@@ -1,0 +1,140 @@
+# docker network create --subnet=172.18.0.0/16 -d bridge goya_net
+networks:
+  goya_net:
+    driver: bridge
+
+services:
+  postgres:
+    image: "${POSTGRES_IMAGE}"
+    container_name: postgres
+    hostname: postgres
+    restart: always
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - "${DATA_DIR}/components/postgres:/bitnami/postgresql"
+    environment:
+      - POSTGRESQL_USERNAME=${POSTGRES_USERNAME}
+      - POSTGRESQL_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRESQL_POSTGRES_PASSWORD=${POSTGRES_POSTGRES_PASSWORD}
+    networks:
+      - goya_net
+
+  mysql:
+    image: "${MYSQL_IMAGE}"
+    container_name: mysql
+    hostname: mysql
+    restart: always
+    command: --default-authentication-plugin=mysql_native_password
+    ports:
+      - "${MYSQL_PORT}:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - "${DATA_DIR}/components/mysql/data:/var/lib/mysql"
+      - "${DATA_DIR}/components/mysql/conf.d:/etc/mysql/conf.d"
+    networks:
+      - goya_net
+
+  mongo:
+    image: "${MONGO_IMAGE}"
+    container_name: mongo
+    hostname: mongo
+    restart: always
+    ports:
+      - "${MONGO_PORT}:27017"
+    command: [ "mongod", "--config", "/etc/mongo/mongod.conf" ]
+    volumes:
+      - "${DATA_DIR}/components/mongodb/data/db:/data/db"
+      - "${DATA_DIR}/components/mongodb/data/logs:/data/logs"
+      - "${DATA_DIR}/components/mongodb/data/conf:/etc/mongo"
+    environment:
+      - TZ=Asia/Shanghai
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_USERNAME}
+    networks:
+      - goya_net
+
+  redis:
+    image: "${REDIS_IMAGE}"
+    container_name: redis
+    hostname: redis
+    restart: always
+    ports:
+      - "${REDIS_PORT}:6379"
+    volumes:
+      - "${DATA_DIR}/components/redis/data:/data"
+      - "${DATA_DIR}/components/redis/config/redis.conf:/usr/local/redis/config/redis.conf"
+    environment:
+      TZ: Asia/Shanghai
+    sysctls:
+      net.core.somaxconn: 1024
+    command:
+      [
+        "redis-server",
+        "/usr/local/redis/config/redis.conf",
+        "--requirepass",
+        "${REDIS_PASSWORD}",
+        "--appendonly",
+        "yes",
+      ]
+    networks:
+      - goya_net
+
+  kafka:
+    image: "${KAFKA_IMAGE}"
+    container_name: kafka
+    hostname: kafka
+    restart: always
+    ports:
+      - "${KAFKA_PORT}:19092"   # INTERNAL
+      - "${KAFKA_EXPORT_PORT}:14270"   # EXTERNAL (FRP 用)
+      - "19093:19093"   # CONTROLLER
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      CLUSTER_ID: 5L6g3nShT-eMCtK--X86sw
+      KAFKA_LISTENERS: >
+        INTERNAL://0.0.0.0:${KAFKA_PORT},
+        EXTERNAL://0.0.0.0:${KAFKA_EXPORT_PORT},
+        CONTROLLER://0.0.0.0:19093
+      KAFKA_ADVERTISED_LISTENERS: >
+        INTERNAL://kafka:${KAFKA_PORT},
+        EXTERNAL://${KAFKA_EXPORT_HOST}
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: >
+        INTERNAL:PLAINTEXT,
+        EXTERNAL:PLAINTEXT,
+        CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:19093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    volumes:
+      - ${DATA_DIR}/components/kafka/data:/var/lib/kafka/data
+      - ${DATA_DIR}/components/kafka/logs:/opt/kafka/logs
+    networks:
+      - goya_net
+
+  minio:
+    image: "${MINIO_IMAGE}"
+    container_name: minio
+    hostname: minio
+    restart: always
+    ports:
+      - "${MINIO_PORT}:9000"
+      - "${MINIO_CONSOLE_PORT}:9090"
+    volumes:
+      - "${DATA_DIR}/components/minio/data:/data"
+      - "${DATA_DIR}/components/minio/config:/root/.minio"
+    environment:
+      TZ: Asia/Shanghai
+      MINIO_ROOT_USER: "${MINIO_ACCESS_KEY_ID}"
+      MINIO_ROOT_PASSWORD: "${MINIO_SECRET_ACCESS_KEY}"
+    command: minio server /data --console-address ':9090'
+    networks:
+      - goya_net

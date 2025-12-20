@@ -1,0 +1,2 @@
+com.ysmjjsy.goya.security.authentication.configuration.SecurityAuthenticationAutoConfiguration
+com.ysmjjsy.goya.security.authentication.configuration.AuthorizationAutoConfiguration

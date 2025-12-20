@@ -1,0 +1,8 @@
+# Ignore common build outputs and IDE files
+target/
+logs/
+.idea/
+.plans/
+# Ignore Cursor's own rule directory to prevent self-referencing issues
+.cursor/
+.test-service/

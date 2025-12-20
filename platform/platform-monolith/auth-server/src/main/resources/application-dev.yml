@@ -1,0 +1,65 @@
+---
+spring:
+  sql:
+    init:
+      mode: never
+      username: goya
+      password: goya123
+      platform: postgresql
+  datasource:
+    url: jdbc:p6spy:postgresql://39.105.2.5:14210/goya_auth_server
+    username: ${spring.sql.init.username}
+    password: ${spring.sql.init.password}
+    # 动态数据源文档 https://www.kancloud.cn/tracy5546/dynamic-datasource/content
+    dynamic:
+      datasource:
+        # 主库配置
+        master:
+          url: ${spring.datasource.url}
+          username: ${spring.sql.init.username}
+          password: ${spring.sql.init.password}
+          driver-class-name: ${spring.datasource.driver-class-name}
+          type: ${spring.datasource.type}
+
+---
+# MyBatisPlus配置
+# https://baomidou.com/config/
+#mybatis-plus:
+  # 多包名使用 例如 com.hzzhg.sewage.iam,com.hzzhg.sewage.iam
+#  mapperPackage: com.ysmjjsy.goya.module.upms.**.repository
+  # 对应的 XML 文件位置
+#  mapperLocations: classpath*:mapper/**/*Mapper.xml
+  # 实体扫描，多个package用逗号或者分号分隔
+#  typeAliasesPackage: com.ysmjjsy.goya.module.upms.**.domain
+---
+# Redis配置
+spring:
+  data:
+    redis:
+      database: 0
+      host: 39.105.2.5
+      password: goya123
+      port: 14240
+      timeout: 10000
+      repositories:
+        enabled: false
+      lettuce:
+        pool:
+          max-active: 10
+          max-wait: 10000
+          max-idle: 10
+          min-idle: 5
+    redisson:
+      enabled: false
+      single-server-config:
+        address: redis://${spring.data.redis.host}:${spring.data.redis.port}
+        password: ${spring.data.redis.password}
+
+---
+logging:
+  config: classpath:logback-plus.xml
+  file:
+    name: logs/${spring.application.name}.log
+  level:
+    root: info
+    com.ysmjjsy.goya: info

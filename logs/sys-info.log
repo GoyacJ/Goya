@@ -1,0 +1,445 @@
+2025-12-15 09:22:24 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.3.Final
+2025-12-15 09:22:24 [main] INFO  c.y.goya.auth.server.AuthApplication - Starting AuthApplication using Java 21.0.8 with PID 29567 (/Users/goya/Repo/goya/Goya/platform/platform-monolith/auth-server/target/classes started by goya in /Users/goya/Repo/goya/Goya)
+2025-12-15 09:22:24 [main] INFO  c.y.goya.auth.server.AuthApplication - The following 1 profile is active: "dev"
+2025-12-15 09:22:25 [main] INFO  o.s.i.c.DefaultConfiguringBeanFactoryPostProcessor - No bean named 'errorChannel' has been explicitly defined. Therefore, a default PublishSubscribeChannel will be created.
+2025-12-15 09:22:25 [main] INFO  o.s.i.c.DefaultConfiguringBeanFactoryPostProcessor - No bean named 'integrationHeaderChannelRegistry' has been explicitly defined. Therefore, a default DefaultHeaderChannelRegistry will be created.
+2025-12-15 09:22:25 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8101 (http)
+2025-12-15 09:22:25 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8101"]
+2025-12-15 09:22:25 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-12-15 09:22:25 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.49]
+2025-12-15 09:22:25 [main] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2025-12-15 09:22:25 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1303 ms
+2025-12-15 09:22:26 [main] INFO  c.a.j.a.AbstractCacheAutoInit - init cache area default , type= caffeine
+2025-12-15 09:22:26 [main] INFO  c.a.j.a.AbstractCacheAutoInit - init cache area default , type= redis.lettuce
+2025-12-15 09:22:27 [main] INFO  c.a.j.support.DefaultMetricsManager - cache stat period at 15 MINUTES
+2025-12-15 09:22:27 [main] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource detect P6SPY plugin and enabled it
+2025-12-15 09:22:27 [main] INFO  com.zaxxer.hikari.HikariDataSource - master - Starting...
+2025-12-15 09:22:28 [main] INFO  com.zaxxer.hikari.pool.HikariPool - master - Added connection com.p6spy.engine.wrapper.ConnectionWrapper@5ca8157c
+2025-12-15 09:22:28 [main] INFO  com.zaxxer.hikari.HikariDataSource - master - Start completed.
+2025-12-15 09:22:28 [main] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource - add a datasource named [master] success
+2025-12-15 09:22:28 [main] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource initial loaded [1] datasource,primary datasource named [master]
+2025-12-15 09:22:28 [main] INFO  org.redisson.Version - Redisson 3.52.0
+2025-12-15 09:22:28 [redisson-netty-5-6] INFO  o.r.connection.ConnectionsHolder - 1 connections initialized for 39.105.2.5/39.105.2.5:14240
+2025-12-15 09:22:29 [redisson-netty-5-19] INFO  o.r.connection.ConnectionsHolder - 24 connections initialized for 39.105.2.5/39.105.2.5:14240
+2025-12-15 09:22:30 [main] INFO  o.s.i.endpoint.EventDrivenConsumer - Adding {logging-channel-adapter:_org.springframework.integration.errorLogger} as a subscriber to the 'errorChannel' channel
+2025-12-15 09:22:30 [main] INFO  o.s.i.c.PublishSubscribeChannel - Channel 'auth-server.errorChannel' has 1 subscriber(s).
+2025-12-15 09:22:30 [main] INFO  o.s.i.endpoint.EventDrivenConsumer - started bean '_org.springframework.integration.errorLogger'
+2025-12-15 09:22:30 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8101"]
+2025-12-15 09:22:30 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 8101 (http) with context path '/'
+2025-12-15 09:22:30 [main] INFO  o.s.i.c.PublishSubscribeChannel - Channel 'unknown.channel.name' has 1 subscriber(s).
+2025-12-15 09:22:30 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 1 endpoint beneath base path '/actuator'
+2025-12-15 09:22:30 [main] INFO  c.y.goya.auth.server.AuthApplication - Started AuthApplication in 6.476 seconds (process running for 6.879)
+2025-12-15 09:22:30 [RMI TCP Connection(3)-127.0.0.1] INFO  org.owasp.validator.html.Policy - Attempting to load AntiSamy policy from URL: file:/Users/goya/Repo/goya/Goya/component/component-web/target/classes/antisamy/antisamy-anythinggoes.xml
+2025-12-15 09:22:30 [RMI TCP Connection(1)-127.0.0.1] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-12-15 09:22:30 [RMI TCP Connection(1)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2025-12-15 09:22:31 [RMI TCP Connection(1)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 110 ms
+2025-12-15 09:22:35 [SpringApplicationShutdownHook] INFO  o.s.b.w.e.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2025-12-15 09:22:35 [tomcat-shutdown] INFO  o.s.b.w.e.tomcat.GracefulShutdown - Graceful shutdown complete
+2025-12-15 09:22:35 [SpringApplicationShutdownHook] INFO  o.s.i.endpoint.EventDrivenConsumer - Removing {logging-channel-adapter:_org.springframework.integration.errorLogger} as a subscriber to the 'errorChannel' channel
+2025-12-15 09:22:35 [SpringApplicationShutdownHook] INFO  o.s.i.c.PublishSubscribeChannel - Channel 'auth-server.errorChannel' has 0 subscriber(s).
+2025-12-15 09:22:35 [SpringApplicationShutdownHook] INFO  o.s.i.endpoint.EventDrivenConsumer - stopped bean '_org.springframework.integration.errorLogger'
+2025-12-15 09:22:35 [SpringApplicationShutdownHook] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource start closing ....
+2025-12-15 09:22:35 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - master - Shutdown initiated...
+2025-12-15 09:22:35 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - master - Shutdown completed.
+2025-12-15 09:22:35 [SpringApplicationShutdownHook] INFO  c.b.d.d.d.DefaultDataSourceDestroyer - dynamic-datasource close the datasource named [master] success,
+2025-12-15 09:22:35 [SpringApplicationShutdownHook] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource all closed success,bye
+2025-12-15 09:22:35 [SpringApplicationShutdownHook] INFO  c.a.j.support.DefaultMetricsManager - cache stat canceled
+2025-12-15 09:38:28 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.3.Final
+2025-12-15 09:38:28 [main] INFO  c.y.goya.auth.server.AuthApplication - Starting AuthApplication using Java 21.0.8 with PID 30788 (/Users/goya/Repo/goya/Goya/platform/platform-monolith/auth-server/target/classes started by goya in /Users/goya/Repo/goya/Goya)
+2025-12-15 09:38:28 [main] INFO  c.y.goya.auth.server.AuthApplication - The following 1 profile is active: "dev"
+2025-12-15 09:38:29 [main] INFO  o.s.i.c.DefaultConfiguringBeanFactoryPostProcessor - No bean named 'errorChannel' has been explicitly defined. Therefore, a default PublishSubscribeChannel will be created.
+2025-12-15 09:38:29 [main] INFO  o.s.i.c.DefaultConfiguringBeanFactoryPostProcessor - No bean named 'integrationHeaderChannelRegistry' has been explicitly defined. Therefore, a default DefaultHeaderChannelRegistry will be created.
+2025-12-15 09:38:29 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8101 (http)
+2025-12-15 09:38:29 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8101"]
+2025-12-15 09:38:29 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-12-15 09:38:29 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.49]
+2025-12-15 09:38:29 [main] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2025-12-15 09:38:29 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1313 ms
+2025-12-15 09:38:29 [main] INFO  c.a.j.a.AbstractCacheAutoInit - init cache area default , type= caffeine
+2025-12-15 09:38:29 [main] INFO  c.a.j.a.AbstractCacheAutoInit - init cache area default , type= redis.lettuce
+2025-12-15 09:38:33 [main] INFO  c.a.j.support.DefaultMetricsManager - cache stat period at 15 MINUTES
+2025-12-15 09:38:34 [main] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource detect P6SPY plugin and enabled it
+2025-12-15 09:38:34 [main] INFO  com.zaxxer.hikari.HikariDataSource - master - Starting...
+2025-12-15 09:38:34 [main] INFO  com.zaxxer.hikari.pool.HikariPool - master - Added connection com.p6spy.engine.wrapper.ConnectionWrapper@5a4ceb1
+2025-12-15 09:38:34 [main] INFO  com.zaxxer.hikari.HikariDataSource - master - Start completed.
+2025-12-15 09:38:34 [main] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource - add a datasource named [master] success
+2025-12-15 09:38:34 [main] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource initial loaded [1] datasource,primary datasource named [master]
+2025-12-15 09:38:34 [main] INFO  org.redisson.Version - Redisson 3.52.0
+2025-12-15 09:38:34 [redisson-netty-5-6] INFO  o.r.connection.ConnectionsHolder - 1 connections initialized for 39.105.2.5/39.105.2.5:14240
+2025-12-15 09:38:38 [redisson-netty-5-19] INFO  o.r.connection.ConnectionsHolder - 24 connections initialized for 39.105.2.5/39.105.2.5:14240
+2025-12-15 09:38:41 [main] INFO  o.s.i.endpoint.EventDrivenConsumer - Adding {logging-channel-adapter:_org.springframework.integration.errorLogger} as a subscriber to the 'errorChannel' channel
+2025-12-15 09:38:41 [main] INFO  o.s.i.c.PublishSubscribeChannel - Channel 'auth-server.errorChannel' has 1 subscriber(s).
+2025-12-15 09:38:41 [main] INFO  o.s.i.endpoint.EventDrivenConsumer - started bean '_org.springframework.integration.errorLogger'
+2025-12-15 09:38:41 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8101"]
+2025-12-15 09:38:41 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 8101 (http) with context path '/'
+2025-12-15 09:38:41 [main] INFO  o.s.i.c.PublishSubscribeChannel - Channel 'unknown.channel.name' has 1 subscriber(s).
+2025-12-15 09:38:41 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 1 endpoint beneath base path '/actuator'
+2025-12-15 09:38:41 [main] INFO  c.y.goya.auth.server.AuthApplication - Started AuthApplication in 13.464 seconds (process running for 13.938)
+2025-12-15 09:38:41 [RMI TCP Connection(2)-127.0.0.1] INFO  org.owasp.validator.html.Policy - Attempting to load AntiSamy policy from URL: file:/Users/goya/Repo/goya/Goya/component/component-web/target/classes/antisamy/antisamy-anythinggoes.xml
+2025-12-15 09:38:42 [RMI TCP Connection(3)-127.0.0.1] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-12-15 09:38:42 [RMI TCP Connection(3)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2025-12-15 09:38:42 [RMI TCP Connection(3)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 117 ms
+2025-12-15 09:38:42 [tomcat-handler-0] INFO  o.a.tomcat.util.http.parser.Cookie - A cookie header was received [Hm_lvt_0febd9e3cacb3f627ddac64d52caac39=1764082779,1764990375,1765186543,1765269127;] that contained an invalid cookie. That cookie will be ignored.
+ Note: further occurrences of this error will be logged at DEBUG level.
+2025-12-15 09:45:00 [JetCacheDefaultExecutor] INFO  c.a.jetcache.support.StatInfoLogger - jetcache stat from 2025-12-15 09:38:33,802 to 2025-12-15 09:45:00,001
+cache                             |       qps|   rate|           get|           hit|          fail|        expire|avgLoadTime|maxLoadTime
+----------------------------------+----------+-------+--------------+--------------+--------------+--------------+-----------+-----------
+cache:properties:                 |      0.00|100.00%|             1|             1|             0|             0|        0.0|          0
+cache:properties:_local           |      0.00|  0.00%|             1|             0|             0|             0|        0.0|          0
+cache:properties:_remote          |      0.00|100.00%|             1|             1|             0|             0|        0.0|          0
+cache:token:access_limited:       |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:access_limited:_local |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:access_limited:_remote|      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:idempotent:           |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:idempotent:_local     |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:idempotent:_remote    |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:secure_key:           |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:secure_key:_local     |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:secure_key:_remote    |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+----------------------------------+----------+-------+--------------+--------------+--------------+--------------+-----------+-----------
+
+2025-12-15 09:53:25 [SpringApplicationShutdownHook] INFO  o.s.b.w.e.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2025-12-15 09:53:25 [tomcat-shutdown] INFO  o.s.b.w.e.tomcat.GracefulShutdown - Graceful shutdown complete
+2025-12-15 09:53:25 [SpringApplicationShutdownHook] INFO  o.s.i.endpoint.EventDrivenConsumer - Removing {logging-channel-adapter:_org.springframework.integration.errorLogger} as a subscriber to the 'errorChannel' channel
+2025-12-15 09:53:25 [SpringApplicationShutdownHook] INFO  o.s.i.c.PublishSubscribeChannel - Channel 'auth-server.errorChannel' has 0 subscriber(s).
+2025-12-15 09:53:25 [SpringApplicationShutdownHook] INFO  o.s.i.endpoint.EventDrivenConsumer - stopped bean '_org.springframework.integration.errorLogger'
+2025-12-15 09:53:25 [SpringApplicationShutdownHook] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource start closing ....
+2025-12-15 09:53:25 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - master - Shutdown initiated...
+2025-12-15 09:53:25 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - master - Shutdown completed.
+2025-12-15 09:53:25 [SpringApplicationShutdownHook] INFO  c.b.d.d.d.DefaultDataSourceDestroyer - dynamic-datasource close the datasource named [master] success,
+2025-12-15 09:53:25 [SpringApplicationShutdownHook] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource all closed success,bye
+2025-12-15 09:53:25 [SpringApplicationShutdownHook] INFO  c.a.j.support.DefaultMetricsManager - cache stat canceled
+2025-12-15 09:53:29 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.3.Final
+2025-12-15 09:53:29 [main] INFO  c.y.goya.auth.server.AuthApplication - Starting AuthApplication using Java 21.0.8 with PID 31420 (/Users/goya/Repo/goya/Goya/platform/platform-monolith/auth-server/target/classes started by goya in /Users/goya/Repo/goya/Goya)
+2025-12-15 09:53:29 [main] INFO  c.y.goya.auth.server.AuthApplication - The following 1 profile is active: "dev"
+2025-12-15 09:53:30 [main] INFO  o.s.i.c.DefaultConfiguringBeanFactoryPostProcessor - No bean named 'errorChannel' has been explicitly defined. Therefore, a default PublishSubscribeChannel will be created.
+2025-12-15 09:53:30 [main] INFO  o.s.i.c.DefaultConfiguringBeanFactoryPostProcessor - No bean named 'integrationHeaderChannelRegistry' has been explicitly defined. Therefore, a default DefaultHeaderChannelRegistry will be created.
+2025-12-15 09:53:30 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8101 (http)
+2025-12-15 09:53:30 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8101"]
+2025-12-15 09:53:30 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-12-15 09:53:30 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.49]
+2025-12-15 09:53:30 [main] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2025-12-15 09:53:30 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1411 ms
+2025-12-15 09:53:31 [main] INFO  c.a.j.a.AbstractCacheAutoInit - init cache area default , type= caffeine
+2025-12-15 09:53:31 [main] INFO  c.a.j.a.AbstractCacheAutoInit - init cache area default , type= redis.lettuce
+2025-12-15 09:53:32 [main] INFO  c.a.j.support.DefaultMetricsManager - cache stat period at 15 MINUTES
+2025-12-15 09:53:32 [main] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource detect P6SPY plugin and enabled it
+2025-12-15 09:53:32 [main] INFO  com.zaxxer.hikari.HikariDataSource - master - Starting...
+2025-12-15 09:53:33 [main] INFO  com.zaxxer.hikari.pool.HikariPool - master - Added connection com.p6spy.engine.wrapper.ConnectionWrapper@5bbd8118
+2025-12-15 09:53:33 [main] INFO  com.zaxxer.hikari.HikariDataSource - master - Start completed.
+2025-12-15 09:53:33 [main] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource - add a datasource named [master] success
+2025-12-15 09:53:33 [main] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource initial loaded [1] datasource,primary datasource named [master]
+2025-12-15 09:53:33 [main] INFO  org.redisson.Version - Redisson 3.52.0
+2025-12-15 09:53:33 [redisson-netty-5-6] INFO  o.r.connection.ConnectionsHolder - 1 connections initialized for 39.105.2.5/39.105.2.5:14240
+2025-12-15 09:53:34 [redisson-netty-5-19] INFO  o.r.connection.ConnectionsHolder - 24 connections initialized for 39.105.2.5/39.105.2.5:14240
+2025-12-15 09:53:35 [main] INFO  o.s.i.endpoint.EventDrivenConsumer - Adding {logging-channel-adapter:_org.springframework.integration.errorLogger} as a subscriber to the 'errorChannel' channel
+2025-12-15 09:53:35 [main] INFO  o.s.i.c.PublishSubscribeChannel - Channel 'auth-server.errorChannel' has 1 subscriber(s).
+2025-12-15 09:53:35 [main] INFO  o.s.i.endpoint.EventDrivenConsumer - started bean '_org.springframework.integration.errorLogger'
+2025-12-15 09:53:35 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8101"]
+2025-12-15 09:53:35 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 8101 (http) with context path '/'
+2025-12-15 09:53:35 [main] INFO  o.s.i.c.PublishSubscribeChannel - Channel 'unknown.channel.name' has 1 subscriber(s).
+2025-12-15 09:53:35 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 1 endpoint beneath base path '/actuator'
+2025-12-15 09:53:35 [main] INFO  c.y.goya.auth.server.AuthApplication - Started AuthApplication in 7.032 seconds (process running for 7.525)
+2025-12-15 09:53:36 [RMI TCP Connection(3)-127.0.0.1] INFO  org.owasp.validator.html.Policy - Attempting to load AntiSamy policy from URL: file:/Users/goya/Repo/goya/Goya/component/component-web/target/classes/antisamy/antisamy-anythinggoes.xml
+2025-12-15 09:53:36 [RMI TCP Connection(2)-127.0.0.1] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-12-15 09:53:36 [RMI TCP Connection(2)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2025-12-15 09:53:36 [RMI TCP Connection(2)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 118 ms
+2025-12-15 09:53:41 [tomcat-handler-0] INFO  o.a.tomcat.util.http.parser.Cookie - A cookie header was received [Hm_lvt_0febd9e3cacb3f627ddac64d52caac39=1764082779,1764990375,1765186543,1765269127;] that contained an invalid cookie. That cookie will be ignored.
+ Note: further occurrences of this error will be logged at DEBUG level.
+2025-12-15 09:54:46 [SpringApplicationShutdownHook] INFO  o.s.b.w.e.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2025-12-15 09:54:46 [tomcat-shutdown] INFO  o.s.b.w.e.tomcat.GracefulShutdown - Graceful shutdown complete
+2025-12-15 09:54:46 [SpringApplicationShutdownHook] INFO  o.s.i.endpoint.EventDrivenConsumer - Removing {logging-channel-adapter:_org.springframework.integration.errorLogger} as a subscriber to the 'errorChannel' channel
+2025-12-15 09:54:46 [SpringApplicationShutdownHook] INFO  o.s.i.c.PublishSubscribeChannel - Channel 'auth-server.errorChannel' has 0 subscriber(s).
+2025-12-15 09:54:46 [SpringApplicationShutdownHook] INFO  o.s.i.endpoint.EventDrivenConsumer - stopped bean '_org.springframework.integration.errorLogger'
+2025-12-15 09:54:46 [SpringApplicationShutdownHook] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource start closing ....
+2025-12-15 09:54:46 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - master - Shutdown initiated...
+2025-12-15 09:54:46 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - master - Shutdown completed.
+2025-12-15 09:54:46 [SpringApplicationShutdownHook] INFO  c.b.d.d.d.DefaultDataSourceDestroyer - dynamic-datasource close the datasource named [master] success,
+2025-12-15 09:54:46 [SpringApplicationShutdownHook] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource all closed success,bye
+2025-12-15 09:54:46 [SpringApplicationShutdownHook] INFO  c.a.j.support.DefaultMetricsManager - cache stat canceled
+2025-12-15 09:54:48 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.3.Final
+2025-12-15 09:54:48 [main] INFO  c.y.goya.auth.server.AuthApplication - Starting AuthApplication using Java 21.0.8 with PID 31526 (/Users/goya/Repo/goya/Goya/platform/platform-monolith/auth-server/target/classes started by goya in /Users/goya/Repo/goya/Goya)
+2025-12-15 09:54:48 [main] INFO  c.y.goya.auth.server.AuthApplication - The following 1 profile is active: "dev"
+2025-12-15 09:54:48 [main] INFO  o.s.i.c.DefaultConfiguringBeanFactoryPostProcessor - No bean named 'errorChannel' has been explicitly defined. Therefore, a default PublishSubscribeChannel will be created.
+2025-12-15 09:54:48 [main] INFO  o.s.i.c.DefaultConfiguringBeanFactoryPostProcessor - No bean named 'integrationHeaderChannelRegistry' has been explicitly defined. Therefore, a default DefaultHeaderChannelRegistry will be created.
+2025-12-15 09:54:49 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8101 (http)
+2025-12-15 09:54:49 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8101"]
+2025-12-15 09:54:49 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-12-15 09:54:49 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.49]
+2025-12-15 09:54:49 [main] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2025-12-15 09:54:49 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1254 ms
+2025-12-15 09:54:49 [main] INFO  c.a.j.a.AbstractCacheAutoInit - init cache area default , type= caffeine
+2025-12-15 09:54:49 [main] INFO  c.a.j.a.AbstractCacheAutoInit - init cache area default , type= redis.lettuce
+2025-12-15 09:54:51 [main] INFO  c.a.j.support.DefaultMetricsManager - cache stat period at 15 MINUTES
+2025-12-15 09:54:51 [main] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource detect P6SPY plugin and enabled it
+2025-12-15 09:54:51 [main] INFO  com.zaxxer.hikari.HikariDataSource - master - Starting...
+2025-12-15 09:54:51 [main] INFO  com.zaxxer.hikari.pool.HikariPool - master - Added connection com.p6spy.engine.wrapper.ConnectionWrapper@6d7c8a2
+2025-12-15 09:54:51 [main] INFO  com.zaxxer.hikari.HikariDataSource - master - Start completed.
+2025-12-15 09:54:51 [main] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource - add a datasource named [master] success
+2025-12-15 09:54:51 [main] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource initial loaded [1] datasource,primary datasource named [master]
+2025-12-15 09:54:51 [main] INFO  org.redisson.Version - Redisson 3.52.0
+2025-12-15 09:54:51 [redisson-netty-5-6] INFO  o.r.connection.ConnectionsHolder - 1 connections initialized for 39.105.2.5/39.105.2.5:14240
+2025-12-15 09:54:53 [redisson-netty-5-19] INFO  o.r.connection.ConnectionsHolder - 24 connections initialized for 39.105.2.5/39.105.2.5:14240
+2025-12-15 09:54:54 [main] INFO  o.s.i.endpoint.EventDrivenConsumer - Adding {logging-channel-adapter:_org.springframework.integration.errorLogger} as a subscriber to the 'errorChannel' channel
+2025-12-15 09:54:54 [main] INFO  o.s.i.c.PublishSubscribeChannel - Channel 'auth-server.errorChannel' has 1 subscriber(s).
+2025-12-15 09:54:54 [main] INFO  o.s.i.endpoint.EventDrivenConsumer - started bean '_org.springframework.integration.errorLogger'
+2025-12-15 09:54:54 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8101"]
+2025-12-15 09:54:54 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 8101 (http) with context path '/'
+2025-12-15 09:54:54 [main] INFO  o.s.i.c.PublishSubscribeChannel - Channel 'unknown.channel.name' has 1 subscriber(s).
+2025-12-15 09:54:54 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 1 endpoint beneath base path '/actuator'
+2025-12-15 09:54:54 [main] INFO  c.y.goya.auth.server.AuthApplication - Started AuthApplication in 6.538 seconds (process running for 6.951)
+2025-12-15 09:54:54 [RMI TCP Connection(3)-127.0.0.1] INFO  org.owasp.validator.html.Policy - Attempting to load AntiSamy policy from URL: file:/Users/goya/Repo/goya/Goya/component/component-web/target/classes/antisamy/antisamy-anythinggoes.xml
+2025-12-15 09:54:54 [RMI TCP Connection(4)-127.0.0.1] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-12-15 09:54:54 [RMI TCP Connection(4)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2025-12-15 09:54:54 [RMI TCP Connection(4)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 107 ms
+2025-12-15 09:55:10 [tomcat-handler-0] INFO  o.a.tomcat.util.http.parser.Cookie - A cookie header was received [Hm_lvt_0febd9e3cacb3f627ddac64d52caac39=1764082779,1764990375,1765186543,1765269127;] that contained an invalid cookie. That cookie will be ignored.
+ Note: further occurrences of this error will be logged at DEBUG level.
+2025-12-15 09:55:10 [tomcat-handler-0] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name securityUserService
+2025-12-15 10:00:00 [JetCacheDefaultExecutor] INFO  c.a.jetcache.support.StatInfoLogger - jetcache stat from 2025-12-15 09:54:51,191 to 2025-12-15 10:00:00,001
+cache                             |       qps|   rate|           get|           hit|          fail|        expire|avgLoadTime|maxLoadTime
+----------------------------------+----------+-------+--------------+--------------+--------------+--------------+-----------+-----------
+cache:properties:                 |      0.00|100.00%|             1|             1|             0|             0|        0.0|          0
+cache:properties:_local           |      0.00|  0.00%|             1|             0|             0|             0|        0.0|          0
+cache:properties:_remote          |      0.00|100.00%|             1|             1|             0|             0|        0.0|          0
+cache:token:access_limited:       |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:access_limited:_local |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:access_limited:_remote|      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:idempotent:           |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:idempotent:_local     |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:idempotent:_remote    |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:secure_key:           |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:secure_key:_local     |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:secure_key:_remote    |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+----------------------------------+----------+-------+--------------+--------------+--------------+--------------+-----------+-----------
+
+2025-12-15 10:01:12 [SpringApplicationShutdownHook] INFO  o.s.b.w.e.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2025-12-15 10:01:12 [tomcat-shutdown] INFO  o.s.b.w.e.tomcat.GracefulShutdown - Graceful shutdown complete
+2025-12-15 10:01:12 [SpringApplicationShutdownHook] INFO  o.s.i.endpoint.EventDrivenConsumer - Removing {logging-channel-adapter:_org.springframework.integration.errorLogger} as a subscriber to the 'errorChannel' channel
+2025-12-15 10:01:12 [SpringApplicationShutdownHook] INFO  o.s.i.c.PublishSubscribeChannel - Channel 'auth-server.errorChannel' has 0 subscriber(s).
+2025-12-15 10:01:12 [SpringApplicationShutdownHook] INFO  o.s.i.endpoint.EventDrivenConsumer - stopped bean '_org.springframework.integration.errorLogger'
+2025-12-15 10:01:12 [SpringApplicationShutdownHook] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource start closing ....
+2025-12-15 10:01:12 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - master - Shutdown initiated...
+2025-12-15 10:01:12 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - master - Shutdown completed.
+2025-12-15 10:01:12 [SpringApplicationShutdownHook] INFO  c.b.d.d.d.DefaultDataSourceDestroyer - dynamic-datasource close the datasource named [master] success,
+2025-12-15 10:01:12 [SpringApplicationShutdownHook] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource all closed success,bye
+2025-12-15 10:01:12 [SpringApplicationShutdownHook] INFO  c.a.j.support.DefaultMetricsManager - cache stat canceled
+2025-12-15 10:01:14 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.3.Final
+2025-12-15 10:01:14 [main] INFO  c.y.goya.auth.server.AuthApplication - Starting AuthApplication using Java 21.0.8 with PID 31784 (/Users/goya/Repo/goya/Goya/platform/platform-monolith/auth-server/target/classes started by goya in /Users/goya/Repo/goya/Goya)
+2025-12-15 10:01:14 [main] INFO  c.y.goya.auth.server.AuthApplication - The following 1 profile is active: "dev"
+2025-12-15 10:01:15 [main] INFO  o.s.i.c.DefaultConfiguringBeanFactoryPostProcessor - No bean named 'errorChannel' has been explicitly defined. Therefore, a default PublishSubscribeChannel will be created.
+2025-12-15 10:01:15 [main] INFO  o.s.i.c.DefaultConfiguringBeanFactoryPostProcessor - No bean named 'integrationHeaderChannelRegistry' has been explicitly defined. Therefore, a default DefaultHeaderChannelRegistry will be created.
+2025-12-15 10:01:15 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8101 (http)
+2025-12-15 10:01:15 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8101"]
+2025-12-15 10:01:15 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-12-15 10:01:15 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.49]
+2025-12-15 10:01:15 [main] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2025-12-15 10:01:15 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1321 ms
+2025-12-15 10:01:16 [main] INFO  c.a.j.a.AbstractCacheAutoInit - init cache area default , type= caffeine
+2025-12-15 10:01:16 [main] INFO  c.a.j.a.AbstractCacheAutoInit - init cache area default , type= redis.lettuce
+2025-12-15 10:01:17 [main] INFO  c.a.j.support.DefaultMetricsManager - cache stat period at 15 MINUTES
+2025-12-15 10:01:18 [main] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource detect P6SPY plugin and enabled it
+2025-12-15 10:01:18 [main] INFO  com.zaxxer.hikari.HikariDataSource - master - Starting...
+2025-12-15 10:01:18 [main] INFO  com.zaxxer.hikari.pool.HikariPool - master - Added connection com.p6spy.engine.wrapper.ConnectionWrapper@198eeb36
+2025-12-15 10:01:18 [main] INFO  com.zaxxer.hikari.HikariDataSource - master - Start completed.
+2025-12-15 10:01:18 [main] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource - add a datasource named [master] success
+2025-12-15 10:01:18 [main] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource initial loaded [1] datasource,primary datasource named [master]
+2025-12-15 10:01:18 [main] INFO  org.redisson.Version - Redisson 3.52.0
+2025-12-15 10:01:18 [redisson-netty-5-6] INFO  o.r.connection.ConnectionsHolder - 1 connections initialized for 39.105.2.5/39.105.2.5:14240
+2025-12-15 10:01:19 [redisson-netty-5-19] INFO  o.r.connection.ConnectionsHolder - 24 connections initialized for 39.105.2.5/39.105.2.5:14240
+2025-12-15 10:01:20 [main] INFO  o.s.i.endpoint.EventDrivenConsumer - Adding {logging-channel-adapter:_org.springframework.integration.errorLogger} as a subscriber to the 'errorChannel' channel
+2025-12-15 10:01:20 [main] INFO  o.s.i.c.PublishSubscribeChannel - Channel 'auth-server.errorChannel' has 1 subscriber(s).
+2025-12-15 10:01:20 [main] INFO  o.s.i.endpoint.EventDrivenConsumer - started bean '_org.springframework.integration.errorLogger'
+2025-12-15 10:01:20 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8101"]
+2025-12-15 10:01:20 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 8101 (http) with context path '/'
+2025-12-15 10:01:20 [main] INFO  o.s.i.c.PublishSubscribeChannel - Channel 'unknown.channel.name' has 1 subscriber(s).
+2025-12-15 10:01:20 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 1 endpoint beneath base path '/actuator'
+2025-12-15 10:01:20 [main] INFO  c.y.goya.auth.server.AuthApplication - Started AuthApplication in 6.733 seconds (process running for 7.087)
+2025-12-15 10:01:21 [RMI TCP Connection(2)-127.0.0.1] INFO  org.owasp.validator.html.Policy - Attempting to load AntiSamy policy from URL: file:/Users/goya/Repo/goya/Goya/component/component-web/target/classes/antisamy/antisamy-anythinggoes.xml
+2025-12-15 10:01:21 [RMI TCP Connection(3)-127.0.0.1] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-12-15 10:01:21 [RMI TCP Connection(3)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2025-12-15 10:01:21 [RMI TCP Connection(3)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 113 ms
+2025-12-15 10:01:38 [tomcat-handler-0] INFO  o.a.tomcat.util.http.parser.Cookie - A cookie header was received [Hm_lvt_0febd9e3cacb3f627ddac64d52caac39=1764082779,1764990375,1765186543,1765269127;] that contained an invalid cookie. That cookie will be ignored.
+ Note: further occurrences of this error will be logged at DEBUG level.
+2025-12-15 10:01:38 [tomcat-handler-0] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name securityUserService
+2025-12-15 10:14:59 [JetCacheDefaultExecutor] INFO  c.a.jetcache.support.StatInfoLogger - jetcache stat from 2025-12-15 10:01:17,856 to 2025-12-15 10:14:59,960
+cache                             |       qps|   rate|           get|           hit|          fail|        expire|avgLoadTime|maxLoadTime
+----------------------------------+----------+-------+--------------+--------------+--------------+--------------+-----------+-----------
+cache:properties:                 |      0.00|100.00%|             1|             1|             0|             0|        0.0|          0
+cache:properties:_local           |      0.00|  0.00%|             1|             0|             0|             0|        0.0|          0
+cache:properties:_remote          |      0.00|100.00%|             1|             1|             0|             0|        0.0|          0
+cache:token:access_limited:       |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:access_limited:_local |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:access_limited:_remote|      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:idempotent:           |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:idempotent:_local     |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:idempotent:_remote    |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:secure_key:           |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:secure_key:_local     |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:secure_key:_remote    |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+----------------------------------+----------+-------+--------------+--------------+--------------+--------------+-----------+-----------
+
+2025-12-15 10:21:33 [SpringApplicationShutdownHook] INFO  o.s.b.w.e.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2025-12-15 10:21:33 [tomcat-shutdown] INFO  o.s.b.w.e.tomcat.GracefulShutdown - Graceful shutdown complete
+2025-12-15 10:21:33 [SpringApplicationShutdownHook] INFO  o.s.i.endpoint.EventDrivenConsumer - Removing {logging-channel-adapter:_org.springframework.integration.errorLogger} as a subscriber to the 'errorChannel' channel
+2025-12-15 10:21:33 [SpringApplicationShutdownHook] INFO  o.s.i.c.PublishSubscribeChannel - Channel 'auth-server.errorChannel' has 0 subscriber(s).
+2025-12-15 10:21:33 [SpringApplicationShutdownHook] INFO  o.s.i.endpoint.EventDrivenConsumer - stopped bean '_org.springframework.integration.errorLogger'
+2025-12-15 10:21:33 [SpringApplicationShutdownHook] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource start closing ....
+2025-12-15 10:21:33 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - master - Shutdown initiated...
+2025-12-15 10:21:33 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - master - Shutdown completed.
+2025-12-15 10:21:33 [SpringApplicationShutdownHook] INFO  c.b.d.d.d.DefaultDataSourceDestroyer - dynamic-datasource close the datasource named [master] success,
+2025-12-15 10:21:33 [SpringApplicationShutdownHook] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource all closed success,bye
+2025-12-15 10:21:33 [SpringApplicationShutdownHook] INFO  c.a.j.support.DefaultMetricsManager - cache stat canceled
+2025-12-15 10:21:36 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.3.Final
+2025-12-15 10:21:36 [main] INFO  c.y.goya.auth.server.AuthApplication - Starting AuthApplication using Java 21.0.8 with PID 32498 (/Users/goya/Repo/goya/Goya/platform/platform-monolith/auth-server/target/classes started by goya in /Users/goya/Repo/goya/Goya)
+2025-12-15 10:21:36 [main] INFO  c.y.goya.auth.server.AuthApplication - The following 1 profile is active: "dev"
+2025-12-15 10:21:36 [main] INFO  o.s.b.a.l.ConditionEvaluationReportLogger - 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2025-12-15 10:26:49 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.3.Final
+2025-12-15 10:26:50 [main] INFO  c.y.goya.auth.server.AuthApplication - Starting AuthApplication using Java 21.0.8 with PID 32960 (/Users/goya/Repo/goya/Goya/platform/platform-monolith/auth-server/target/classes started by goya in /Users/goya/Repo/goya/Goya)
+2025-12-15 10:26:50 [main] INFO  c.y.goya.auth.server.AuthApplication - The following 1 profile is active: "dev"
+2025-12-15 10:26:50 [main] INFO  o.s.i.c.DefaultConfiguringBeanFactoryPostProcessor - No bean named 'errorChannel' has been explicitly defined. Therefore, a default PublishSubscribeChannel will be created.
+2025-12-15 10:26:50 [main] INFO  o.s.i.c.DefaultConfiguringBeanFactoryPostProcessor - No bean named 'integrationHeaderChannelRegistry' has been explicitly defined. Therefore, a default DefaultHeaderChannelRegistry will be created.
+2025-12-15 10:26:51 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8101 (http)
+2025-12-15 10:26:51 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8101"]
+2025-12-15 10:26:51 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-12-15 10:26:51 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.49]
+2025-12-15 10:26:51 [main] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2025-12-15 10:26:51 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1395 ms
+2025-12-15 10:26:51 [main] INFO  c.a.j.a.AbstractCacheAutoInit - init cache area default , type= caffeine
+2025-12-15 10:26:51 [main] INFO  c.a.j.a.AbstractCacheAutoInit - init cache area default , type= redis.lettuce
+2025-12-15 10:26:53 [main] INFO  c.a.j.support.DefaultMetricsManager - cache stat period at 15 MINUTES
+2025-12-15 10:26:53 [main] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource detect P6SPY plugin and enabled it
+2025-12-15 10:26:53 [main] INFO  com.zaxxer.hikari.HikariDataSource - master - Starting...
+2025-12-15 10:26:53 [main] INFO  com.zaxxer.hikari.pool.HikariPool - master - Added connection com.p6spy.engine.wrapper.ConnectionWrapper@24a4e9c0
+2025-12-15 10:26:53 [main] INFO  com.zaxxer.hikari.HikariDataSource - master - Start completed.
+2025-12-15 10:26:53 [main] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource - add a datasource named [master] success
+2025-12-15 10:26:53 [main] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource initial loaded [1] datasource,primary datasource named [master]
+2025-12-15 10:26:53 [main] INFO  org.redisson.Version - Redisson 3.52.0
+2025-12-15 10:26:53 [redisson-netty-5-6] INFO  o.r.connection.ConnectionsHolder - 1 connections initialized for 39.105.2.5/39.105.2.5:14240
+2025-12-15 10:26:55 [redisson-netty-5-19] INFO  o.r.connection.ConnectionsHolder - 24 connections initialized for 39.105.2.5/39.105.2.5:14240
+2025-12-15 10:26:55 [main] INFO  o.s.i.endpoint.EventDrivenConsumer - Adding {logging-channel-adapter:_org.springframework.integration.errorLogger} as a subscriber to the 'errorChannel' channel
+2025-12-15 10:26:55 [main] INFO  o.s.i.c.PublishSubscribeChannel - Channel 'auth-server.errorChannel' has 1 subscriber(s).
+2025-12-15 10:26:55 [main] INFO  o.s.i.endpoint.EventDrivenConsumer - started bean '_org.springframework.integration.errorLogger'
+2025-12-15 10:26:55 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8101"]
+2025-12-15 10:26:55 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 8101 (http) with context path '/'
+2025-12-15 10:26:55 [main] INFO  o.s.i.c.PublishSubscribeChannel - Channel 'unknown.channel.name' has 1 subscriber(s).
+2025-12-15 10:26:55 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 1 endpoint beneath base path '/actuator'
+2025-12-15 10:26:56 [main] INFO  c.y.goya.auth.server.AuthApplication - Started AuthApplication in 6.598 seconds (process running for 7.096)
+2025-12-15 10:26:56 [RMI TCP Connection(2)-127.0.0.1] INFO  org.owasp.validator.html.Policy - Attempting to load AntiSamy policy from URL: file:/Users/goya/Repo/goya/Goya/component/component-web/target/classes/antisamy/antisamy-anythinggoes.xml
+2025-12-15 10:26:56 [RMI TCP Connection(4)-127.0.0.1] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-12-15 10:26:56 [RMI TCP Connection(4)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2025-12-15 10:26:56 [RMI TCP Connection(4)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 111 ms
+2025-12-15 10:30:00 [JetCacheDefaultExecutor] INFO  c.a.jetcache.support.StatInfoLogger - jetcache stat from 2025-12-15 10:26:53,024 to 2025-12-15 10:30:00,002
+cache                             |       qps|   rate|           get|           hit|          fail|        expire|avgLoadTime|maxLoadTime
+----------------------------------+----------+-------+--------------+--------------+--------------+--------------+-----------+-----------
+cache:properties:                 |      0.01|100.00%|             1|             1|             0|             0|        0.0|          0
+cache:properties:_local           |      0.01|  0.00%|             1|             0|             0|             0|        0.0|          0
+cache:properties:_remote          |      0.01|100.00%|             1|             1|             0|             0|        0.0|          0
+cache:token:access_limited:       |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:access_limited:_local |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:access_limited:_remote|      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:idempotent:           |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:idempotent:_local     |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:idempotent:_remote    |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:secure_key:           |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:secure_key:_local     |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:secure_key:_remote    |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+----------------------------------+----------+-------+--------------+--------------+--------------+--------------+-----------+-----------
+
+2025-12-15 10:44:59 [JetCacheDefaultExecutor] INFO  c.a.jetcache.support.StatInfoLogger - jetcache stat from 2025-12-15 10:30:00,002 to 2025-12-15 10:44:59,971
+cache                             |       qps|   rate|           get|           hit|          fail|        expire|avgLoadTime|maxLoadTime
+----------------------------------+----------+-------+--------------+--------------+--------------+--------------+-----------+-----------
+cache:properties:                 |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:properties:_local           |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:properties:_remote          |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:access_limited:       |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:access_limited:_local |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:access_limited:_remote|      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:idempotent:           |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:idempotent:_local     |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:idempotent:_remote    |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:secure_key:           |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:secure_key:_local     |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:secure_key:_remote    |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+----------------------------------+----------+-------+--------------+--------------+--------------+--------------+-----------+-----------
+
+2025-12-15 10:59:59 [JetCacheDefaultExecutor] INFO  c.a.jetcache.support.StatInfoLogger - jetcache stat from 2025-12-15 10:44:59,971 to 2025-12-15 10:59:59,952
+cache                             |       qps|   rate|           get|           hit|          fail|        expire|avgLoadTime|maxLoadTime
+----------------------------------+----------+-------+--------------+--------------+--------------+--------------+-----------+-----------
+cache:properties:                 |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:properties:_local           |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:properties:_remote          |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:access_limited:       |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:access_limited:_local |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:access_limited:_remote|      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:idempotent:           |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:idempotent:_local     |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:idempotent:_remote    |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:secure_key:           |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:secure_key:_local     |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:secure_key:_remote    |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+----------------------------------+----------+-------+--------------+--------------+--------------+--------------+-----------+-----------
+
+2025-12-15 11:14:59 [JetCacheDefaultExecutor] INFO  c.a.jetcache.support.StatInfoLogger - jetcache stat from 2025-12-15 10:59:59,952 to 2025-12-15 11:14:59,941
+cache                             |       qps|   rate|           get|           hit|          fail|        expire|avgLoadTime|maxLoadTime
+----------------------------------+----------+-------+--------------+--------------+--------------+--------------+-----------+-----------
+cache:properties:                 |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:properties:_local           |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:properties:_remote          |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:access_limited:       |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:access_limited:_local |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:access_limited:_remote|      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:idempotent:           |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:idempotent:_local     |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:idempotent:_remote    |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:secure_key:           |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:secure_key:_local     |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:secure_key:_remote    |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+----------------------------------+----------+-------+--------------+--------------+--------------+--------------+-----------+-----------
+
+2025-12-15 11:30:00 [JetCacheDefaultExecutor] INFO  c.a.jetcache.support.StatInfoLogger - jetcache stat from 2025-12-15 11:14:59,941 to 2025-12-15 11:30:00,006
+cache                             |       qps|   rate|           get|           hit|          fail|        expire|avgLoadTime|maxLoadTime
+----------------------------------+----------+-------+--------------+--------------+--------------+--------------+-----------+-----------
+cache:properties:                 |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:properties:_local           |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:properties:_remote          |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:access_limited:       |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:access_limited:_local |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:access_limited:_remote|      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:idempotent:           |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:idempotent:_local     |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:idempotent:_remote    |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:secure_key:           |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:secure_key:_local     |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:secure_key:_remote    |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+----------------------------------+----------+-------+--------------+--------------+--------------+--------------+-----------+-----------
+
+2025-12-15 11:44:59 [JetCacheDefaultExecutor] INFO  c.a.jetcache.support.StatInfoLogger - jetcache stat from 2025-12-15 11:30:00,006 to 2025-12-15 11:44:59,970
+cache                             |       qps|   rate|           get|           hit|          fail|        expire|avgLoadTime|maxLoadTime
+----------------------------------+----------+-------+--------------+--------------+--------------+--------------+-----------+-----------
+cache:properties:                 |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:properties:_local           |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:properties:_remote          |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:access_limited:       |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:access_limited:_local |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:access_limited:_remote|      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:idempotent:           |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:idempotent:_local     |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:idempotent:_remote    |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:secure_key:           |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:secure_key:_local     |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+cache:token:secure_key:_remote    |      0.00|  0.00%|             0|             0|             0|             0|        0.0|          0
+----------------------------------+----------+-------+--------------+--------------+--------------+--------------+-----------+-----------
+
+2025-12-15 11:50:53 [SpringApplicationShutdownHook] INFO  o.s.b.w.e.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2025-12-15 11:50:53 [tomcat-shutdown] INFO  o.s.b.w.e.tomcat.GracefulShutdown - Graceful shutdown complete
+2025-12-15 11:50:53 [SpringApplicationShutdownHook] INFO  o.s.i.endpoint.EventDrivenConsumer - Removing {logging-channel-adapter:_org.springframework.integration.errorLogger} as a subscriber to the 'errorChannel' channel
+2025-12-15 11:50:53 [SpringApplicationShutdownHook] INFO  o.s.i.c.PublishSubscribeChannel - Channel 'auth-server.errorChannel' has 0 subscriber(s).
+2025-12-15 11:50:53 [SpringApplicationShutdownHook] INFO  o.s.i.endpoint.EventDrivenConsumer - stopped bean '_org.springframework.integration.errorLogger'
+2025-12-15 11:50:53 [SpringApplicationShutdownHook] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource start closing ....
+2025-12-15 11:50:53 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - master - Shutdown initiated...
+2025-12-15 11:50:53 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - master - Shutdown completed.
+2025-12-15 11:50:53 [SpringApplicationShutdownHook] INFO  c.b.d.d.d.DefaultDataSourceDestroyer - dynamic-datasource close the datasource named [master] success,
+2025-12-15 11:50:53 [SpringApplicationShutdownHook] INFO  c.b.d.d.DynamicRoutingDataSource - dynamic-datasource all closed success,bye
+2025-12-15 11:50:53 [SpringApplicationShutdownHook] INFO  c.a.j.support.DefaultMetricsManager - cache stat canceled

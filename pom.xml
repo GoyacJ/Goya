@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.ysmjjsy.goya</groupId>
+        <artifactId>bom</artifactId>
+        <version>${revision}</version>
+        <relativePath>bom/pom.xml</relativePath>
+    </parent>
+
+    <artifactId>goya</artifactId>
+    <packaging>pom</packaging>
+    <description>基于 Spring Boot 的企业级微服务框架</description>
+
+    <url>https://www.ysmjjsy.com</url>
+
+    <licenses>
+        <license>
+            <name>Apache License Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+        </license>
+    </licenses>
+
+    <properties>
+        <!--配置参数-->
+        <!--为了便于Docker的构建，减少上下文影响，将所有Docker资源放置在同一个目录中进行构建-->
+        <docker.build.directory>../../configurations/docker/context/target</docker.build.directory>
+        <docker.resource.name>${project.build.finalName}.${project.packaging}</docker.resource.name>
+    </properties>
+
+    <modules>
+        <module>dependencies</module>
+        <module>bom</module>
+        <module>security</module>
+        <module>ai</module>
+        <module>platform</module>
+        <module>component</module>
+        <module>cloud</module>
+        <module>oss</module>
+        <module>starter</module>
+    </modules>
+
+    <!-- 环境 -->
+    <profiles>
+        <!-- 开发 -->
+        <profile>
+            <id>dev</id>
+            <activation>
+                <!--默认激活配置-->
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <!--当前环境-->
+                <profile>dev</profile>
+                <!--代码构建控制-->
+                <!--跳过构建源代码包-->
+                <skip.build.source.package>false</skip.build.source.package>
+                <!--不copy代码包到docker构建目录-->
+                <skip.copy.docker.resource>true</skip.copy.docker.resource>
+                <!--不执行git commit 构建-->
+                <skip.build.git.commit.info>true</skip.build.git.commit.info>
+            </properties>
+        </profile>
+        <!-- Docker -->
+        <profile>
+            <id>docker</id>
+            <properties>
+                <!--当前环境-->
+                <profile>docker</profile>
+                <!--数据库类型-->
+                <!--跳过构建源代码包-->
+                <skip.build.source.package>true</skip.build.source.package>
+                <!--不copy代码包到docker构建目录-->
+                <skip.copy.docker.resource>false</skip.copy.docker.resource>
+                <!--不执行git commit 构建-->
+                <skip.build.git.commit.info>false</skip.build.git.commit.info>
+            </properties>
+        </profile>
+        <!-- 生产 -->
+        <profile>
+            <id>prod</id>
+            <properties>
+                <!--当前环境-->
+                <profile>prod</profile>
+                <!--代码构建控制-->
+                <!--跳过构建源代码包-->
+                <skip.build.source.package>false</skip.build.source.package>
+                <!--不copy代码包到docker构建目录-->
+                <skip.copy.docker.resource>true</skip.copy.docker.resource>
+                <!--不执行git commit 构建-->
+                <skip.build.git.commit.info>false</skip.build.git.commit.info>
+            </properties>
+        </profile>
+    </profiles>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-antrun-plugin</artifactId>
+                    <version>${maven-antrun-plugin.version}</version>
+                    <configuration>
+                        <skip>${skip.copy.docker.resource}</skip>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>delete-jar-file</id>
+                            <phase>pre-clean</phase>
+                            <goals>
+                                <goal>run</goal>
+                            </goals>
+                            <configuration>
+                                <target>
+                                    <delete file="${docker.build.directory}/${docker.resource.name}"/>
+                                </target>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>prepare-docker-resource</id>
+                            <!--fix: #IA6J53 prepare 阶段会导致 jar 包中 manifest 信息缺失，导致 java -jar 运行失败-->
+                            <phase>install</phase>
+                            <goals>
+                                <goal>run</goal>
+                            </goals>
+                            <configuration>
+                                <target>
+                                    <!--jar包保存位置 -->
+                                    <copy todir="${docker.build.directory}">
+                                        <fileset dir="${project.basedir}/target">
+                                            <include name="${docker.resource.name}"/>
+                                        </fileset>
+                                    </copy>
+                                </target>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>io.github.git-commit-id</groupId>
+                    <artifactId>git-commit-id-maven-plugin</artifactId>
+                    <configuration>
+                        <skip>${skip.build.git.commit.info}</skip>
+                        <!-- 检查的仓库根目录，${project.basedir}：项目根目录，即包含pom.xml文件的目录 -->
+                        <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
+                        <!-- 生成git属性文件，默认false：不生成 -->
+                        <generateGitPropertiesFile>true</generateGitPropertiesFile>
+                        <dateFormat>yyyy-MM-dd HH:mm:ss</dateFormat>
+                        <gitDescribe>
+                            <skip>false</skip>
+                            <always>false</always>
+                            <dirty>-dirty</dirty>
+                        </gitDescribe>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <configuration>
+                    <skipSource>${skip.build.source.package}</skipSource>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

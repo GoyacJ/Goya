@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.ysmjjsy.goya</groupId>
+        <artifactId>dependencies</artifactId>
+        <version>${revision}</version>
+        <relativePath>../dependencies/pom.xml</relativePath>
+    </parent>
+
+    <artifactId>bom</artifactId>
+    <packaging>pom</packaging>
+
+    <description>goya internal dependency management</description>
+
+    <dependencyManagement>
+        <dependencies>
+
+            <!-- ======================== component ======================== -->
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>component-auth</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>component-bus</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>component-cache</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>component-captcha</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>component-common</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>component-database</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>component-ddd</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>component-oss</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>component-social</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>component-web</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- ======================== oss ======================== -->
+
+            <!-- ======================== security ======================== -->
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>security-core</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>security-authentication</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>security-resource</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <!-- ======================== ai ======================== -->
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>ai-spring</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>ai-model</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>ai-mcp</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>ai-rag</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>ai-video</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- ======================== starter ======================== -->
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>kafka-boot-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>mybatis-plus-boot-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>oss-boot-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>redis-boot-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>servlet-boot-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+
+</project>

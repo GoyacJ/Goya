@@ -1,0 +1,560 @@
+/* 登录页面样式 */
+.login-page {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.login-container {
+    display: flex;
+    height: 100vh;
+    width: 100%;
+}
+
+/* 左侧背景区域 */
+.login-left {
+    flex: 1;
+    position: relative;
+    display: none;
+}
+
+@media (min-width: 992px) {
+    .login-left {
+        display: block;
+    }
+}
+
+.login-background {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    position: relative;
+}
+
+.login-left-header {
+    position: absolute;
+    top: 30px;
+    left: 40px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 10;
+}
+
+.login-logo {
+    height: 36px;
+    width: auto;
+}
+
+.login-brand-text {
+    font-size: 16px;
+    font-weight: 500;
+    color: #333;
+}
+
+/* 右侧登录表单区域 */
+.login-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 60px 40px;
+    background: #fff;
+    position: relative;
+    min-height: 100vh;
+}
+
+@media (min-width: 992px) {
+    .login-right {
+        flex: 0 0 50%;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+}
+
+.login-content {
+    width: 100%;
+    max-width: 400px;
+    padding: 0 20px;
+}
+
+.login-header-top {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 16px;
+}
+
+.login-qrcode-icon {
+    height: 32px;
+    width: auto;
+    opacity: 0.8;
+    cursor: pointer;
+}
+
+.login-title-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 32px;
+}
+
+.login-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+    text-align: center;
+}
+
+/* 标签页样式 */
+.login-tabs {
+    display: flex;
+    border-bottom: 2px solid #e5e7eb;
+    margin-bottom: 20px;
+}
+
+.login-tab {
+    flex: 1;
+    padding: 12px 20px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-size: 16px;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-bottom: -2px;
+}
+
+.login-tab:hover {
+    color: #1890ff;
+}
+
+.login-tab.active {
+    color: #1890ff;
+    border-bottom-color: #1890ff;
+    font-weight: 500;
+}
+
+/* 表单容器样式 */
+.login-forms-container {
+    position: relative;
+    min-height: 400px;
+}
+
+/* 表单样式 */
+.login-form {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    z-index: 1;
+}
+
+.login-form.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    z-index: 2;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group-inline {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.forgot-password-link {
+    font-size: 14px;
+    color: #1890ff;
+    text-decoration: none;
+}
+
+.forgot-password-link:hover {
+    color: #40a9ff;
+    text-decoration: underline;
+}
+
+.form-label {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.form-label.required::after {
+    content: '*';
+    color: #ff4d4f;
+    margin-left: 4px;
+}
+
+
+.form-control {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 14px;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    transition: all 0.3s;
+    height: 40px;
+    box-sizing: border-box;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #1890ff;
+    box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.form-control.error {
+    border-color: #ff4d4f;
+}
+
+.form-control.error:focus {
+    border-color: #ff4d4f;
+    box-shadow: 0 0 0 2px rgba(255, 77, 79, 0.2);
+}
+
+.input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon-left {
+    position: absolute;
+    left: 12px;
+    width: 16px;
+    height: 16px;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.input-with-icon .form-control {
+    padding-left: 38px;
+}
+
+.password-input-wrapper {
+    position: relative;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+}
+
+.password-icon {
+    width: 18px;
+    height: 18px;
+    display: block;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+}
+
+.input-group .form-control {
+    flex: 1;
+}
+
+.input-group .btn {
+    white-space: nowrap;
+}
+
+.form-check {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.form-check-input {
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+.form-check-label {
+    font-size: 14px;
+    color: #666;
+    cursor: pointer;
+}
+
+.form-footer {
+    margin-top: 24px;
+}
+
+.btn {
+    padding: 12px 24px;
+    font-size: 16px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background: #1890ff;
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: #40a9ff;
+}
+
+.btn-primary:disabled {
+    background: #d9d9d9;
+    cursor: not-allowed;
+}
+
+.btn-outline-primary {
+    background: #fff;
+    color: #1890ff;
+    border: 1px solid #1890ff;
+    height: 40px;
+    padding: 0 16px;
+    font-size: 14px;
+    line-height: 40px;
+    white-space: nowrap;
+}
+
+.btn-outline-primary:hover {
+    background: #1890ff;
+    color: #fff;
+}
+
+.btn-outline-primary:disabled {
+    background: #f5f5f5;
+    color: #bfbfbf;
+    border-color: #d9d9d9;
+    cursor: not-allowed;
+}
+
+.w-100 {
+    width: 100%;
+}
+
+/* 滑动验证码样式 */
+.captcha-container {
+    margin-top: 10px;
+}
+
+.jigsaw-captcha {
+    width: 100%;
+}
+
+.jigsaw-captcha-bg {
+    position: relative;
+    width: 100%;
+    min-height: 160px;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #f5f5f5;
+}
+
+.jigsaw-captcha-bg.dragging {
+    cursor: grabbing;
+}
+
+.jigsaw-original-image {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.jigsaw-slider-image {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: block;
+    cursor: move;
+    user-select: none;
+    pointer-events: auto;
+    z-index: 10;
+}
+
+.jigsaw-captcha-bg.success {
+    border-color: #52c41a;
+}
+
+.jigsaw-captcha-bg.error {
+    border-color: #ff4d4f;
+}
+
+.jigsaw-captcha-tip {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    font-size: 12px;
+}
+
+.jigsaw-tip-text {
+    color: #666;
+}
+
+.jigsaw-tip-text.success {
+    color: #52c41a;
+}
+
+.jigsaw-tip-text.error {
+    color: #ff4d4f;
+}
+
+.jigsaw-refresh-btn {
+    background: none;
+    border: none;
+    color: #1890ff;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 0;
+    text-decoration: underline;
+}
+
+.jigsaw-refresh-btn:hover {
+    color: #40a9ff;
+}
+
+/* 验证码弹框样式 */
+.captcha-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+}
+
+.captcha-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+}
+
+.captcha-modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    min-width: 400px;
+    max-width: 90%;
+    max-height: 90vh;
+    overflow: auto;
+}
+
+.captcha-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.captcha-modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+}
+
+.captcha-modal-close {
+    background: none;
+    border: none;
+    font-size: 28px;
+    color: #999;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.3s;
+}
+
+.captcha-modal-close:hover {
+    background: #f5f5f5;
+    color: #333;
+}
+
+.captcha-modal-body {
+    padding: 24px;
+}
+
+.captcha-modal-body .captcha-container {
+    margin: 0;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .login-right {
+        padding: 40px 20px;
+    }
+    
+    .login-content {
+        max-width: 100%;
+    }
+    
+    .login-title {
+        font-size: 20px;
+    }
+    
+    .login-left-header {
+        top: 20px;
+        left: 20px;
+    }
+    
+    .login-logo {
+        height: 24px;
+    }
+    
+    .login-brand-text {
+        font-size: 12px;
+    }
+    
+    .login-qrcode-icon {
+        height: 18px;
+    }
+    
+    .captcha-modal-content {
+        min-width: 90%;
+        margin: 20px;
+    }
+}
+

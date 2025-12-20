@@ -1,0 +1,113 @@
+package com.ysmjjsy.goya.component.common.code;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import org.springframework.http.HttpStatus;
+
+/**
+ * <p>业务状态码枚举定义</p>
+ * <p>约定：
+ * <ul>
+ *   <li>1xxx - 成功类</li>
+ *   <li>2xxx - 客户端错误</li>
+ *   <li>3xxx - 系统内部错误</li>
+ *   <li>4xxx - 权限与认证错误</li>
+ *   <li>5xxx - 外部依赖错误（第三方）</li>
+ * </ul>
+ * </p>
+ *
+ * @author goya
+ * @since 2025/12/19 23:22
+ */
+@Getter
+@AllArgsConstructor
+@Schema(description = "业务状态码")
+public enum ResponseCodeEnum implements IResponseCode {
+
+    // 1xx 信息
+    CONTINUE("0100", HttpStatus.CONTINUE),
+    SWITCHING_PROTOCOLS("0101", HttpStatus.SWITCHING_PROTOCOLS),
+    PROCESSING("0102", HttpStatus.PROCESSING),
+    CHECKPOINT("0103", HttpStatus.EARLY_HINTS),
+
+    // 2xx 成功
+    OK("0200", HttpStatus.OK),
+    CREATED("0201", HttpStatus.CREATED),
+    ACCEPTED("0202", HttpStatus.ACCEPTED),
+    NON_AUTHORITATIVE_INFORMATION("0203", HttpStatus.NON_AUTHORITATIVE_INFORMATION),
+    NO_CONTENT("0204", HttpStatus.NO_CONTENT),
+    RESET_CONTENT("0205", HttpStatus.RESET_CONTENT),
+    PARTIAL_CONTENT("0206", HttpStatus.PARTIAL_CONTENT),
+    MULTI_STATUS("0207", HttpStatus.MULTI_STATUS),
+    ALREADY_REPORTED("0208", HttpStatus.ALREADY_REPORTED),
+    IM_USED("0226", HttpStatus.IM_USED),
+
+    // 3xx 重定向
+    MULTIPLE_CHOICES("0300", HttpStatus.MULTIPLE_CHOICES),
+    MOVED_PERMANENTLY("0301", HttpStatus.MOVED_PERMANENTLY),
+    FOUND("0302", HttpStatus.FOUND),
+    SEE_OTHER("0303", HttpStatus.SEE_OTHER),
+    NOT_MODIFIED("0304", HttpStatus.NOT_MODIFIED),
+    TEMPORARY_REDIRECT("0307", HttpStatus.TEMPORARY_REDIRECT),
+    PERMANENT_REDIRECT("0308", HttpStatus.PERMANENT_REDIRECT),
+
+    // 4xx 客户端错误
+    BAD_REQUEST("0400", HttpStatus.BAD_REQUEST),
+    UNAUTHORIZED("0401", HttpStatus.UNAUTHORIZED),
+    PAYMENT_REQUIRED("0402", HttpStatus.PAYMENT_REQUIRED),
+    FORBIDDEN("0403", HttpStatus.FORBIDDEN),
+    NOT_FOUND("0404", HttpStatus.NOT_FOUND),
+    METHOD_NOT_ALLOWED("0405", HttpStatus.METHOD_NOT_ALLOWED),
+    NOT_ACCEPTABLE("0406", HttpStatus.NOT_ACCEPTABLE),
+    PROXY_AUTHENTICATION_REQUIRED("0407", HttpStatus.PROXY_AUTHENTICATION_REQUIRED),
+    REQUEST_TIMEOUT("0408", HttpStatus.REQUEST_TIMEOUT),
+    CONFLICT("0409", HttpStatus.CONFLICT),
+    GONE("0410", HttpStatus.GONE),
+    LENGTH_REQUIRED("0411", HttpStatus.LENGTH_REQUIRED),
+    PRECONDITION_FAILED("0412", HttpStatus.PRECONDITION_FAILED),
+    PAYLOAD_TOO_LARGE("0413", HttpStatus.PAYLOAD_TOO_LARGE),
+    URI_TOO_LONG("0414", HttpStatus.URI_TOO_LONG),
+    UNSUPPORTED_MEDIA_TYPE("0415", HttpStatus.UNSUPPORTED_MEDIA_TYPE),
+    REQUESTED_RANGE_NOT_SATISFIABLE("0416", HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE),
+    EXPECTATION_FAILED("0417", HttpStatus.EXPECTATION_FAILED),
+    I_AM_A_TEAPOT("0418", HttpStatus.I_AM_A_TEAPOT),
+    UNPROCESSABLE_ENTITY("0422", HttpStatus.UNPROCESSABLE_ENTITY),
+    LOCKED("0423", HttpStatus.LOCKED),
+    FAILED_DEPENDENCY("0424", HttpStatus.FAILED_DEPENDENCY),
+    TOO_EARLY("0425", HttpStatus.TOO_EARLY),
+    UPGRADE_REQUIRED("0426", HttpStatus.UPGRADE_REQUIRED),
+    PRECONDITION_REQUIRED("0428", HttpStatus.PRECONDITION_REQUIRED),
+    TOO_MANY_REQUESTS("0429", HttpStatus.TOO_MANY_REQUESTS),
+    REQUEST_HEADER_FIELDS_TOO_LARGE("0431", HttpStatus.REQUEST_HEADER_FIELDS_TOO_LARGE),
+    UNAVAILABLE_FOR_LEGAL_REASONS("0451", HttpStatus.UNAVAILABLE_FOR_LEGAL_REASONS),
+
+    // 5xx 服务器错误
+    INTERNAL_SERVER_ERROR("0500", HttpStatus.INTERNAL_SERVER_ERROR),
+    NOT_IMPLEMENTED("0501", HttpStatus.NOT_IMPLEMENTED),
+    BAD_GATEWAY("0502", HttpStatus.BAD_GATEWAY),
+    SERVICE_UNAVAILABLE("0503", HttpStatus.SERVICE_UNAVAILABLE),
+    GATEWAY_TIMEOUT("0504", HttpStatus.GATEWAY_TIMEOUT),
+    HTTP_VERSION_NOT_SUPPORTED("0505", HttpStatus.HTTP_VERSION_NOT_SUPPORTED),
+    VARIANT_ALSO_NEGOTIATES("0506", HttpStatus.VARIANT_ALSO_NEGOTIATES),
+    INSUFFICIENT_STORAGE("0507", HttpStatus.INSUFFICIENT_STORAGE),
+    LOOP_DETECTED("0508", HttpStatus.LOOP_DETECTED),
+    BANDWIDTH_LIMIT_EXCEEDED("0509", HttpStatus.BANDWIDTH_LIMIT_EXCEEDED),
+    NOT_EXTENDED("0510", HttpStatus.NOT_EXTENDED),
+    NETWORK_AUTHENTICATION_REQUIRED("0511", HttpStatus.NETWORK_AUTHENTICATION_REQUIRED);
+
+    @Schema(description = "业务状态码")
+    private final String code;
+
+    @Schema(description = "HTTP 状态码")
+    private final HttpStatus status;
+
+    @Schema(description = "国际化 key")
+    private final String i18nKey;
+
+    ResponseCodeEnum(String code, HttpStatus status) {
+        this.code = code;
+        this.status = status;
+        this.i18nKey = "response.code." + code;
+    }
+}
