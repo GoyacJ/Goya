@@ -2,15 +2,17 @@ package com.ysmjjsy.goya.component.common.configuration;
 
 import com.ysmjjsy.goya.component.common.code.IResponseCode;
 import com.ysmjjsy.goya.component.common.code.ResponseCodeRegistry;
+import com.ysmjjsy.goya.component.common.configuration.properties.PlatformProperties;
 import com.ysmjjsy.goya.component.common.context.ApplicationContentPostProcessor;
 import com.ysmjjsy.goya.component.common.context.SpringContext;
-import com.ysmjjsy.goya.component.common.i18n.EnumI18nResolver;
+import com.ysmjjsy.goya.component.common.i18n.I18nResolver;
 import com.ysmjjsy.goya.component.common.strategy.StrategyChoose;
 import com.ysmjjsy.goya.component.common.strategy.chain.ChainContext;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
@@ -29,6 +31,7 @@ import java.util.concurrent.ThreadPoolExecutor;
  */
 @Slf4j
 @AutoConfiguration
+@EnableConfigurationProperties(PlatformProperties.class)
 public class CommonAutoConfiguration {
 
     @PostConstruct
@@ -40,16 +43,18 @@ public class CommonAutoConfiguration {
     public MessageSource messageSource() {
         ReloadableResourceBundleMessageSource source =
                 new ReloadableResourceBundleMessageSource();
-        source.setBasename("classpath:messages");
+        source.setBasename("classpath:messages/messages");
         source.setDefaultEncoding("UTF-8");
         source.setUseCodeAsDefaultMessage(true);
+        source.setCacheSeconds(3600);
+        source.setFallbackToSystemLocale(false);
         log.trace("[Goya] |- component [common] CommonAutoConfiguration |- bean [messageSource] register.");
         return source;
     }
 
     @Bean
-    public EnumI18nResolver enumI18nResolver(MessageSource messageSource) {
-        EnumI18nResolver resolver = new EnumI18nResolver(messageSource);
+    public I18nResolver enumI18nResolver(MessageSource messageSource) {
+        I18nResolver resolver = new I18nResolver(messageSource);
         log.trace("[Goya] |- component [common] CommonAutoConfiguration |- bean [enumI18nResolver] register.");
         return resolver;
     }
@@ -86,7 +91,7 @@ public class CommonAutoConfiguration {
      * 执行周期性或定时任务
      */
     @Bean(name = "scheduledExecutorService")
-    protected ScheduledExecutorService scheduledExecutorService() {
+    public ScheduledExecutorService scheduledExecutorService() {
         // daemon 必须为 true
         BasicThreadFactory.Builder builder = BasicThreadFactory.builder().daemon(true);
         if (SpringContext.isVirtual()) {

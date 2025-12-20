@@ -23,6 +23,7 @@
         <module>component-oss</module>
         <module>component-social</module>
         <module>component-ddd</module>
+        <module>component-log</module>
     </modules>
 
 

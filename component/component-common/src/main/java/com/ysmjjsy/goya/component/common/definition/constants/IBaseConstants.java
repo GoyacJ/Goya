@@ -51,6 +51,11 @@ public interface IBaseConstants {
     String PROPERTY_PLATFORM_ARCHITECTURE = PROPERTY_PLATFORM + ".architecture";
 
     /**
+     * PROPERTY_PLATFORM_LOCALE
+     */
+    String PROPERTY_PLATFORM_LOCALE = PROPERTY_PLATFORM + ".locale";
+
+    /**
      * PROPERTY_PREFIX_PLATFORM_REMOTE_DATA_TYPE
      */
     String PROPERTY_PLATFORM_REMOTE_DATA_TYPE = PROPERTY_PLATFORM + ".remoteDataType";

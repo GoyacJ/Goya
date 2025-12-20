@@ -10,7 +10,7 @@ import org.springframework.core.env.Environment;
  * @author goya
  * @since 2025/12/19 23:56
  */
-public interface IPropertyEnum extends IEnum<String>,IDescribableEnum {
+public interface IPropertyEnum extends IEnum<String>, IDescribableEnum {
 
     /**
      * 检测是否已经配置
@@ -18,14 +18,25 @@ public interface IPropertyEnum extends IEnum<String>,IDescribableEnum {
      * @param environment {@link Environment}
      * @return 否加密策略属性已经配置
      */
-    boolean isActive(Environment environment);
+    default boolean isActive(Environment environment) {
+        return isActive(environment, getPrefix());
+    }
+
+    /**
+     * 获取前缀
+     *
+     * @return 前缀
+     */
+    String getPrefix();
 
     /**
      * 获取常量
      *
      * @return 常量
      */
-    String getConstant();
+    default String getConstant() {
+        return name();
+    }
 
     /**
      * 获取指定配置的 String 类型的值

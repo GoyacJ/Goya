@@ -94,20 +94,16 @@ public enum ResponseCodeEnum implements IResponseCode {
     LOOP_DETECTED("0508", HttpStatus.LOOP_DETECTED),
     BANDWIDTH_LIMIT_EXCEEDED("0509", HttpStatus.BANDWIDTH_LIMIT_EXCEEDED),
     NOT_EXTENDED("0510", HttpStatus.NOT_EXTENDED),
-    NETWORK_AUTHENTICATION_REQUIRED("0511", HttpStatus.NETWORK_AUTHENTICATION_REQUIRED);
+    NETWORK_AUTHENTICATION_REQUIRED("0511", HttpStatus.NETWORK_AUTHENTICATION_REQUIRED),
 
+    // customizer
+    PARAMS_VALIDATION_ERROR("0500001", HttpStatus.INTERNAL_SERVER_ERROR),
+    RESOURCE_NOT_FOUNT_ERROR("0500002", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    ;
     @Schema(description = "业务状态码")
     private final String code;
 
     @Schema(description = "HTTP 状态码")
     private final HttpStatus status;
-
-    @Schema(description = "国际化 key")
-    private final String i18nKey;
-
-    ResponseCodeEnum(String code, HttpStatus status) {
-        this.code = code;
-        this.status = status;
-        this.i18nKey = "response.code." + code;
-    }
 }

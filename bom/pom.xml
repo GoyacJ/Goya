@@ -57,6 +57,11 @@
             </dependency>
             <dependency>
                 <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>component-log</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
                 <artifactId>component-oss</artifactId>
                 <version>${revision}</version>
             </dependency>

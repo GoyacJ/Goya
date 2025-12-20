@@ -13,10 +13,10 @@ import java.io.Serial;
  * @author goya
  * @since 2025/12/19 23:16
  */
-public class AbstractRuntimeException extends RuntimeException implements IException{
+public class AbstractRuntimeException extends RuntimeException implements IException {
     @Serial
     private static final long serialVersionUID = -4736030455914143575L;
-    
+
     @Getter
     private final IResponseCode code;
 

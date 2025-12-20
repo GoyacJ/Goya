@@ -1,0 +1,7 @@
+logging:
+  config: classpath:logback-plus.xml
+  file:
+    name: logs/${spring.application.name}.log
+  level:
+    root: info
+    com.ysmjjsy.goya: debug

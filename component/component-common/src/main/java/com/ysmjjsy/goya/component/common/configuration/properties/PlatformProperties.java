@@ -1,0 +1,26 @@
+package com.ysmjjsy.goya.component.common.configuration.properties;
+
+import com.ysmjjsy.goya.component.common.definition.constants.IBaseConstants;
+import com.ysmjjsy.goya.component.common.enums.ArchitectureEnum;
+import com.ysmjjsy.goya.component.common.enums.LocaleEnum;
+import io.swagger.v3.oas.annotations.media.Schema;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
+/**
+ * <p></p>
+ *
+ * @author goya
+ * @since 2025/12/20 21:48
+ */
+@Schema(description = "平台配置")
+@ConfigurationProperties(prefix = IBaseConstants.PROPERTY_PLATFORM)
+public record PlatformProperties(
+
+        @Schema(description = "系统架构模式")
+        ArchitectureEnum architecture,
+
+        @Schema(description = "系统语言")
+        LocaleEnum locale
+) {
+
+}

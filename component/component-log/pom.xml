@@ -5,22 +5,17 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.ysmjjsy.goya</groupId>
-        <artifactId>starter</artifactId>
+        <artifactId>component</artifactId>
         <version>${revision}</version>
     </parent>
 
-    <artifactId>servlet-boot-starter</artifactId>
-    <description>servlet starter</description>
+    <artifactId>component-log</artifactId>
 
     <dependencies>
         <dependency>
             <groupId>com.ysmjjsy.goya</groupId>
-            <artifactId>component-web</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.ysmjjsy.goya</groupId>
-            <artifactId>component-log</artifactId>
+            <artifactId>component-common</artifactId>
         </dependency>
     </dependencies>
+
 </project>

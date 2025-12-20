@@ -1,8 +1,10 @@
 package com.ysmjjsy.goya.component.web.configuration;
 
+import com.ysmjjsy.goya.component.web.exception.GlobalExceptionHandler;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.context.annotation.Import;
 
 /**
  * <p>web configuration</p>
@@ -12,6 +14,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
  */
 @Slf4j
 @AutoConfiguration
+@Import(GlobalExceptionHandler.class)
 public class WebAutoConfiguration {
 
     @PostConstruct

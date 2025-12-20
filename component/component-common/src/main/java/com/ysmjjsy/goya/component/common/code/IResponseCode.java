@@ -19,6 +19,16 @@ public interface IResponseCode extends IBizEnum<String> {
     HttpStatus getStatus();
 
     /**
+     * 国际化
+     *
+     * @return 国际化值
+     */
+    @Override
+    default String getI18nKey() {
+        return "response.code." + getCode();
+    }
+
+    /**
      * 是否失败
      *
      * @return 是否失败

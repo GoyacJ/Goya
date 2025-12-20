@@ -3,9 +3,13 @@ package com.ysmjjsy.goya.component.common.definition.exception;
 import com.ysmjjsy.goya.component.common.code.IResponseCode;
 import com.ysmjjsy.goya.component.common.code.ResponseCodeEnum;
 import com.ysmjjsy.goya.component.common.definition.pojo.IResponse;
+import com.ysmjjsy.goya.component.common.i18n.I18nResolver;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * <p>base exception interface</p>
@@ -58,16 +62,23 @@ public interface IException extends Serializable {
      */
     static String formatMessage(IResponseCode code, String... ext) {
         if (code == null) {
-            return ResponseCodeEnum.INTERNAL_SERVER_ERROR.getDescription();
+            return I18nResolver.resolveEnum(ResponseCodeEnum.INTERNAL_SERVER_ERROR);
         }
-        String name = code.getI18nKey();
 
+        // 获取国际化消息
+        String message = I18nResolver.resolveEnum(code);
+
+        // 如果没有扩展信息，直接返回消息
         if (ext == null || ext.length == 0) {
-            return name;
+            return message;
         }
 
-        // 拼接 ext 为空格分隔的字符串
-        String extStr = String.join(" ", ext);
-        return String.format("[%s]: %s", name, extStr);
+        // 过滤空字符串，避免多余空格
+        String extStr = Arrays.stream(ext)
+                .filter(Objects::nonNull)
+                .filter(s -> !s.isBlank())
+                .collect(Collectors.joining(" "));
+
+        return extStr.isEmpty() ? message : String.format("[%s] %s", message, extStr);
     }
 }

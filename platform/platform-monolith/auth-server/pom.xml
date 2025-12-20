@@ -10,9 +10,13 @@
     </parent>
 
     <artifactId>auth-server</artifactId>
+    <description>认证中心</description>
 
     <dependencies>
-
+        <dependency>
+            <groupId>com.ysmjjsy.goya</groupId>
+            <artifactId>servlet-boot-starter</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
