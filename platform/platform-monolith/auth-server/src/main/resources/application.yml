@@ -44,8 +44,8 @@ spring:
     virtual:
       enabled: true
   # 开启懒加载
-#  main:
-#    lazy-initialization: true
+  main:
+    lazy-initialization: true
 ---
 # 关闭缓存
 spring:

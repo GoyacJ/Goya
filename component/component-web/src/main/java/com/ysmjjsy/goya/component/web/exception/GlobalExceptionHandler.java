@@ -13,7 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
-import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -59,7 +58,7 @@ public class GlobalExceptionHandler {
      * 处理 HTTP 客户端/服务端异常
      */
     @ExceptionHandler({HttpClientErrorException.class, HttpServerErrorException.class})
-    public ResponseEntity<Response<Void>> handleHttpException(
+    public Response<Void> handleHttpException(
             Exception ex,
             HttpServletRequest request) {
         log.warn("[HTTP Exception] [{}] -> {}", request.getRequestURI(), ex.getMessage());
@@ -70,7 +69,7 @@ public class GlobalExceptionHandler {
      * 处理参数校验异常（@Valid 注解）
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Response<Void>> handleMethodArgumentNotValidException(
+    public Response<Void> handleMethodArgumentNotValidException(
             MethodArgumentNotValidException ex,
             HttpServletRequest request) {
         return handleValidationException(ex.getBindingResult(), request);
@@ -80,7 +79,7 @@ public class GlobalExceptionHandler {
      * 处理参数绑定异常（@ModelAttribute 绑定失败）
      */
     @ExceptionHandler(BindException.class)
-    public ResponseEntity<Response<Void>> handleBindException(
+    public Response<Void> handleBindException(
             BindException ex,
             HttpServletRequest request) {
         return handleValidationException(ex.getBindingResult(), request);
@@ -89,7 +88,7 @@ public class GlobalExceptionHandler {
     /**
      * 统一处理参数校验异常
      */
-    private ResponseEntity<Response<Void>> handleValidationException(
+    private Response<Void> handleValidationException(
             BindingResult bindingResult,
             HttpServletRequest request) {
         List<FieldError> fieldErrors = bindingResult.getFieldErrors();
@@ -129,7 +128,7 @@ public class GlobalExceptionHandler {
                     new IllegalArgumentException(errorMessage)));
         }
 
-        return builder.build().toResponseEntity();
+        return builder.build();
     }
 
     /**
@@ -139,7 +138,7 @@ public class GlobalExceptionHandler {
      * （这是 Chrome DevTools 等工具的自动请求）
      */
     @ExceptionHandler(NoResourceFoundException.class)
-    public ResponseEntity<Response<Void>> handleNoResourceFoundException(
+    public Response<Void> handleNoResourceFoundException(
             NoResourceFoundException ex,
             HttpServletRequest request) {
         String requestPath = request.getRequestURI();
@@ -155,15 +154,14 @@ public class GlobalExceptionHandler {
         return Response.<Void>builder()
                 .code(ResponseCodeEnum.RESOURCE_NOT_FOUNT_ERROR)
                 .path(requestPath)
-                .build()
-                .toResponseEntity();
+                .build();
     }
 
     /**
      * 处理业务运行时异常
      */
     @ExceptionHandler(AbstractRuntimeException.class)
-    public ResponseEntity<Response<Void>> handleRuntimeException(
+    public Response<Void> handleRuntimeException(
             AbstractRuntimeException ex,
             HttpServletRequest request) {
         log.warn("[业务异常] [{}] -> {}", request.getRequestURI(), ex.getMessage());
@@ -174,7 +172,7 @@ public class GlobalExceptionHandler {
      * 处理系统异常
      */
     @ExceptionHandler(SystemException.class)
-    public ResponseEntity<Response<Void>> handleSystemException(
+    public Response<Void> handleSystemException(
             SystemException ex,
             HttpServletRequest request) {
         log.warn("[系统异常] [{}] -> {}", request.getRequestURI(), ex.getMessage());
@@ -187,7 +185,7 @@ public class GlobalExceptionHandler {
      * 注意：此方法必须放在最后，因为 Throwable 是所有异常的父类
      */
     @ExceptionHandler(Throwable.class)
-    public ResponseEntity<Response<Void>> handleThrowable(
+    public Response<Void> handleThrowable(
             Throwable ex,
             HttpServletRequest request) {
         log.error("[未知异常] [{}]", request.getRequestURI(), ex);
@@ -204,7 +202,7 @@ public class GlobalExceptionHandler {
      * @param code    响应码（如果异常实现了 IException，会优先使用异常中的 code）
      * @return 错误响应实体
      */
-    private static ResponseEntity<Response<Void>> buildErrorResponse(
+    private static Response<Void> buildErrorResponse(
             Throwable ex,
             HttpServletRequest request,
             IResponseCode code) {
@@ -222,6 +220,6 @@ public class GlobalExceptionHandler {
                 .path(request.getRequestURI())
                 .error(ErrorDetail.withStackTrace(ex));
 
-        return builder.build().toResponseEntity();
+        return builder.build();
     }
 }

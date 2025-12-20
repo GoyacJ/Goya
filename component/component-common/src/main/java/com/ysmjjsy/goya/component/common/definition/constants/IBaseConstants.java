@@ -82,6 +82,8 @@ public interface IBaseConstants {
      */
     String DATE_FORMAT_YYYYMMDDHHMMSS = "yyyyMMddHHmmss";
 
+    String DATE_FORMAT_HHMMSS = "HH:mm:ss";
+
     /**
      * DEFAULT_TIME_ZONE_NAME
      */
