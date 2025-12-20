@@ -60,8 +60,8 @@ public class CommonAutoConfiguration {
 
     @Bean
     @Lazy(false)
-    public I18nResolver i18nResolver(MessageSource messageSource) {
-        I18nResolver resolver = new I18nResolver(messageSource);
+    public I18nResolver i18nResolver() {
+        I18nResolver resolver = new I18nResolver();
         log.trace("[Goya] |- component [common] CommonAutoConfiguration |- bean [enumI18nResolver] register.");
         return resolver;
     }

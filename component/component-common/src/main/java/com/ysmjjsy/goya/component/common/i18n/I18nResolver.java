@@ -2,8 +2,12 @@ package com.ysmjjsy.goya.component.common.i18n;
 
 import com.ysmjjsy.goya.component.common.definition.enums.IBizEnum;
 import com.ysmjjsy.goya.component.common.enums.LocaleEnum;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 
@@ -37,20 +41,14 @@ import java.util.Locale;
  * @see LocaleContextHolder
  */
 @Slf4j
-public class I18nResolver {
+public class I18nResolver implements ApplicationContextAware {
 
+    @Getter
     private static MessageSource messageSource;
 
-    /**
-     * 构造器
-     * <p>
-     * 由 Spring 容器自动注入 MessageSource
-     *
-     * @param messageSource 消息源
-     */
-    public I18nResolver(MessageSource messageSource) {
-        I18nResolver.messageSource = messageSource;
-        log.debug("[Goya] |- I18nResolver initialized with MessageSource: {}", messageSource.getClass().getSimpleName());
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        messageSource = applicationContext.getBean(MessageSource.class);
     }
 
     /**
