@@ -58,7 +58,7 @@ public interface IPropertyEnum extends IEnum<String>, IDescribableEnum {
      */
     default boolean isActive(Environment environment, String property) {
         String value = getString(environment, property);
-        return StringUtils.isNotBlank(value) && Strings.CS.equals(value, getConstant());
+        return StringUtils.isNotBlank(value) && Strings.CI.equals(value, getConstant());
     }
 
     /**
@@ -70,7 +70,7 @@ public interface IPropertyEnum extends IEnum<String>, IDescribableEnum {
      */
     default boolean isDefault(Environment environment, String property) {
         String value = getString(environment, property);
-        return StringUtils.isBlank(value) || Strings.CS.equals(value, getConstant());
+        return StringUtils.isBlank(value) || Strings.CI.equals(value, getConstant());
     }
 
     @Override

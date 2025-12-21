@@ -17,6 +17,10 @@
             <groupId>com.ysmjjsy.goya</groupId>
             <artifactId>servlet-boot-starter</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.ysmjjsy.goya</groupId>
+            <artifactId>redis-boot-starter</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
