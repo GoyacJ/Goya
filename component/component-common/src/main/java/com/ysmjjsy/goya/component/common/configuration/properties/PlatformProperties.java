@@ -16,6 +16,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = IBaseConstants.PROPERTY_PLATFORM)
 public record PlatformProperties(
 
+        @Schema(description = "平台信息")
+        PlatformInfo platformInfo,
+
         @Schema(description = "系统架构模式")
         ArchitectureEnum architecture,
 

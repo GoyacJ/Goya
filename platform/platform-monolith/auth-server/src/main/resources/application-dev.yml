@@ -63,3 +63,7 @@ logging:
 ---
 platform:
   locale: zh_cn
+  architecture: monolith
+  platform-info:
+    project-name: goya
+    website: ysmjjsy.com

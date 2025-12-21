@@ -100,7 +100,7 @@ public enum ResponseCodeEnum implements IResponseCode {
     PARAMS_VALIDATION_ERROR("0500001", HttpStatus.INTERNAL_SERVER_ERROR),
     RESOURCE_NOT_FOUNT_ERROR("0500002", HttpStatus.INTERNAL_SERVER_ERROR),
     JSON_ERROR("0500003", HttpStatus.INTERNAL_SERVER_ERROR),
-
+    CACHE_ERROR("0500100", HttpStatus.INTERNAL_SERVER_ERROR),
     ;
     @Schema(description = "业务状态码")
     private final String code;
