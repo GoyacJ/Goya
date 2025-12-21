@@ -2,6 +2,8 @@ package com.ysmjjsy.goya.component.common.jackson;
 
 import com.ysmjjsy.goya.component.common.definition.constants.IBaseConstants;
 import com.ysmjjsy.goya.component.common.exception.JsonException;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.jackson.JacksonComponent;
 import tools.jackson.core.JacksonException;
@@ -23,6 +25,7 @@ import java.time.format.DateTimeParseException;
  */
 @Slf4j
 @JacksonComponent
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class TimeJacksonComponent {
 
     private static final DateTimeFormatter FORMATTER_YYYY_MM_DD_HH_MM_SS =
