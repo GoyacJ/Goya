@@ -1,124 +1,238 @@
-# component-cache 缓存组件
+# component-cache 模块
 
-## 模块简介
+## 简介
 
-`component-cache` 是 Goya 框架的缓存抽象层模块，提供统一的缓存服务接口，支持多种缓存实现（Caffeine 本地缓存、Redis 分布式缓存）。
+`component-cache` 是 Goya 项目的缓存抽象层，提供统一的缓存接口和默认的混合缓存实现（Hybrid Cache）。
 
-## 核心功能
-
-### 1. 缓存操作
-- **基本操作**：get、put、remove
-- **批量操作**：批量获取、批量删除
-- **懒加载**：支持 computeIfAbsent 和 getOrLoad
-- **过期控制**：支持设置 TTL
-
-### 2. 分布式锁
-- **tryLock**：尝试获取锁
-- **lockAndRun**：获取锁并执行操作
-
-### 3. 多种实现
-- **CaffeineCacheService**：基于 Caffeine 的本地缓存实现
-- **RedisCacheService**：基于 Redisson 的分布式缓存实现（在 redis-boot-starter 中）
-
-## 项目结构
+## 架构设计
 
 ```
-component-cache/
-├── configuration/
-│   ├── CacheAutoConfiguration.java       # 缓存自动配置
-│   └── properties/
-│       └── CacheProperties.java          # 缓存配置属性
-├── constants/
-│   └── ICacheConstants.java              # 缓存常量
-├── enums/
-│   └── CacheTypeEnum.java                # 缓存类型枚举
-├── exception/
-│   └── CacheException.java               # 缓存异常
-└── service/
-    ├── ICacheService.java                # 缓存服务接口
-    ├── AbstractCacheService.java         # 抽象基类
-    └── CaffeineCacheService.java         # Caffeine 实现
+┌─────────────────────────────────────────────────────────────────┐
+│                      component-cache (抽象层)                    │
+├─────────────────────────────────────────────────────────────────┤
+│  ICacheService (统一缓存接口)                                     │
+│      ↑                                                          │
+│  IL2Cache (L2 分布式缓存接口)                                     │
+│      ↑                                                          │
+│  ┌──────────────────┐  ┌───────────────────┐  ┌──────────────┐  │
+│  │LocalCacheService │  │RemoteCacheService│  │HybridCache   │  │
+│  │  (本地缓存)       │  │  (远程缓存包装器)  │  │Service       │  │
+│  │  - Caffeine      │  │  - IL2Cache      │  │  (默认实现)    │  │
+│  └──────────────────┘  └───────────────────┘  │  - L1 + L2   │  │
+│                                               └──────────────┘  │
+│  ┌──────────────────┐                                           │
+│  │CacheService      │                                           │
+│  │Factory           │ (工厂类，创建各种缓存实例)                  │
+│  └──────────────────┘                                           │
+└─────────────────────────────────────────────────────────────────┘
+                                    ↑
+                                    │ 实现 IL2Cache
+┌─────────────────────────────────────────────────────────────────┐
+│  redis-boot-starter                                              │
+│  ├── RedisCacheService (实现 IL2Cache)                          │
+│  ├── RedisCacheInvalidatePublisher                               │
+│  └── RedisCacheInvalidateListener                                │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-## 使用方式
+## 核心特性
 
-### 1. 引入依赖
+1. **默认混合缓存架构**
+   - L1 (LocalCacheService): 固定启用，高性能本地缓存 (Caffeine)
+   - L2 (RemoteCacheService): 通过接口支持多种分布式实现
+   - 自动检测：有 L2 实现时自动启用混合缓存，无则降级为 L1 Only
 
-```xml
-<dependency>
-    <groupId>com.ysmjjsy.goya</groupId>
-    <artifactId>component-cache</artifactId>
-</dependency>
-```
+2. **灵活的使用方式**
+   - **默认注入**：`ICacheService` → `HybridCacheService`（推荐）
+   - **工厂创建**：通过 `CacheServiceFactory` 创建特定缓存实例
+     - `createLocal()`: 仅本地缓存（高频访问场景）
+     - `createRemote()`: 仅远程缓存（强一致性场景）
+     - `createHybrid()`: 混合缓存（默认）
 
-### 2. 配置文件
+3. **清晰的命名**
+   - `LocalCacheService`: 本地缓存服务
+   - `RemoteCacheService`: 远程缓存服务
+   - `HybridCacheService`: 混合缓存服务（多级）
+
+4. **高可用设计**
+   - L2 不可用时自动降级为 L1 Only
+   - Pub/Sub 失败不阻塞主流程
+   - 支持缓存统计和监控
+
+## 配置示例
+
+### 基础配置
 
 ```yaml
 platform:
   cache:
-    type: caffeine          # 缓存类型: caffeine / redis
-    key-prefix: "goya:"     # 缓存键前缀
-    default-ttl: 30m        # 默认过期时间
-    enable-stats: false     # 是否启用统计
+    key-prefix: "goya:"
+    default-ttl: PT30M
+    enable-stats: true
+    
+    # 本地缓存（Caffeine）配置
+    caffeine-max-size: 10000
+    caffeine-ttl: PT5M  # 可选，不设置则使用 default-ttl
+    
+    # 缓存失效消息主题
+    invalidate-topic: "cache:invalidate"
 ```
 
-### 3. 代码示例
+## 使用示例
+
+### 1. 默认使用（推荐）
+
+大部分场景使用默认的混合缓存：
+
+```java
+@Service
+public class UserService {
+    
+    @Autowired
+    private ICacheService cacheService;  // → HybridCacheService
+    
+    public User getUser(Long id) {
+        return cacheService.get("users", id, this::loadFromDb);
+    }
+    
+    public void updateUser(User user) {
+        userRepository.save(user);
+        // 自动失效本地和远程缓存，并通知其他节点
+        cacheService.remove("users", user.getId());
+    }
+}
+```
+
+### 2. 特殊场景：仅本地缓存
+
+高频访问的数据，不需要跨节点共享：
+
+```java
+@Service
+public class HotDataService {
+    
+    private final LocalCacheService localCache;
+    
+    public HotDataService(CacheServiceFactory factory) {
+        // 创建本地缓存实例
+        this.localCache = factory.createLocal();
+    }
+    
+    public String getHotData(String key) {
+        return localCache.get("hotData", key, this::loadHotData);
+    }
+}
+```
+
+### 3. 特殊场景：仅远程缓存
+
+多实例共享配置，需要强一致性：
+
+```java
+@Service
+public class SharedConfigService {
+    
+    private final RemoteCacheService remoteCache;
+    
+    public SharedConfigService(CacheServiceFactory factory) {
+        // 创建远程缓存实例
+        this.remoteCache = factory.createRemote();
+    }
+    
+    public Config getConfig(String key) {
+        return remoteCache.get("sharedConfig", key, this::loadConfig);
+    }
+}
+```
+
+## 装配逻辑
+
+### 场景 1: 有 redis-boot-starter 依赖
+
+```
+1. RedisAutoConfiguration 注册 RedisCacheService 为 IL2Cache
+2. CacheAutoConfiguration 检测到 IL2Cache bean
+3. 注册 HybridCacheService (L1 + L2)
+4. 应用使用混合缓存（自动降级、跨节点同步）
+```
+
+### 场景 2: 无任何 L2 starter 依赖
+
+```
+1. 没有 IL2Cache bean
+2. CacheAutoConfiguration 注册 HybridCacheService (L1 Only)
+3. 应用使用本地缓存（无跨节点同步）
+```
+
+## 扩展指南
+
+### 实现新的 L2 缓存
+
+1. 实现 `IL2Cache` 接口
+2. 在 starter 中注册为 Spring Bean
+3. 自动被 `CacheAutoConfiguration` 检测并使用
+
+示例：
+
+```java
+@Component
+public class MongodbCacheService extends AbstractCacheService implements IL2Cache {
+    
+    @Override
+    public String getCacheType() {
+        return "mongodb";
+    }
+    
+    @Override
+    protected <K, V> V doGet(String cacheName, K key) {
+        // MongoDB 实现
+    }
+    
+    // 实现其他方法...
+}
+```
+
+## 日志说明
+
+```
+[Goya] |- Cache |- Hybrid cache initialized: Local (Caffeine) + Remote (redis), nodeId: xxx
+```
+
+- 表示混合缓存已启动
+- `Local (Caffeine)`: L1 本地缓存
+- `Remote (redis)`: L2 远程缓存类型
+- `nodeId`: 节点 ID，用于跨节点消息过滤
+
+```
+[Goya] |- Cache |- Hybrid cache degraded to Local only (no remote cache implementation found)
+```
+
+- 表示没有找到 L2 实现，降级为 L1 Only
+
+## 性能优化建议
+
+1. **合理设置 L1 容量**：根据应用内存大小调整 `caffeine-max-size`
+2. **合理设置 TTL**：根据数据更新频率调整 `caffeine-ttl`
+3. **使用批量操作**：减少网络往返
+4. **特定场景使用特定缓存**：
+   - 高频访问 → `LocalCacheService`
+   - 强一致性 → `RemoteCacheService`
+   - 通用场景 → `HybridCacheService`（默认）
+
+## 监控指标
 
 ```java
 @Autowired
-private ICacheService cacheService;
+private HybridCacheService cacheService;
 
-// 基本操作
-cacheService.put("user", "user:1", userObject);
-User user = cacheService.get("user", "user:1");
-
-// 带过期时间
-cacheService.put("session", "session:123", session, Duration.ofMinutes(30));
-
-// 懒加载
-User user = cacheService.get("user", "user:1", key -> loadUserFromDb(key));
-
-// 批量操作
-Set<String> keys = Set.of("user:1", "user:2", "user:3");
-Map<String, User> users = cacheService.get("user", keys);
-
-// 分布式锁
-cacheService.lockAndRun("lock", "resource:1", Duration.ofSeconds(30), () -> {
-    // 执行需要锁保护的操作
-});
+// 获取缓存统计
+Map<String, Object> stats = cacheService.getStats();
+// stats 包含：nodeId, remoteCacheType, remoteCacheAvailable
 ```
-
-## 设计说明
-
-### 1. 抽象层设计
-
-- **ICacheService**：定义缓存服务接口
-- **AbstractCacheService**：提供通用逻辑和模板方法
-- **具体实现类**：实现特定缓存技术的操作
-
-### 2. 配置优先级
-
-1. 当配置 `platform.cache.type=redis` 且存在 Redisson 依赖时，使用 Redis 缓存
-2. 当配置 `platform.cache.type=caffeine` 或未配置时，使用 Caffeine 本地缓存
-3. 通过条件注解实现自动切换
-
-### 3. 扩展性
-
-如需添加新的缓存实现：
-
-1. 继承 `AbstractCacheService`
-2. 实现所有抽象方法
-3. 在自动配置类中注册 Bean
 
 ## 注意事项
 
-1. **本地锁限制**：CaffeineCacheService 的锁功能仅在单个 JVM 内有效，不支持分布式锁
-2. **Redis 依赖**：使用 Redis 缓存需要引入 `redis-boot-starter`
-3. **键命名**：建议使用有意义的 cacheName 和 key，避免键冲突
-4. **过期时间**：合理设置 TTL，避免缓存占用过多内存
-
-## 参考资料
-
-- [Caffeine Github](https://github.com/ben-manes/caffeine)
-- [Spring Cache](https://docs.spring.io/spring-framework/reference/integration/cache.html)
-
+1. **Bean 唯一性**：`ICacheService` 只有一个 bean（`HybridCacheService`）
+2. **工厂创建的实例**：不是 Spring bean，不会被自动注入到其他组件
+3. **L2 可选性**：没有 L2 实现时自动降级，不会抛出异常
+4. **跨节点同步**：需要有 `ICacheInvalidatePublisher` 实现（如 Redis Pub/Sub）

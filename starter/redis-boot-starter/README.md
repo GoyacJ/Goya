@@ -1,206 +1,299 @@
-# redis-boot-starter Redis 启动器
+# redis-boot-starter 模块
 
-## 模块简介
+## 简介
 
-`redis-boot-starter` 是 Goya 框架的 Redis 集成模块，基于 Redisson 提供分布式缓存和 Redis 特有功能。
+`redis-boot-starter` 是 Goya 项目的 Redis 集成模块，提供 `IL2Cache` 接口的 Redis 实现，基于 Redisson 实现分布式缓存和 Redis 特有功能。
 
-## 核心功能
+## 架构设计
 
-### 1. 分布式缓存
-- 实现 `ICacheService` 接口
-- 基于 `RMapCache` 提供带 TTL 的缓存
-- 支持批量操作和懒加载
-- 自动过期和分布式锁
-
-### 2. Redis 特有功能
-
-#### 原子计数器
-- increment/decrement：原子递增/递减
-- incrementBy/decrementBy：指定增量
-- getCounter/setCounter：获取/设置计数值
-
-#### 发布订阅
-- publish：发布消息到主题
-- subscribe：订阅主题
-- unsubscribe：取消订阅
-
-#### 分布式信号量
-- acquire/release：获取/释放许可
-- tryAcquire：尝试获取许可
-- availablePermits：查询可用许可数
-
-#### 分布式倒计时门闩
-- countDown：倒计时减一
-- await：等待倒计时到零
-- trySetCount：设置倒计时数量
-
-## 项目结构
+本模块实现了 `component-cache` 定义的 `IL2Cache` 接口，作为混合缓存架构的 L2 层：
 
 ```
-redis-boot-starter/
-├── configuration/
-│   ├── RedisAutoConfiguration.java       # Redis 自动配置
-│   └── properties/
-│       └── RedisProperties.java          # Redis 配置属性
-├── constants/
-│   └── IRedisConstants.java              # Redis 常量
-└── service/
-    ├── IRedisService.java                # Redis 特有功能接口
-    ├── RedisCacheService.java            # Redis 缓存实现
-    └── RedisService.java                 # Redis 服务实现
+┌─────────────────────────────────────────────────────────────────┐
+│                    component-cache (抽象层)                      │
+│  ┌───────────────┐     ┌──────────────────────────────────────┐ │
+│  │ ICacheService │ ←── │ HybridCacheService (默认 bean)      │ │
+│  └───────────────┘     │ ├── L1: LocalCacheService (固定)    │ │
+│         ↑              │ └── L2: RemoteCacheService (可选)    │ │
+│  ┌───────────────┐     └──────────────────────────────────────┘ │
+│  │   IL2Cache    │                                              │
+│  └───────────────┘                                              │
+└─────────────────────────────────────────────────────────────────┘
+           ↑ 实现
+┌─────────────────────────────────────────────────────────────────┐
+│                    redis-boot-starter                            │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │ RedisCacheService implements IL2Cache                       ││
+│  │ ├── getCacheType() → "redis"                               ││
+│  │ ├── isAvailable() → 检查 Redis 连接                         ││
+│  │ └── 分布式缓存操作 + 分布式锁                                ││
+│  └─────────────────────────────────────────────────────────────┘│
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │ RedisCacheInvalidatePublisher / Listener                    ││
+│  │ └── 基于 Redis Pub/Sub 的缓存失效通知                        ││
+│  └─────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## 核心特性
+
+1. **IL2Cache 实现**
+   - 基于 Redisson RMapCache 实现
+   - 支持 TTL 和过期策略
+   - JSON 序列化（复用项目 JsonMapper）
+
+2. **自动装配**
+   - 存在 RedissonClient 时自动注册为 IL2Cache
+   - CacheAutoConfiguration 检测到后自动启用混合缓存
+   - 无需手动配置缓存类型
+
+3. **Redis 特有功能**
+   - 原子计数器（RAtomicLong）
+   - 发布订阅（RTopic）
+   - 分布式锁（RLock）
+   - 分布式信号量（RSemaphore）
+   - 分布式倒计时门闩（RCountDownLatch）
+
+## 配置示例
+
+### 基本配置
+
+```yaml
+# Spring Redisson 配置
+spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: your_password
+      database: 0
+
+# Goya 缓存配置
+platform:
+  cache:
+    key-prefix: "goya:"
+    default-ttl: PT30M
+    enable-stats: true
+    
+    # 多级缓存配置（默认启用）
+    multi-level:
+      enabled: true  # 默认 true，有 L2 时自动启用多级模式
+      ttl-sync-strategy: UNIFIED
+      invalidate-topic: "cache:invalidate"
+      
+      l1:
+        max-size: 10000
+        ttl: PT5M  # INDEPENDENT 模式生效
+    
+    # Redis 特有配置
+    redis:
+      lock-timeout: PT30S
+      lock-wait-time: PT10S
+```
+
+### 强制 L1 Only（禁用 Redis L2）
+
+```yaml
+platform:
+  cache:
+    multi-level:
+      enabled: false  # 即使有 Redis 也只使用 L1
+```
+
+## 装配流程
+
+```
+1. 应用启动，Redisson 自动配置 RedissonClient
+2. RedisAutoConfiguration 检测到 RedissonClient
+3. 注册 RedisCacheService 为 IL2Cache bean
+4. MultiLevelCacheAutoConfiguration 检测到 IL2Cache
+5. 注册 MultiLevelCacheService (L1 + L2)
+6. 应用使用多级缓存
 ```
 
 ## 使用方式
 
-### 1. 引入依赖
+### 1. 使用缓存服务（自动注入多级缓存）
+
+```java
+@Autowired
+private ICacheService cacheService;
+
+// 缓存操作（自动 L1+L2 协作）
+cacheService.put("userCache", "userId:1", user, Duration.ofMinutes(30));
+User user = cacheService.get("userCache", "userId:1");
+cacheService.remove("userCache", "userId:1");
+
+// 获取或加载
+User result = cacheService.get("userCache", "userId:1", key -> {
+    return userRepository.findById(key);
+});
+```
+
+### 2. 使用 Redis 特有功能
+
+```java
+@Autowired
+private IRedisService redisService;
+
+// 原子计数器
+Long count = redisService.increment("visitCount");
+redisService.setCounter("visitCount", 100);
+
+// 发布订阅
+redisService.publish("notification", message);
+redisService.subscribe("notification", msg -> {
+    System.out.println("Received: " + msg);
+});
+
+// 分布式信号量
+redisService.trySetPermits("resourceLock", 10);
+if (redisService.tryAcquire("resourceLock")) {
+    try {
+        // 访问受限资源
+    } finally {
+        redisService.release("resourceLock");
+    }
+}
+```
+
+### 3. 分布式锁
+
+```java
+// 使用锁并执行操作（L2 可用时为分布式锁）
+boolean success = cacheService.lockAndRun(
+    "lockCache",
+    "orderId:123",
+    Duration.ofSeconds(30),
+    () -> {
+        processOrder("123");
+    }
+);
+```
+
+## 序列化机制
+
+### 默认序列化
+
+Redisson 使用项目配置的 `JsonMapper` 进行序列化：
+
+- **编解码器**: `TypedJsonJacksonCodec`
+- **序列化格式**: JSON
+- **复用配置**: 时间格式、枚举处理、命名策略等
+
+### 自定义序列化
+
+如需自定义，可以覆盖 Redisson 的 Codec 配置：
+
+```java
+@Bean
+public Codec customCodec() {
+    return new YourCustomCodec();
+}
+```
+
+## 多级缓存架构
+
+```
+应用节点1               应用节点2               应用节点N
+   |                     |                     |
+ L1(Caffeine)         L1(Caffeine)         L1(Caffeine)
+   |                     |                     |
+   +---------------------+---------------------+
+                         |
+                    L2(Redis)
+                         |
+                  Pub/Sub Channel
+                (失效消息广播)
+```
+
+### 工作流程
+
+1. **写入操作**: 
+   - 写入 L1 + L2
+   - 发布失效消息到 Pub/Sub
+   - 其他节点收到消息后失效本地 L1
+
+2. **读取操作**:
+   - 先查 L1，命中则返回
+   - L1 未命中查 L2
+   - L2 命中则回填 L1
+
+3. **降级流程**:
+   - L2 不可用时自动降级为 L1 Only
+   - 日志记录降级事件
+   - L2 恢复后自动恢复多级模式
+
+## 高可用特性
+
+1. **自动降级**: L2 不可用时自动降级为 L1 Only
+2. **容错机制**: Pub/Sub 失败不阻塞主流程
+3. **连接池**: Redisson 自动管理连接池
+4. **健康检查**: `isAvailable()` 方法检查 Redis 连接状态
+
+## 监控与统计
+
+```java
+@Autowired
+private MultiLevelCacheService multiLevelCache;
+
+// 获取统计信息
+Map<String, Object> stats = multiLevelCache.getStats();
+System.out.println("NodeId: " + stats.get("nodeId"));
+System.out.println("L2 Type: " + stats.get("l2CacheType"));  // "redis"
+System.out.println("L2 Available: " + stats.get("l2Available"));
+```
+
+## 依赖
 
 ```xml
 <dependency>
     <groupId>com.ysmjjsy.goya</groupId>
     <artifactId>redis-boot-starter</artifactId>
 </dependency>
+
+<!-- component-cache 会自动传递依赖 -->
+<!-- Redisson 已内置，无需额外引入 -->
 ```
-
-### 2. 配置文件
-
-```yaml
-# Redisson 配置（使用 Redisson 默认配置或自定义）
-spring:
-  data:
-    redis:
-      host: localhost
-      port: 6379
-      password: 
-      database: 0
-
-# Goya 缓存配置
-platform:
-  cache:
-    type: redis             # 使用 Redis 缓存
-    key-prefix: "goya:"     # 缓存键前缀
-    default-ttl: 30m        # 默认过期时间
-    redis:
-      lock-timeout: 30s     # 锁超时时间
-      lock-wait-time: 10s   # 锁等待时间
-      watchdog-timeout: 30s # 看门狗超时时间
-      enable-stats: false   # 是否启用统计
-```
-
-### 3. 使用缓存服务
-
-```java
-@Autowired
-private ICacheService cacheService;
-
-// 使用方式与 component-cache 中的示例相同
-// 但底层使用 Redis 实现，支持分布式环境
-```
-
-### 4. 使用 Redis 特有功能
-
-#### 原子计数器
-
-```java
-@Autowired
-private IRedisService redisService;
-
-// 递增计数器
-Long value = redisService.increment("page:views");
-
-// 递增指定值
-Long value = redisService.incrementBy("page:views", 10);
-
-// 获取计数值
-Long value = redisService.getCounter("page:views");
-```
-
-#### 发布订阅
-
-```java
-// 发布消息
-redisService.publish("notifications", "New message");
-
-// 订阅主题
-int listenerId = redisService.subscribe("notifications", message -> {
-    System.out.println("Received: " + message);
-});
-
-// 取消订阅
-redisService.unsubscribe("notifications", listenerId);
-```
-
-#### 分布式信号量
-
-```java
-// 设置许可数量
-redisService.trySetPermits("resource:limit", 10);
-
-// 获取许可
-if (redisService.tryAcquire("resource:limit", Duration.ofSeconds(5))) {
-    try {
-        // 执行需要许可的操作
-    } finally {
-        redisService.release("resource:limit");
-    }
-}
-```
-
-#### 分布式倒计时门闩
-
-```java
-// 设置倒计时数量
-redisService.trySetCount("task:complete", 3);
-
-// 在各个任务完成时倒计时
-redisService.countDown("task:complete");
-
-// 等待所有任务完成
-redisService.await("task:complete", Duration.ofMinutes(5));
-```
-
-## 设计说明
-
-### 1. 基于 Redisson
-
-- 使用 Redisson 作为 Redis 客户端
-- 支持单机、集群、哨兵等多种部署模式
-- 自动连接管理和故障转移
-
-### 2. 分布式锁实现
-
-- 使用 Redisson 的 `RLock` 实现
-- 支持自动续约（看门狗机制）
-- 支持超时和等待时间控制
-
-### 3. 缓存实现
-
-- 使用 `RMapCache` 实现缓存功能
-- 支持 TTL 和 maxIdleTime
-- cacheName 作为 Map 的 key，实现命名空间隔离
-
-### 4. 条件化配置
-
-- 当 Redisson 依赖存在且配置正确时自动注册
-- 通过 `@ConditionalOnBean` 和 `@ConditionalOnProperty` 实现条件加载
-
-## 性能优化
-
-1. **连接池配置**：合理设置 Redisson 连接池大小
-2. **批量操作**：尽量使用批量 API 减少网络往返
-3. **过期时间**：合理设置 TTL，避免 Redis 内存溢出
-4. **序列化**：Redisson 默认使用高效的序列化方式
 
 ## 注意事项
 
-1. **Redisson 版本**：当前使用 Redisson 4.0.0
-2. **Redis 版本**：建议使用 Redis 5.0+
-3. **分布式锁**：确保网络稳定，避免锁失效
-4. **过期时间**：合理设置锁和缓存的过期时间
-5. **键命名**：使用有意义的键名，避免冲突
+1. **序列化对象**: 确保缓存的对象可以被 Jackson 序列化
+2. **TTL 设置**: 推荐使用 UNIFIED 模式，或确保 L1 TTL ≤ L2 TTL
+3. **Key 设计**: 使用有意义的 key 前缀，避免冲突
+4. **内存管理**: L1 设置合理的 maxSize，避免 OOM
+5. **网络延迟**: 注意 Redis 网络延迟对性能的影响
 
-## 参考资料
+## 常见问题
 
-- [Redisson 官方文档](https://github.com/redisson/redisson/wiki)
-- [Redis 官方文档](https://redis.io/docs/)
-- [Redisson Spring Boot Starter](https://github.com/redisson/redisson/tree/master/redisson-spring-boot-starter)
+### Q: 如何只使用本地缓存（禁用 Redis）？
 
+不添加 `redis-boot-starter` 依赖，或：
+
+```yaml
+platform:
+  cache:
+    multi-level:
+      enabled: false
+```
+
+### Q: 缓存失效消息延迟怎么办？
+
+多级缓存使用最终一致性模型，存在短暂的不一致窗口。建议：
+- 使用 UNIFIED TTL 策略
+- 设置较短的 L1 TTL
+
+### Q: 如何查看调试日志？
+
+启用 TRACE 日志级别：
+
+```yaml
+logging:
+  level:
+    com.ysmjjsy.goya.starter.redis: TRACE
+    com.ysmjjsy.goya.component.cache: TRACE
+```
+
+### Q: 如何扩展其他 L2 实现？
+
+实现 `IL2Cache` 接口即可，参考 `RedisCacheService` 实现。

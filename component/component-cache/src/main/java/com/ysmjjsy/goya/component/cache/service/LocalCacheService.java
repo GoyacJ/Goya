@@ -17,23 +17,45 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * <p>基于 Caffeine 的本地缓存服务实现</p>
- * <p>适用于单机环境或对缓存一致性要求不高的场景</p>
+ * <p>本地缓存服务（基于 Caffeine）</p>
  * <p>特点：</p>
  * <ul>
- *     <li>高性能的本地内存缓存</li>
- *     <li>支持自动过期和容量限制</li>
- *     <li>线程安全</li>
- *     <li>支持简单的本地锁（不支持分布式锁）</li>
+ *     <li>高性能，低延迟</li>
+ *     <li>仅单机有效，不跨节点共享</li>
+ *     <li>适合高频访问、不需要共享的数据</li>
  * </ul>
  *
+ * <p>适用场景：</p>
+ * <ul>
+ *     <li>高频访问的数据</li>
+ *     <li>不需要跨节点共享</li>
+ *     <li>对一致性要求不高</li>
+ * </ul>
+ *
+ * <p>使用示例：</p>
+ * <pre>{@code
+ * @Service
+ * public class HotDataService {
+ *     private final LocalCacheService localCache;
+ *
+ *     public HotDataService(CacheServiceFactory factory) {
+ *         // 高频访问数据，只用本地缓存
+ *         this.localCache = factory.createLocal();
+ *     }
+ *
+ *     public String getHotData(String key) {
+ *         return localCache.get("hotData", key, this::loadHotData);
+ *     }
+ * }
+ * }</pre>
+ *
  * @author goya
- * @since 2025/12/21 23:45
+ * @since 2025/12/22
  * @see AbstractCacheService
  * @see <a href="https://github.com/ben-manes/caffeine">Caffeine Github</a>
  */
 @Slf4j
-public class CaffeineCacheService extends AbstractCacheService {
+public class LocalCacheService extends AbstractCacheService {
 
     /**
      * 缓存容器映射
@@ -47,7 +69,7 @@ public class CaffeineCacheService extends AbstractCacheService {
      */
     private final Map<String, Lock> lockMap = new ConcurrentHashMap<>();
 
-    public CaffeineCacheService(CacheProperties cacheProperties) {
+    public LocalCacheService(CacheProperties cacheProperties) {
         super(cacheProperties);
     }
 
@@ -59,18 +81,25 @@ public class CaffeineCacheService extends AbstractCacheService {
      * @return Caffeine Cache 实例
      */
     private Cache<Object, Object> getOrCreateCache(String cacheName, Duration duration) {
-        return cacheMap.computeIfAbsent(cacheName, name -> {
+        // 使用带前缀的 cacheName
+        String prefixedName = buildCachePrefix(cacheName);
+        return cacheMap.computeIfAbsent(prefixedName, name -> {
+            // 使用配置的 Caffeine 参数
+            Integer maxSize = cacheProperties.caffeineMaxSize() != null
+                    ? cacheProperties.caffeineMaxSize()
+                    : 10000;
+
             Caffeine<Object, Object> builder = Caffeine.newBuilder()
                     .expireAfterWrite(duration)
-                    .maximumSize(10000); // 默认最大容量
+                    .maximumSize(maxSize);
 
             if (Boolean.TRUE.equals(cacheProperties.enableStats())) {
                 builder.recordStats();
             }
 
             Cache<Object, Object> cache = builder.build();
-            log.debug("[Goya] |- component [cache] |- caffeine cache [{}] created with ttl [{}]",
-                    name, duration);
+            log.debug("[Goya] |- Cache |- Local cache [{}] created with ttl [{}], maxSize [{}]",
+                    name, duration, maxSize);
             return cache;
         });
     }
@@ -110,7 +139,7 @@ public class CaffeineCacheService extends AbstractCacheService {
         try {
             Cache<Object, Object> cache = getOrCreateCache(cacheName, getDefaultTtl());
             Map<K, V> result = new HashMap<>();
-            
+
             for (K key : keys) {
                 @SuppressWarnings("unchecked")
                 V value = (V) cache.getIfPresent(key);
@@ -118,7 +147,7 @@ public class CaffeineCacheService extends AbstractCacheService {
                     result.put(key, value);
                 }
             }
-            
+
             return result;
         } catch (Exception e) {
             handleException("getBatch", cacheName, e);
@@ -172,19 +201,19 @@ public class CaffeineCacheService extends AbstractCacheService {
         try {
             Cache<Object, Object> cache = getOrCreateCache(cacheName, duration);
             cache.put(key, value);
-            log.trace("[Goya] |- component [cache] |- caffeine cache [{}] put key [{}]", cacheName, key);
+            log.trace("[Goya] |- Cache |- Local cache [{}] put key [{}]", cacheName, key);
         } catch (Exception e) {
             handleException("put", cacheName, e);
         }
     }
 
     @Override
-    protected <K> Boolean doRemove(String cacheName, K key) {
+    public <K> Boolean doRemove(String cacheName, K key) {
         try {
             Cache<Object, Object> cache = getOrCreateCache(cacheName, getDefaultTtl());
             boolean exists = cache.getIfPresent(key) != null;
             cache.invalidate(key);
-            log.trace("[Goya] |- component [cache] |- caffeine cache [{}] remove key [{}]", cacheName, key);
+            log.trace("[Goya] |- Cache |- Local cache [{}] remove key [{}]", cacheName, key);
             return exists;
         } catch (Exception e) {
             handleException("remove", cacheName, e);
@@ -197,8 +226,7 @@ public class CaffeineCacheService extends AbstractCacheService {
         try {
             Cache<Object, Object> cache = getOrCreateCache(cacheName, getDefaultTtl());
             cache.invalidateAll(keys);
-            log.trace("[Goya] |- component [cache] |- caffeine cache [{}] remove keys [{}]", 
-                    cacheName, keys.size());
+            log.trace("[Goya] |- Cache |- Local cache [{}] remove {} keys", cacheName, keys.size());
         } catch (Exception e) {
             handleException("removeBatch", cacheName, e);
         }
@@ -223,32 +251,31 @@ public class CaffeineCacheService extends AbstractCacheService {
 
     @Override
     protected <K> void doTryLock(String cacheName, K key, Duration expire) {
-        String lockKey = buildCacheKey(cacheName, key);
+        String lockKey = buildLockKey(cacheName, key);
         Lock lock = lockMap.computeIfAbsent(lockKey, k -> new ReentrantLock());
-        
+
         // 本地锁不支持超时，这里只是记录日志
-        log.warn("[Goya] |- component [cache] |- caffeine local lock does not support timeout, " +
-                "lock key [{}], expire [{}]", lockKey, expire);
-        
+        log.warn("[Goya] |- Cache |- Local lock does not support timeout, lock key [{}], expire [{}]",
+                lockKey, expire);
+
         lock.lock();
     }
 
     @Override
     protected <K> boolean doLockAndRun(String cacheName, K key, Duration expire, Runnable action) {
-        String lockKey = buildCacheKey(cacheName, key);
+        String lockKey = buildLockKey(cacheName, key);
         Lock lock = lockMap.computeIfAbsent(lockKey, k -> new ReentrantLock());
-        
+
         try {
             // 本地锁不支持超时，这里只是记录日志
-            log.warn("[Goya] |- component [cache] |- caffeine local lock does not support timeout, " +
-                    "lock key [{}], expire [{}]", lockKey, expire);
-            
+            log.warn("[Goya] |- Cache |- Local lock does not support timeout, lock key [{}], expire [{}]",
+                    lockKey, expire);
+
             lock.lock();
             action.run();
             return true;
         } catch (Exception e) {
-            log.error("[Goya] |- component [cache] |- caffeine lock and run failed, lock key [{}]", 
-                    lockKey, e);
+            log.error("[Goya] |- Cache |- Local lock and run failed, lock key [{}]", lockKey, e);
             return false;
         } finally {
             lock.unlock();
@@ -260,7 +287,7 @@ public class CaffeineCacheService extends AbstractCacheService {
      */
     public void clearAll() {
         cacheMap.values().forEach(Cache::invalidateAll);
-        log.info("[Goya] |- component [cache] |- all caffeine caches cleared");
+        log.info("[Goya] |- Cache |- All local caches cleared");
     }
 
     /**
@@ -269,10 +296,11 @@ public class CaffeineCacheService extends AbstractCacheService {
      * @param cacheName 缓存名称
      */
     public void clear(String cacheName) {
-        Cache<Object, Object> cache = cacheMap.get(cacheName);
+        String prefixedName = buildCachePrefix(cacheName);
+        Cache<Object, Object> cache = cacheMap.get(prefixedName);
         if (cache != null) {
             cache.invalidateAll();
-            log.info("[Goya] |- component [cache] |- caffeine cache [{}] cleared", cacheName);
+            log.info("[Goya] |- Cache |- Local cache [{}] cleared", prefixedName);
         }
     }
 

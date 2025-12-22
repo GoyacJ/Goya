@@ -1,6 +1,7 @@
 package com.ysmjjsy.goya.auth.server;
 
 import com.ysmjjsy.goya.component.cache.exception.CacheException;
+import com.ysmjjsy.goya.component.cache.service.CacheServiceFactory;
 import com.ysmjjsy.goya.component.cache.service.ICacheService;
 import com.ysmjjsy.goya.component.common.service.IPlatformService;
 import com.ysmjjsy.goya.component.common.utils.JsonUtils;
@@ -26,6 +27,7 @@ import java.util.Set;
 public class TestController {
 
     private final ICacheService iCacheService;
+    private final CacheServiceFactory cacheServiceFactory;
 
     @GetMapping("test")
     public Response<Void> test() {
@@ -66,7 +68,6 @@ public class TestController {
         }
 
         String cache2 = iCacheService.get("test", "cache");
-
 
         log.warn("cache2:{}", cache2);
 

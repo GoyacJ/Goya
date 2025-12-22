@@ -1,10 +1,14 @@
 package com.ysmjjsy.goya.starter.redis.configuration;
 
-import com.ysmjjsy.goya.component.cache.annotation.CacheType;
 import com.ysmjjsy.goya.component.cache.configuration.properties.CacheProperties;
-import com.ysmjjsy.goya.component.cache.enums.CacheTypeEnum;
-import com.ysmjjsy.goya.component.cache.service.ICacheService;
+import com.ysmjjsy.goya.component.cache.listener.ICacheInvalidateListener;
+import com.ysmjjsy.goya.component.cache.publisher.ICacheInvalidatePublisher;
+import com.ysmjjsy.goya.component.cache.service.HybridCacheService;
+import com.ysmjjsy.goya.component.cache.service.IL2Cache;
+import com.ysmjjsy.goya.component.cache.service.LocalCacheService;
 import com.ysmjjsy.goya.starter.redis.configuration.properties.RedisProperties;
+import com.ysmjjsy.goya.starter.redis.listener.RedisCacheInvalidateListener;
+import com.ysmjjsy.goya.starter.redis.publisher.RedisCacheInvalidatePublisher;
 import com.ysmjjsy.goya.starter.redis.service.IRedisService;
 import com.ysmjjsy.goya.starter.redis.service.RedisCacheService;
 import com.ysmjjsy.goya.starter.redis.service.RedisService;
@@ -20,22 +24,24 @@ import org.springframework.context.annotation.Lazy;
 
 /**
  * <p>Redis 自动配置类</p>
- * <p>根据配置和依赖自动注册 Redis 相关服务</p>
+ * <p>提供 Redis 作为 L2 分布式缓存的实现</p>
+ * <p>装配逻辑：</p>
  * <ul>
- *     <li>当 Redisson 存在时，自动注册 RedisCacheService</li>
- *     <li>当配置 platform.cache.type=redis 时，使用 Redis 作为缓存实现</li>
+ *     <li>当存在 RedissonClient 时，自动注册 RedisCacheService 为 IL2Cache 实现</li>
+ *     <li>CacheAutoConfiguration 检测到 IL2Cache 后注册 HybridCacheService</li>
  *     <li>提供 Redis 特有功能服务（发布订阅、分布式锁等）</li>
+ *     <li>提供缓存失效消息的发布和监听功能</li>
  * </ul>
  *
  * @author goya
+ * @since 2025/12/22
  * @see RedisProperties
  * @see RedisCacheService
- * @see RedisService
- * @since 2025/12/19 17:29
+ * @see IL2Cache
  */
 @Slf4j
 @AutoConfiguration
-@EnableConfigurationProperties(RedisProperties.class)
+@EnableConfigurationProperties({RedisProperties.class})
 public class RedisAutoConfiguration {
 
     @PostConstruct
@@ -44,25 +50,26 @@ public class RedisAutoConfiguration {
     }
 
     /**
-     * 注册 Redis 缓存服务
-     * <p>当存在 RedissonClient 并且配置了 platform.cache.type=redis 时自动注册</p>
-     * <p>此服务将替换默认的 Caffeine 缓存服务</p>
+     * 注册 Redis L2 缓存服务
+     * <p>作为 IL2Cache 接口的 Redis 实现</p>
+     * <p>当存在 RedissonClient 时自动注册</p>
      *
-     * @param redissonClient RedissonClient 实例
-     * @return RedisCacheService 实例
+     * @param cacheProperties  缓存配置
+     * @param redisProperties  Redis 配置
+     * @param redissonClient   RedissonClient 实例
+     * @return RedisCacheService 实例（实现 IL2Cache）
      */
-    @Bean
-    @ConditionalOnMissingBean(ICacheService.class)
-    @CacheType(CacheTypeEnum.REDIS)
+    @Bean("redisL2CacheService")
+    @ConditionalOnMissingBean(IL2Cache.class)
     @Lazy(false)
-    public RedisCacheService redisCacheService(CacheProperties cacheProperties,
-                                               RedisProperties redisProperties,
-                                               RedissonClient redissonClient) {
-        RedisCacheService service = new RedisCacheService(cacheProperties,
-                redisProperties,
-                redissonClient
-        );
-        log.trace("[Goya] |- starter [redis] RedisAutoConfiguration |- bean [redisCacheService] register.");
+    public RedisCacheService redisL2CacheService(
+            CacheProperties cacheProperties,
+            RedisProperties redisProperties,
+            RedissonClient redissonClient) {
+        RedisCacheService service = new RedisCacheService(
+                cacheProperties, redisProperties, redissonClient);
+        log.info("[Goya] |- starter [redis] RedisAutoConfiguration |- " +
+                "bean [redisL2CacheService] register as IL2Cache implementation.");
         return service;
     }
 
@@ -86,5 +93,53 @@ public class RedisAutoConfiguration {
         RedisService service = new RedisService(redissonClient);
         log.trace("[Goya] |- starter [redis] RedisAutoConfiguration |- bean [redisService] register.");
         return service;
+    }
+
+    /**
+     * 注册缓存失效消息发布器
+     * <p>用于混合缓存中跨节点的 L1 缓存失效通知</p>
+     *
+     * @param redissonClient  RedissonClient 实例
+     * @param cacheProperties 缓存配置
+     * @return RedisCacheInvalidatePublisher 实例
+     */
+    @Bean
+    @ConditionalOnMissingBean(ICacheInvalidatePublisher.class)
+    @Lazy(false)
+    public RedisCacheInvalidatePublisher redisCacheInvalidatePublisher(
+            RedissonClient redissonClient,
+            CacheProperties cacheProperties) {
+        String topic = cacheProperties.invalidateTopic();
+        RedisCacheInvalidatePublisher publisher = new RedisCacheInvalidatePublisher(redissonClient, topic);
+        log.trace("[Goya] |- starter [redis] RedisAutoConfiguration |- " +
+                "bean [redisCacheInvalidatePublisher] register, topic: {}", topic);
+        return publisher;
+    }
+
+    /**
+     * 注册缓存失效消息监听器
+     * <p>监听 Redis Pub/Sub 消息，失效本地 L1 缓存</p>
+     *
+     * @param redissonClient      RedissonClient 实例
+     * @param cacheProperties     缓存配置
+     * @param hybridCacheService  混合缓存服务（用于获取 L1 和 nodeId）
+     * @return RedisCacheInvalidateListener 实例
+     */
+    @Bean
+    @ConditionalOnMissingBean(ICacheInvalidateListener.class)
+    @Lazy(false)
+    public RedisCacheInvalidateListener redisCacheInvalidateListener(
+            RedissonClient redissonClient,
+            CacheProperties cacheProperties,
+            @Lazy HybridCacheService hybridCacheService) {
+        String topic = cacheProperties.invalidateTopic();
+        String nodeId = hybridCacheService.getNodeId();
+        LocalCacheService l1Cache = hybridCacheService.getLocalCache();
+        RedisCacheInvalidateListener listener = new RedisCacheInvalidateListener(
+                redissonClient, topic, l1Cache, nodeId);
+        listener.start();
+        log.trace("[Goya] |- starter [redis] RedisAutoConfiguration |- " +
+                "bean [redisCacheInvalidateListener] register, topic: {}, nodeId: {}", topic, nodeId);
+        return listener;
     }
 }

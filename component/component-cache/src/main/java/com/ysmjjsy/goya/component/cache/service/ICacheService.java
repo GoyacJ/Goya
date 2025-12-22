@@ -17,7 +17,6 @@ import java.util.function.Function;
  */
 public interface ICacheService {
 
-
     /**
      * 获取缓存
      *

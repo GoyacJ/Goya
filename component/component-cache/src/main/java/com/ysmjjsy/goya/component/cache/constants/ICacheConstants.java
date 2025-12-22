@@ -20,6 +20,7 @@ public interface ICacheConstants {
      */
     String PROPERTY_CACHE = IBaseConstants.PROPERTY_PLATFORM + ".cache";
     String PROPERTY_CACHE_TYPE = PROPERTY_CACHE + ".type";
+    String PROPERTY_CACHE_MULTI_LEVEL = PROPERTY_CACHE + ".multi-level";
 
     /* ---------- 通用缓存常量 ---------- */
 

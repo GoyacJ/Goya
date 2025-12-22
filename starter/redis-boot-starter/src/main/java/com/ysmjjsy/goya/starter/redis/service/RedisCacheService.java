@@ -2,6 +2,7 @@ package com.ysmjjsy.goya.starter.redis.service;
 
 import com.ysmjjsy.goya.component.cache.configuration.properties.CacheProperties;
 import com.ysmjjsy.goya.component.cache.service.AbstractCacheService;
+import com.ysmjjsy.goya.component.cache.service.IL2Cache;
 import com.ysmjjsy.goya.starter.redis.configuration.properties.RedisProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
@@ -18,8 +19,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * <p>基于 Redis (Redisson) 的分布式缓存服务实现</p>
- * <p>适用于分布式环境，支持缓存共享和分布式锁</p>
+ * <p>基于 Redis (Redisson) 的 L2 分布式缓存服务实现</p>
+ * <p>作为多级缓存架构中的 L2 层，实现 IL2Cache 接口</p>
  * <p>特点：</p>
  * <ul>
  *     <li>分布式缓存，多实例间共享缓存数据</li>
@@ -30,22 +31,52 @@ import java.util.stream.Collectors;
  *
  * @author goya
  * @see AbstractCacheService
+ * @see IL2Cache
  * @see RedissonClient
  * @see <a href="https://github.com/redisson/redisson">Redisson Github</a>
- * @since 2025/12/22 00:10
+ * @since 2025/12/22
  */
 @Slf4j
-public class RedisCacheService extends AbstractCacheService {
+public class RedisCacheService extends AbstractCacheService implements IL2Cache {
+
+    private static final String CACHE_TYPE = "redis";
 
     private final RedissonClient redissonClient;
     private final RedisProperties redisProperties;
 
     public RedisCacheService(CacheProperties cacheProperties,
-                                RedisProperties redisProperties,
-                                RedissonClient redissonClient) {
+                             RedisProperties redisProperties,
+                             RedissonClient redissonClient) {
         super(cacheProperties);
         this.redissonClient = redissonClient;
         this.redisProperties = redisProperties;
+        log.info("[Goya] |- starter [redis] |- RedisCacheService initialized as IL2Cache");
+    }
+
+    @Override
+    public String getCacheType() {
+        return CACHE_TYPE;
+    }
+
+    @Override
+    public boolean isAvailable() {
+        try {
+            // 检查 Redis 连接是否可用
+            return redissonClient != null && !redissonClient.isShutdown();
+        } catch (Exception e) {
+            log.warn("[Goya] |- starter [redis] |- Redis availability check failed: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    public void clearAll() {
+        try {
+            // 注意：此操作会清空所有缓存，使用需谨慎
+            log.warn("[Goya] |- starter [redis] |- clearAll is not recommended in production");
+        } catch (Exception e) {
+            log.error("[Goya] |- starter [redis] |- clearAll failed", e);
+        }
     }
 
     /**
@@ -58,7 +89,8 @@ public class RedisCacheService extends AbstractCacheService {
      * @return RMapCache 实例
      */
     private <K, V> RMapCache<K, V> getMapCache(String cacheName) {
-        return redissonClient.getMapCache(cacheName);
+        String prefixedName = buildCachePrefix(cacheName);
+        return redissonClient.getMapCache(prefixedName);
     }
 
     /**
@@ -242,7 +274,7 @@ public class RedisCacheService extends AbstractCacheService {
 
     @Override
     protected <K> void doTryLock(String cacheName, K key, Duration expire) {
-        String lockKey = buildCacheKey(cacheName, key);
+        String lockKey = buildLockKey(cacheName, key);
         RLock lock = getLock(lockKey);
 
         try {
@@ -261,7 +293,7 @@ public class RedisCacheService extends AbstractCacheService {
 
     @Override
     protected <K> boolean doLockAndRun(String cacheName, K key, Duration expire, Runnable action) {
-        String lockKey = buildCacheKey(cacheName, key);
+        String lockKey = buildLockKey(cacheName, key);
         RLock lock = getLock(lockKey);
 
         Duration waitTime = redisProperties.lockWaitTime() != null
@@ -303,9 +335,10 @@ public class RedisCacheService extends AbstractCacheService {
      */
     public void clear(String cacheName) {
         try {
-            RMapCache<Object, Object> mapCache = getMapCache(cacheName);
+            String prefixedName = buildCachePrefix(cacheName);
+            RMapCache<Object, Object> mapCache = redissonClient.getMapCache(prefixedName);
             mapCache.clear();
-            log.info("[Goya] |- starter [redis] |- redis cache [{}] cleared", cacheName);
+            log.info("[Goya] |- starter [redis] |- redis cache [{}] cleared", prefixedName);
         } catch (Exception e) {
             log.error("[Goya] |- starter [redis] |- redis cache [{}] clear failed", cacheName, e);
         }
@@ -326,5 +359,13 @@ public class RedisCacheService extends AbstractCacheService {
             return 0;
         }
     }
-}
 
+    /**
+     * 获取 RedissonClient 实例（用于高级操作）
+     *
+     * @return RedissonClient 实例
+     */
+    public RedissonClient getRedissonClient() {
+        return redissonClient;
+    }
+}

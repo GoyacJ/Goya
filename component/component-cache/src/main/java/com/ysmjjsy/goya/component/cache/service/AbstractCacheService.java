@@ -31,24 +31,39 @@ public abstract class AbstractCacheService implements ICacheService {
     }
 
     /**
-     * 构建完整的缓存键
-     * 格式: {keyPrefix}{cacheName}:{key}
+     * 构建完整的缓存前缀
+     * 格式: {cachePrefix}{cacheName}
      *
      * @param cacheName 缓存名称
-     * @param key       缓存键
      * @return 完整的缓存键
      */
-    protected String buildCacheKey(String cacheName, Object key) {
+    protected String buildCachePrefix(String cacheName) {
         if (StringUtils.isBlank(cacheName)) {
             throw new CacheException("Cache name cannot be blank");
         }
+
+        String prefix = cacheProperties.cachePrefix();
+
+        return ICacheConstants.CACHE_PREFIX + prefix + cacheName + ICacheConstants.CACHE_SEPARATOR;
+    }
+
+    /**
+     * 构建分布式锁的完整键
+     * 格式: cache:{keyPrefix}lock:{cacheName}:{key}
+     *
+     * @param cacheName 缓存名称
+     * @param key       缓存键
+     * @return 完整的锁键
+     */
+    protected String buildLockKey(String cacheName, Object key) {
         if (key == null) {
             throw new CacheException("Cache key cannot be null");
         }
 
-        String prefix = cacheProperties.keyPrefix();
-
-        return ICacheConstants.CACHE_PREFIX + prefix + cacheName + ICacheConstants.CACHE_SEPARATOR + key;
+        String prefix = cacheProperties.cachePrefix();
+        return ICacheConstants.CACHE_PREFIX + prefix + "lock"
+                + ICacheConstants.CACHE_SEPARATOR + cacheName
+                + ICacheConstants.CACHE_SEPARATOR + key;
     }
 
     /**

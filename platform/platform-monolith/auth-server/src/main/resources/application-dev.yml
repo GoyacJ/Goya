@@ -54,5 +54,3 @@ platform:
   platform-info:
     project-name: goya
     website: ysmjjsy.com
-  cache:
-    type: redis

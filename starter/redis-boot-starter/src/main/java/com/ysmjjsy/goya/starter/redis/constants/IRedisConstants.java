@@ -52,6 +52,11 @@ public interface IRedisConstants {
     String REDIS_TOPIC_PREFIX = REDIS_PREFIX + "topic:";
 
     /**
+     * 缓存失效消息主题
+     */
+    String CACHE_INVALIDATE_TOPIC = REDIS_TOPIC_PREFIX + "cache:invalidate";
+
+    /**
      * Redis 缓存名称前缀
      */
     String REDIS_CACHE_PREFIX = "redis:cache:";
