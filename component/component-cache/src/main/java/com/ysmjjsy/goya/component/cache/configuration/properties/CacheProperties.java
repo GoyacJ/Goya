@@ -31,7 +31,7 @@ public record CacheProperties(
           用于区分不同应用的缓存数据
          */
         @Schema(description = "缓存键前缀", example = "goya:")
-        @DefaultValue("goya")
+        @DefaultValue("goya:")
         String keyPrefix,
         
         /*
