@@ -1,5 +1,6 @@
 package com.ysmjjsy.goya.component.cache.service;
 
+import com.ysmjjsy.goya.component.cache.warmup.ICacheWarmup;
 import jakarta.validation.constraints.NotBlank;
 import org.apache.commons.lang3.ObjectUtils;
 import org.jspecify.annotations.NonNull;
@@ -15,7 +16,7 @@ import java.util.function.Function;
  * @author goya
  * @since 2025/12/21 22:47
  */
-public interface ICacheService {
+public interface ICacheService extends ICacheWarmup {
 
     /**
      * 获取缓存
@@ -151,5 +152,56 @@ public interface ICacheService {
      * @see <a href="https://github.com/alibaba/jetcache/wiki/CacheAPI_CN">JetCache Wiki</a>
      */
     <K> boolean lockAndRun(String cacheName, K key, Duration expire, Runnable action);
+
+    // ==================== 缓存穿透防护（布隆过滤器）====================
+
+    /**
+     * <p>判断 key 是否可能存在（布隆过滤器）</p>
+     * <p>用于防止缓存穿透：快速判断不存在的 key，避免查询数据库</p>
+     * <p>布隆过滤器特性：</p>
+     * <ul>
+     *     <li>返回 false：key 一定不存在</li>
+     *     <li>返回 true：key 可能存在（存在误判率）</li>
+     * </ul>
+     *
+     * @param cacheName 缓存名称
+     * @param key       缓存键
+     * @param <K>       键类型
+     * @return true 可能存在，false 一定不存在
+     */
+    <K> boolean mightContain(String cacheName, K key);
+
+    /**
+     * <p>添加 key 到布隆过滤器</p>
+     * <p>在写入缓存时自动调用，用户通常不需要手动调用</p>
+     *
+     * @param cacheName 缓存名称
+     * @param key       缓存键
+     * @param <K>       键类型
+     */
+    <K> void addToBloomFilter(String cacheName, K key);
+
+    // ==================== 缓存击穿防护（分布式锁）====================
+
+    /**
+     * <p>使用分布式锁获取缓存，防止缓存击穿</p>
+     * <p>适用场景：热点 key 过期时，避免大量并发请求同时打到数据库</p>
+     * <p>实现机制：</p>
+     * <ul>
+     *     <li>先尝试从缓存获取（快速路径）</li>
+     *     <li>未命中时使用分布式锁（仅一个请求加载数据）</li>
+     *     <li>双重检查（DCL）避免重复加载</li>
+     *     <li>结合布隆过滤器防止穿透</li>
+     * </ul>
+     *
+     * @param cacheName   缓存名称
+     * @param key         缓存键
+     * @param lockTimeout 锁超时时间
+     * @param loader      数据加载函数
+     * @param <K>         键类型
+     * @param <V>         值类型
+     * @return 缓存值
+     */
+    <K, V> V getWithLock(String cacheName, K key, Duration lockTimeout, Function<K, V> loader);
 
 }

@@ -2,6 +2,7 @@ package com.ysmjjsy.goya.starter.redis.listener;
 
 import com.ysmjjsy.goya.component.cache.listener.ICacheInvalidateListener;
 import com.ysmjjsy.goya.component.cache.message.CacheInvalidateMessage;
+import com.ysmjjsy.goya.component.cache.model.CacheValue;
 import com.ysmjjsy.goya.component.cache.service.LocalCacheService;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
@@ -63,9 +64,27 @@ public class RedisCacheInvalidateListener implements ICacheInvalidateListener {
             switch (message.type()) {
                 case KEY -> {
                     if (message.cacheName() != null && message.key() != null) {
-                        l1Cache.remove(message.cacheName(), message.key());
-                        log.trace("[Goya] |- starter [redis] |- L1 invalidated key [{}] in cache [{}]",
-                                message.key(), message.cacheName());
+                        if (message.version() != null) {
+                            // 带版本号（更新操作）：比较版本，只有更新时才失效
+                            CacheValue<?> localValue = l1Cache.get(message.cacheName(), message.key());
+                            
+                            if (localValue == null || message.version() > localValue.version()) {
+                                l1Cache.remove(message.cacheName(), message.key());
+                                log.trace("[Goya] |- starter [redis] |- L1 invalidated key [{}] in cache [{}], " +
+                                                "message version: {}, local version: {}",
+                                        message.key(), message.cacheName(), message.version(),
+                                        localValue != null ? localValue.version() : "null");
+                            } else {
+                                log.trace("[Goya] |- starter [redis] |- Skip invalidate key [{}] in cache [{}], " +
+                                                "message version {} <= local version {}",
+                                        message.key(), message.cacheName(), message.version(), localValue.version());
+                            }
+                        } else {
+                            // 无版本号（删除操作）：直接失效
+                            l1Cache.remove(message.cacheName(), message.key());
+                            log.trace("[Goya] |- starter [redis] |- L1 invalidated key [{}] in cache [{}] (delete operation)",
+                                    message.key(), message.cacheName());
+                        }
                     }
                 }
                 case CACHE -> {

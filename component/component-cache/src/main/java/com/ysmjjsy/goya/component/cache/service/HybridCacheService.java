@@ -2,6 +2,7 @@ package com.ysmjjsy.goya.component.cache.service;
 
 import com.ysmjjsy.goya.component.cache.configuration.properties.CacheProperties;
 import com.ysmjjsy.goya.component.cache.message.CacheInvalidateMessage;
+import com.ysmjjsy.goya.component.cache.model.CacheValue;
 import com.ysmjjsy.goya.component.cache.publisher.ICacheInvalidatePublisher;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
@@ -108,25 +109,52 @@ public class HybridCacheService extends AbstractCacheService {
 
     @Override
     protected <K, V> V doGet(String cacheName, K key) {
-        // 1. 查询本地缓存
-        V value = localCache.get(cacheName, key);
-        if (value != null) {
-            log.trace("[Goya] |- Cache |- L1 hit, cache: {}, key: {}", cacheName, key);
-            return value;
-        }
+        // 1. 查询本地缓存（存储的是 CacheValue<V>）
+        CacheValue<V> l1Value = localCache.get(cacheName, key);
 
-        // 2. 本地未命中，查询远程缓存
+        // 2. 查询远程缓存
         if (hasRemoteCache()) {
             try {
-                value = remoteCache.get(cacheName, key);
-                if (value != null) {
-                    // 3. 回填本地缓存
-                    localCache.put(cacheName, key, value, getDefaultTtl());
-                    log.trace("[Goya] |- Cache |- L2 hit, cache: {}, key: {}", cacheName, key);
-                    return value;
+                CacheValue<V> l2Value = remoteCache.get(cacheName, key);
+
+                // 3. 比较版本号，使用较新的值
+                if (l2Value != null && l2Value.isNewerThan(l1Value)) {
+                    // L2 版本更新，回填 L1
+                    localCache.put(cacheName, key, l2Value, getDefaultTtl());
+                    log.trace("[Goya] |- Cache |- L2 hit with newer version, cache: {}, key: {}, version: {}",
+                            cacheName, key, l2Value.version());
+                    return l2Value.value();
+                }
+
+                // L1 版本较新或相同，使用 L1
+                if (l1Value != null) {
+                    log.trace("[Goya] |- Cache |- L1 hit, cache: {}, key: {}, version: {}",
+                            cacheName, key, l1Value.version());
+                    return l1Value.value();
+                }
+
+                // 只有 L2 有值（L1 为 null）
+                if (l2Value != null) {
+                    // 回填 L1
+                    localCache.put(cacheName, key, l2Value, getDefaultTtl());
+                    log.trace("[Goya] |- Cache |- L2 hit, backfill L1, cache: {}, key: {}, version: {}",
+                            cacheName, key, l2Value.version());
+                    return l2Value.value();
                 }
             } catch (Exception e) {
                 markRemoteUnavailable("get", e);
+                // L2 失败，降级使用 L1
+                if (l1Value != null) {
+                    log.debug("[Goya] |- Cache |- L2 failed, fallback to L1, cache: {}, key: {}",
+                            cacheName, key);
+                    return l1Value.value();
+                }
+            }
+        } else {
+            // 没有远程缓存，直接使用 L1
+            if (l1Value != null) {
+                log.trace("[Goya] |- Cache |- L1 hit (no L2), cache: {}, key: {}", cacheName, key);
+                return l1Value.value();
             }
         }
 
@@ -135,39 +163,17 @@ public class HybridCacheService extends AbstractCacheService {
 
     @Override
     protected <K, V> V doGetOrLoad(String cacheName, K key, Function<? super K, ? extends V> mappingFunction) {
-        // 1. 先查询 L1
-        V value = localCache.get(cacheName, key);
+        // 1. 先尝试从缓存获取（使用 doGet，已包含版本号逻辑）
+        V value = doGet(cacheName, key);
         if (value != null) {
             return value;
         }
 
-        // 2. 查询 L2
-        if (hasRemoteCache()) {
-            try {
-                value = remoteCache.get(cacheName, key);
-                if (value != null) {
-                    // 回填 L1
-                    localCache.put(cacheName, key, value, getDefaultTtl());
-                    return value;
-                }
-            } catch (Exception e) {
-                markRemoteUnavailable("getOrLoad", e);
-            }
-        }
-
-        // 3. 加载数据
+        // 2. 缓存未命中，加载数据
         value = mappingFunction.apply(key);
         if (value != null) {
-            // 4. 写入 L1 和 L2
-            localCache.put(cacheName, key, value, getDefaultTtl());
-
-            if (hasRemoteCache()) {
-                try {
-                    remoteCache.put(cacheName, key, value, getDefaultTtl());
-                } catch (Exception e) {
-                    markRemoteUnavailable("getOrLoad-put", e);
-                }
-            }
+            // 3. 写入缓存（使用 doPut，已包含版本号逻辑）
+            doPut(cacheName, key, value, getDefaultTtl());
         }
 
         return value;
@@ -176,27 +182,12 @@ public class HybridCacheService extends AbstractCacheService {
     @Override
     protected <K, V> Map<K, @NonNull V> doGetBatch(String cacheName, Set<? extends K> keys) {
         Map<K, V> result = new HashMap<>();
-        Set<K> l1MissKeys = new HashSet<>(keys);
 
-        // 1. 先从 L1 获取
-        Map<K, V> l1Result = localCache.get(cacheName, keys);
-        result.putAll(l1Result);
-        l1MissKeys.removeAll(l1Result.keySet());
-
-        // 2. L1 未命中的从 L2 获取
-        if (hasRemoteCache() && !l1MissKeys.isEmpty()) {
-            try {
-                Map<K, V> l2Result = remoteCache.get(cacheName, l1MissKeys);
-                result.putAll(l2Result);
-
-                // 回填 L1
-                if (!l2Result.isEmpty()) {
-                    for (Map.Entry<K, V> entry : l2Result.entrySet()) {
-                        localCache.put(cacheName, entry.getKey(), entry.getValue(), getDefaultTtl());
-                    }
-                }
-            } catch (Exception e) {
-                markRemoteUnavailable("getBatch", e);
+        // 逐个处理（使用 doGet，包含版本号比较逻辑）
+        for (K key : keys) {
+            V value = doGet(cacheName, key);
+            if (value != null) {
+                result.put(key, value);
             }
         }
 
@@ -209,54 +200,29 @@ public class HybridCacheService extends AbstractCacheService {
             Set<? extends K> keys,
             Function<? super Set<? extends K>, ? extends Map<? extends K, ? extends @NonNull V>> mappingFunction) {
         Map<K, V> result = new HashMap<>();
-        Set<K> l1MissKeys = new HashSet<>(keys);
+        Set<K> missKeys = new HashSet<>();
 
-        // 1. 先从 L1 获取
-        Map<K, V> l1Result = localCache.get(cacheName, keys);
-        result.putAll(l1Result);
-        l1MissKeys.removeAll(l1Result.keySet());
-
-        Set<K> l2MissKeys = new HashSet<>(l1MissKeys);
-
-        // 2. L1 未命中的从 L2 获取
-        if (hasRemoteCache() && !l1MissKeys.isEmpty()) {
-            try {
-                Map<K, V> l2Result = remoteCache.get(cacheName, l1MissKeys);
-                result.putAll(l2Result);
-                l2MissKeys.removeAll(l2Result.keySet());
-
-                // 回填 L1
-                if (!l2Result.isEmpty()) {
-                    for (Map.Entry<K, V> entry : l2Result.entrySet()) {
-                        localCache.put(cacheName, entry.getKey(), entry.getValue(), getDefaultTtl());
-                    }
-                }
-            } catch (Exception e) {
-                markRemoteUnavailable("getBatchOrLoad", e);
+        // 1. 先尝试从缓存获取
+        for (K key : keys) {
+            V value = doGet(cacheName, key);
+            if (value != null) {
+                result.put(key, value);
+            } else {
+                missKeys.add(key);
             }
         }
 
-        // 3. 加载缺失的值
-        if (!l2MissKeys.isEmpty()) {
-            Map<? extends K, ? extends V> loadedValues = mappingFunction.apply(l2MissKeys);
+        // 2. 加载缺失的值
+        if (!missKeys.isEmpty()) {
+            Map<? extends K, ? extends V> loadedValues = mappingFunction.apply(missKeys);
             if (loadedValues != null && !loadedValues.isEmpty()) {
                 for (Map.Entry<? extends K, ? extends V> entry : loadedValues.entrySet()) {
                     K key = entry.getKey();
                     V value = entry.getValue();
                     if (value != null) {
                         result.put(key, value);
-
-                        // 写入 L1
-                        localCache.put(cacheName, key, value, getDefaultTtl());
-
-                        // 写入 L2
-                        if (hasRemoteCache()) {
-                            try {
-                                remoteCache.put(cacheName, key, value, getDefaultTtl());
-                            } catch (Exception e) {
-                                markRemoteUnavailable("getBatchOrLoad-put", e);
-                            }
-                        }
+                        // 写入缓存（使用 doPut，包含版本号逻辑）
+                        doPut(cacheName, key, value, getDefaultTtl());
                     }
                 }
             }
@@ -267,20 +233,31 @@ public class HybridCacheService extends AbstractCacheService {
 
     @Override
     protected <K, V> void doPut(String cacheName, K key, V value, Duration duration) {
-        // 1. 写入本地
-        localCache.put(cacheName, key, value, duration);
+        // 包装为 CacheValue（带版本号）
+        CacheValue<V> wrappedValue = CacheValue.of(value);
 
-        // 2. 写入远程
+        // 1. 写入本地（存储 CacheValue）
+        localCache.put(cacheName, key, wrappedValue, duration);
+        log.trace("[Goya] |- Cache |- L1 put, cache: {}, key: {}, version: {}",
+                cacheName, key, wrappedValue.version());
+
+        // 2. 写入远程（存储 CacheValue）
         if (hasRemoteCache()) {
             try {
-                remoteCache.put(cacheName, key, value, duration);
+                remoteCache.put(cacheName, key, wrappedValue, duration);
+                log.trace("[Goya] |- Cache |- L2 put, cache: {}, key: {}, version: {}",
+                        cacheName, key, wrappedValue.version());
             } catch (Exception e) {
                 markRemoteUnavailable("put", e);
+                log.warn("[Goya] |- Cache |- L2 put failed, only L1 cached, cache: {}, key: {}, version: {}",
+                        cacheName, key, wrappedValue.version());
             }
         }
 
-        // 3. 发布失效消息
-        publishInvalidateMessage(cacheName, key);
+        // 3. 发布失效消息（携带版本号）
+        publishInvalidateMessage(
+                CacheInvalidateMessage.ofKey(cacheName, key, nodeId, wrappedValue.version())
+        );
     }
 
     @Override
@@ -300,8 +277,10 @@ public class HybridCacheService extends AbstractCacheService {
             }
         }
 
-        // 3. 发布失效消息
-        publishInvalidateMessage(cacheName, key);
+        // 3. 发布失效消息（删除操作不需要版本号）
+        publishInvalidateMessage(
+                CacheInvalidateMessage.ofKey(cacheName, key, nodeId)
+        );
 
         return result;
     }
@@ -320,9 +299,11 @@ public class HybridCacheService extends AbstractCacheService {
             }
         }
 
-        // 3. 发布失效消息（批量）
+        // 3. 发布失效消息（批量）（删除操作不需要版本号）
         for (K key : keys) {
-            publishInvalidateMessage(cacheName, key);
+            publishInvalidateMessage(
+                    CacheInvalidateMessage.ofKey(cacheName, key, nodeId)
+            );
         }
     }
 
@@ -398,13 +379,45 @@ public class HybridCacheService extends AbstractCacheService {
         return localCache.lockAndRun(cacheName, key, expire, action);
     }
 
+    @Override
+    public <K> boolean mightContain(String cacheName, K key) {
+        // 优先查询 L2 布隆过滤器（分布式，更准确）
+        if (hasRemoteCache()) {
+            try {
+                return remoteCache.mightContain(cacheName, key);
+            } catch (Exception e) {
+                log.warn("[Goya] |- Cache |- L2 bloom filter check failed, fallback to L1", e);
+            }
+        }
+
+        // 降级到 L1 本地布隆过滤器
+        return localCache.mightContain(cacheName, key);
+    }
+
+    @Override
+    public <K> void addToBloomFilter(String cacheName, K key) {
+        // 同时添加到 L1 和 L2 布隆过滤器
+        localCache.addToBloomFilter(cacheName, key);
+
+        if (hasRemoteCache()) {
+            try {
+                remoteCache.addToBloomFilter(cacheName, key);
+            } catch (Exception e) {
+                log.warn("[Goya] |- Cache |- Failed to add to L2 bloom filter", e);
+            }
+        }
+    }
+
     /**
      * 发布失效消息（不抛出异常）
      */
-    private void publishInvalidateMessage(String cacheName, Object key) {
+    /**
+     * 发布失效消息
+     */
+    private void publishInvalidateMessage(CacheInvalidateMessage message) {
         if (publisher != null) {
             try {
-                publisher.publish(CacheInvalidateMessage.ofKey(cacheName, key, nodeId));
+                publisher.publish(message);
             } catch (Exception e) {
                 log.warn("[Goya] |- Cache |- Failed to publish invalidate message", e);
             }

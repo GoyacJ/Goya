@@ -2,10 +2,13 @@ package com.ysmjjsy.goya.component.cache.service;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.google.common.hash.BloomFilter;
+import com.google.common.hash.Funnels;
 import com.ysmjjsy.goya.component.cache.configuration.properties.CacheProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -68,6 +71,12 @@ public class LocalCacheService extends AbstractCacheService {
      * Key: lockKey, Value: ReentrantLock 实例
      */
     private final Map<String, Lock> lockMap = new ConcurrentHashMap<>();
+
+    /**
+     * 布隆过滤器映射（防止缓存穿透）
+     * Key: cacheName, Value: BloomFilter 实例
+     */
+    private final Map<String, BloomFilter<byte[]>> bloomFilters = new ConcurrentHashMap<>();
 
     public LocalCacheService(CacheProperties cacheProperties) {
         super(cacheProperties);
@@ -201,6 +210,10 @@ public class LocalCacheService extends AbstractCacheService {
         try {
             Cache<Object, Object> cache = getOrCreateCache(cacheName, duration);
             cache.put(key, value);
+
+            // 自动添加到布隆过滤器
+            addToBloomFilter(cacheName, key);
+
             log.trace("[Goya] |- Cache |- Local cache [{}] put key [{}]", cacheName, key);
         } catch (Exception e) {
             handleException("put", cacheName, e);
@@ -316,6 +329,67 @@ public class LocalCacheService extends AbstractCacheService {
             return cache.stats().toString();
         }
         return null;
+    }
+
+    // ==================== 布隆过滤器实现（防止缓存穿透）====================
+
+    /**
+     * 获取或创建布隆过滤器
+     *
+     * @param cacheName 缓存名称
+     * @return BloomFilter 实例
+     */
+    private BloomFilter<byte[]> getOrCreateBloomFilter(String cacheName) {
+        String prefixedName = buildCachePrefix(cacheName);
+        return bloomFilters.computeIfAbsent(prefixedName, name -> {
+            int expectedInsertions = cacheProperties.caffeineMaxSize();
+            double fpp = 0.01; // 1% 误判率
+
+            BloomFilter<byte[]> filter = BloomFilter.create(
+                    Funnels.byteArrayFunnel(),
+                    expectedInsertions,
+                    fpp
+            );
+
+            log.debug("[Goya] |- Cache |- Bloom filter created for cache [{}], expected {} insertions, fpp {}",
+                    name, expectedInsertions, fpp);
+            return filter;
+        });
+    }
+
+    @Override
+    public <K> boolean mightContain(String cacheName, K key) {
+        String prefixedName = buildCachePrefix(cacheName);
+        BloomFilter<byte[]> filter = bloomFilters.get(prefixedName);
+        if (filter == null) {
+            // 过滤器不存在，假设可能存在（保守策略）
+            return true;
+        }
+
+        byte[] keyBytes = serializeKey(key);
+        return filter.mightContain(keyBytes);
+    }
+
+    @Override
+    public <K> void addToBloomFilter(String cacheName, K key) {
+        try {
+            BloomFilter<byte[]> filter = getOrCreateBloomFilter(cacheName);
+            byte[] keyBytes = serializeKey(key);
+            filter.put(keyBytes);
+            log.trace("[Goya] |- Cache |- Key [{}] added to bloom filter for cache [{}]", key, cacheName);
+        } catch (Exception e) {
+            log.warn("[Goya] |- Cache |- Failed to add key to bloom filter: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * 序列化 key（简单实现）
+     *
+     * @param key 缓存键
+     * @return 序列化后的字节数组
+     */
+    private byte[] serializeKey(Object key) {
+        return String.valueOf(key).getBytes(StandardCharsets.UTF_8);
     }
 }
 

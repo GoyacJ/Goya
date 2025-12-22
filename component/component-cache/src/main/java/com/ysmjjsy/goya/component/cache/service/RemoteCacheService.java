@@ -128,6 +128,16 @@ public class RemoteCacheService extends AbstractCacheService {
         return delegate.lockAndRun(cacheName, key, expire, action);
     }
 
+    @Override
+    public <K> boolean mightContain(String cacheName, K key) {
+        return delegate.mightContain(cacheName, key);
+    }
+
+    @Override
+    public <K> void addToBloomFilter(String cacheName, K key) {
+        delegate.addToBloomFilter(cacheName, key);
+    }
+
     /**
      * 清空所有缓存
      */

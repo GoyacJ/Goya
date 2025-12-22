@@ -11,7 +11,11 @@ import org.jspecify.annotations.NonNull;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * <p>缓存服务抽象基类</p>
@@ -73,6 +77,34 @@ public abstract class AbstractCacheService implements ICacheService {
      */
     protected Duration getDefaultTtl() {
         return cacheProperties.defaultTtl();
+    }
+
+    /**
+     * <p>获取随机化的 TTL（防止缓存雪崩）</p>
+     * <p>在基础 TTL 上增加 ±10% 的随机抖动，避免大量 key 同时过期</p>
+     * <p>使用场景：批量数据预热、定时任务刷新缓存</p>
+     * 
+     * <p>示例：</p>
+     * <ul>
+     *     <li>输入 TTL: 60秒</li>
+     *     <li>输出 TTL: 54-66秒之间的随机值</li>
+     * </ul>
+     *
+     * @param baseTtl 基础 TTL
+     * @return 随机化后的 TTL（最小 1 秒）
+     */
+    protected Duration getRandomizedTtl(Duration baseTtl) {
+        long baseMillis = baseTtl.toMillis();
+
+        // 计算抖动范围：±10%
+        long jitter = ThreadLocalRandom.current().nextLong(
+                -baseMillis / 10,      // -10%
+                baseMillis / 10 + 1    // +10%
+        );
+
+        long finalMillis = baseMillis + jitter;
+        // 确保最小 1 秒
+        return Duration.ofMillis(Math.max(1000, finalMillis));
     }
 
     /**
@@ -154,7 +186,9 @@ public abstract class AbstractCacheService implements ICacheService {
     @Override
     public <K, V> void put(String cacheName, @NotBlank K key, V value) {
         validateCacheNameAndKey(cacheName, key);
-        doPut(cacheName, key, value, getDefaultTtl());
+        // 使用随机 TTL 防止缓存雪崩
+        Duration randomizedTtl = getRandomizedTtl(getDefaultTtl());
+        doPut(cacheName, key, value, randomizedTtl);
     }
 
     @Override
@@ -206,6 +240,70 @@ public abstract class AbstractCacheService implements ICacheService {
             throw new CacheException("Action cannot be null");
         }
         return doLockAndRun(cacheName, key, expire, action);
+    }
+
+    @Override
+    public <K, V> V getWithLock(String cacheName, K key, Duration lockTimeout, Function<K, V> loader) {
+        validateCacheNameAndKey(cacheName, key);
+        if (lockTimeout == null || lockTimeout.isNegative()) {
+            throw new CacheException("Lock timeout must be positive");
+        }
+        if (loader == null) {
+            throw new CacheException("Loader function cannot be null");
+        }
+
+        // 1. 先尝试从缓存获取（快速路径）
+        V value = get(cacheName, key);
+        if (value != null) {
+            log.trace("[Goya] |- Cache |- getWithLock cache hit for key [{}] in cache [{}]", key, cacheName);
+            return value;
+        }
+
+        // 2. 布隆过滤器检查（防止穿透）
+        try {
+            if (!mightContain(cacheName, key)) {
+                log.debug("[Goya] |- Cache |- Key [{}] not in bloom filter for cache [{}], skip loading",
+                        key, cacheName);
+                return null;
+            }
+        } catch (UnsupportedOperationException e) {
+            // 子类未实现布隆过滤器，跳过检查
+            log.trace("[Goya] |- Cache |- Bloom filter not supported, skip check");
+        }
+
+        // 3. 使用分布式锁加载数据（防止击穿）
+        AtomicReference<V> result = new AtomicReference<>();
+        boolean success = lockAndRun(cacheName, key, lockTimeout, () -> {
+            // 双重检查（DCL）- 可能其他线程已经加载
+            V doubleCheck = get(cacheName, key);
+            if (doubleCheck != null) {
+                result.set(doubleCheck);
+                log.trace("[Goya] |- Cache |- DCL cache hit for key [{}] in cache [{}]", key, cacheName);
+                return;
+            }
+
+            // 加载数据
+            log.debug("[Goya] |- Cache |- Loading data for key [{}] in cache [{}]", key, cacheName);
+            V loaded = loader.apply(key);
+            if (loaded != null) {
+                // 缓存加载的数据（使用随机 TTL 防止雪崩）
+                Duration ttl = getRandomizedTtl(getDefaultTtl());
+                put(cacheName, key, loaded, ttl);
+                result.set(loaded);
+                log.debug("[Goya] |- Cache |- Data loaded and cached for key [{}]", key);
+            } else {
+                // 空值也缓存，防止穿透（短 TTL）
+                Duration shortTtl = Duration.ofMinutes(1);
+                put(cacheName, key, null, shortTtl);
+                log.debug("[Goya] |- Cache |- Null value cached for key [{}] with short TTL", key);
+            }
+        });
+
+        if (!success) {
+            log.warn("[Goya] |- Cache |- Failed to acquire lock for key [{}] in cache [{}]", key, cacheName);
+        }
+
+        return result.get();
     }
 
     /* ---------- 抽象方法，由子类实现 ---------- */
@@ -323,5 +421,64 @@ public abstract class AbstractCacheService implements ICacheService {
      * @return 是否执行成功
      */
     protected abstract <K> boolean doLockAndRun(String cacheName, K key, Duration expire, Runnable action);
+
+    // ==================== 缓存预热与刷新（ICacheWarmup 实现）====================
+
+    @Override
+    public <K, V> void warmup(String cacheName, Map<K, V> data) {
+        if (data == null || data.isEmpty()) {
+            log.warn("[Goya] |- Cache |- Warmup data is empty for cache [{}]", cacheName);
+            return;
+        }
+
+        log.info("[Goya] |- Cache |- Starting warmup for cache [{}] with {} entries",
+                cacheName, data.size());
+
+        long startTime = System.currentTimeMillis();
+        Duration ttl = getRandomizedTtl(getDefaultTtl());
+
+        // 批量写入（使用随机 TTL 防止雪崩）
+        for (Map.Entry<K, V> entry : data.entrySet()) {
+            put(cacheName, entry.getKey(), entry.getValue(), ttl);
+            // 添加到布隆过滤器（如果实现了）
+            try {
+                addToBloomFilter(cacheName, entry.getKey());
+            } catch (UnsupportedOperationException e) {
+                // 子类未实现布隆过滤器，忽略
+            }
+        }
+
+        long elapsed = System.currentTimeMillis() - startTime;
+        log.info("[Goya] |- Cache |- Warmup completed for cache [{}], {} entries in {}ms",
+                cacheName, data.size(), elapsed);
+    }
+
+    @Override
+    public <K, V> void refreshAsync(String cacheName, K key, Function<K, V> loader) {
+        CompletableFuture.runAsync(() -> {
+            try {
+                log.debug("[Goya] |- Cache |- Starting async refresh for key [{}] in cache [{}]",
+                        key, cacheName);
+
+                V value = loader.apply(key);
+                if (value != null) {
+                    put(cacheName, key, value);
+                    log.debug("[Goya] |- Cache |- Async refresh completed for key [{}]", key);
+                } else {
+                    log.debug("[Goya] |- Cache |- Async refresh returned null for key [{}], skip caching", key);
+                }
+            } catch (Exception e) {
+                log.error("[Goya] |- Cache |- Async refresh failed for key [{}] in cache [{}]: {}",
+                        key, cacheName, e.getMessage(), e);
+            }
+        });
+    }
+
+    @Override
+    public <K, V> void scheduleRefresh(String cacheName, Duration interval, Supplier<Map<K, V>> loader) {
+        log.warn("[Goya] |- Cache |- scheduleRefresh not implemented yet for cache [{}]", cacheName);
+        // TODO: 实现定时刷新功能，需要使用 ScheduledExecutorService
+        // 当前计划中不包含此功能的完整实现
+    }
 }
 

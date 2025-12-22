@@ -68,7 +68,8 @@ public record CacheInvalidateMessage(
     }
 
     /**
-     * 创建单个键失效消息
+     * 创建单个键失效消息（无版本号）
+     * <p>用于删除操作，无需版本号比较，直接失效所有节点的缓存</p>
      *
      * @param cacheName 缓存名称
      * @param key       缓存键
@@ -88,11 +89,12 @@ public record CacheInvalidateMessage(
 
     /**
      * 创建单个键失效消息（带版本号）
+     * <p>用于更新操作，携带版本号，监听器会比较版本号后决定是否失效本地缓存</p>
      *
      * @param cacheName 缓存名称
      * @param key       缓存键
      * @param nodeId    节点 ID
-     * @param version   版本号
+     * @param version   版本号（纳秒时间戳）
      * @return 失效消息
      */
     public static CacheInvalidateMessage ofKey(String cacheName, Object key, String nodeId, long version) {

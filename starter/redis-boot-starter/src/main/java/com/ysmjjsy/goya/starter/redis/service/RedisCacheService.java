@@ -6,12 +6,16 @@ import com.ysmjjsy.goya.component.cache.service.IL2Cache;
 import com.ysmjjsy.goya.starter.redis.configuration.properties.RedisProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
+import org.redisson.api.RBatch;
+import org.redisson.api.RBloomFilter;
 import org.redisson.api.RLock;
 import org.redisson.api.RMapCache;
+import org.redisson.api.RMapCacheAsync;
 import org.redisson.api.RedissonClient;
 
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -141,19 +145,28 @@ public class RedisCacheService extends AbstractCacheService implements IL2Cache 
 
     @Override
     protected <K, V> Map<K, @NonNull V> doGetBatch(String cacheName, Set<? extends K> keys) {
+        if (keys.isEmpty()) {
+            return Map.of();
+        }
+
         try {
             RMapCache<K, V> mapCache = getMapCache(cacheName);
-            Map<K, V> result = new HashMap<>();
 
-            for (K key : keys) {
-                V value = mapCache.get(key);
-                if (value != null) {
-                    result.put(key, value);
-                }
-            }
+            // 类型转换：Set<? extends K> -> Set<K>（用于 Redisson API）
+            @SuppressWarnings("unchecked")
+            Set<K> keysSet = new HashSet<>(keys);
 
-            log.trace("[Goya] |- starter [redis] |- redis cache [{}] get batch keys [{}]",
-                    cacheName, keys.size());
+            // 使用 Redisson 的批量操作（底层使用 MGET，一次网络调用）
+            Map<K, V> allValues = mapCache.getAll(keysSet);
+
+            // 过滤 null 值
+            Map<K, V> result = allValues.entrySet().stream()
+                    .filter(e -> e.getValue() != null)
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+            log.trace("[Goya] |- starter [redis] |- redis batch get {} keys from cache [{}], found {}",
+                    keys.size(), cacheName, result.size());
+
             return result;
         } catch (Exception e) {
             handleException("getBatch", cacheName, e);
@@ -215,6 +228,10 @@ public class RedisCacheService extends AbstractCacheService implements IL2Cache 
             RMapCache<K, V> mapCache = getMapCache(cacheName);
             long ttlMillis = duration.toMillis();
             mapCache.put(key, value, ttlMillis, TimeUnit.MILLISECONDS);
+
+            // 自动添加到布隆过滤器
+            addToBloomFilter(cacheName, key);
+
             log.trace("[Goya] |- starter [redis] |- redis cache [{}] put key [{}] with ttl [{}]",
                     cacheName, key, duration);
         } catch (Exception e) {
@@ -367,5 +384,92 @@ public class RedisCacheService extends AbstractCacheService implements IL2Cache 
      */
     public RedissonClient getRedissonClient() {
         return redissonClient;
+    }
+
+    // ==================== 批量操作优化（使用 Pipeline）====================
+
+    /**
+     * <p>批量写入（使用 Pipeline 优化）</p>
+     * <p>将多个写入操作打包为一次网络调用，显著提升批量写入性能</p>
+     *
+     * @param cacheName 缓存名称
+     * @param entries   要写入的键值对
+     * @param duration  过期时间
+     * @param <K>       键类型
+     * @param <V>       值类型
+     */
+    public <K, V> void putBatch(String cacheName, Map<K, V> entries, Duration duration) {
+        if (entries == null || entries.isEmpty()) {
+            return;
+        }
+
+        try {
+            // 创建批处理（Pipeline）
+            RBatch batch = redissonClient.createBatch();
+            String prefixedName = buildCachePrefix(cacheName);
+            RMapCacheAsync<K, V> asyncMapCache = batch.getMapCache(prefixedName);
+
+            long ttlMillis = duration.toMillis();
+
+            // 批量写入（所有操作打包为一次网络调用）
+            for (Map.Entry<K, V> entry : entries.entrySet()) {
+                asyncMapCache.putAsync(entry.getKey(), entry.getValue(), ttlMillis, TimeUnit.MILLISECONDS);
+            }
+
+            // 执行批处理（一次性发送所有命令）
+            batch.execute();
+
+            log.trace("[Goya] |- starter [redis] |- redis batch put {} entries to cache [{}]",
+                    entries.size(), cacheName);
+        } catch (Exception e) {
+            log.error("[Goya] |- starter [redis] |- redis cache [{}] batch put failed", cacheName, e);
+        }
+    }
+
+    // ==================== 布隆过滤器实现（防止缓存穿透）====================
+
+    @Override
+    public <K> boolean mightContain(String cacheName, K key) {
+        try {
+            String filterName = buildCachePrefix(cacheName) + "bloom";
+            RBloomFilter<Object> filter = redissonClient.getBloomFilter(filterName);
+
+            if (!filter.isExists()) {
+                // 过滤器不存在，假设可能存在（保守策略）
+                return true;
+            }
+
+            return filter.contains(key);
+        } catch (Exception e) {
+            log.warn("[Goya] |- starter [redis] |- Bloom filter check failed for key [{}]: {}",
+                    key, e.getMessage());
+            // 出错时假设可能存在（保守策略，避免误杀）
+            return true;
+        }
+    }
+
+    @Override
+    public <K> void addToBloomFilter(String cacheName, K key) {
+        try {
+            String filterName = buildCachePrefix(cacheName) + "bloom";
+            RBloomFilter<Object> filter = redissonClient.getBloomFilter(filterName);
+
+            // 初始化过滤器（如果未初始化）
+            if (!filter.isExists()) {
+                long expectedInsertions = 100000L; // 预期 10 万元素
+                double fpp = 0.01; // 1% 误判率
+                filter.tryInit(expectedInsertions, fpp);
+                log.debug("[Goya] |- starter [redis] |- Bloom filter initialized for cache [{}], " +
+                                "expected {} insertions, fpp {}",
+                        cacheName, expectedInsertions, fpp);
+            }
+
+            filter.add(key);
+            log.trace("[Goya] |- starter [redis] |- Key [{}] added to bloom filter for cache [{}]",
+                    key, cacheName);
+        } catch (Exception e) {
+            log.warn("[Goya] |- starter [redis] |- Failed to add key [{}] to bloom filter: {}",
+                    key, e.getMessage());
+        }
     }
 }

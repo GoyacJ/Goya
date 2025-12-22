@@ -2,6 +2,7 @@ package com.ysmjjsy.goya.component.cache.configuration.properties;
 
 import com.ysmjjsy.goya.component.cache.constants.ICacheConstants;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
@@ -15,6 +16,7 @@ import java.time.Duration;
  * @since 2025/12/22
  * @see ICacheConstants
  */
+@Slf4j
 @Schema(description = "缓存配置属性")
 @ConfigurationProperties(prefix = ICacheConstants.PROPERTY_CACHE)
 public record CacheProperties(
@@ -64,6 +66,19 @@ public record CacheProperties(
 ) {
 
     /**
+     * <p>规范化构造器：确保 L1 TTL ≤ L2 TTL</p>
+     * <p>防止 L1 TTL 超过 L2 TTL，避免频繁回填导致性能下降</p>
+     */
+    public CacheProperties {
+        // 如果 caffeineTtl 大于 defaultTtl，强制调整为 defaultTtl
+        if (caffeineTtl != null && caffeineTtl.compareTo(defaultTtl) > 0) {
+            log.warn("[Goya] |- Cache |- caffeineTtl ({}) > defaultTtl ({}), force adjust to defaultTtl",
+                    caffeineTtl, defaultTtl);
+            caffeineTtl = defaultTtl;
+        }
+    }
+
+    /**
      * 获取 Caffeine 最大容量，提供默认值
      *
      * @return Caffeine 最大容量
@@ -73,12 +88,17 @@ public record CacheProperties(
     }
 
     /**
-     * 获取 Caffeine TTL，提供默认值
+     * <p>获取 Caffeine TTL，确保不超过 L2 TTL</p>
+     * <p>双重保证机制：构造器验证 + 访问器验证</p>
      *
      * @return Caffeine TTL
      */
     public Duration caffeineTtl() {
-        return caffeineTtl != null ? caffeineTtl : defaultTtl;
+        if (caffeineTtl == null) {
+            return defaultTtl;
+        }
+        // 双重保证：即使构造器验证失败，这里也会兜底
+        return caffeineTtl.compareTo(defaultTtl) <= 0 ? caffeineTtl : defaultTtl;
     }
 
     /**
