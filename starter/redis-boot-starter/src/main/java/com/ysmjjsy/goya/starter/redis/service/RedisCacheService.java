@@ -475,8 +475,10 @@ public class RedisCacheService implements IL2Cache {
 
             // 初始化过滤器（如果未初始化）
             if (!filter.isExists()) {
-                long expectedInsertions = 100000L; // 预期 10 万元素
-                double fpp = 0.01; // 1% 误判率
+                // 预期 10 万元素
+                long expectedInsertions = 100000L;
+                // 1% 误判率
+                double fpp = 0.01;
                 filter.tryInit(expectedInsertions, fpp);
                 log.debug("[Goya] |- starter [redis] |- Bloom filter initialized for cache [{}], " +
                                 "expected {} insertions, fpp {}",

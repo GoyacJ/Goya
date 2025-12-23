@@ -178,8 +178,7 @@ public abstract class AbstractCacheService implements ICacheService {
         Map<K, V> result = doGetBatch(cacheName, keys);
         // 过滤空值哨兵
         result.entrySet().removeIf(entry -> CacheNullValue.isNullValue(entry.getValue()));
-        Map<K, @NonNull V> nonNullResult = result;
-        return nonNullResult;
+        return result;
     }
 
     @Override
@@ -194,9 +193,7 @@ public abstract class AbstractCacheService implements ICacheService {
         Map<K, V> result = doGetBatchOrLoad(cacheName, keys, mappingFunction);
         // 过滤空值哨兵
         result.entrySet().removeIf(entry -> CacheNullValue.isNullValue(entry.getValue()));
-        @SuppressWarnings("unchecked")
-        Map<K, @NonNull V> nonNullResult = (Map<K, @NonNull V>) result;
-        return nonNullResult;
+        return result;
     }
 
     @Override
