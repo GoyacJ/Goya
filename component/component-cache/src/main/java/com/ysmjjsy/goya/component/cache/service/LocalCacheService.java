@@ -94,7 +94,7 @@ public class LocalCacheService extends AbstractCacheService {
         String prefixedName = buildCachePrefix(cacheName);
         return cacheMap.computeIfAbsent(prefixedName, name -> {
             // 使用配置的 Caffeine 参数
-            Integer maxSize = cacheProperties.caffeineMaxSize() != null
+            int maxSize = cacheProperties.caffeineMaxSize() != null
                     ? cacheProperties.caffeineMaxSize()
                     : 10000;
 

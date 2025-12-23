@@ -1,9 +1,9 @@
 package com.ysmjjsy.goya.component.cache.service;
 
 import com.ysmjjsy.goya.component.cache.configuration.properties.CacheProperties;
-import com.ysmjjsy.goya.component.cache.constants.ICacheConstants;
 import com.ysmjjsy.goya.component.cache.exception.CacheException;
 import com.ysmjjsy.goya.component.cache.model.CacheNullValue;
+import jakarta.annotation.PreDestroy;
 import jakarta.validation.constraints.NotBlank;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -12,8 +12,7 @@ import org.jspecify.annotations.NonNull;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -31,8 +30,24 @@ public abstract class AbstractCacheService implements ICacheService {
 
     protected final CacheProperties cacheProperties;
 
+    /**
+     * 定时刷新任务调度器
+     */
+    private final ScheduledExecutorService scheduledExecutor;
+
+    /**
+     * 已调度的刷新任务
+     * Key: cacheName, Value: ScheduledFuture
+     */
+    private final Map<String, ScheduledFuture<?>> scheduledTasks = new ConcurrentHashMap<>();
+
     protected AbstractCacheService(CacheProperties cacheProperties) {
         this.cacheProperties = cacheProperties;
+        // 创建调度器（使用虚拟线程友好的线程池）
+        this.scheduledExecutor = Executors.newScheduledThreadPool(
+                2,
+                r -> Thread.ofVirtual().name("cache-refresh-", 0).unstarted(r)
+        );
     }
 
     /**
@@ -43,13 +58,7 @@ public abstract class AbstractCacheService implements ICacheService {
      * @return 完整的缓存键
      */
     protected String buildCachePrefix(String cacheName) {
-        if (StringUtils.isBlank(cacheName)) {
-            throw new CacheException("Cache name cannot be blank");
-        }
-
-        String prefix = cacheProperties.cachePrefix();
-
-        return ICacheConstants.CACHE_PREFIX + prefix + cacheName + ICacheConstants.CACHE_SEPARATOR;
+        return cacheProperties.buildCachePrefix(cacheName);
     }
 
     /**
@@ -61,14 +70,7 @@ public abstract class AbstractCacheService implements ICacheService {
      * @return 完整的锁键
      */
     protected String buildLockKey(String cacheName, Object key) {
-        if (key == null) {
-            throw new CacheException("Cache key cannot be null");
-        }
-
-        String prefix = cacheProperties.cachePrefix();
-        return ICacheConstants.CACHE_PREFIX + prefix + "lock"
-                + ICacheConstants.CACHE_SEPARATOR + cacheName
-                + ICacheConstants.CACHE_SEPARATOR + key;
+        return cacheProperties.buildLockKey(cacheName, key);
     }
 
     /**
@@ -84,7 +86,7 @@ public abstract class AbstractCacheService implements ICacheService {
      * <p>获取随机化的 TTL（防止缓存雪崩）</p>
      * <p>在基础 TTL 上增加 ±10% 的随机抖动，避免大量 key 同时过期</p>
      * <p>使用场景：批量数据预热、定时任务刷新缓存</p>
-     * 
+     *
      * <p>示例：</p>
      * <ul>
      *     <li>输入 TTL: 60秒</li>
@@ -99,8 +101,8 @@ public abstract class AbstractCacheService implements ICacheService {
 
         // 计算抖动范围：±10%
         long jitter = ThreadLocalRandom.current().nextLong(
-                -baseMillis / 10,      // -10%
-                baseMillis / 10 + 1    // +10%
+                -baseMillis / 10,
+                baseMillis / 10 + 1
         );
 
         long finalMillis = baseMillis + jitter;
@@ -176,8 +178,7 @@ public abstract class AbstractCacheService implements ICacheService {
         Map<K, V> result = doGetBatch(cacheName, keys);
         // 过滤空值哨兵
         result.entrySet().removeIf(entry -> CacheNullValue.isNullValue(entry.getValue()));
-        @SuppressWarnings("unchecked")
-        Map<K, @NonNull V> nonNullResult = (Map<K, @NonNull V>) result;
+        Map<K, @NonNull V> nonNullResult = result;
         return nonNullResult;
     }
 
@@ -473,9 +474,84 @@ public abstract class AbstractCacheService implements ICacheService {
 
     @Override
     public <K, V> void scheduleRefresh(String cacheName, Duration interval, Supplier<Map<K, V>> loader) {
-        log.warn("[Goya] |- Cache |- scheduleRefresh not implemented yet for cache [{}]", cacheName);
-        // TODO: 实现定时刷新功能，需要使用 ScheduledExecutorService
-        // 当前计划中不包含此功能的完整实现
+        if (StringUtils.isBlank(cacheName)) {
+            throw new CacheException("Cache name cannot be blank");
+        }
+        if (interval == null || interval.isNegative() || interval.isZero()) {
+            throw new CacheException("Refresh interval must be positive");
+        }
+        if (loader == null) {
+            throw new CacheException("Loader cannot be null");
+        }
+
+        // 取消已存在的任务
+        ScheduledFuture<?> existingTask = scheduledTasks.get(cacheName);
+        if (existingTask != null && !existingTask.isDone()) {
+            existingTask.cancel(false);
+            log.info("[Goya] |- Cache |- Cancelled existing refresh task for cache [{}]", cacheName);
+        }
+
+        // 创建新的定时刷新任务
+        Runnable refreshTask = () -> {
+            try {
+                log.debug("[Goya] |- Cache |- Starting scheduled refresh for cache [{}]", cacheName);
+                Map<K, V> data = loader.get();
+                if (data != null && !data.isEmpty()) {
+                    warmup(cacheName, data);
+                    log.info("[Goya] |- Cache |- Scheduled refresh completed for cache [{}], {} entries refreshed",
+                            cacheName, data.size());
+                } else {
+                    log.warn("[Goya] |- Cache |- Scheduled refresh returned empty data for cache [{}]", cacheName);
+                }
+            } catch (Exception e) {
+                log.error("[Goya] |- Cache |- Scheduled refresh failed for cache [{}]", cacheName, e);
+            }
+        };
+
+        // 调度任务（固定间隔）
+        ScheduledFuture<?> future = scheduledExecutor.scheduleAtFixedRate(
+                refreshTask,
+                interval.toMillis(),  // 初始延迟（等一个间隔后再执行）
+                interval.toMillis(),  // 执行间隔
+                TimeUnit.MILLISECONDS
+        );
+
+        scheduledTasks.put(cacheName, future);
+        log.info("[Goya] |- Cache |- Scheduled refresh task registered for cache [{}], interval: {}",
+                cacheName, interval);
+    }
+
+    /**
+     * <p>优雅关闭定时刷新调度器</p>
+     * <p>停止所有已调度的刷新任务，并等待当前任务完成</p>
+     * <p>Spring 容器销毁时自动调用</p>
+     */
+    @PreDestroy
+    public void shutdown() {
+        log.info("[Goya] |- Cache |- Shutting down cache refresh scheduler...");
+
+        // 取消所有已调度的任务
+        scheduledTasks.values().forEach(future -> {
+            if (!future.isDone()) {
+                future.cancel(false);
+            }
+        });
+        scheduledTasks.clear();
+
+        // 关闭调度器
+        scheduledExecutor.shutdown();
+        try {
+            if (!scheduledExecutor.awaitTermination(10, TimeUnit.SECONDS)) {
+                log.warn("[Goya] |- Cache |- Scheduler did not terminate in time, forcing shutdown");
+                scheduledExecutor.shutdownNow();
+            } else {
+                log.info("[Goya] |- Cache |- Cache refresh scheduler stopped gracefully");
+            }
+        } catch (InterruptedException e) {
+            log.error("[Goya] |- Cache |- Interrupted while waiting for scheduler shutdown", e);
+            scheduledExecutor.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
     }
 }
 

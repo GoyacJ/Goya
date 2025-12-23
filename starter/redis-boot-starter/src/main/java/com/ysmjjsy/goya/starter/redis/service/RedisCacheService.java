@@ -4,14 +4,8 @@ import com.ysmjjsy.goya.component.cache.configuration.properties.CacheProperties
 import com.ysmjjsy.goya.component.cache.service.IL2Cache;
 import com.ysmjjsy.goya.starter.redis.configuration.properties.RedisProperties;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.NonNull;
-import org.redisson.api.RBatch;
-import org.redisson.api.RBloomFilter;
-import org.redisson.api.RLock;
-import org.redisson.api.RMapCache;
-import org.redisson.api.RMapCacheAsync;
-import org.redisson.api.RedissonClient;
+import org.redisson.api.*;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -94,16 +88,7 @@ public class RedisCacheService implements IL2Cache {
      * @return 完整缓存前缀
      */
     private String buildCachePrefix(String cacheName) {
-        if (StringUtils.isBlank(cacheName)) {
-            throw new IllegalArgumentException("cacheName must not be blank");
-        }
-
-        String prefix = cacheProperties.cachePrefix();
-        if (StringUtils.isBlank(prefix)) {
-            prefix = "cache:";
-        }
-
-        return prefix + cacheName + ":";
+        return cacheProperties.buildCachePrefix(cacheName);
     }
 
     /**
@@ -115,19 +100,7 @@ public class RedisCacheService implements IL2Cache {
      * @return 锁键
      */
     private String buildLockKey(String cacheName, Object key) {
-        if (StringUtils.isBlank(cacheName)) {
-            throw new IllegalArgumentException("cacheName must not be blank");
-        }
-        if (key == null) {
-            throw new IllegalArgumentException("key must not be null");
-        }
-
-        String prefix = cacheProperties.cachePrefix();
-        if (StringUtils.isBlank(prefix)) {
-            prefix = "cache:";
-        }
-
-        return prefix + "lock:" + cacheName + ":" + key;
+        return cacheProperties.buildLockKey(cacheName, key);
     }
 
     /**

@@ -1,8 +1,10 @@
 package com.ysmjjsy.goya.component.cache.configuration.properties;
 
 import com.ysmjjsy.goya.component.cache.constants.ICacheConstants;
+import com.ysmjjsy.goya.component.cache.exception.CacheException;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
@@ -13,8 +15,8 @@ import java.time.Duration;
  * <p>支持配置键前缀、默认过期时间、本地缓存参数等</p>
  *
  * @author goya
- * @since 2025/12/22
  * @see ICacheConstants
+ * @since 2025/12/22
  */
 @Slf4j
 @Schema(description = "缓存配置属性")
@@ -108,5 +110,37 @@ public record CacheProperties(
      */
     public String invalidateTopic() {
         return invalidateTopic != null ? invalidateTopic : "cache:invalidate";
+    }
+    /**
+     * 构建完整的缓存前缀
+     * 格式: {cachePrefix}{cacheName}
+     *
+     * @param cacheName 缓存名称
+     * @return 完整的缓存键
+     */
+
+    public String buildCachePrefix(String cacheName) {
+        if (StringUtils.isBlank(cacheName)) {
+            throw new CacheException("Cache name cannot be blank");
+        }
+        return ICacheConstants.CACHE_PREFIX + cachePrefix + cacheName + ICacheConstants.CACHE_SEPARATOR;
+    }
+
+    /**
+     * 构建分布式锁的完整键
+     * 格式: cache:{keyPrefix}lock:{cacheName}:{key}
+     *
+     * @param cacheName 缓存名称
+     * @param key       缓存键
+     * @return 完整的锁键
+     */
+    public String buildLockKey(String cacheName, Object key) {
+        if (key == null) {
+            throw new CacheException("Cache key cannot be null");
+        }
+
+        return ICacheConstants.CACHE_PREFIX + cachePrefix + "lock"
+                + ICacheConstants.CACHE_SEPARATOR + cacheName
+                + ICacheConstants.CACHE_SEPARATOR + key;
     }
 }
