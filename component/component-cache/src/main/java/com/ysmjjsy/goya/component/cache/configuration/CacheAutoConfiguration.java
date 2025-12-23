@@ -1,11 +1,14 @@
 package com.ysmjjsy.goya.component.cache.configuration;
 
 import com.ysmjjsy.goya.component.cache.configuration.properties.CacheProperties;
+import com.ysmjjsy.goya.component.cache.properties.DefaultPropertiesCacheService;
+import com.ysmjjsy.goya.component.cache.properties.PropertiesCacheProcessor;
 import com.ysmjjsy.goya.component.cache.publisher.ICacheInvalidatePublisher;
 import com.ysmjjsy.goya.component.cache.service.CacheServiceFactory;
 import com.ysmjjsy.goya.component.cache.service.HybridCacheService;
 import com.ysmjjsy.goya.component.cache.service.ICacheService;
 import com.ysmjjsy.goya.component.cache.service.IL2Cache;
+import com.ysmjjsy.goya.component.common.service.IPropertiesCacheService;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
@@ -53,7 +56,7 @@ public class CacheAutoConfiguration {
                                                    ObjectProvider<IL2Cache> l2Cache,
                                                    ObjectProvider<ICacheInvalidatePublisher> publisher) {
         CacheServiceFactory factory = new CacheServiceFactory(properties,l2Cache.getIfAvailable(),publisher.getIfAvailable());
-        log.trace("[Goya] |- component [cache] |- bean [cacheServiceFactory] registered");
+        log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [cacheServiceFactory] register.");
         return factory;
     }
 
@@ -70,7 +73,22 @@ public class CacheAutoConfiguration {
     @ConditionalOnMissingBean(ICacheService.class)
     public HybridCacheService hybridCacheService(CacheServiceFactory factory) {
         HybridCacheService service = factory.createHybrid();
-        log.info("[Goya] |- Cache |- Default cache service registered: HybridCacheService");
+        log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [hybridCacheService] register.");
+        return service;
+    }
+
+    @Bean
+    public PropertiesCacheProcessor propertiesCacheProcessor(ICacheService iCacheService){
+        PropertiesCacheProcessor processor = new PropertiesCacheProcessor(iCacheService);
+        log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [propertiesCacheProcessor] register.");
+        return processor;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public IPropertiesCacheService propertiesCacheService(PropertiesCacheProcessor processor){
+        DefaultPropertiesCacheService service = new DefaultPropertiesCacheService(processor);
+        log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [propertiesCacheService] register.");
         return service;
     }
 }
