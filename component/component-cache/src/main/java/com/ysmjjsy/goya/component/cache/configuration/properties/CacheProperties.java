@@ -64,21 +64,41 @@ public record CacheProperties(
          */
         @Schema(description = "缓存失效消息主题", example = "cache:invalidate")
         @DefaultValue("cache:invalidate")
-        String invalidateTopic
+        String invalidateTopic,
+
+        /**
+         * 布隆过滤器预期插入数
+         * 用于初始化布隆过滤器，影响内存占用和误判率
+         */
+        @Schema(description = "布隆过滤器预期插入数", example = "100000")
+        @DefaultValue("100000")
+        Long bloomFilterExpectedInsertions,
+
+        /**
+         * 布隆过滤器误判率（False Positive Probability）
+         * 范围：0.0 - 1.0，值越小误判率越低，但内存占用越大
+         */
+        @Schema(description = "布隆过滤器误判率", example = "0.01")
+        @DefaultValue("0.01")
+        Double bloomFilterFpp
 ) {
 
     /**
-     * <p>规范化构造器：确保 L1 TTL ≤ L2 TTL</p>
-     * <p>防止 L1 TTL 超过 L2 TTL，避免频繁回填导致性能下降</p>
+     * <p>永不过期的 TTL 标识值</p>
+     * <p>使用 100 年作为永不过期的标识（实际不会真的等100年，只是表示永不过期）</p>
      */
-    public CacheProperties {
-        // 如果 caffeineTtl 大于 defaultTtl，强制调整为 defaultTtl
-        if (caffeineTtl != null && caffeineTtl.compareTo(defaultTtl) > 0) {
-            log.warn("[Goya] |- Cache |- caffeineTtl ({}) > defaultTtl ({}), force adjust to defaultTtl",
-                    caffeineTtl, defaultTtl);
-            caffeineTtl = defaultTtl;
-        }
+    public static final Duration ETERNAL = Duration.ofDays(36500);
+
+    /**
+     * <p>判断给定的 TTL 是否为永不过期</p>
+     *
+     * @param ttl TTL 值
+     * @return true 表示永不过期
+     */
+    public static boolean isEternal(Duration ttl) {
+        return ttl != null && ttl.compareTo(ETERNAL) >= 0;
     }
+
 
     /**
      * 获取 Caffeine 最大容量，提供默认值

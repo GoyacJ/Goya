@@ -214,6 +214,16 @@ public abstract class AbstractCacheService implements ICacheService {
     }
 
     @Override
+    public <K, V> void putEternal(String cacheName, @NotBlank K key, V value) {
+        validateCacheNameAndKey(cacheName, key);
+
+        log.debug("[Goya] |- Cache |- Creating eternal cache entry: cache={}, key={}", cacheName, key);
+
+        // 使用特殊的 TTL 值表示永不过期
+        doPut(cacheName, key, value, CacheProperties.ETERNAL);
+    }
+
+    @Override
     public <K> Boolean remove(String cacheName, @NotBlank K key) {
         validateCacheNameAndKey(cacheName, key);
         return doRemove(cacheName, key);
@@ -270,7 +280,7 @@ public abstract class AbstractCacheService implements ICacheService {
                         key, cacheName);
                 return null;
             }
-        } catch (UnsupportedOperationException e) {
+        } catch (UnsupportedOperationException _) {
             // 子类未实现布隆过滤器，跳过检查
             log.trace("[Goya] |- Cache |- Bloom filter not supported, skip check");
         }
@@ -438,7 +448,7 @@ public abstract class AbstractCacheService implements ICacheService {
             // 添加到布隆过滤器（如果实现了）
             try {
                 addToBloomFilter(cacheName, entry.getKey());
-            } catch (UnsupportedOperationException e) {
+            } catch (UnsupportedOperationException _) {
                 // 子类未实现布隆过滤器，忽略
             }
         }
@@ -508,8 +518,10 @@ public abstract class AbstractCacheService implements ICacheService {
         // 调度任务（固定间隔）
         ScheduledFuture<?> future = scheduledExecutor.scheduleAtFixedRate(
                 refreshTask,
-                interval.toMillis(),  // 初始延迟（等一个间隔后再执行）
-                interval.toMillis(),  // 执行间隔
+                // 初始延迟（等一个间隔后再执行）
+                interval.toMillis(),
+                // 执行间隔
+                interval.toMillis(),
                 TimeUnit.MILLISECONDS
         );
 

@@ -56,51 +56,70 @@ public class RedisCacheInvalidateListener implements ICacheInvalidateListener {
 
         // 忽略自己发送的消息
         if (localNodeId.equals(message.nodeId())) {
-            log.trace("[Goya] |- starter [redis] |- ignore self message, nodeId: {}", localNodeId);
+            log.trace("[Goya] |- starter [redis] |- ignore self invalidate message, nodeId={}", localNodeId);
             return;
         }
 
         try {
             switch (message.type()) {
-                case KEY -> {
-                    if (message.cacheName() != null && message.key() != null) {
-                        if (message.version() != null) {
-                            // 带版本号（更新操作）：比较版本，只有更新时才失效
-                            CacheValue<?> localValue = l1Cache.get(message.cacheName(), message.key());
-                            
-                            if (localValue == null || message.version() > localValue.version()) {
-                                l1Cache.remove(message.cacheName(), message.key());
-                                log.trace("[Goya] |- starter [redis] |- L1 invalidated key [{}] in cache [{}], " +
-                                                "message version: {}, local version: {}",
-                                        message.key(), message.cacheName(), message.version(),
-                                        localValue != null ? localValue.version() : "null");
-                            } else {
-                                log.trace("[Goya] |- starter [redis] |- Skip invalidate key [{}] in cache [{}], " +
-                                                "message version {} <= local version {}",
-                                        message.key(), message.cacheName(), message.version(), localValue.version());
-                            }
-                        } else {
-                            // 无版本号（删除操作）：直接失效
-                            l1Cache.remove(message.cacheName(), message.key());
-                            log.trace("[Goya] |- starter [redis] |- L1 invalidated key [{}] in cache [{}] (delete operation)",
-                                    message.key(), message.cacheName());
-                        }
-                    }
-                }
-                case CACHE -> {
-                    if (message.cacheName() != null) {
-                        l1Cache.clear(message.cacheName());
-                        log.trace("[Goya] |- starter [redis] |- L1 cache [{}] cleared", message.cacheName());
-                    }
-                }
-                case ALL -> {
-                    l1Cache.clearAll();
-                    log.trace("[Goya] |- starter [redis] |- all L1 caches cleared");
-                }
+                case KEY -> handleKeyInvalidate(message);
+                case CACHE -> handleCacheInvalidate(message);
+                case ALL -> handleAllInvalidate();
+                default -> log.warn("[Goya] |- starter [redis] |- unknown invalidate message type: {}", message.type());
             }
-        } catch (Exception e) {
-            log.error("[Goya] |- starter [redis] |- failed to process invalidate message: {}", e.getMessage(), e);
+        } catch (Exception ex) {
+            log.error("[Goya] |- starter [redis] |- failed to process invalidate message: {}", message, ex);
         }
+    }
+
+    private void handleKeyInvalidate(CacheInvalidateMessage message) {
+        String cacheName = message.cacheName();
+        Object key = message.key();
+
+        if (cacheName == null || key == null) {
+            log.debug("[Goya] |- starter [redis] |- skip KEY invalidate, cacheName or key is null: {}", message);
+            return;
+        }
+
+        Long incomingVersion = message.version();
+        CacheValue<?> localValue = l1Cache.get(cacheName, key);
+
+        // 无版本号：直接删除（通常是 delete）
+        if (incomingVersion == null) {
+            l1Cache.remove(cacheName, key);
+            log.trace("[Goya] |- starter [redis] |- L1 invalidated key [{}] in cache [{}] (no version)",
+                    key, cacheName);
+            return;
+        }
+
+        // 本地无缓存 or 远端版本更新
+        if (localValue == null || incomingVersion > localValue.version()) {
+            l1Cache.remove(cacheName, key);
+            log.trace("[Goya] |- starter [redis] |- L1 invalidated key [{}] in cache [{}], " +
+                            "incomingVersion={}, localVersion={}",
+                    key, cacheName, incomingVersion,
+                    localValue != null ? localValue.version() : "null");
+        } else {
+            log.trace("[Goya] |- starter [redis] |- skip invalidate key [{}] in cache [{}], " +
+                            "incomingVersion={} <= localVersion={}",
+                    key, cacheName, incomingVersion, localValue.version());
+        }
+    }
+
+    private void handleCacheInvalidate(CacheInvalidateMessage message) {
+        String cacheName = message.cacheName();
+        if (cacheName == null) {
+            log.debug("[Goya] |- starter [redis] |- skip CACHE invalidate, cacheName is null: {}", message);
+            return;
+        }
+
+        l1Cache.clear(cacheName);
+        log.trace("[Goya] |- starter [redis] |- L1 cache [{}] cleared", cacheName);
+    }
+
+    private void handleAllInvalidate() {
+        l1Cache.clearAll();
+        log.trace("[Goya] |- starter [redis] |- all L1 caches cleared");
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.ysmjjsy.goya.component.cache.model;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -28,6 +29,7 @@ import java.io.Serializable;
  */
 public final class CacheNullValue implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**
@@ -48,6 +50,7 @@ public final class CacheNullValue implements Serializable {
     /**
      * 反序列化时返回单例实例
      */
+    @Serial
     private Object readResolve() {
         return INSTANCE;
     }

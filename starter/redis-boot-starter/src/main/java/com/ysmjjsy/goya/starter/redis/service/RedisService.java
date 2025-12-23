@@ -1,5 +1,7 @@
 package com.ysmjjsy.goya.starter.redis.service;
 
+import com.ysmjjsy.goya.component.cache.exception.CacheException;
+import com.ysmjjsy.goya.component.common.definition.exception.CommonException;
 import com.ysmjjsy.goya.starter.redis.constants.IRedisConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -133,7 +135,7 @@ public class RedisService implements IRedisService {
         try {
             String topicKey = IRedisConstants.REDIS_TOPIC_PREFIX + topic;
             RTopic rTopic = redissonClient.getTopic(topicKey);
-            int listenerId = rTopic.addListener(Object.class, (channel, msg) -> {
+            int listenerId = rTopic.addListener(Object.class, (_, msg) -> {
                 @SuppressWarnings("unchecked")
                 T typedMsg = (T) msg;
                 listener.accept(typedMsg);
@@ -203,7 +205,7 @@ public class RedisService implements IRedisService {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.error("[Goya] |- starter [redis] |- semaphore [{}] acquire interrupted", name, e);
-            throw new RuntimeException(e);
+            throw new CacheException(e);
         } catch (Exception e) {
             log.error("[Goya] |- starter [redis] |- semaphore [{}] acquire failed", name, e);
             throw e;
@@ -227,14 +229,14 @@ public class RedisService implements IRedisService {
     public boolean tryAcquire(String name, Duration timeout) {
         try {
             RSemaphore semaphore = getSemaphore(name);
-            boolean result = semaphore.tryAcquire(timeout.toMillis(), TimeUnit.MILLISECONDS);
+            boolean result = semaphore.tryAcquire(timeout);
             log.trace("[Goya] |- starter [redis] |- semaphore [{}] try acquire with timeout [{}], result [{}]",
                     name, timeout, result);
             return result;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.error("[Goya] |- starter [redis] |- semaphore [{}] try acquire interrupted", name, e);
-            throw new RuntimeException(e);
+            throw new CacheException(e);
         } catch (Exception e) {
             log.error("[Goya] |- starter [redis] |- semaphore [{}] try acquire failed", name, e);
             throw e;
@@ -307,7 +309,7 @@ public class RedisService implements IRedisService {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.error("[Goya] |- starter [redis] |- countdown latch [{}] await interrupted", name, e);
-            throw new RuntimeException(e);
+            throw new CommonException(e);
         } catch (Exception e) {
             log.error("[Goya] |- starter [redis] |- countdown latch [{}] await failed", name, e);
             throw e;
@@ -325,7 +327,7 @@ public class RedisService implements IRedisService {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.error("[Goya] |- starter [redis] |- countdown latch [{}] await interrupted", name, e);
-            throw new RuntimeException(e);
+            throw new CommonException(e);
         } catch (Exception e) {
             log.error("[Goya] |- starter [redis] |- countdown latch [{}] await failed", name, e);
             throw e;
@@ -338,11 +340,10 @@ public class RedisService implements IRedisService {
     public String info() {
         try {
             // Redisson 不直接提供 info 命令，这里返回基本信息
-            StringBuilder info = new StringBuilder();
-            info.append("Redisson Client Info:\n");
-            info.append("Config: ").append(redissonClient.getConfig().toString()).append("\n");
+            String info = "Redisson Client Info:\n" +
+                    "Config: " + redissonClient.getConfig().toString() + "\n";
             log.trace("[Goya] |- starter [redis] |- get info success");
-            return info.toString();
+            return info;
         } catch (Exception e) {
             log.error("[Goya] |- starter [redis] |- get info failed", e);
             return "Error getting Redis info: " + e.getMessage();

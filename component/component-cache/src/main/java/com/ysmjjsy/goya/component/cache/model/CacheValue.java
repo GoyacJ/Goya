@@ -1,6 +1,7 @@
 package com.ysmjjsy.goya.component.cache.model;
 
 import java.io.Serializable;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * <p>缓存值包装类（带版本号）</p>
@@ -15,7 +16,7 @@ import java.io.Serializable;
  * 
  * @param <V> 实际缓存值类型
  * @param value 实际缓存值
- * @param version 版本号（纳秒时间戳，确保唯一性和递增性）
+ * @param version 版本号（组合时间戳和计数器，确保唯一性和递增性）
  * @param timestamp 创建时间戳（毫秒）
  * 
  * @author goya
@@ -26,19 +27,36 @@ public record CacheValue<V>(
     long version,
     long timestamp
 ) implements Serializable {
+
+    /**
+     * 版本号计数器，确保高并发下版本号唯一性
+     */
+    private static final AtomicLong VERSION_COUNTER = new AtomicLong(0);
     
     /**
      * 创建包装值
-     * 使用纳秒时间戳作为版本号，确保单调递增
+     * 使用组合时间戳和计数器生成版本号，确保唯一性和单调递增
+     * <p>版本号格式：{时间戳高48位}{计数器低16位}</p>
+     * <p>优点：</p>
+     * <ul>
+     *     <li>时间戳部分保证大致的时间顺序</li>
+     *     <li>计数器部分保证高并发下的唯一性</li>
+     *     <li>64位长整型，支持足够大的版本号空间</li>
+     * </ul>
      * 
      * @param value 实际缓存值
      * @param <V> 值类型
      * @return 包装后的缓存值
      */
     public static <V> CacheValue<V> of(V value) {
+        long nanoTime = System.nanoTime();
+        long counter = VERSION_COUNTER.incrementAndGet();
+        // 组合时间戳（高48位）和计数器（低16位）
+        long version = (nanoTime << 16) | (counter & 0xFFFF);
+        
         return new CacheValue<>(
             value,
-            System.nanoTime(),
+            version,
             System.currentTimeMillis()
         );
     }

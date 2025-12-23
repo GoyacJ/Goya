@@ -86,6 +86,29 @@ public interface ICacheService extends ICacheWarmup {
     <K, V> void put(String cacheName, K key, V value, Duration duration);
 
     /**
+     * <p>放入缓存（永不过期）</p>
+     * <p>适用场景：</p>
+     * <ul>
+     *     <li>系统配置数据（如全局参数）</li>
+     *     <li>字典数据（如国家、地区列表）</li>
+     *     <li>枚举映射（如状态码、类型）</li>
+     * </ul>
+     * <p>注意事项：</p>
+     * <ul>
+     *     <li>数据更新时必须手动失效</li>
+     *     <li>占用内存不会自动释放</li>
+     *     <li>需要定期评估是否仍需要</li>
+     * </ul>
+     *
+     * @param cacheName 缓存名称
+     * @param key       存储Key
+     * @param value     与Key对应的value
+     * @param <K>       键类型
+     * @param <V>       值类型
+     */
+    <K, V> void putEternal(String cacheName, @NotBlank K key, V value);
+
+    /**
      * 删除缓存
      *
      * @param cacheName 缓存名称

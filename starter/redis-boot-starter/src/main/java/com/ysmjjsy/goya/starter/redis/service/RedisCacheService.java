@@ -1,8 +1,10 @@
 package com.ysmjjsy.goya.starter.redis.service;
 
 import com.ysmjjsy.goya.component.cache.configuration.properties.CacheProperties;
+import com.ysmjjsy.goya.component.cache.exception.CacheException;
 import com.ysmjjsy.goya.component.cache.service.IL2Cache;
 import com.ysmjjsy.goya.starter.redis.configuration.properties.RedisProperties;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.redisson.api.*;
@@ -39,6 +41,13 @@ public class RedisCacheService implements IL2Cache {
     private static final String CACHE_TYPE = "redis";
 
     private final CacheProperties cacheProperties;
+    /**
+     * -- GETTER --
+     *  获取 RedissonClient 实例（用于高级操作）
+     *
+     * @return RedissonClient 实例
+     */
+    @Getter
     private final RedissonClient redissonClient;
     private final RedisProperties redisProperties;
 
@@ -127,6 +136,20 @@ public class RedisCacheService implements IL2Cache {
     }
 
     /**
+     * 获取 RMap 实例（用于永不过期的缓存）
+     * 使用 cacheName 作为 Redis Map 的 key
+     *
+     * @param cacheName 缓存名称
+     * @param <K>       键类型
+     * @param <V>       值类型
+     * @return RMap 实例
+     */
+    private <K, V> RMap<K, V> getMap(String cacheName) {
+        String prefixedName = buildCachePrefix(cacheName);
+        return redissonClient.getMap(prefixedName);
+    }
+
+    /**
      * 获取分布式锁
      *
      * @param lockKey 锁键
@@ -138,9 +161,17 @@ public class RedisCacheService implements IL2Cache {
 
     /**
      * 处理异常
+     * 统一异常处理策略：记录日志并抛出异常
+     *
+     * @param operation 操作名称
+     * @param cacheName 缓存名称
+     * @param e         异常
+     * @throws CacheException 缓存异常
      */
     private void handleException(String operation, String cacheName, Exception e) {
-        log.error("[Goya] |- starter [redis] |- redis cache [{}] {} failed", cacheName, operation, e);
+        String message = String.format("Redis cache operation [%s] failed for cache [%s]", operation, cacheName);
+        log.error("[Goya] |- starter [redis] |- {}", message, e);
+        throw new CacheException(message, e);
     }
 
     // ==================== IL2Cache 接口实现 ====================
@@ -148,21 +179,36 @@ public class RedisCacheService implements IL2Cache {
     @Override
     public <K, V> V get(String cacheName, K key) {
         try {
+            // 先尝试从 RMapCache 获取（有过期时间的缓存）
             RMapCache<K, V> mapCache = getMapCache(cacheName);
             V value = mapCache.get(key);
+            
+            // 如果 RMapCache 中没有，尝试从 RMap 获取（永不过期的缓存）
+            if (value == null) {
+                RMap<K, V> map = getMap(cacheName);
+                value = map.get(key);
+            }
+            
             log.trace("[Goya] |- starter [redis] |- redis cache [{}] get key [{}]", cacheName, key);
             return value;
         } catch (Exception e) {
             handleException("get", cacheName, e);
-            return null;
+            return null; // 不会执行到这里，因为 handleException 会抛出异常
         }
     }
 
     @Override
     public <K, V> V get(String cacheName, K key, Function<? super K, ? extends V> mappingFunction) {
         try {
+            // 先尝试从 RMapCache 获取（有过期时间的缓存）
             RMapCache<K, V> mapCache = getMapCache(cacheName);
             V value = mapCache.get(key);
+
+            // 如果 RMapCache 中没有，尝试从 RMap 获取（永不过期的缓存）
+            if (value == null) {
+                RMap<K, V> map = getMap(cacheName);
+                value = map.get(key);
+            }
 
             if (value == null) {
                 value = mappingFunction.apply(key);
@@ -191,7 +237,6 @@ public class RedisCacheService implements IL2Cache {
             RMapCache<K, V> mapCache = getMapCache(cacheName);
 
             // 类型转换：Set<? extends K> -> Set<K>（用于 Redisson API）
-            @SuppressWarnings("unchecked")
             Set<K> keysSet = new HashSet<>(keys);
 
             // 使用 Redisson 的批量操作（底层使用 MGET，一次网络调用）
@@ -242,9 +287,7 @@ public class RedisCacheService implements IL2Cache {
                     loadedValues.forEach((key, value) -> {
                         if (value != null) {
                             mapCache.put(key, value, ttlMillis, TimeUnit.MILLISECONDS);
-                            @SuppressWarnings("unchecked")
-                            V typedValue = (V) value;
-                            result.put(key, typedValue);
+                            result.put(key, value);
                         }
                     });
 
@@ -263,15 +306,26 @@ public class RedisCacheService implements IL2Cache {
     @Override
     public <K, V> void put(String cacheName, K key, V value, Duration duration) {
         try {
-            RMapCache<K, V> mapCache = getMapCache(cacheName);
-            long ttlMillis = duration.toMillis();
-            mapCache.put(key, value, ttlMillis, TimeUnit.MILLISECONDS);
+            // 判断是否永不过期
+            boolean eternal = com.ysmjjsy.goya.component.cache.configuration.properties.CacheProperties.isEternal(duration);
+
+            if (eternal) {
+                // 永不过期：使用 RMap（不设置 TTL）
+                RMap<K, V> map = getMap(cacheName);
+                map.put(key, value);
+                log.trace("[Goya] |- starter [redis] |- redis cache [{}] put eternal key [{}]", 
+                        cacheName, key);
+            } else {
+                // 有过期时间：使用 RMapCache（设置 TTL）
+                RMapCache<K, V> mapCache = getMapCache(cacheName);
+                long ttlMillis = duration.toMillis();
+                mapCache.put(key, value, ttlMillis, TimeUnit.MILLISECONDS);
+                log.trace("[Goya] |- starter [redis] |- redis cache [{}] put key [{}] with ttl [{}]",
+                        cacheName, key, duration);
+            }
 
             // 自动添加到布隆过滤器
             addToBloomFilter(cacheName, key);
-
-            log.trace("[Goya] |- starter [redis] |- redis cache [{}] put key [{}] with ttl [{}]",
-                    cacheName, key, duration);
         } catch (Exception e) {
             handleException("put", cacheName, e);
         }
@@ -280,13 +334,27 @@ public class RedisCacheService implements IL2Cache {
     @Override
     public <K> Boolean remove(String cacheName, K key) {
         try {
+            boolean removed = false;
+            
+            // 尝试从 RMapCache 删除（有过期时间的缓存）
             RMapCache<K, Object> mapCache = getMapCache(cacheName);
-            Object removed = mapCache.remove(key);
+            Object removedFromCache = mapCache.remove(key);
+            if (removedFromCache != null) {
+                removed = true;
+            }
+            
+            // 尝试从 RMap 删除（永不过期的缓存）
+            RMap<K, Object> map = getMap(cacheName);
+            Object removedFromMap = map.remove(key);
+            if (removedFromMap != null) {
+                removed = true;
+            }
+            
             log.trace("[Goya] |- starter [redis] |- redis cache [{}] remove key [{}]", cacheName, key);
-            return removed != null;
+            return removed;
         } catch (Exception e) {
             handleException("remove", cacheName, e);
-            return false;
+            return false; // 不会执行到这里，因为 handleException 会抛出异常
         }
     }
 
@@ -294,9 +362,14 @@ public class RedisCacheService implements IL2Cache {
     public <K> void remove(String cacheName, Set<? extends K> keys) {
         try {
             RMapCache<K, Object> mapCache = getMapCache(cacheName);
+            RMap<K, Object> map = getMap(cacheName);
+            
+            // 批量删除：同时从 RMapCache 和 RMap 删除
             for (K key : keys) {
                 mapCache.remove(key);
+                map.remove(key);
             }
+            
             log.trace("[Goya] |- starter [redis] |- redis cache [{}] remove batch keys [{}]",
                     cacheName, keys.size());
         } catch (Exception e) {
@@ -323,7 +396,7 @@ public class RedisCacheService implements IL2Cache {
             return value;
         } catch (Exception e) {
             handleException("computeIfAbsent", cacheName, e);
-            return null;
+            return null; // 不会执行到这里，因为 handleException 会抛出异常
         }
     }
 
@@ -396,15 +469,6 @@ public class RedisCacheService implements IL2Cache {
         }
     }
 
-    /**
-     * 获取 RedissonClient 实例（用于高级操作）
-     *
-     * @return RedissonClient 实例
-     */
-    public RedissonClient getRedissonClient() {
-        return redissonClient;
-    }
-
     // ==================== 批量操作优化（使用 Pipeline）====================
 
     /**
@@ -475,10 +539,16 @@ public class RedisCacheService implements IL2Cache {
 
             // 初始化过滤器（如果未初始化）
             if (!filter.isExists()) {
-                // 预期 10 万元素
-                long expectedInsertions = 100000L;
-                // 1% 误判率
-                double fpp = 0.01;
+                // 使用配置的预期插入数，如果没有配置则使用默认值 100000
+                long expectedInsertions = cacheProperties.bloomFilterExpectedInsertions() != null
+                        ? cacheProperties.bloomFilterExpectedInsertions()
+                        : 100000L;
+                
+                // 使用配置的误判率，如果没有配置则使用默认值 0.01
+                double fpp = cacheProperties.bloomFilterFpp() != null
+                        ? cacheProperties.bloomFilterFpp()
+                        : 0.01;
+                
                 filter.tryInit(expectedInsertions, fpp);
                 log.debug("[Goya] |- starter [redis] |- Bloom filter initialized for cache [{}], " +
                                 "expected {} insertions, fpp {}",
