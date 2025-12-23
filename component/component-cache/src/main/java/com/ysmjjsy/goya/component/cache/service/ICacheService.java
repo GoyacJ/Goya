@@ -125,30 +125,16 @@ public interface ICacheService extends ICacheWarmup {
     <K, V> V computeIfAbsent(String cacheName, K key, Function<K, V> loader);
 
     /**
-     * 锁定值
-     * <p>
-     * 非堵塞的尝试获取一个锁，如果对应的key还没有锁，返回一个AutoReleaseLock，否则立即返回空。
-     * 如果Cache实例是本地的，它是一个本地锁，在本JVM中有效；如果是redis等远程缓存，它是一个不十分严格的分布式锁。
-     * 锁的超时时间由expire指定。多级缓存的情况会使用最后一级做tryLock操作。
-     *
-     * @param cacheName 缓存名称
-     * @param key       key
-     * @param expire    expire
-     */
-    <K> void tryLock(String cacheName, K key, Duration expire);
-
-    /**
-     * 锁定并执行操作
-     * <p>
-     * 非堵塞的尝试获取一个锁，如果对应的key还没有锁，返回一个AutoReleaseLock，否则立即返回空。
-     * 如果Cache实例是本地的，它是一个本地锁，在本JVM中有效；如果是redis等远程缓存，它是一个不十分严格的分布式锁。
-     * 锁的超时时间由expire和timeUnit指定。多级缓存的情况会使用最后一级做tryLock操作。
+     * <p>锁定并执行操作</p>
+     * <p>非堵塞的尝试获取一个锁，如果对应的key还没有锁，执行操作后自动释放，否则立即返回false。</p>
+     * <p>如果Cache实例是本地的，它是一个本地锁，在本JVM中有效；如果是redis等远程缓存，它是一个分布式锁。</p>
+     * <p>锁会在操作完成后自动释放，或在expire超时后自动释放。</p>
      *
      * @param cacheName 缓存名称
      * @param key       存储Key
-     * @param expire    过期时间{@link Duration}
+     * @param expire    锁过期时间{@link Duration}
      * @param action    需要执行的操作 {@link Runnable}
-     * @return 是否执行成功
+     * @return 是否成功获取锁并执行操作
      * @see <a href="https://github.com/alibaba/jetcache/wiki/CacheAPI_CN">JetCache Wiki</a>
      */
     <K> boolean lockAndRun(String cacheName, K key, Duration expire, Runnable action);

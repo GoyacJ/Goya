@@ -12,6 +12,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -68,6 +69,27 @@ public class TestController {
         }
 
         String cache2 = iCacheService.get("test", "cache");
+
+        log.warn("cache2:{}", cache2);
+
+        return Response.success();
+    }
+
+    @PostMapping("test5")
+    public Response<Void> test5() {
+
+        TestDTO cache = iCacheService.get("test5", "cache");
+
+        if (Objects.isNull(cache)) {
+            TestDTO dto = new TestDTO(
+                    "1",
+                    LocalDateTime.now(),
+                    "1,2,3,4"
+            );
+            iCacheService.put("test5", "cache", dto);
+        }
+
+        TestDTO cache2 = iCacheService.get("test5", "cache");
 
         log.warn("cache2:{}", cache2);
 

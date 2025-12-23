@@ -3,6 +3,7 @@ package com.ysmjjsy.goya.component.cache.service;
 import com.ysmjjsy.goya.component.cache.configuration.properties.CacheProperties;
 import com.ysmjjsy.goya.component.cache.constants.ICacheConstants;
 import com.ysmjjsy.goya.component.cache.exception.CacheException;
+import com.ysmjjsy.goya.component.cache.model.CacheNullValue;
 import jakarta.validation.constraints.NotBlank;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -153,7 +154,9 @@ public abstract class AbstractCacheService implements ICacheService {
     @Override
     public <K, V> V get(String cacheName, @NotBlank K key) {
         validateCacheNameAndKey(cacheName, key);
-        return doGet(cacheName, key);
+        V value = doGet(cacheName, key);
+        // 检测并过滤空值哨兵
+        return CacheNullValue.isNullValue(value) ? null : value;
     }
 
     @Override
@@ -162,13 +165,20 @@ public abstract class AbstractCacheService implements ICacheService {
         if (mappingFunction == null) {
             throw new CacheException("Mapping function cannot be null");
         }
-        return doGetOrLoad(cacheName, key, mappingFunction);
+        V value = doGetOrLoad(cacheName, key, mappingFunction);
+        // 检测并过滤空值哨兵
+        return CacheNullValue.isNullValue(value) ? null : value;
     }
 
     @Override
     public <K, V> Map<K, @NonNull V> get(String cacheName, Set<? extends K> keys) {
         validateCacheNameAndKeys(cacheName, keys);
-        return doGetBatch(cacheName, keys);
+        Map<K, V> result = doGetBatch(cacheName, keys);
+        // 过滤空值哨兵
+        result.entrySet().removeIf(entry -> CacheNullValue.isNullValue(entry.getValue()));
+        @SuppressWarnings("unchecked")
+        Map<K, @NonNull V> nonNullResult = (Map<K, @NonNull V>) result;
+        return nonNullResult;
     }
 
     @Override
@@ -180,7 +190,12 @@ public abstract class AbstractCacheService implements ICacheService {
         if (mappingFunction == null) {
             throw new CacheException("Mapping function cannot be null");
         }
-        return doGetBatchOrLoad(cacheName, keys, mappingFunction);
+        Map<K, V> result = doGetBatchOrLoad(cacheName, keys, mappingFunction);
+        // 过滤空值哨兵
+        result.entrySet().removeIf(entry -> CacheNullValue.isNullValue(entry.getValue()));
+        @SuppressWarnings("unchecked")
+        Map<K, @NonNull V> nonNullResult = (Map<K, @NonNull V>) result;
+        return nonNullResult;
     }
 
     @Override
@@ -219,15 +234,6 @@ public abstract class AbstractCacheService implements ICacheService {
             throw new CacheException("Loader function cannot be null");
         }
         return doComputeIfAbsent(cacheName, key, loader);
-    }
-
-    @Override
-    public <K> void tryLock(String cacheName, K key, Duration expire) {
-        validateCacheNameAndKey(cacheName, key);
-        if (expire == null || expire.isNegative()) {
-            throw new CacheException("Expire duration must be positive");
-        }
-        doTryLock(cacheName, key, expire);
     }
 
     @Override
@@ -292,10 +298,13 @@ public abstract class AbstractCacheService implements ICacheService {
                 result.set(loaded);
                 log.debug("[Goya] |- Cache |- Data loaded and cached for key [{}]", key);
             } else {
-                // 空值也缓存，防止穿透（短 TTL）
+                // 空值缓存哨兵，防止穿透（短 TTL，1分钟）
                 Duration shortTtl = Duration.ofMinutes(1);
-                put(cacheName, key, null, shortTtl);
-                log.debug("[Goya] |- Cache |- Null value cached for key [{}] with short TTL", key);
+                @SuppressWarnings("unchecked")
+                V sentinel = (V) CacheNullValue.INSTANCE;
+                put(cacheName, key, sentinel, shortTtl);
+                log.debug("[Goya] |- Cache |- Null sentinel cached for key [{}] with short TTL [{}]",
+                        key, shortTtl);
             }
         });
 
@@ -407,18 +416,6 @@ public abstract class AbstractCacheService implements ICacheService {
      * @param key       锁键
      * @param expire    过期时间
      * @param <K>       键类型
-     */
-    protected abstract <K> void doTryLock(String cacheName, K key, Duration expire);
-
-    /**
-     * 获取锁并执行操作
-     *
-     * @param cacheName 缓存名称
-     * @param key       锁键
-     * @param expire    过期时间
-     * @param action    执行的操作
-     * @param <K>       键类型
-     * @return 是否执行成功
      */
     protected abstract <K> boolean doLockAndRun(String cacheName, K key, Duration expire, Runnable action);
 

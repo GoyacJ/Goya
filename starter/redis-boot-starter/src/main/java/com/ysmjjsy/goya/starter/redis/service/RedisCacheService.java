@@ -1,10 +1,10 @@
 package com.ysmjjsy.goya.starter.redis.service;
 
 import com.ysmjjsy.goya.component.cache.configuration.properties.CacheProperties;
-import com.ysmjjsy.goya.component.cache.service.AbstractCacheService;
 import com.ysmjjsy.goya.component.cache.service.IL2Cache;
 import com.ysmjjsy.goya.starter.redis.configuration.properties.RedisProperties;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.NonNull;
 import org.redisson.api.RBatch;
 import org.redisson.api.RBloomFilter;
@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 
 /**
  * <p>基于 Redis (Redisson) 的 L2 分布式缓存服务实现</p>
- * <p>作为多级缓存架构中的 L2 层，实现 IL2Cache 接口</p>
+ * <p>作为多级缓存架构中的 L2 层，实现 IL2Cache SPI</p>
  * <p>特点：</p>
  * <ul>
  *     <li>分布式缓存，多实例间共享缓存数据</li>
@@ -34,27 +34,27 @@ import java.util.stream.Collectors;
  * </ul>
  *
  * @author goya
- * @see AbstractCacheService
  * @see IL2Cache
  * @see RedissonClient
  * @see <a href="https://github.com/redisson/redisson">Redisson Github</a>
  * @since 2025/12/22
  */
 @Slf4j
-public class RedisCacheService extends AbstractCacheService implements IL2Cache {
+public class RedisCacheService implements IL2Cache {
 
     private static final String CACHE_TYPE = "redis";
 
+    private final CacheProperties cacheProperties;
     private final RedissonClient redissonClient;
     private final RedisProperties redisProperties;
 
     public RedisCacheService(CacheProperties cacheProperties,
                              RedisProperties redisProperties,
                              RedissonClient redissonClient) {
-        super(cacheProperties);
+        this.cacheProperties = cacheProperties;
         this.redissonClient = redissonClient;
         this.redisProperties = redisProperties;
-        log.info("[Goya] |- starter [redis] |- RedisCacheService initialized as IL2Cache");
+        log.info("[Goya] |- starter [redis] |- RedisCacheService initialized as IL2Cache SPI");
     }
 
     @Override
@@ -83,6 +83,62 @@ public class RedisCacheService extends AbstractCacheService implements IL2Cache 
         }
     }
 
+    // ==================== 辅助方法 ====================
+
+    /**
+     * 构建缓存前缀
+     * <p>格式: {cachePrefix}{cacheName}:</p>
+     * <p>例如: cache:goya:users:</p>
+     *
+     * @param cacheName 缓存名称
+     * @return 完整缓存前缀
+     */
+    private String buildCachePrefix(String cacheName) {
+        if (StringUtils.isBlank(cacheName)) {
+            throw new IllegalArgumentException("cacheName must not be blank");
+        }
+
+        String prefix = cacheProperties.cachePrefix();
+        if (StringUtils.isBlank(prefix)) {
+            prefix = "cache:";
+        }
+
+        return prefix + cacheName + ":";
+    }
+
+    /**
+     * 构建锁键
+     * <p>格式: {cachePrefix}lock:{cacheName}:{key}</p>
+     *
+     * @param cacheName 缓存名称
+     * @param key       缓存键
+     * @return 锁键
+     */
+    private String buildLockKey(String cacheName, Object key) {
+        if (StringUtils.isBlank(cacheName)) {
+            throw new IllegalArgumentException("cacheName must not be blank");
+        }
+        if (key == null) {
+            throw new IllegalArgumentException("key must not be null");
+        }
+
+        String prefix = cacheProperties.cachePrefix();
+        if (StringUtils.isBlank(prefix)) {
+            prefix = "cache:";
+        }
+
+        return prefix + "lock:" + cacheName + ":" + key;
+    }
+
+    /**
+     * 获取默认 TTL
+     */
+    private Duration getDefaultTtl() {
+        return cacheProperties.defaultTtl() != null
+                ? cacheProperties.defaultTtl()
+                : Duration.ofHours(1);
+    }
+
     /**
      * 获取 RMapCache 实例
      * 使用 cacheName 作为 Redis Map 的 key
@@ -107,8 +163,17 @@ public class RedisCacheService extends AbstractCacheService implements IL2Cache 
         return redissonClient.getLock(lockKey);
     }
 
+    /**
+     * 处理异常
+     */
+    private void handleException(String operation, String cacheName, Exception e) {
+        log.error("[Goya] |- starter [redis] |- redis cache [{}] {} failed", cacheName, operation, e);
+    }
+
+    // ==================== IL2Cache 接口实现 ====================
+
     @Override
-    protected <K, V> V doGet(String cacheName, K key) {
+    public <K, V> V get(String cacheName, K key) {
         try {
             RMapCache<K, V> mapCache = getMapCache(cacheName);
             V value = mapCache.get(key);
@@ -121,7 +186,7 @@ public class RedisCacheService extends AbstractCacheService implements IL2Cache 
     }
 
     @Override
-    protected <K, V> V doGetOrLoad(String cacheName, K key, Function<? super K, ? extends V> mappingFunction) {
+    public <K, V> V get(String cacheName, K key, Function<? super K, ? extends V> mappingFunction) {
         try {
             RMapCache<K, V> mapCache = getMapCache(cacheName);
             V value = mapCache.get(key);
@@ -144,7 +209,7 @@ public class RedisCacheService extends AbstractCacheService implements IL2Cache 
     }
 
     @Override
-    protected <K, V> Map<K, @NonNull V> doGetBatch(String cacheName, Set<? extends K> keys) {
+    public <K, V> Map<K, @NonNull V> get(String cacheName, Set<? extends K> keys) {
         if (keys.isEmpty()) {
             return Map.of();
         }
@@ -175,7 +240,7 @@ public class RedisCacheService extends AbstractCacheService implements IL2Cache 
     }
 
     @Override
-    protected <K, V> Map<K, @NonNull V> doGetBatchOrLoad(
+    public <K, V> Map<K, @NonNull V> get(
             String cacheName,
             Set<? extends K> keys,
             Function<? super Set<? extends K>, ? extends Map<? extends K, ? extends @NonNull V>> mappingFunction) {
@@ -223,7 +288,7 @@ public class RedisCacheService extends AbstractCacheService implements IL2Cache 
     }
 
     @Override
-    protected <K, V> void doPut(String cacheName, K key, V value, Duration duration) {
+    public <K, V> void put(String cacheName, K key, V value, Duration duration) {
         try {
             RMapCache<K, V> mapCache = getMapCache(cacheName);
             long ttlMillis = duration.toMillis();
@@ -240,7 +305,7 @@ public class RedisCacheService extends AbstractCacheService implements IL2Cache 
     }
 
     @Override
-    protected <K> Boolean doRemove(String cacheName, K key) {
+    public <K> Boolean remove(String cacheName, K key) {
         try {
             RMapCache<K, Object> mapCache = getMapCache(cacheName);
             Object removed = mapCache.remove(key);
@@ -253,7 +318,7 @@ public class RedisCacheService extends AbstractCacheService implements IL2Cache 
     }
 
     @Override
-    protected <K> void doRemoveBatch(String cacheName, Set<? extends K> keys) {
+    public <K> void remove(String cacheName, Set<? extends K> keys) {
         try {
             RMapCache<K, Object> mapCache = getMapCache(cacheName);
             for (K key : keys) {
@@ -267,7 +332,7 @@ public class RedisCacheService extends AbstractCacheService implements IL2Cache 
     }
 
     @Override
-    protected <K, V> V doComputeIfAbsent(String cacheName, K key, Function<K, V> loader) {
+    public <K, V> V computeIfAbsent(String cacheName, K key, Function<K, V> loader) {
         try {
             RMapCache<K, V> mapCache = getMapCache(cacheName);
             V value = mapCache.get(key);
@@ -290,26 +355,7 @@ public class RedisCacheService extends AbstractCacheService implements IL2Cache 
     }
 
     @Override
-    protected <K> void doTryLock(String cacheName, K key, Duration expire) {
-        String lockKey = buildLockKey(cacheName, key);
-        RLock lock = getLock(lockKey);
-
-        try {
-            boolean acquired = lock.tryLock(0, expire.toMillis(), TimeUnit.MILLISECONDS);
-            if (acquired) {
-                log.trace("[Goya] |- starter [redis] |- redis lock acquired [{}] with expire [{}]",
-                        lockKey, expire);
-            } else {
-                log.warn("[Goya] |- starter [redis] |- redis lock failed to acquire [{}]", lockKey);
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            log.error("[Goya] |- starter [redis] |- redis lock interrupted [{}]", lockKey, e);
-        }
-    }
-
-    @Override
-    protected <K> boolean doLockAndRun(String cacheName, K key, Duration expire, Runnable action) {
+    public <K> boolean lockAndRun(String cacheName, K key, Duration expire, Runnable action) {
         String lockKey = buildLockKey(cacheName, key);
         RLock lock = getLock(lockKey);
 

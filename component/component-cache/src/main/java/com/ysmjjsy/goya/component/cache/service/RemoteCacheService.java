@@ -119,11 +119,6 @@ public class RemoteCacheService extends AbstractCacheService {
     }
 
     @Override
-    protected <K> void doTryLock(String cacheName, K key, Duration expire) {
-        delegate.tryLock(cacheName, key, expire);
-    }
-
-    @Override
     protected <K> boolean doLockAndRun(String cacheName, K key, Duration expire, Runnable action) {
         return delegate.lockAndRun(cacheName, key, expire, action);
     }

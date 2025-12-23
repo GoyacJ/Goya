@@ -84,12 +84,12 @@ public class LocalCacheService extends AbstractCacheService {
 
     /**
      * 获取或创建 Caffeine Cache 实例
+     * <p>注意：L1 TTL 固定使用 {@link CacheProperties#caffeineTtl()}</p>
      *
      * @param cacheName 缓存名称
-     * @param duration  过期时间
      * @return Caffeine Cache 实例
      */
-    private Cache<Object, Object> getOrCreateCache(String cacheName, Duration duration) {
+    private Cache<Object, Object> getOrCreateCache(String cacheName) {
         // 使用带前缀的 cacheName
         String prefixedName = buildCachePrefix(cacheName);
         return cacheMap.computeIfAbsent(prefixedName, name -> {
@@ -98,8 +98,11 @@ public class LocalCacheService extends AbstractCacheService {
                     ? cacheProperties.caffeineMaxSize()
                     : 10000;
 
+            // L1 固定使用 caffeineTtl
+            Duration l1Ttl = cacheProperties.caffeineTtl();
+
             Caffeine<Object, Object> builder = Caffeine.newBuilder()
-                    .expireAfterWrite(duration)
+                    .expireAfterWrite(l1Ttl)
                     .maximumSize(maxSize);
 
             if (Boolean.TRUE.equals(cacheProperties.enableStats())) {
@@ -107,8 +110,8 @@ public class LocalCacheService extends AbstractCacheService {
             }
 
             Cache<Object, Object> cache = builder.build();
-            log.debug("[Goya] |- Cache |- Local cache [{}] created with ttl [{}], maxSize [{}]",
-                    name, duration, maxSize);
+            log.debug("[Goya] |- Cache |- Local cache [{}] created with fixed L1 TTL [{}], maxSize [{}]",
+                    name, l1Ttl, maxSize);
             return cache;
         });
     }
@@ -116,7 +119,7 @@ public class LocalCacheService extends AbstractCacheService {
     @Override
     protected <K, V> V doGet(String cacheName, K key) {
         try {
-            Cache<Object, Object> cache = getOrCreateCache(cacheName, getDefaultTtl());
+            Cache<Object, Object> cache = getOrCreateCache(cacheName);
             @SuppressWarnings("unchecked")
             V value = (V) cache.getIfPresent(key);
             return value;
@@ -129,7 +132,7 @@ public class LocalCacheService extends AbstractCacheService {
     @Override
     protected <K, V> V doGetOrLoad(String cacheName, K key, Function<? super K, ? extends V> mappingFunction) {
         try {
-            Cache<Object, Object> cache = getOrCreateCache(cacheName, getDefaultTtl());
+            Cache<Object, Object> cache = getOrCreateCache(cacheName);
             @SuppressWarnings("unchecked")
             V value = (V) cache.get(key, k -> {
                 @SuppressWarnings("unchecked")
@@ -146,7 +149,7 @@ public class LocalCacheService extends AbstractCacheService {
     @Override
     protected <K, V> Map<K, @NonNull V> doGetBatch(String cacheName, Set<? extends K> keys) {
         try {
-            Cache<Object, Object> cache = getOrCreateCache(cacheName, getDefaultTtl());
+            Cache<Object, Object> cache = getOrCreateCache(cacheName);
             Map<K, V> result = new HashMap<>();
 
             for (K key : keys) {
@@ -170,7 +173,7 @@ public class LocalCacheService extends AbstractCacheService {
             Set<? extends K> keys,
             Function<? super Set<? extends K>, ? extends Map<? extends K, ? extends @NonNull V>> mappingFunction) {
         try {
-            Cache<Object, Object> cache = getOrCreateCache(cacheName, getDefaultTtl());
+            Cache<Object, Object> cache = getOrCreateCache(cacheName);
             Map<K, V> result = new HashMap<>();
             Set<K> missingKeys = keys.stream()
                     .filter(key -> !cache.asMap().containsKey(key))
@@ -208,7 +211,8 @@ public class LocalCacheService extends AbstractCacheService {
     @Override
     protected <K, V> void doPut(String cacheName, K key, V value, Duration duration) {
         try {
-            Cache<Object, Object> cache = getOrCreateCache(cacheName, duration);
+            // L1 固定使用 caffeineTtl，忽略 duration 参数（duration 仅影响 L2）
+            Cache<Object, Object> cache = getOrCreateCache(cacheName);
             cache.put(key, value);
 
             // 自动添加到布隆过滤器
@@ -223,7 +227,7 @@ public class LocalCacheService extends AbstractCacheService {
     @Override
     public <K> Boolean doRemove(String cacheName, K key) {
         try {
-            Cache<Object, Object> cache = getOrCreateCache(cacheName, getDefaultTtl());
+            Cache<Object, Object> cache = getOrCreateCache(cacheName);
             boolean exists = cache.getIfPresent(key) != null;
             cache.invalidate(key);
             log.trace("[Goya] |- Cache |- Local cache [{}] remove key [{}]", cacheName, key);
@@ -237,7 +241,7 @@ public class LocalCacheService extends AbstractCacheService {
     @Override
     protected <K> void doRemoveBatch(String cacheName, Set<? extends K> keys) {
         try {
-            Cache<Object, Object> cache = getOrCreateCache(cacheName, getDefaultTtl());
+            Cache<Object, Object> cache = getOrCreateCache(cacheName);
             cache.invalidateAll(keys);
             log.trace("[Goya] |- Cache |- Local cache [{}] remove {} keys", cacheName, keys.size());
         } catch (Exception e) {
@@ -248,7 +252,7 @@ public class LocalCacheService extends AbstractCacheService {
     @Override
     protected <K, V> V doComputeIfAbsent(String cacheName, K key, Function<K, V> loader) {
         try {
-            Cache<Object, Object> cache = getOrCreateCache(cacheName, getDefaultTtl());
+            Cache<Object, Object> cache = getOrCreateCache(cacheName);
             @SuppressWarnings("unchecked")
             V value = (V) cache.get(key, k -> {
                 @SuppressWarnings("unchecked")
@@ -260,18 +264,6 @@ public class LocalCacheService extends AbstractCacheService {
             handleException("computeIfAbsent", cacheName, e);
             return null;
         }
-    }
-
-    @Override
-    protected <K> void doTryLock(String cacheName, K key, Duration expire) {
-        String lockKey = buildLockKey(cacheName, key);
-        Lock lock = lockMap.computeIfAbsent(lockKey, k -> new ReentrantLock());
-
-        // 本地锁不支持超时，这里只是记录日志
-        log.warn("[Goya] |- Cache |- Local lock does not support timeout, lock key [{}], expire [{}]",
-                lockKey, expire);
-
-        lock.lock();
     }
 
     @Override

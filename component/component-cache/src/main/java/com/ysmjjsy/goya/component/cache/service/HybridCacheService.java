@@ -54,6 +54,8 @@ public class HybridCacheService extends AbstractCacheService {
     private final ICacheInvalidatePublisher publisher;
     private final String nodeId;
     private volatile boolean remoteCacheAvailable = true;
+    private volatile long lastRemoteFailureAt = 0L;
+    private static final Duration RETRY_AFTER = Duration.ofSeconds(30); // 失败后30秒再重试
 
     /**
      * 构造混合缓存服务
@@ -86,7 +88,26 @@ public class HybridCacheService extends AbstractCacheService {
     }
 
     private boolean hasRemoteCache() {
-        return remoteCache != null && remoteCacheAvailable && remoteCache.isAvailable();
+        if (remoteCache == null) {
+            return false;
+        }
+
+        // 如果已标记为不可用，检查是否到了重试时间
+        if (!remoteCacheAvailable) {
+            long now = System.currentTimeMillis();
+            long retryAfterMillis = RETRY_AFTER.toMillis();
+            if (now - lastRemoteFailureAt >= retryAfterMillis) {
+                // 尝试恢复
+                log.info("[Goya] |- Cache |- Attempting to recover remote cache after {} seconds",
+                        RETRY_AFTER.getSeconds());
+                remoteCacheAvailable = true;
+                lastRemoteFailureAt = 0L;
+            } else {
+                return false;
+            }
+        }
+
+        return remoteCache.isAvailable();
     }
 
     /**
@@ -119,8 +140,8 @@ public class HybridCacheService extends AbstractCacheService {
 
                 // 3. 比较版本号，使用较新的值
                 if (l2Value != null && l2Value.isNewerThan(l1Value)) {
-                    // L2 版本更新，回填 L1
-                    localCache.put(cacheName, key, l2Value, getDefaultTtl());
+                    // L2 版本更新，回填 L1（固定使用 caffeineTtl）
+                    localCache.put(cacheName, key, l2Value, cacheProperties.caffeineTtl());
                     log.trace("[Goya] |- Cache |- L2 hit with newer version, cache: {}, key: {}, version: {}",
                             cacheName, key, l2Value.version());
                     return l2Value.value();
@@ -135,8 +156,8 @@ public class HybridCacheService extends AbstractCacheService {
 
                 // 只有 L2 有值（L1 为 null）
                 if (l2Value != null) {
-                    // 回填 L1
-                    localCache.put(cacheName, key, l2Value, getDefaultTtl());
+                    // 回填 L1（固定使用 caffeineTtl）
+                    localCache.put(cacheName, key, l2Value, cacheProperties.caffeineTtl());
                     log.trace("[Goya] |- Cache |- L2 hit, backfill L1, cache: {}, key: {}, version: {}",
                             cacheName, key, l2Value.version());
                     return l2Value.value();
@@ -236,10 +257,10 @@ public class HybridCacheService extends AbstractCacheService {
         // 包装为 CacheValue（带版本号）
         CacheValue<V> wrappedValue = CacheValue.of(value);
 
-        // 1. 写入本地（存储 CacheValue）
-        localCache.put(cacheName, key, wrappedValue, duration);
-        log.trace("[Goya] |- Cache |- L1 put, cache: {}, key: {}, version: {}",
-                cacheName, key, wrappedValue.version());
+        // 1. 写入本地（存储 CacheValue，固定使用 caffeineTtl）
+        localCache.put(cacheName, key, wrappedValue, cacheProperties.caffeineTtl());
+        log.trace("[Goya] |- Cache |- L1 put, cache: {}, key: {}, version: {} (ttl: {})",
+                cacheName, key, wrappedValue.version(), cacheProperties.caffeineTtl());
 
         // 2. 写入远程（存储 CacheValue）
         if (hasRemoteCache()) {
@@ -320,8 +341,8 @@ public class HybridCacheService extends AbstractCacheService {
             try {
                 value = remoteCache.get(cacheName, key);
                 if (value != null) {
-                    // 回填 L1
-                    localCache.put(cacheName, key, value, getDefaultTtl());
+                    // 回填 L1（固定使用 caffeineTtl）
+                    localCache.put(cacheName, key, value, cacheProperties.caffeineTtl());
                     return value;
                 }
             } catch (Exception e) {
@@ -332,8 +353,8 @@ public class HybridCacheService extends AbstractCacheService {
         // 3. 加载数据
         value = loader.apply(key);
         if (value != null) {
-            // 写入 L1
-            localCache.put(cacheName, key, value, getDefaultTtl());
+            // 写入 L1（固定使用 caffeineTtl）
+            localCache.put(cacheName, key, value, cacheProperties.caffeineTtl());
 
             // 写入 L2
             if (hasRemoteCache()) {
@@ -346,22 +367,6 @@ public class HybridCacheService extends AbstractCacheService {
         }
 
         return value;
-    }
-
-    @Override
-    protected <K> void doTryLock(String cacheName, K key, Duration expire) {
-        // 优先使用 L2 的分布式锁
-        if (hasRemoteCache()) {
-            try {
-                remoteCache.tryLock(cacheName, key, expire);
-                return;
-            } catch (Exception e) {
-                markRemoteUnavailable("tryLock", e);
-            }
-        }
-
-        // 降级到 L1 的本地锁
-        localCache.tryLock(cacheName, key, expire);
     }
 
     @Override
@@ -425,12 +430,14 @@ public class HybridCacheService extends AbstractCacheService {
     }
 
     /**
-     * 标记远程缓存不可用
+     * 标记远程缓存不可用（并记录时间用于恢复探测）
      */
     private void markRemoteUnavailable(String operation, Exception e) {
         remoteCacheAvailable = false;
-        log.warn("[Goya] |- Cache |- Remote cache unavailable during [{}], degraded to local only: {}",
-                operation, e.getMessage());
+        lastRemoteFailureAt = System.currentTimeMillis();
+        log.warn("[Goya] |- Cache |- Remote cache unavailable during [{}], degraded to local only. " +
+                "Will retry after {} seconds. Error: {}",
+                operation, RETRY_AFTER.getSeconds(), e.getMessage());
     }
 
     /**
