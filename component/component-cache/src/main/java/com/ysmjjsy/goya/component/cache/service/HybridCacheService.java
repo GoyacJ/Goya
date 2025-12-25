@@ -43,17 +43,17 @@ import java.util.function.Function;
  * }</pre>
  *
  * @author goya
- * @since 2025/12/22
  * @see AbstractCacheService
  * @see LocalCacheService
  * @see RemoteCacheService
+ * @since 2025/12/22
  */
 @Slf4j
 public class HybridCacheService extends AbstractCacheService {
 
     /**
      * -- GETTER --
-     *  获取本地缓存（供失效监听器使用）
+     * 获取本地缓存（供失效监听器使用）
      *
      */
     @Getter
@@ -62,7 +62,7 @@ public class HybridCacheService extends AbstractCacheService {
     private final ICacheInvalidatePublisher publisher;
     /**
      * -- GETTER --
-     *  获取节点 ID
+     * 获取节点 ID
      *
      */
     @Getter
@@ -74,16 +74,17 @@ public class HybridCacheService extends AbstractCacheService {
     /**
      * 构造混合缓存服务
      *
-     * @param properties    缓存配置
-     * @param remoteCache   远程缓存（可选，为 null 时只使用本地）
-     * @param publisher     失效消息发布器（可选）
+     * @param properties  缓存配置
+     * @param remoteCache 远程缓存（可选，为 null 时只使用本地）
+     * @param publisher   失效消息发布器（可选）
      */
     public HybridCacheService(
             CacheProperties properties,
+            LocalCacheService localCacheService,
             RemoteCacheService remoteCache,
             ICacheInvalidatePublisher publisher) {
         super(properties);
-        this.localCache = new LocalCacheService(properties);
+        this.localCache = localCacheService;
         this.remoteCache = remoteCache;
         this.publisher = publisher;
         this.nodeId = UUID.randomUUID().toString();
@@ -510,7 +511,7 @@ public class HybridCacheService extends AbstractCacheService {
         remoteCacheAvailable = false;
         lastRemoteFailureAt = System.currentTimeMillis();
         log.warn("[Goya] |- Cache |- Remote cache unavailable during [{}], degraded to local only. " +
-                "Will retry after {} seconds. Error: {}",
+                        "Will retry after {} seconds. Error: {}",
                 operation, RETRY_AFTER.getSeconds(), e.getMessage());
     }
 

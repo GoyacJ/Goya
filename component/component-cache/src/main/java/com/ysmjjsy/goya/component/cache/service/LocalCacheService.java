@@ -5,6 +5,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
 import com.ysmjjsy.goya.component.cache.configuration.properties.CacheProperties;
+import com.ysmjjsy.goya.component.cache.factory.CaffeineFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 
@@ -53,9 +54,9 @@ import java.util.stream.Collectors;
  * }</pre>
  *
  * @author goya
- * @since 2025/12/22
  * @see AbstractCacheService
  * @see <a href="https://github.com/ben-manes/caffeine">Caffeine Github</a>
+ * @since 2025/12/22
  */
 @Slf4j
 public class LocalCacheService extends AbstractCacheService {
@@ -78,19 +79,21 @@ public class LocalCacheService extends AbstractCacheService {
      */
     private final Map<String, BloomFilter<byte[]>> bloomFilters = new ConcurrentHashMap<>();
 
-    public LocalCacheService(CacheProperties cacheProperties) {
+    private final CaffeineFactory caffeineFactory;
+
+    public LocalCacheService(CacheProperties cacheProperties, CaffeineFactory caffeineFactory) {
         super(cacheProperties);
+        this.caffeineFactory = caffeineFactory;
     }
 
     /**
      * 获取或创建 Caffeine Cache 实例
-     * <p>注意：L1 TTL 固定使用 {@link CacheProperties#caffeineTtl()}</p>
      *
      * @param cacheName 缓存名称
      * @return Caffeine Cache 实例
      */
     private Cache<Object, Object> getOrCreateCache(String cacheName) {
-        return getOrCreateCache(cacheName, false);
+        return getOrCreateCache(cacheName, false, null);
     }
 
     /**
@@ -98,37 +101,17 @@ public class LocalCacheService extends AbstractCacheService {
      *
      * @param cacheName 缓存名称
      * @param eternal   是否永不过期
+     * @param duration
      * @return Caffeine Cache 实例
      */
-    private Cache<Object, Object> getOrCreateCache(String cacheName, boolean eternal) {
+    private Cache<Object, Object> getOrCreateCache(String cacheName, boolean eternal, Duration duration) {
         // 使用带前缀的 cacheName，永不过期的缓存使用单独的实例
         String prefixedName = buildCachePrefix(cacheName);
         String cacheKey = eternal ? prefixedName + ":eternal" : prefixedName;
 
         return cacheMap.computeIfAbsent(cacheKey, name -> {
-            // 使用配置的 Caffeine 参数
-            int maxSize = cacheProperties.caffeineMaxSize() != null
-                    ? cacheProperties.caffeineMaxSize()
-                    : 10000;
-
-            Caffeine<Object, Object> builder = Caffeine.newBuilder()
-                    .maximumSize(maxSize);
-
-            // 永不过期的缓存不设置 expireAfterWrite
-            if (!eternal) {
-                // L1 固定使用 caffeineTtl
-                Duration l1Ttl = cacheProperties.caffeineTtl();
-                builder.expireAfterWrite(l1Ttl);
-            }
-
-            if (Boolean.TRUE.equals(cacheProperties.enableStats())) {
-                builder.recordStats();
-            }
-
-            Cache<Object, Object> cache = builder.build();
-            log.debug("[Goya] |- Cache |- Local cache [{}] created with eternal={}, maxSize [{}]",
-                    name, eternal, maxSize);
-            return cache;
+            Caffeine<Object, Object> builder = caffeineFactory.create(cacheKey, eternal, duration);
+            return builder.build();
         });
     }
 
@@ -227,15 +210,15 @@ public class LocalCacheService extends AbstractCacheService {
         try {
             // 判断是否永不过期
             boolean eternal = CacheProperties.isEternal(duration);
-            
+
             // 永不过期的缓存使用单独的 Cache 实例
-            Cache<Object, Object> cache = getOrCreateCache(cacheName, eternal);
+            Cache<Object, Object> cache = getOrCreateCache(cacheName, eternal, duration);
             cache.put(key, value);
 
             // 自动添加到布隆过滤器
             addToBloomFilter(cacheName, key);
 
-            log.trace("[Goya] |- Cache |- Local cache [{}] put key [{}], eternal={}", 
+            log.trace("[Goya] |- Cache |- Local cache [{}] put key [{}], eternal={}",
                     cacheName, key, eternal);
         } catch (Exception e) {
             handleException("put", cacheName, e);
@@ -335,7 +318,7 @@ public class LocalCacheService extends AbstractCacheService {
      */
     public String getStats(String cacheName) {
         Cache<Object, Object> cache = cacheMap.get(cacheName);
-        if (cache != null && Boolean.TRUE.equals(cacheProperties.enableStats())) {
+        if (cache != null && Boolean.TRUE.equals(cacheProperties.defaultConfig().enableStats())) {
             return cache.stats().toString();
         }
         return null;
@@ -353,13 +336,13 @@ public class LocalCacheService extends AbstractCacheService {
         String prefixedName = buildCachePrefix(cacheName);
         return bloomFilters.computeIfAbsent(prefixedName, name -> {
             // 使用配置的预期插入数，如果没有配置则使用 caffeineMaxSize
-            long expectedInsertions = cacheProperties.bloomFilterExpectedInsertions() != null
-                    ? cacheProperties.bloomFilterExpectedInsertions()
+            long expectedInsertions = cacheProperties.defaultConfig().bloomFilterExpectedInsertions() != null
+                    ? cacheProperties.defaultConfig().bloomFilterExpectedInsertions()
                     : cacheProperties.caffeineMaxSize();
-            
+
             // 使用配置的误判率，如果没有配置则使用默认值 0.01
-            double fpp = cacheProperties.bloomFilterFpp() != null
-                    ? cacheProperties.bloomFilterFpp()
+            double fpp = cacheProperties.defaultConfig().bloomFilterFpp() != null
+                    ? cacheProperties.defaultConfig().bloomFilterFpp()
                     : 0.01;
 
             BloomFilter<byte[]> filter = BloomFilter.create(

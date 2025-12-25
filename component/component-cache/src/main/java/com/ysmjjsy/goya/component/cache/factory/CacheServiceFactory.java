@@ -1,7 +1,12 @@
-package com.ysmjjsy.goya.component.cache.service;
+package com.ysmjjsy.goya.component.cache.factory;
 
 import com.ysmjjsy.goya.component.cache.configuration.properties.CacheProperties;
 import com.ysmjjsy.goya.component.cache.publisher.ICacheInvalidatePublisher;
+import com.ysmjjsy.goya.component.cache.service.HybridCacheService;
+import com.ysmjjsy.goya.component.cache.service.IL2Cache;
+import com.ysmjjsy.goya.component.cache.service.LocalCacheService;
+import com.ysmjjsy.goya.component.cache.service.RemoteCacheService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -26,26 +31,20 @@ import lombok.extern.slf4j.Slf4j;
  * }</pre>
  *
  * @author goya
- * @since 2025/12/22
  * @see LocalCacheService
  * @see RemoteCacheService
  * @see HybridCacheService
+ * @since 2025/12/22
  */
 @Slf4j
+@RequiredArgsConstructor
 public class CacheServiceFactory {
 
     private final CacheProperties properties;
     private final IL2Cache l2Cache;
     private final ICacheInvalidatePublisher publisher;
+    private final CaffeineFactory caffeineFactory;
 
-    public CacheServiceFactory(
-            CacheProperties properties,
-            IL2Cache l2Cache,
-            ICacheInvalidatePublisher publisher) {
-        this.properties = properties;
-        this.l2Cache = l2Cache;
-        this.publisher = publisher;
-    }
 
     /**
      * 创建本地缓存服务
@@ -60,7 +59,7 @@ public class CacheServiceFactory {
      * @return LocalCacheService 实例
      */
     public LocalCacheService createLocal() {
-        LocalCacheService service = new LocalCacheService(properties);
+        LocalCacheService service = new LocalCacheService(properties, caffeineFactory);
         log.debug("[Goya] |- Cache |- LocalCacheService created via factory");
         return service;
     }
@@ -106,7 +105,8 @@ public class CacheServiceFactory {
         RemoteCacheService remote = l2Cache != null
                 ? new RemoteCacheService(properties, l2Cache)
                 : null;
-        HybridCacheService service = new HybridCacheService(properties, remote, publisher);
+        LocalCacheService localCacheService = createLocal();
+        HybridCacheService service = new HybridCacheService(properties, localCacheService, remote, publisher);
         log.debug("[Goya] |- Cache |- HybridCacheService created via factory");
         return service;
     }

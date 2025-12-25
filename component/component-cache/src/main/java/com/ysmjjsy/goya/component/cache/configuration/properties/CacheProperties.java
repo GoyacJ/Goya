@@ -1,14 +1,21 @@
 package com.ysmjjsy.goya.component.cache.configuration.properties;
 
+import com.google.common.collect.Lists;
 import com.ysmjjsy.goya.component.cache.constants.ICacheConstants;
 import com.ysmjjsy.goya.component.cache.exception.CacheException;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 import java.time.Duration;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * <p>缓存配置属性</p>
@@ -22,66 +29,106 @@ import java.time.Duration;
 @Schema(description = "缓存配置属性")
 @ConfigurationProperties(prefix = ICacheConstants.PROPERTY_CACHE)
 public record CacheProperties(
-        /**
-         * 缓存键前缀
-         * 用于区分不同应用的缓存数据
+        /*
+          缓存键前缀
+          用于区分不同应用的缓存数据
          */
         @Schema(description = "缓存键前缀", example = "goya:")
         @DefaultValue("goya:")
         String cachePrefix,
 
-        /**
-         * 默认过期时间
-         * 当未指定过期时间时使用此值
-         */
-        @Schema(description = "默认过期时间", example = "PT30M")
-        @DefaultValue("PT30M")
-        Duration defaultTtl,
+        @Schema(description = "默认配置")
+        @DefaultValue
+        CacheConfig defaultConfig,
 
-        /**
-         * 是否启用缓存统计
-         */
-        @Schema(description = "是否启用缓存统计", example = "false")
-        @DefaultValue("false")
-        Boolean enableStats,
-
-        /**
-         * 本地缓存（Caffeine）最大容量
-         */
-        @Schema(description = "本地缓存最大容量", example = "10000")
-        @DefaultValue("10000")
-        Integer caffeineMaxSize,
-
-        /**
-         * 本地缓存（Caffeine）过期时间
-         * 如果不设置，使用 defaultTtl
-         */
-        @Schema(description = "本地缓存过期时间", example = "PT5M")
-        Duration caffeineTtl,
-
-        /**
-         * 缓存失效消息主题
-         */
-        @Schema(description = "缓存失效消息主题", example = "cache:invalidate")
-        @DefaultValue("cache:invalidate")
-        String invalidateTopic,
-
-        /**
-         * 布隆过滤器预期插入数
-         * 用于初始化布隆过滤器，影响内存占用和误判率
-         */
-        @Schema(description = "布隆过滤器预期插入数", example = "100000")
-        @DefaultValue("100000")
-        Long bloomFilterExpectedInsertions,
-
-        /**
-         * 布隆过滤器误判率（False Positive Probability）
-         * 范围：0.0 - 1.0，值越小误判率越低，但内存占用越大
-         */
-        @Schema(description = "布隆过滤器误判率", example = "0.01")
-        @DefaultValue("0.01")
-        Double bloomFilterFpp
+        @Schema(description = "每个缓存名称的独立配置")
+        @DefaultValue
+        Map<String, CacheConfig> caches
 ) {
+
+    public record CacheConfig(
+            /*
+              默认过期时间
+              当未指定过期时间时使用此值
+             */
+            @Schema(description = "默认过期时间", example = "PT30M")
+            @DefaultValue("PT30M")
+            Duration defaultTtl,
+
+            @Schema(description = "是否允许 null 值")
+            @DefaultValue("true")
+            Boolean allowNullValues,
+
+            /*
+              是否启用缓存统计
+             */
+            @Schema(description = "是否启用缓存统计", example = "false")
+            @DefaultValue("false")
+            Boolean enableStats,
+
+            /*
+              本地缓存（Caffeine）最大容量
+             */
+            @Schema(description = "本地缓存最大容量", example = "10000")
+            @DefaultValue("10000")
+            Integer caffeineMaxSize,
+
+            @Schema(description = "是否开启缓存穿透保护")
+            @DefaultValue("false")
+            Boolean penetrationProtect,
+
+            @Schema(description = "缓存穿透保护有效期")
+            Duration penetrationProtectTimeout,
+
+            /*
+              缓存失效消息主题
+             */
+            @Schema(description = "缓存失效消息主题", example = "cache:invalidate")
+            @DefaultValue("cache:invalidate")
+            String invalidateTopic,
+
+            /*
+              布隆过滤器预期插入数
+              用于初始化布隆过滤器，影响内存占用和误判率
+             */
+            @Schema(description = "布隆过滤器预期插入数", example = "100000")
+            @DefaultValue("100000")
+            Long bloomFilterExpectedInsertions,
+
+            /*
+              布隆过滤器误判率（False Positive Probability）
+              范围：0.0 - 1.0，值越小误判率越低，但内存占用越大
+             */
+            @Schema(description = "布隆过滤器误判率", example = "0.01")
+            @DefaultValue("0.01")
+            Double bloomFilterFpp
+    ) {
+
+    }
+
+    public CacheConfig getCacheConfig(String cacheName) {
+        if (MapUtils.isNotEmpty(caches)) {
+            List<CacheConfig> cacheConfigs = Lists.newArrayList();
+            caches.forEach((k, v) -> {
+                String prefix = buildCachePrefix(k);
+                if (Strings.CS.equals(prefix, cacheName)) {
+                    cacheConfigs.add(v);
+                }
+            });
+            if (CollectionUtils.isNotEmpty(cacheConfigs)) {
+                return cacheConfigs.getFirst();
+            }
+        }
+        return null;
+    }
+
+    public CacheConfig getCacheConfigByDefault(String cacheName) {
+        CacheConfig cacheConfig = getCacheConfig(cacheName);
+        if (Objects.isNull(cacheConfig)) {
+            return defaultConfig;
+        }
+        return cacheConfig;
+    }
 
     /**
      * <p>永不过期的 TTL 标识值</p>
@@ -106,21 +153,7 @@ public record CacheProperties(
      * @return Caffeine 最大容量
      */
     public Integer caffeineMaxSize() {
-        return caffeineMaxSize != null ? caffeineMaxSize : 10000;
-    }
-
-    /**
-     * <p>获取 Caffeine TTL，确保不超过 L2 TTL</p>
-     * <p>双重保证机制：构造器验证 + 访问器验证</p>
-     *
-     * @return Caffeine TTL
-     */
-    public Duration caffeineTtl() {
-        if (caffeineTtl == null) {
-            return defaultTtl;
-        }
-        // 双重保证：即使构造器验证失败，这里也会兜底
-        return caffeineTtl.compareTo(defaultTtl) <= 0 ? caffeineTtl : defaultTtl;
+        return defaultConfig.caffeineMaxSize != null ? defaultConfig.caffeineMaxSize : 10000;
     }
 
     /**
@@ -129,8 +162,9 @@ public record CacheProperties(
      * @return 失效消息主题
      */
     public String invalidateTopic() {
-        return invalidateTopic != null ? invalidateTopic : "cache:invalidate";
+        return defaultConfig.invalidateTopic != null ? defaultConfig.invalidateTopic : "cache:invalidate";
     }
+
     /**
      * 构建完整的缓存前缀
      * 格式: {cachePrefix}{cacheName}

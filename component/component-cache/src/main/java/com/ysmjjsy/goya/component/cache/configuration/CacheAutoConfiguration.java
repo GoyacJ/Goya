@@ -1,10 +1,12 @@
 package com.ysmjjsy.goya.component.cache.configuration;
 
 import com.ysmjjsy.goya.component.cache.configuration.properties.CacheProperties;
+import com.ysmjjsy.goya.component.cache.factory.CacheServiceFactory;
+import com.ysmjjsy.goya.component.cache.factory.CaffeineFactory;
+import com.ysmjjsy.goya.component.cache.manager.LocalCaffeineCacheManager;
 import com.ysmjjsy.goya.component.cache.properties.DefaultPropertiesCacheService;
 import com.ysmjjsy.goya.component.cache.properties.PropertiesCacheProcessor;
 import com.ysmjjsy.goya.component.cache.publisher.ICacheInvalidatePublisher;
-import com.ysmjjsy.goya.component.cache.service.CacheServiceFactory;
 import com.ysmjjsy.goya.component.cache.service.HybridCacheService;
 import com.ysmjjsy.goya.component.cache.service.ICacheService;
 import com.ysmjjsy.goya.component.cache.service.IL2Cache;
@@ -15,6 +17,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 
@@ -29,10 +32,10 @@ import org.springframework.context.annotation.Primary;
  * </ul>
  *
  * @author goya
- * @since 2025/12/22
  * @see CacheProperties
  * @see HybridCacheService
  * @see CacheServiceFactory
+ * @since 2025/12/22
  */
 @Slf4j
 @AutoConfiguration
@@ -54,10 +57,27 @@ public class CacheAutoConfiguration {
     @ConditionalOnMissingBean(CacheServiceFactory.class)
     public CacheServiceFactory cacheServiceFactory(CacheProperties properties,
                                                    ObjectProvider<IL2Cache> l2Cache,
-                                                   ObjectProvider<ICacheInvalidatePublisher> publisher) {
-        CacheServiceFactory factory = new CacheServiceFactory(properties,l2Cache.getIfAvailable(),publisher.getIfAvailable());
+                                                   ObjectProvider<ICacheInvalidatePublisher> publisher,
+                                                   CaffeineFactory caffeineFactory) {
+        CacheServiceFactory factory = new CacheServiceFactory(properties, l2Cache.getIfAvailable(), publisher.getIfAvailable(), caffeineFactory);
         log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [cacheServiceFactory] register.");
         return factory;
+    }
+
+    @Bean
+    public CaffeineFactory caffeineFactory(CacheProperties properties) {
+        CaffeineFactory factory = new CaffeineFactory(properties);
+        log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [caffeineFactory] register.");
+        return factory;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(CaffeineCacheManager.class)
+    public CaffeineCacheManager caffeineCacheManager(CaffeineFactory caffeineFactory) {
+        LocalCaffeineCacheManager caffeineCacheManager = new LocalCaffeineCacheManager(caffeineFactory);
+        caffeineCacheManager.setCaffeine(caffeineFactory.create());
+        log.trace("[GOYA] |- component [cache] CacheAutoConfiguration |- bean [caffeineCacheManager] register.");
+        return caffeineCacheManager;
     }
 
     /**
@@ -78,7 +98,7 @@ public class CacheAutoConfiguration {
     }
 
     @Bean
-    public PropertiesCacheProcessor propertiesCacheProcessor(ICacheService iCacheService){
+    public PropertiesCacheProcessor propertiesCacheProcessor(ICacheService iCacheService) {
         PropertiesCacheProcessor processor = new PropertiesCacheProcessor(iCacheService);
         log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [propertiesCacheProcessor] register.");
         return processor;
@@ -86,7 +106,7 @@ public class CacheAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public IPropertiesCacheService propertiesCacheService(PropertiesCacheProcessor processor){
+    public IPropertiesCacheService propertiesCacheService(PropertiesCacheProcessor processor) {
         DefaultPropertiesCacheService service = new DefaultPropertiesCacheService(processor);
         log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [propertiesCacheService] register.");
         return service;
