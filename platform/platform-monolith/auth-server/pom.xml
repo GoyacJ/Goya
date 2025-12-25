@@ -21,6 +21,10 @@
             <groupId>com.ysmjjsy.goya</groupId>
             <artifactId>redis-boot-starter</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.ysmjjsy.goya</groupId>
+            <artifactId>kafka-boot-starter</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

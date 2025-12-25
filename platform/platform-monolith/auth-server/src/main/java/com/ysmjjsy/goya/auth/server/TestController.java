@@ -1,7 +1,9 @@
 package com.ysmjjsy.goya.auth.server;
 
+import com.ysmjjsy.goya.component.bus.annotation.BusEventListener;
+import com.ysmjjsy.goya.component.bus.definition.EventScope;
+import com.ysmjjsy.goya.component.bus.service.IBusService;
 import com.ysmjjsy.goya.component.cache.exception.CacheException;
-import com.ysmjjsy.goya.component.cache.service.CacheServiceFactory;
 import com.ysmjjsy.goya.component.cache.service.ICacheService;
 import com.ysmjjsy.goya.component.common.service.IPlatformService;
 import com.ysmjjsy.goya.component.common.utils.JsonUtils;
@@ -11,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Set;
@@ -28,14 +31,11 @@ import java.util.Set;
 public class TestController {
 
     private final ICacheService iCacheService;
-    private final CacheServiceFactory cacheServiceFactory;
+    private final IBusService iBusService;
 
     @GetMapping("test")
     public Response<Void> test() {
         throw new CacheException();
-//        String s = I18nResolver.resolveEnum(ResponseCodeEnum.PARAMS_VALIDATION_ERROR);
-//        log.warn("s------------>{}",s);
-//        return Response.success();
     }
 
     @GetMapping("test1")
@@ -92,6 +92,44 @@ public class TestController {
         TestDTO cache2 = iCacheService.get("test5", "cache");
 
         log.warn("cache2:{}", cache2);
+
+        return Response.success();
+    }
+
+    @PostMapping("test6")
+    public Response<Void> test6() {
+
+        TestEvent testEvent = new TestEvent("123");
+        iBusService.publishAll(testEvent);
+
+        return Response.success();
+    }
+
+    @BusEventListener(scope = EventScope.REMOTE)
+    public void test6Remote(TestEvent testEvent) {
+        log.warn("event:{}", testEvent);
+    }
+
+    @BusEventListener(scope = EventScope.LOCAL)
+    public void test6Local(TestEvent testEvent) {
+        log.warn("event:{}", testEvent);
+    }
+
+    @BusEventListener(scope = EventScope.ALL)
+    public void test6All(TestEvent testEvent) {
+        log.warn("event:{}", testEvent);
+    }
+
+    @BusEventListener(scope = EventScope.ALL, eventNames = "TestEvent")
+    public void test6String(String testEvent) {
+        log.warn("event:{}", testEvent);
+    }
+
+    @PostMapping("test7")
+    public Response<Void> test7() {
+
+        TestEvent testEvent = new TestEvent("123");
+        iBusService.publishDelayed(testEvent, Duration.ofMillis(10));
 
         return Response.success();
     }

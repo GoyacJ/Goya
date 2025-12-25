@@ -19,7 +19,7 @@
         </dependency>
         <dependency>
             <groupId>com.ysmjjsy.goya</groupId>
-            <artifactId>component-cache</artifactId>
+            <artifactId>component-bus</artifactId>
         </dependency>
 
         <dependency>

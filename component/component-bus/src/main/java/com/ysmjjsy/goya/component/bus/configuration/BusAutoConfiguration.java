@@ -1,17 +1,40 @@
 package com.ysmjjsy.goya.component.bus.configuration;
 
+import com.ysmjjsy.goya.component.bus.configuration.properties.BusProperties;
+import com.ysmjjsy.goya.component.bus.deserializer.EventDeserializer;
+import com.ysmjjsy.goya.component.bus.handler.CacheIdempotencyHandler;
+import com.ysmjjsy.goya.component.bus.handler.IIdempotencyHandler;
+import com.ysmjjsy.goya.component.bus.processor.BusEventListenerHandler;
+import com.ysmjjsy.goya.component.bus.processor.BusEventListenerScanner;
+import com.ysmjjsy.goya.component.bus.publish.LocalEventPublisher;
+import com.ysmjjsy.goya.component.bus.publish.StreamEventPublisher;
+import com.ysmjjsy.goya.component.bus.service.DefaultBusService;
+import com.ysmjjsy.goya.component.bus.service.IBusService;
+import com.ysmjjsy.goya.component.cache.service.ICacheService;
+import com.ysmjjsy.goya.component.common.strategy.StrategyChoose;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.stream.function.StreamBridge;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
+import org.springframework.scheduling.annotation.EnableAsync;
 
 /**
- * <p>bus configuration</p>
+ * <p>事件总线自动配置类</p>
+ * <p>注册 IBusService、BusEventListenerScanner、BusEventListenerHandler 等核心组件</p>
  *
  * @author goya
- * @since 2025/12/19 17:29
+ * @since 2025/12/21
  */
 @Slf4j
 @AutoConfiguration
+@EnableAsync
+@EnableConfigurationProperties(BusProperties.class)
 public class BusAutoConfiguration {
 
     @PostConstruct
@@ -19,5 +42,124 @@ public class BusAutoConfiguration {
         log.debug("[Goya] |- component [bus] BusAutoConfiguration auto configure.");
     }
 
+    /**
+     * 注册 IBusService
+     * <p>如果已存在则跳过</p>
+     *
+     * @param strategyChoose 策略选择器
+     * @return IBusService 实例
+     */
+    @Bean
+    @Primary
+    @ConditionalOnMissingBean
+    public IBusService busService(StrategyChoose strategyChoose, BusProperties busProperties) {
+        DefaultBusService service = new DefaultBusService(strategyChoose, busProperties);
+        log.trace("[Goya] |- component [bus] BusAutoConfiguration |- bean [busService] register.");
+        return service;
+    }
+
+    /**
+     * 注册 BusEventListenerScanner
+     * <p>用于扫描 @BusEventListener 注解的方法，记录元数据</p>
+     * <p>使用 static 方法避免 BeanPostProcessor 警告</p>
+     * <p>不依赖任何业务 Bean，避免在创建时触发依赖链</p>
+     *
+     * @return BusEventListenerScanner 实例
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public static BusEventListenerScanner busEventListenerScanner() {
+        BusEventListenerScanner scanner = new BusEventListenerScanner();
+        log.trace("[Goya] |- component [bus] BusAutoConfiguration |- bean [busEventListenerScanner] register.");
+        return scanner;
+    }
+
+    /**
+     * 注册 EventDeserializer
+     * <p>负责从 Message<?> 中反序列化事件，供所有 starter 复用</p>
+     *
+     * @return EventDeserializer 实例
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public EventDeserializer eventDeserializer() {
+        EventDeserializer deserializer = new EventDeserializer();
+        log.trace("[Goya] |- component [bus] BusAutoConfiguration |- bean [eventDeserializer] register.");
+        return deserializer;
+    }
+
+    /**
+     * 注册 BusEventListenerHandler
+     * <p>负责事件路由、幂等性检查等业务逻辑</p>
+     * <p>作为普通 Bean，可以正常依赖业务组件</p>
+     *
+     * @param scanner                     扫描器
+     * @param idempotencyHandlerProvider  幂等性处理器提供者（延迟注入）
+     * @param eventDeserializerProvider  事件反序列化器提供者（延迟注入）
+     * @return BusEventListenerHandler 实例
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public BusEventListenerHandler busEventListenerHandler(BusEventListenerScanner scanner,
+                                                           ObjectProvider<IIdempotencyHandler> idempotencyHandlerProvider,
+                                                           ObjectProvider<EventDeserializer> eventDeserializerProvider) {
+        BusEventListenerHandler handler = new BusEventListenerHandler(scanner, idempotencyHandlerProvider, eventDeserializerProvider);
+        log.trace("[Goya] |- component [bus] BusAutoConfiguration |- bean [busEventListenerHandler] register.");
+        return handler;
+    }
+
+    /**
+     * 注册幂等性处理器
+     *
+     * @param cacheService  缓存服务
+     * @param busProperties 总线配置属性
+     * @return IIdempotencyHandler 实例
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public IIdempotencyHandler idempotencyHandler(ICacheService cacheService, BusProperties busProperties) {
+        CacheIdempotencyHandler cacheIdempotencyHandler = new CacheIdempotencyHandler(cacheService, busProperties);
+        log.trace("[Goya] |- component [bus] BusAutoConfiguration |- bean [idempotencyHandler] register.");
+        return cacheIdempotencyHandler;
+    }
+
+    /**
+     * 注册本地事件发布器
+     *
+     * @param eventPublisher 应用事件发布器
+     * @param handlerProvider 事件监听器处理器提供者
+     * @return LocalEventPublisher 实例
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public LocalEventPublisher localEventPublisher(ApplicationEventPublisher eventPublisher,
+                                                    ObjectProvider<BusEventListenerHandler> handlerProvider) {
+        LocalEventPublisher publisher = new LocalEventPublisher(eventPublisher, handlerProvider);
+        log.trace("[Goya] |- component [bus] BusAutoConfiguration |- bean [localEventPublisher] register.");
+        return publisher;
+    }
+
+    /**
+     * 注册 StreamEventPublisher
+     * <p>使用 ObjectProvider 延迟注入，避免加载顺序问题</p>
+     * <p>如果 StreamBridge 不存在，则返回 null（不会报错）</p>
+     * <p>在发布远程事件时，如果 StreamEventPublisher 不存在，会打印警告日志</p>
+     *
+     * @param streamBridgeProvider StreamBridge 提供者（延迟注入）
+     * @return StreamEventPublisher 实例，如果 StreamBridge 不存在则返回 null
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public StreamEventPublisher streamEventPublisher(ObjectProvider<StreamBridge> streamBridgeProvider) {
+        StreamBridge streamBridge = streamBridgeProvider.getIfAvailable();
+        if (streamBridge == null) {
+            log.debug("[Goya] |- component [bus] BusAutoConfiguration |- StreamBridge not available, StreamEventPublisher will not be created");
+            return null;
+        }
+        StreamEventPublisher publisher = new StreamEventPublisher(streamBridge);
+        log.trace("[Goya] |- component [bus] BusAutoConfiguration |- bean [streamEventPublisher] register.");
+        return publisher;
+    }
 
 }
+
