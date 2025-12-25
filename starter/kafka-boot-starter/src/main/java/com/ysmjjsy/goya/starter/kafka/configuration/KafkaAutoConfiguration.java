@@ -1,16 +1,20 @@
 package com.ysmjjsy.goya.starter.kafka.configuration;
 
 import com.ysmjjsy.goya.component.bus.processor.BusEventListenerHandler;
+import com.ysmjjsy.goya.starter.kafka.publish.KafkaStreamEventPublisher;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.Message;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 
 /**
@@ -36,6 +40,24 @@ public class KafkaAutoConfiguration {
     }
 
     /**
+     * 注册延迟消息调度器
+     * <p>用于实现 Kafka 延迟消息功能（Kafka 不支持原生延迟消息）</p>
+     *
+     * @return ScheduledExecutorService
+     */
+    @Bean
+    @ConditionalOnMissingBean(name = "delayedMessageScheduler")
+    public ScheduledExecutorService delayedMessageScheduler() {
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(10, r -> {
+            Thread t = new Thread(r, "kafka-delayed-message-scheduler");
+            t.setDaemon(true);
+            return t;
+        });
+        log.trace("[Goya] |- starter [kafka] KafkaAutoConfiguration |- bean [delayedMessageScheduler] register.");
+        return scheduler;
+    }
+
+    /**
      * 注册 Kafka 事件消费者
      * <p>基于 Spring Cloud Stream 函数式编程实现消息接收</p>
      * <p>通过 BusEventListenerHandler.handleRemoteMessage() 统一处理远程事件</p>
@@ -58,5 +80,12 @@ public class KafkaAutoConfiguration {
             // 内部会使用 EventDeserializer 进行反序列化，并路由到对应的监听器
             handler.handleRemoteMessage(message);
         };
+    }
+
+    @Bean
+    public KafkaStreamEventPublisher kafkaStreamEventPublisher(StreamBridge streamBridge, ScheduledExecutorService delayedMessageScheduler){
+        KafkaStreamEventPublisher publisher = new KafkaStreamEventPublisher(streamBridge,delayedMessageScheduler);
+        log.trace("[Goya] |- starter [kafka] KafkaAutoConfiguration |- bean [kafkaStreamEventPublisher] register.");
+        return publisher;
     }
 }

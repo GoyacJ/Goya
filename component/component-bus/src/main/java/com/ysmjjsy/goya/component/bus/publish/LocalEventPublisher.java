@@ -1,5 +1,6 @@
 package com.ysmjjsy.goya.component.bus.publish;
 
+import com.ysmjjsy.goya.component.bus.constants.IBusConstants;
 import com.ysmjjsy.goya.component.bus.definition.IEvent;
 import com.ysmjjsy.goya.component.bus.processor.BusEventListenerHandler;
 import com.ysmjjsy.goya.component.common.definition.exception.CommonException;
@@ -37,7 +38,7 @@ public class LocalEventPublisher implements IStrategyExecute<IEvent, Void> {
 
     @Override
     public String mark() {
-        return "LOCAL";
+        return IBusConstants.MARK_LOCAL;
     }
 
     @Override

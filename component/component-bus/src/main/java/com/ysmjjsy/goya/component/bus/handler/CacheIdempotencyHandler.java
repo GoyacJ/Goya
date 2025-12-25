@@ -38,8 +38,8 @@ public class CacheIdempotencyHandler implements IIdempotencyHandler {
             return true;
         }
 
-        String cacheName = busProperties.getIdempotency().getCacheName();
-        java.time.Duration ttl = busProperties.getIdempotency().getTtl();
+        String cacheName = busProperties.idempotency().cacheName();
+        java.time.Duration ttl = busProperties.idempotency().ttl();
 
         // 检查是否已存在
         String cached = cacheService.get(cacheName, idempotencyKey);

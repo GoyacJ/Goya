@@ -56,7 +56,7 @@ public class DefaultBusService implements IBusService {
 
         try {
             log.debug("[Goya] |- component [bus] BusServiceImpl |- publish remote event [{}]", event.eventName());
-            IRemoteEventPublisher publisher = (IRemoteEventPublisher) strategyChoose.choose("DISTRIBUTED");
+            IRemoteEventPublisher publisher = (IRemoteEventPublisher) strategyChoose.choose(busProperties.defaultRemoteBus());
             
             if (publisher == null) {
                 log.warn("[Goya] |- component [bus] BusServiceImpl |- remote event publishing is not available. " +
@@ -187,13 +187,13 @@ public class DefaultBusService implements IBusService {
         String eventName = event.eventName();
         
         // 1. 检查是否有配置映射
-        Map<String, String> mappings = busProperties.getDestination().getMappings();
+        Map<String, String> mappings = busProperties.destination().mappings();
         if (mappings != null && mappings.containsKey(eventName)) {
             return mappings.get(eventName);
         }
         
         // 2. 使用默认模板
-        String template = busProperties.getDestination().getDefaultTemplate();
+        String template = busProperties.destination().defaultTemplate();
         if (StringUtils.isNotBlank(template)) {
             // 替换占位符 {eventName}
             String normalizedEventName = eventName.replace(".", "-");

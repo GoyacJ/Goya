@@ -1,5 +1,6 @@
 package com.ysmjjsy.goya.component.bus.publish;
 
+import com.ysmjjsy.goya.component.bus.constants.IBusConstants;
 import com.ysmjjsy.goya.component.common.strategy.IStrategyExecute;
 import org.springframework.messaging.Message;
 
@@ -38,7 +39,7 @@ public interface IRemoteEventPublisher extends IStrategyExecute<Message<?>, Void
      */
     @Override
     default String mark() {
-        return "DISTRIBUTED";
+        return IBusConstants.MARK_REMOTE;
     }
 
     /**
