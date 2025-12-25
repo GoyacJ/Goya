@@ -4,6 +4,7 @@ import com.ysmjjsy.goya.component.cache.configuration.properties.CacheProperties
 import com.ysmjjsy.goya.component.cache.factory.CacheServiceFactory;
 import com.ysmjjsy.goya.component.cache.factory.CaffeineFactory;
 import com.ysmjjsy.goya.component.cache.manager.LocalCaffeineCacheManager;
+import com.ysmjjsy.goya.component.cache.manager.PlatformCacheManager;
 import com.ysmjjsy.goya.component.cache.properties.DefaultPropertiesCacheService;
 import com.ysmjjsy.goya.component.cache.properties.PropertiesCacheProcessor;
 import com.ysmjjsy.goya.component.cache.publisher.ICacheInvalidatePublisher;
@@ -17,6 +18,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
@@ -71,8 +73,33 @@ public class CacheAutoConfiguration {
         return factory;
     }
 
+    /**
+     * 注册平台缓存管理器（Spring Cache 集成）
+     * <p>作为 @Primary 的 CacheManager，支持 Spring Cache 注解</p>
+     * <p>使用 ICacheService（HybridCacheService）作为底层实现</p>
+     *
+     * @param cacheService 缓存服务（HybridCacheService）
+     * @param cacheProperties 缓存配置
+     * @return PlatformCacheManager 实例
+     */
+    @Primary
     @Bean
-    @ConditionalOnMissingBean(CaffeineCacheManager.class)
+    @ConditionalOnMissingBean(name = "cacheManager")
+    public CacheManager platformCacheManager(ICacheService cacheService, CacheProperties cacheProperties) {
+        PlatformCacheManager manager = new PlatformCacheManager(cacheService, cacheProperties);
+        log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [platformCacheManager] register.");
+        return manager;
+    }
+
+    /**
+     * 注册本地 Caffeine 缓存管理器（备选）
+     * <p>仅在 PlatformCacheManager 不存在时注册，作为备选方案</p>
+     *
+     * @param caffeineFactory Caffeine 工厂
+     * @return CaffeineCacheManager 实例
+     */
+    @Bean
+    @ConditionalOnMissingBean(CacheManager.class)
     public CaffeineCacheManager caffeineCacheManager(CaffeineFactory caffeineFactory) {
         LocalCaffeineCacheManager caffeineCacheManager = new LocalCaffeineCacheManager(caffeineFactory);
         caffeineCacheManager.setCaffeine(caffeineFactory.create());

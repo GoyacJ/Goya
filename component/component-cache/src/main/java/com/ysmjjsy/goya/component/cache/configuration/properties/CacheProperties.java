@@ -1,14 +1,11 @@
 package com.ysmjjsy.goya.component.cache.configuration.properties;
 
-import com.google.common.collect.Lists;
 import com.ysmjjsy.goya.component.cache.constants.ICacheConstants;
 import com.ysmjjsy.goya.component.cache.exception.CacheException;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Strings;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
@@ -106,18 +103,17 @@ public record CacheProperties(
 
     }
 
+    /**
+     * <p>获取指定缓存名称的配置</p>
+     * <p>直接使用 cacheName 作为 key 从 caches Map 中查找，不进行前缀匹配</p>
+     *
+     * @param cacheName 缓存名称（原始名称，如 "userCache"）
+     * @return 缓存配置，如果不存在则返回 null
+     */
     public CacheConfig getCacheConfig(String cacheName) {
-        if (MapUtils.isNotEmpty(caches)) {
-            List<CacheConfig> cacheConfigs = Lists.newArrayList();
-            caches.forEach((k, v) -> {
-                String prefix = buildCachePrefix(k);
-                if (Strings.CS.equals(prefix, cacheName)) {
-                    cacheConfigs.add(v);
-                }
-            });
-            if (CollectionUtils.isNotEmpty(cacheConfigs)) {
-                return cacheConfigs.getFirst();
-            }
+        if (MapUtils.isNotEmpty(caches) && StringUtils.isNotBlank(cacheName)) {
+            // 直接使用 cacheName 作为 key 查找，而不是 buildCachePrefix 后的结果
+            return caches.get(cacheName);
         }
         return null;
     }

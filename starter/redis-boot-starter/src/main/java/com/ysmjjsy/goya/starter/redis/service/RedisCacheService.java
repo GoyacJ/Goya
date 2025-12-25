@@ -113,11 +113,53 @@ public class RedisCacheService implements IL2Cache {
     }
 
     /**
-     * 获取默认 TTL
+     * <p>获取 TTL（支持优先级逻辑）</p>
+     * <p>优先级逻辑：</p>
+     * <ol>
+     *     <li>如果配置中有该 cacheName 的配置 → 使用配置的 defaultTtl</li>
+     *     <li>如果配置中没有 → 使用调用方法传入的 duration</li>
+     *     <li>如果 duration 为空 → 使用默认配置的 defaultTtl</li>
+     * </ol>
+     *
+     * @param cacheName 缓存名称
+     * @param duration  调用方法传入的过期时间（可选）
+     * @return TTL 值
      */
+    private Duration getTtl(String cacheName, Duration duration) {
+        // 获取配置（优先查找特定缓存配置，否则使用默认配置）
+        CacheProperties.CacheConfig cacheConfig = cacheProperties.getCacheConfig(cacheName);
+        boolean hasSpecificConfig = cacheConfig != null;
+        
+        if (!hasSpecificConfig) {
+            // 配置中没有该 cacheName，使用默认配置
+            cacheConfig = cacheProperties.getCacheConfigByDefault(cacheName);
+        }
+        
+        if (hasSpecificConfig) {
+            // 优先级1：配置中有该 cacheName → 使用配置的 defaultTtl
+            return cacheConfig.defaultTtl();
+        } else {
+            // 配置中没有该 cacheName
+            if (duration != null) {
+                // 优先级2：使用调用方法传入的 duration
+                return duration;
+            } else {
+                // 优先级3：duration 为空 → 使用默认配置的 defaultTtl
+                return cacheConfig.defaultTtl();
+            }
+        }
+    }
+
+    /**
+     * 获取默认 TTL（兼容旧代码）
+     * 
+     * @deprecated 使用 {@link #getTtl(String, Duration)} 替代
+     */
+    @Deprecated
     private Duration getDefaultTtl() {
-        return cacheProperties.defaultTtl() != null
-                ? cacheProperties.defaultTtl()
+        CacheProperties.CacheConfig defaultConfig = cacheProperties.defaultConfig();
+        return defaultConfig != null && defaultConfig.defaultTtl() != null
+                ? defaultConfig.defaultTtl()
                 : Duration.ofHours(1);
     }
 
@@ -179,6 +221,16 @@ public class RedisCacheService implements IL2Cache {
     @Override
     public <K, V> V get(String cacheName, K key) {
         try {
+            // 缓存穿透保护检查
+            CacheProperties.CacheConfig config = cacheProperties.getCacheConfigByDefault(cacheName);
+            if (Boolean.TRUE.equals(config.penetrationProtect())) {
+                if (!mightContain(cacheName, key)) {
+                    log.trace("[Goya] |- starter [redis] |- Key [{}] not in bloom filter for cache [{}], skip query",
+                            key, cacheName);
+                    return null;
+                }
+            }
+
             // 先尝试从 RMapCache 获取（有过期时间的缓存）
             RMapCache<K, V> mapCache = getMapCache(cacheName);
             V value = mapCache.get(key);
@@ -200,6 +252,17 @@ public class RedisCacheService implements IL2Cache {
     @Override
     public <K, V> V get(String cacheName, K key, Function<? super K, ? extends V> mappingFunction) {
         try {
+            CacheProperties.CacheConfig config = cacheProperties.getCacheConfigByDefault(cacheName);
+            
+            // 缓存穿透保护检查
+            if (Boolean.TRUE.equals(config.penetrationProtect())) {
+                if (!mightContain(cacheName, key)) {
+                    log.trace("[Goya] |- starter [redis] |- Key [{}] not in bloom filter for cache [{}], skip query",
+                            key, cacheName);
+                    return null;
+                }
+            }
+
             // 先尝试从 RMapCache 获取（有过期时间的缓存）
             RMapCache<K, V> mapCache = getMapCache(cacheName);
             V value = mapCache.get(key);
@@ -213,10 +276,23 @@ public class RedisCacheService implements IL2Cache {
             if (value == null) {
                 value = mappingFunction.apply(key);
                 if (value != null) {
-                    Duration ttl = getDefaultTtl();
+                    // 使用优先级逻辑获取 TTL（传入 null，会使用配置的 defaultTtl）
+                    Duration ttl = getTtl(cacheName, null);
                     mapCache.put(key, value, ttl.toMillis(), TimeUnit.MILLISECONDS);
                     log.trace("[Goya] |- starter [redis] |- redis cache [{}] load and put key [{}]",
                             cacheName, key);
+                } else {
+                    // 如果加载的值为 null，且配置不允许 null 值，使用哨兵值
+                    if (!Boolean.TRUE.equals(config.allowNullValues())) {
+                        Duration ttl = config.penetrationProtectTimeout() != null
+                                ? config.penetrationProtectTimeout()
+                                : Duration.ofMinutes(1);
+                        @SuppressWarnings("unchecked")
+                        V sentinel = (V) com.ysmjjsy.goya.component.cache.model.CacheNullValue.INSTANCE;
+                        mapCache.put(key, sentinel, ttl.toMillis(), TimeUnit.MILLISECONDS);
+                        log.trace("[Goya] |- starter [redis] |- redis cache [{}] put null sentinel for key [{}]",
+                                cacheName, key);
+                    }
                 }
             }
 
@@ -281,7 +357,8 @@ public class RedisCacheService implements IL2Cache {
             if (!missingKeys.isEmpty()) {
                 Map<? extends K, ? extends V> loadedValues = mappingFunction.apply(missingKeys);
                 if (loadedValues != null && !loadedValues.isEmpty()) {
-                    Duration ttl = getDefaultTtl();
+                    // 使用优先级逻辑获取 TTL（传入 null，会使用配置的 defaultTtl）
+                    Duration ttl = getTtl(cacheName, null);
                     long ttlMillis = ttl.toMillis();
 
                     loadedValues.forEach((key, value) -> {
@@ -306,8 +383,11 @@ public class RedisCacheService implements IL2Cache {
     @Override
     public <K, V> void put(String cacheName, K key, V value, Duration duration) {
         try {
+            // 获取实际的 TTL（支持优先级逻辑）
+            Duration actualTtl = getTtl(cacheName, duration);
+            
             // 判断是否永不过期
-            boolean eternal = com.ysmjjsy.goya.component.cache.configuration.properties.CacheProperties.isEternal(duration);
+            boolean eternal = com.ysmjjsy.goya.component.cache.configuration.properties.CacheProperties.isEternal(actualTtl);
 
             if (eternal) {
                 // 永不过期：使用 RMap（不设置 TTL）
@@ -318,10 +398,10 @@ public class RedisCacheService implements IL2Cache {
             } else {
                 // 有过期时间：使用 RMapCache（设置 TTL）
                 RMapCache<K, V> mapCache = getMapCache(cacheName);
-                long ttlMillis = duration.toMillis();
+                long ttlMillis = actualTtl.toMillis();
                 mapCache.put(key, value, ttlMillis, TimeUnit.MILLISECONDS);
                 log.trace("[Goya] |- starter [redis] |- redis cache [{}] put key [{}] with ttl [{}]",
-                        cacheName, key, duration);
+                        cacheName, key, actualTtl);
             }
 
             // 自动添加到布隆过滤器
@@ -386,7 +466,8 @@ public class RedisCacheService implements IL2Cache {
             if (value == null) {
                 value = loader.apply(key);
                 if (value != null) {
-                    Duration ttl = getDefaultTtl();
+                    // 使用优先级逻辑获取 TTL（传入 null，会使用配置的 defaultTtl）
+                    Duration ttl = getTtl(cacheName, null);
                     mapCache.put(key, value, ttl.toMillis(), TimeUnit.MILLISECONDS);
                     log.trace("[Goya] |- starter [redis] |- redis cache [{}] compute and put key [{}]",
                             cacheName, key);
@@ -540,13 +621,13 @@ public class RedisCacheService implements IL2Cache {
             // 初始化过滤器（如果未初始化）
             if (!filter.isExists()) {
                 // 使用配置的预期插入数，如果没有配置则使用默认值 100000
-                long expectedInsertions = cacheProperties.bloomFilterExpectedInsertions() != null
-                        ? cacheProperties.bloomFilterExpectedInsertions()
+                long expectedInsertions = cacheProperties.defaultConfig().bloomFilterExpectedInsertions() != null
+                        ? cacheProperties.defaultConfig().bloomFilterExpectedInsertions()
                         : 100000L;
                 
                 // 使用配置的误判率，如果没有配置则使用默认值 0.01
-                double fpp = cacheProperties.bloomFilterFpp() != null
-                        ? cacheProperties.bloomFilterFpp()
+                double fpp = cacheProperties.defaultConfig().bloomFilterFpp() != null
+                        ? cacheProperties.defaultConfig().bloomFilterFpp()
                         : 0.01;
                 
                 filter.tryInit(expectedInsertions, fpp);

@@ -6,6 +6,7 @@ import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
 import com.ysmjjsy.goya.component.cache.configuration.properties.CacheProperties;
 import com.ysmjjsy.goya.component.cache.factory.CaffeineFactory;
+import com.ysmjjsy.goya.component.cache.model.CacheNullValue;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 
@@ -110,7 +111,8 @@ public class LocalCacheService extends AbstractCacheService {
         String cacheKey = eternal ? prefixedName + ":eternal" : prefixedName;
 
         return cacheMap.computeIfAbsent(cacheKey, name -> {
-            Caffeine<Object, Object> builder = caffeineFactory.create(cacheKey, eternal, duration);
+            // 传入原始的 cacheName 用于配置查找，而不是带前缀的 cacheKey
+            Caffeine<Object, Object> builder = caffeineFactory.create(cacheName, eternal, duration);
             return builder.build();
         });
     }
@@ -118,6 +120,11 @@ public class LocalCacheService extends AbstractCacheService {
     @Override
     protected <K, V> V doGet(String cacheName, K key) {
         try {
+            // 缓存穿透保护检查
+            if (shouldSkipQueryDueToPenetrationProtect(cacheName, key)) {
+                return null;
+            }
+
             Cache<Object, Object> cache = getOrCreateCache(cacheName);
             @SuppressWarnings("unchecked")
             V value = (V) cache.getIfPresent(key);
@@ -131,12 +138,29 @@ public class LocalCacheService extends AbstractCacheService {
     @Override
     protected <K, V> V doGetOrLoad(String cacheName, K key, Function<? super K, ? extends V> mappingFunction) {
         try {
+            // 缓存穿透保护检查
+            if (shouldSkipQueryDueToPenetrationProtect(cacheName, key)) {
+                return null;
+            }
+
             Cache<Object, Object> cache = getOrCreateCache(cacheName);
             @SuppressWarnings("unchecked")
             V value = (V) cache.get(key, k -> {
                 @SuppressWarnings("unchecked")
                 K typedKey = (K) k;
-                return mappingFunction.apply(typedKey);
+                V loadedValue = mappingFunction.apply(typedKey);
+                
+                // 如果加载的值为 null，且配置不允许 null 值，使用哨兵值
+                if (loadedValue == null) {
+                    CacheProperties.CacheConfig config = getCacheConfig(cacheName);
+                    if (!Boolean.TRUE.equals(config.allowNullValues())) {
+                        @SuppressWarnings("unchecked")
+                        V sentinel = (V) CacheNullValue.INSTANCE;
+                        return sentinel;
+                    }
+                }
+                
+                return loadedValue;
             });
             return value;
         } catch (Exception e) {

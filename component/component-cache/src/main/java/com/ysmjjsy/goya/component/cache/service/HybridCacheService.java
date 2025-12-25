@@ -127,6 +127,11 @@ public class HybridCacheService extends AbstractCacheService {
 
     @Override
     protected <K, V> V doGet(String cacheName, K key) {
+        // 0. 缓存穿透保护检查
+        if (shouldSkipQueryDueToPenetrationProtect(cacheName, key)) {
+            return null;
+        }
+
         // 1. 查询本地缓存
         final CacheValue<V> l1Value = localCache.get(cacheName, key);
 
@@ -145,7 +150,7 @@ public class HybridCacheService extends AbstractCacheService {
 
             // L2 版本更新，回填 L1 并返回
             if (l2Value != null && l2Value.isNewerThan(l1Value)) {
-                localCache.put(cacheName, key, l2Value, cacheProperties.caffeineTtl());
+                localCache.put(cacheName, key, l2Value, cacheProperties.defaultConfig().defaultTtl());
                 log.trace("[Goya] |- Cache |- L2 hit with newer version, cache: {}, key: {}, version: {}",
                         cacheName, key, l2Value.version());
                 return l2Value.value();
@@ -277,7 +282,7 @@ public class HybridCacheService extends AbstractCacheService {
         }
 
         for (Map.Entry<K, CacheValue<V>> entry : toBackfill.entrySet()) {
-            localCache.put(cacheName, entry.getKey(), entry.getValue(), cacheProperties.caffeineTtl());
+            localCache.put(cacheName, entry.getKey(), entry.getValue(), cacheProperties.defaultConfig().defaultTtl());
         }
     }
 
@@ -344,7 +349,7 @@ public class HybridCacheService extends AbstractCacheService {
 
         // 1. 写入本地（存储 CacheValue）
         // 永不过期的缓存也使用 ETERNAL，否则使用 caffeineTtl
-        Duration l1Ttl = eternal ? CacheProperties.ETERNAL : cacheProperties.caffeineTtl();
+        Duration l1Ttl = eternal ? CacheProperties.ETERNAL : cacheProperties.defaultConfig().defaultTtl();
         localCache.put(cacheName, key, wrappedValue, l1Ttl);
         log.trace("[Goya] |- Cache |- L1 put, cache: {}, key: {}, version: {} (ttl: {}, eternal: {})",
                 cacheName, key, wrappedValue.version(), l1Ttl, eternal);
@@ -429,7 +434,7 @@ public class HybridCacheService extends AbstractCacheService {
                 CacheValue<V> l2Value = remoteCache.get(cacheName, key);
                 if (l2Value != null) {
                     // 回填 L1（使用 CacheValue，固定使用 caffeineTtl）
-                    localCache.put(cacheName, key, l2Value, cacheProperties.caffeineTtl());
+                    localCache.put(cacheName, key, l2Value, cacheProperties.defaultConfig().defaultTtl());
                     return l2Value.value();
                 }
             } catch (Exception e) {

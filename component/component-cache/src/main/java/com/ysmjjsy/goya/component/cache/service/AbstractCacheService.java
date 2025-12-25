@@ -79,7 +79,82 @@ public abstract class AbstractCacheService implements ICacheService {
      * @return 默认过期时间
      */
     protected Duration getDefaultTtl() {
-        return cacheProperties.defaultTtl();
+        CacheProperties.CacheConfig defaultConfig = cacheProperties.defaultConfig();
+        return defaultConfig != null && defaultConfig.defaultTtl() != null
+                ? defaultConfig.defaultTtl()
+                : Duration.ofMinutes(30); // 默认 30 分钟
+    }
+
+    /**
+     * 获取指定缓存名称的配置
+     *
+     * @param cacheName 缓存名称
+     * @return 缓存配置
+     */
+    protected CacheProperties.CacheConfig getCacheConfig(String cacheName) {
+        return cacheProperties.getCacheConfigByDefault(cacheName);
+    }
+
+    /**
+     * 获取缓存穿透保护的超时时间
+     *
+     * @param cacheName 缓存名称
+     * @return 超时时间，如果未配置则返回默认值 1 分钟
+     */
+    protected Duration getPenetrationProtectTimeout(String cacheName) {
+        CacheProperties.CacheConfig config = getCacheConfig(cacheName);
+        return config != null && config.penetrationProtectTimeout() != null
+                ? config.penetrationProtectTimeout()
+                : Duration.ofMinutes(1); // 默认 1 分钟
+    }
+
+    /**
+     * 处理 null 值，根据 allowNullValues 配置决定是否使用哨兵值
+     *
+     * @param cacheName 缓存名称
+     * @param key       缓存键
+     * @param value     缓存值
+     * @param <K>       键类型
+     * @param <V>       值类型
+     * @return 处理后的值（可能是哨兵值）
+     */
+    protected <K, V> V handleNullValue(String cacheName, K key, V value) {
+        if (value == null) {
+            CacheProperties.CacheConfig config = getCacheConfig(cacheName);
+            if (!Boolean.TRUE.equals(config.allowNullValues())) {
+                // 不允许 null 值，使用哨兵值
+                @SuppressWarnings("unchecked")
+                V sentinel = (V) CacheNullValue.INSTANCE;
+                return sentinel;
+            }
+        }
+        return value;
+    }
+
+    /**
+     * 检查缓存穿透保护，如果启用且布隆过滤器判断一定不存在，返回 true
+     *
+     * @param cacheName 缓存名称
+     * @param key       缓存键
+     * @param <K>       键类型
+     * @return true 表示应该跳过查询（一定不存在），false 表示继续查询
+     */
+    protected <K> boolean shouldSkipQueryDueToPenetrationProtect(String cacheName, K key) {
+        CacheProperties.CacheConfig config = getCacheConfig(cacheName);
+        if (Boolean.TRUE.equals(config.penetrationProtect())) {
+            try {
+                if (!mightContain(cacheName, key)) {
+                    // 布隆过滤器判断一定不存在
+                    log.trace("[Goya] |- Cache |- Key [{}] not in bloom filter for cache [{}], skip query",
+                            key, cacheName);
+                    return true;
+                }
+            } catch (UnsupportedOperationException e) {
+                // 子类未实现布隆过滤器，跳过检查
+                log.trace("[Goya] |- Cache |- Bloom filter not supported, skip check");
+            }
+        }
+        return false;
     }
 
     /**
@@ -199,9 +274,11 @@ public abstract class AbstractCacheService implements ICacheService {
     @Override
     public <K, V> void put(String cacheName, @NotBlank K key, V value) {
         validateCacheNameAndKey(cacheName, key);
+        // 处理 null 值
+        V processedValue = handleNullValue(cacheName, key, value);
         // 使用随机 TTL 防止缓存雪崩
         Duration randomizedTtl = getRandomizedTtl(getDefaultTtl());
-        doPut(cacheName, key, value, randomizedTtl);
+        doPut(cacheName, key, processedValue, randomizedTtl);
     }
 
     @Override
@@ -210,7 +287,15 @@ public abstract class AbstractCacheService implements ICacheService {
         if (duration == null || duration.isNegative()) {
             throw new CacheException("Duration must be positive");
         }
-        doPut(cacheName, key, value, duration);
+        // 处理 null 值
+        V processedValue = handleNullValue(cacheName, key, value);
+        // 如果使用了哨兵值，且配置了 penetrationProtectTimeout，使用该超时时间
+        if (CacheNullValue.isNullValue(processedValue) && value == null) {
+            Duration ttl = getPenetrationProtectTimeout(cacheName);
+            doPut(cacheName, key, processedValue, ttl);
+        } else {
+            doPut(cacheName, key, processedValue, duration);
+        }
     }
 
     @Override
@@ -273,16 +358,9 @@ public abstract class AbstractCacheService implements ICacheService {
             return value;
         }
 
-        // 2. 布隆过滤器检查（防止穿透）
-        try {
-            if (!mightContain(cacheName, key)) {
-                log.debug("[Goya] |- Cache |- Key [{}] not in bloom filter for cache [{}], skip loading",
-                        key, cacheName);
-                return null;
-            }
-        } catch (UnsupportedOperationException _) {
-            // 子类未实现布隆过滤器，跳过检查
-            log.trace("[Goya] |- Cache |- Bloom filter not supported, skip check");
+        // 2. 缓存穿透保护检查
+        if (shouldSkipQueryDueToPenetrationProtect(cacheName, key)) {
+            return null;
         }
 
         // 3. 使用分布式锁加载数据（防止击穿）
@@ -306,13 +384,13 @@ public abstract class AbstractCacheService implements ICacheService {
                 result.set(loaded);
                 log.debug("[Goya] |- Cache |- Data loaded and cached for key [{}]", key);
             } else {
-                // 空值缓存哨兵，防止穿透（短 TTL，1分钟）
-                Duration shortTtl = Duration.ofMinutes(1);
+                // 空值缓存哨兵，防止穿透（使用配置的 penetrationProtectTimeout）
+                Duration ttl = getPenetrationProtectTimeout(cacheName);
                 @SuppressWarnings("unchecked")
                 V sentinel = (V) CacheNullValue.INSTANCE;
-                put(cacheName, key, sentinel, shortTtl);
-                log.debug("[Goya] |- Cache |- Null sentinel cached for key [{}] with short TTL [{}]",
-                        key, shortTtl);
+                put(cacheName, key, sentinel, ttl);
+                log.debug("[Goya] |- Cache |- Null sentinel cached for key [{}] with TTL [{}]",
+                        key, ttl);
             }
         });
 
