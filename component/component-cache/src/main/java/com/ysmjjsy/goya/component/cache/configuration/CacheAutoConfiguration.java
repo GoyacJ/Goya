@@ -16,6 +16,7 @@ import com.ysmjjsy.goya.component.cache.serializer.DefaultCacheKeySerializer;
 import com.ysmjjsy.goya.component.cache.service.DefaultCacheService;
 import com.ysmjjsy.goya.component.cache.service.ICacheService;
 import com.ysmjjsy.goya.component.cache.support.CacheRefillManager;
+import com.ysmjjsy.goya.component.cache.support.SingleFlightLoader;
 import com.ysmjjsy.goya.component.cache.ttl.DefaultFallbackStrategy;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -182,6 +183,19 @@ public class CacheAutoConfiguration {
     }
 
     /**
+     * SingleFlight 加载器 Bean
+     *
+     * <p>用于防止缓存击穿，同一 key 的并发回源请求合并为一个。
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public SingleFlightLoader singleFlightLoader() {
+        SingleFlightLoader loader = new SingleFlightLoader();
+        log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [singleFlightLoader] register.");
+        return loader;
+    }
+
+    /**
      * 缓存工厂 Bean
      */
     @Bean
@@ -194,7 +208,8 @@ public class CacheAutoConfiguration {
             CacheRefillManager refillManager,
             CacheEventPublisher eventPublisher,
             GoyaCacheManager.FallbackStrategyFactory fallbackStrategyFactory,
-            CacheMetrics metrics) {
+            CacheMetrics metrics,
+            SingleFlightLoader singleFlightLoader) {
         CacheFactory cacheFactory = new CacheFactory(
                 specificationResolver,
                 localCacheFactory,
@@ -203,7 +218,8 @@ public class CacheAutoConfiguration {
                 refillManager,
                 eventPublisher,
                 fallbackStrategyFactory,
-                metrics
+                metrics,
+                singleFlightLoader
         );
         log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [cacheFactory] register.");
         return cacheFactory;

@@ -1,6 +1,7 @@
 package com.ysmjjsy.goya.starter.redis.codec;
 
 import com.ysmjjsy.goya.component.cache.local.NullValueWrapper;
+import com.ysmjjsy.goya.component.cache.serializer.TypeAliasRegistry;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import lombok.extern.slf4j.Slf4j;
@@ -84,6 +85,11 @@ public class TypedJsonMapperCodec extends BaseCodec {
     private final JsonMapper jsonMapper;
 
     /**
+     * 类型别名注册表（可选，用于类型兼容性）
+     */
+    private final TypeAliasRegistry typeAliasRegistry;
+
+    /**
      * 编码器
      */
     private final Encoder encoder = new TypedEncoder();
@@ -99,10 +105,21 @@ public class TypedJsonMapperCodec extends BaseCodec {
      * @param jsonMapper JsonMapper 实例（从 Spring 容器注入）
      */
     public TypedJsonMapperCodec(JsonMapper jsonMapper) {
+        this(jsonMapper, null);
+    }
+
+    /**
+     * 构造函数（带类型别名注册表）
+     *
+     * @param jsonMapper JsonMapper 实例（从 Spring 容器注入）
+     * @param typeAliasRegistry 类型别名注册表（可选，用于类型兼容性）
+     */
+    public TypedJsonMapperCodec(JsonMapper jsonMapper, TypeAliasRegistry typeAliasRegistry) {
         if (jsonMapper == null) {
             throw new IllegalArgumentException("JsonMapper cannot be null");
         }
         this.jsonMapper = jsonMapper;
+        this.typeAliasRegistry = typeAliasRegistry;
     }
 
     @Override
@@ -208,11 +225,15 @@ public class TypedJsonMapperCodec extends BaseCodec {
 
                 Class<?> targetType;
                 try {
-                    targetType = Class.forName(typeName);
+                    // 优先使用类型别名注册表解析
+                    if (typeAliasRegistry != null) {
+                        targetType = typeAliasRegistry.resolveClass(typeName);
+                    } else {
+                        targetType = Class.forName(typeName);
+                    }
                 } catch (ClassNotFoundException e) {
                     log.error("Class not found: typeName={}, version={}", typeName, version, e);
-                    // 尝试使用类型别名或版本映射（未来扩展点）
-                    // 当前实现：降级到 Object 类型
+                    // 如果类型别名注册表也无法解析，降级到 Object 类型
                     targetType = Object.class;
                 }
 

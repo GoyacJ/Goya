@@ -3,6 +3,7 @@ package com.ysmjjsy.goya.component.cache.resolver;
 import com.ysmjjsy.goya.component.cache.configuration.properties.CacheProperties;
 import com.ysmjjsy.goya.component.cache.constants.ICacheConstants;
 import com.ysmjjsy.goya.component.cache.enums.CacheLevel;
+import com.ysmjjsy.goya.component.cache.enums.ConsistencyLevel;
 import com.ysmjjsy.goya.component.cache.ttl.TtlStrategy;
 import com.ysmjjsy.goya.component.cache.ttl.FallbackStrategy;
 import lombok.Getter;
@@ -105,6 +106,13 @@ public class CacheSpecification {
      */
     private final FallbackStrategy.Type fallbackStrategyType;
 
+    // ========== 一致性等级配置 ==========
+
+    /**
+     * 缓存一致性等级
+     */
+    private final ConsistencyLevel consistencyLevel;
+
     // ========== 扩展配置 ==========
 
     /**
@@ -129,6 +137,9 @@ public class CacheSpecification {
         this.bloomFilterFalsePositiveRate = builder.bloomFilterFalsePositiveRate;
         this.bloomFilterPersistent = builder.bloomFilterPersistent;
         this.fallbackStrategyType = builder.fallbackStrategyType;
+        this.consistencyLevel = builder.consistencyLevel != null 
+                ? builder.consistencyLevel 
+                : ConsistencyLevel.EVENTUAL;
         this.extendedProperties = new HashMap<>(builder.extendedProperties);
     }
 
@@ -207,6 +218,7 @@ public class CacheSpecification {
         private double bloomFilterFalsePositiveRate = 0.03;
         private boolean bloomFilterPersistent = false;
         private FallbackStrategy.Type fallbackStrategyType = FallbackStrategy.Type.DEGRADE_TO_L1;
+        private ConsistencyLevel consistencyLevel = ConsistencyLevel.EVENTUAL;
         private final Map<String, Object> extendedProperties = new HashMap<>();
 
         /**
@@ -230,6 +242,7 @@ public class CacheSpecification {
             this.bloomFilterFalsePositiveRate = spec.bloomFilterFalsePositiveRate;
             this.bloomFilterPersistent = spec.bloomFilterPersistent;
             this.fallbackStrategyType = spec.fallbackStrategyType;
+            this.consistencyLevel = spec.consistencyLevel;
             this.extendedProperties.putAll(spec.extendedProperties);
         }
 
@@ -285,6 +298,11 @@ public class CacheSpecification {
 
         public Builder fallbackStrategyType(FallbackStrategy.Type fallbackStrategyType) {
             this.fallbackStrategyType = fallbackStrategyType;
+            return this;
+        }
+
+        public Builder consistencyLevel(ConsistencyLevel consistencyLevel) {
+            this.consistencyLevel = consistencyLevel;
             return this;
         }
 

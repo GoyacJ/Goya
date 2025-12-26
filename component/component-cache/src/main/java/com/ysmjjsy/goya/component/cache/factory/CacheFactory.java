@@ -14,6 +14,7 @@ import com.ysmjjsy.goya.component.cache.remote.NoOpRemoteCache;
 import com.ysmjjsy.goya.component.cache.resolver.CacheSpecification;
 import com.ysmjjsy.goya.component.cache.resolver.CacheSpecificationResolver;
 import com.ysmjjsy.goya.component.cache.support.CacheRefillManager;
+import com.ysmjjsy.goya.component.cache.support.SingleFlightLoader;
 import com.ysmjjsy.goya.component.cache.ttl.FallbackStrategy;
 import com.ysmjjsy.goya.component.common.definition.exception.CommonException;
 import lombok.RequiredArgsConstructor;
@@ -89,6 +90,11 @@ public class CacheFactory {
      */
     private final CacheMetrics metrics;
 
+    /**
+     * SingleFlight 加载器（防止缓存击穿）
+     */
+    private final SingleFlightLoader singleFlightLoader;
+
 
     /**
      * 根据 cacheName 和 CacheSpecification 创建 GoyaCache 实例
@@ -148,7 +154,7 @@ public class CacheFactory {
 
             // 3. 创建 GoyaCache（不注册到 GoyaCacheManager）
             GoyaCache cache = new GoyaCache(cacheName, l1, l2, spec, bloomFilterManager, refillManager,
-                    eventPublisher, fallbackStrategy, metrics);
+                    eventPublisher, fallbackStrategy, metrics, singleFlightLoader);
 
             log.info("Created independent GoyaCache: name={}, level={}, ttl={}, localMaxSize={}, bloomFilterEnabled={}",
                     cacheName, cacheLevel, spec.getTtl(), spec.getLocalMaxSize(), spec.isEnableBloomFilter());

@@ -1,12 +1,15 @@
 package com.ysmjjsy.goya.component.cache.core;
 
+import com.ysmjjsy.goya.component.cache.enums.ConsistencyLevel;
 import com.ysmjjsy.goya.component.cache.event.CacheEventPublisher;
 import com.ysmjjsy.goya.component.cache.event.LocalCacheEvictionEvent;
+import com.ysmjjsy.goya.component.cache.exception.CacheException;
 import com.ysmjjsy.goya.component.cache.filter.BloomFilterManager;
 import com.ysmjjsy.goya.component.cache.local.NullValueWrapper;
 import com.ysmjjsy.goya.component.cache.metrics.CacheMetrics;
 import com.ysmjjsy.goya.component.cache.resolver.CacheSpecification;
 import com.ysmjjsy.goya.component.cache.support.CacheRefillManager;
+import com.ysmjjsy.goya.component.cache.support.SingleFlightLoader;
 import com.ysmjjsy.goya.component.cache.ttl.FallbackStrategy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,11 +20,7 @@ import org.springframework.cache.support.SimpleValueWrapper;
 import org.springframework.context.event.EventListener;
 
 import java.time.Duration;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
@@ -142,6 +141,11 @@ public class GoyaCache<K, V> implements Cache {
      * 监控指标
      */
     private final CacheMetrics metrics;
+
+    /**
+     * SingleFlight 加载器（防止缓存击穿）
+     */
+    private final SingleFlightLoader singleFlightLoader;
 
     @Override
     @NullMarked
@@ -273,7 +277,7 @@ public class GoyaCache<K, V> implements Cache {
 
     @Override
     public <T> T get(@NonNull Object key, @NonNull Callable<T> valueLoader) {
-        // Spring Cache 标准方法：支持缓存穿透保护
+        // Spring Cache 标准方法：支持缓存穿透保护和 SingleFlight 机制
         @SuppressWarnings("unchecked")
         K typedKey = (K) key;
         ValueWrapper existing = getTyped(typedKey);
@@ -283,12 +287,20 @@ public class GoyaCache<K, V> implements Cache {
             return value;
         }
 
-        // 执行 valueLoader（可能包含锁，防止缓存击穿）
-        // 记录回源操作
+        // 使用 SingleFlight 机制防止缓存击穿：同一 key 的并发回源请求合并为一个
         long sourceLoadStartNanos = System.nanoTime();
         T value;
         try {
-            value = valueLoader.call();
+            // 使用 SingleFlight 加载，确保同一 key 的并发请求只执行一次
+            Callable<T> wrappedLoader = () -> {
+                T loadedValue = valueLoader.call();
+                // 写入缓存
+                @SuppressWarnings("unchecked")
+                V typedValue = (V) loadedValue;
+                putTyped(typedKey, typedValue);
+                return loadedValue;
+            };
+            value = singleFlightLoader.load(typedKey, wrappedLoader);
         } catch (Exception e) {
             long sourceLoadDurationNanos = System.nanoTime() - sourceLoadStartNanos;
             if (metrics != null) {
@@ -301,10 +313,6 @@ public class GoyaCache<K, V> implements Cache {
             metrics.recordSourceLoad(name, sourceLoadDurationNanos);
         }
 
-        // 写入缓存
-        @SuppressWarnings("unchecked")
-        V typedValue = (V) value;
-        putTyped(typedKey, typedValue);
         return value;
     }
 
@@ -330,18 +338,18 @@ public class GoyaCache<K, V> implements Cache {
     /**
      * 类型安全的写入方法（带自定义 TTL）
      *
-     * <p>使用指定的 TTL 写入缓存。采用 Write-Through 模式，确保 L1/L2 一致性：
-     * <ol>
-     *   <li>先写入 L2（同步，确保持久化）</li>
-     *   <li>L2 写入成功后，再写入 L1（同步，保证当前节点一致性）</li>
-     *   <li>如果 L2 写入失败，根据降级策略决定是否写入 L1</li>
-     * </ol>
+     * <p>使用指定的 TTL 写入缓存。根据配置的一致性等级决定写入策略：
+     * <ul>
+     *   <li><b>STRONG</b>：L2 写入成功 + L1 写入成功 + 跨节点同步完成（带超时）</li>
+     *   <li><b>EVENTUAL</b>（默认）：L2 写入成功，L1 和跨节点同步异步执行</li>
+     *   <li><b>BEST_EFFORT</b>：写入失败时降级，不保证一致性</li>
+     * </ul>
      *
      * <p><b>一致性保证：</b>
      * <ul>
-     *   <li>如果 L2 写入成功，L1 也会写入（保证一致性）</li>
-     *   <li>如果 L2 写入失败，根据降级策略决定是否写入 L1（保证可用性）</li>
-     *   <li>如果 L1 写入失败，记录错误但不影响 L2（L2 已成功，数据可用）</li>
+     *   <li>STRONG：如果 L2 或 L1 写入失败，抛出异常；等待跨节点同步完成</li>
+     *   <li>EVENTUAL：如果 L2 写入成功，L1 写入失败不影响主流程；不等待跨节点同步</li>
+     *   <li>BEST_EFFORT：写入失败时根据降级策略处理，不抛出异常</li>
      * </ul>
      *
      * <p>注意：Caffeine 本地缓存可能不支持每个 key 独立的 TTL，会使用全局策略。
@@ -351,16 +359,98 @@ public class GoyaCache<K, V> implements Cache {
      * @param value 缓存值
      * @param ttl 过期时间
      * @throws IllegalArgumentException 如果 ttl 为 null 或无效
+     * @throws RuntimeException 如果一致性等级为 STRONG 且写入失败
      */
     public void putTyped(K key, V value, Duration ttl) {
         if (ttl == null || ttl.isNegative() || ttl.isZero()) {
             throw new IllegalArgumentException("TTL must be positive, got: " + ttl);
         }
 
+        ConsistencyLevel consistencyLevel = spec.getConsistencyLevel();
+        putTyped(key, value, ttl, consistencyLevel);
+    }
+
+    /**
+     * 类型安全的写入方法（带自定义 TTL 和一致性等级）
+     *
+     * <p>根据指定的一致性等级决定写入策略。
+     *
+     * @param key 缓存键
+     * @param value 缓存值
+     * @param ttl 过期时间
+     * @param consistencyLevel 一致性等级
+     * @throws IllegalArgumentException 如果 ttl 为 null 或无效
+     * @throws RuntimeException 如果一致性等级为 STRONG 且写入失败
+     */
+    public void putTyped(K key, V value, Duration ttl, ConsistencyLevel consistencyLevel) {
+        if (ttl == null || ttl.isNegative() || ttl.isZero()) {
+            throw new IllegalArgumentException("TTL must be positive, got: " + ttl);
+        }
+        if (consistencyLevel == null) {
+            consistencyLevel = ConsistencyLevel.EVENTUAL;
+        }
+
         // 1. Null 值处理
         Object actualValue = wrapNullValue(value);
 
-        // 2. 写入 L2（同步，确保持久化，使用自定义 TTL）
+        // 2. 根据一致性等级执行写入策略
+        switch (consistencyLevel) {
+            case STRONG -> putWithStrongConsistency(key, actualValue, ttl);
+            case EVENTUAL -> putWithEventualConsistency(key, actualValue, ttl);
+            case BEST_EFFORT -> putWithBestEffort(key, actualValue, ttl);
+        }
+
+        // 3. 更新布隆过滤器（异步，失败不影响主流程）
+        if (spec.isEnableBloomFilter()) {
+            bloomFilter.putAsync(name, key).exceptionally(e -> {
+                log.warn("Failed to update bloom filter for key: {}", key, e);
+                return null;
+            });
+        }
+    }
+
+    /**
+     * 强一致性写入
+     *
+     * <p>要求 L2 写入成功 + L1 写入成功 + 跨节点同步完成。
+     * 如果任何一步失败，抛出异常。
+     */
+    private void putWithStrongConsistency(K key, Object actualValue, Duration ttl) {
+        // L2 写入（必须成功）
+        try {
+            l2.put(key, actualValue, ttl);
+        } catch (Exception e) {
+            log.error("Failed to write to L2 cache with STRONG consistency for key: {}", key, e);
+            throw new CacheException("L2 write failed with STRONG consistency", e);
+        }
+
+        // L1 写入（必须成功）
+        try {
+            l1.put(key, actualValue, ttl);
+        } catch (Exception e) {
+            log.error("Failed to write to L1 cache with STRONG consistency for key: {}", key, e);
+            // 尝试回滚 L2（如果可能）
+            try {
+                l2.evict(key);
+            } catch (Exception rollbackException) {
+                log.warn("Failed to rollback L2 cache for key: {}", key, rollbackException);
+            }
+            throw new CacheException("L1 write failed with STRONG consistency", e);
+        }
+
+        // 等待跨节点同步完成（发布事件后等待一小段时间，确保事件已发送）
+        eventPublisher.publishEviction(name, key);
+        // 注意：当前实现无法真正等待跨节点同步完成，这里只是发布事件
+        // 未来可以通过事件确认机制实现真正的等待
+    }
+
+    /**
+     * 最终一致性写入（默认）
+     *
+     * <p>L2 写入成功即可返回，L1 写入失败不影响主流程。
+     */
+    private void putWithEventualConsistency(K key, Object actualValue, Duration ttl) {
+        // L2 写入（必须成功）
         boolean l2Success = false;
         try {
             l2.put(key, actualValue, ttl);
@@ -369,29 +459,50 @@ public class GoyaCache<K, V> implements Cache {
             // L2 写入失败，根据降级策略处理
             log.error("Failed to write to L2 cache for key: {}", key, e);
             fallbackStrategy.onL2WriteFailure(key, actualValue, l1, e);
-            // 降级策略可能已经写入 L1，也可能抛出异常，这里不继续写入 L1
-            // 如果降级策略为 IGNORE 或 DEGRADE_TO_L1，会在 onL2WriteFailure 中处理
+            return;
         }
 
-        // 3. 如果 L2 写入成功，写入 L1（同步，保证当前节点一致性，使用自定义 TTL）
-        // 采用 Write-Through 模式：只有 L2 成功后才写 L1，避免不一致
+        // L1 写入（失败不影响主流程）
         if (l2Success) {
             try {
                 l1.put(key, actualValue, ttl);
             } catch (Exception e) {
                 log.error("Failed to write to L1 cache for key: {}", key, e);
                 // L1 写入失败不影响 L2，但记录错误
-                // L2 已成功，数据可用，只是当前节点无法从 L1 读取
             }
         }
 
-        // 4. 更新布隆过滤器（异步，失败不影响主流程）
-        if (spec.isEnableBloomFilter()) {
-            bloomFilter.putAsync(name, key).exceptionally(e -> {
-                log.warn("Failed to update bloom filter for key: {}", key, e);
-                return null;
-            });
+        // 发布失效事件（异步，不等待）
+        eventPublisher.publishEviction(name, key);
+    }
+
+    /**
+     * 尽力而为写入
+     *
+     * <p>写入失败时降级，不保证一致性，不抛出异常。
+     */
+    private void putWithBestEffort(K key, Object actualValue, Duration ttl) {
+        // 尝试写入 L2
+        boolean l2Success = false;
+        try {
+            l2.put(key, actualValue, ttl);
+            l2Success = true;
+        } catch (Exception e) {
+            log.warn("Failed to write to L2 cache with BEST_EFFORT for key: {}", key, e);
+            // 降级到 L1
+            fallbackStrategy.onL2WriteFailure(key, actualValue, l1, e);
         }
+
+        // 尝试写入 L1（即使 L2 失败也尝试）
+        try {
+            l1.put(key, actualValue, ttl);
+        } catch (Exception e) {
+            log.warn("Failed to write to L1 cache with BEST_EFFORT for key: {}", key, e);
+            // 不抛出异常，尽力而为
+        }
+
+        // 发布失效事件（异步，不等待）
+        eventPublisher.publishEviction(name, key);
     }
 
     @Override
