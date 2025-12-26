@@ -104,6 +104,8 @@ public class DefaultCacheSpecificationResolver implements CacheSpecificationReso
                 .allowNullValues(config.allowNullValues())
                 .localMaxSize(config.localMaxSize())
                 .localTtlStrategy(ttlStrategy)
+                .cacheLevel(config.cacheLevel())
+                .keyPrefix(properties.keyPrefix())
                 .enableBloomFilter(config.enableBloomFilter())
                 .bloomFilterExpectedInsertions(config.bloomFilterExpectedInsertions())
                 .bloomFilterFalsePositiveRate(config.bloomFilterFalsePositiveRate())

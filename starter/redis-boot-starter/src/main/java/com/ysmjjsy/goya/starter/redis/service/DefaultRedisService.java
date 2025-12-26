@@ -124,9 +124,12 @@ public class DefaultRedisService implements IRedisService {
     }
 
     @Override
-    public <T> int subscribe(String channel, MessageListener<T> listener) {
+    public <T> int subscribe(String channel, Class<T> messageClass, MessageListener<T> listener) {
         if (channel == null) {
             throw new IllegalArgumentException("Channel cannot be null");
+        }
+        if (messageClass == null) {
+            throw new IllegalArgumentException("MessageClass cannot be null");
         }
         if (listener == null) {
             throw new IllegalArgumentException("Listener cannot be null");
@@ -134,7 +137,7 @@ public class DefaultRedisService implements IRedisService {
 
         try {
             RTopic topic = redissonClient.getTopic(channel);
-            int listenerId = topic.addListener(listener);
+            int listenerId = topic.addListener(messageClass, listener);
             subscriptionCache.put(channel, listenerId);
 
             if (log.isDebugEnabled()) {
@@ -354,7 +357,14 @@ public class DefaultRedisService implements IRedisService {
 
         try {
             RList<Object> list = redissonClient.getList(key);
-            return list.addAll(Arrays.asList(values));
+            int sizeBefore = list.size();
+            boolean added = list.addAll(Arrays.asList(values));
+            if (!added) {
+                return 0;
+            }
+            // 计算实际添加的数量
+            int sizeAfter = list.size();
+            return sizeAfter - sizeBefore;
         } catch (Exception e) {
             log.error("Failed to add to list: key={}, values={}", key, Arrays.toString(values), e);
             throw new CacheException("Failed to add to list", e);
@@ -464,11 +474,11 @@ public class DefaultRedisService implements IRedisService {
     // ========== 高级数据结构 - SortedSet ==========
 
     @Override
-    public <T> RSortedSet<T> getSortedSet(String key) {
+    public <T> RScoredSortedSet<T> getSortedSet(String key) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
         }
-        return redissonClient.getSortedSet(key);
+        return redissonClient.getScoredSortedSet(key);
     }
 
     @Override
@@ -481,7 +491,7 @@ public class DefaultRedisService implements IRedisService {
         }
 
         try {
-            RSortedSet<Object> sortedSet = redissonClient.getSortedSet(key);
+            RScoredSortedSet<Object> sortedSet = redissonClient.getScoredSortedSet(key);
             return sortedSet.add(score, value);
         } catch (Exception e) {
             log.error("Failed to add to sorted set: key={}, score={}, value={}", key, score, value, e);
@@ -490,13 +500,13 @@ public class DefaultRedisService implements IRedisService {
     }
 
     @Override
-    public <T> Set<T> getSortedSetRange(String key, int startRank, int endRank) {
+    public <T> Collection<T> getSortedSetRange(String key, int startRank, int endRank) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
         }
 
         try {
-            RSortedSet<T> sortedSet = redissonClient.getSortedSet(key);
+            RScoredSortedSet<T> sortedSet = redissonClient.getScoredSortedSet(key);
             return sortedSet.valueRange(startRank, endRank);
         } catch (Exception e) {
             log.error("Failed to get sorted set range: key={}, startRank={}, endRank={}", key, startRank, endRank, e);

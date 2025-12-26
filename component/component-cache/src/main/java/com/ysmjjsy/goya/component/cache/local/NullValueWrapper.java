@@ -66,7 +66,7 @@ public final class NullValueWrapper implements Serializable {
      *
      */
     @Getter
-    private final int version = 1;
+    private static final int VERSION = 1;
 
     /**
      * 私有构造函数，确保单例
@@ -101,6 +101,6 @@ public final class NullValueWrapper implements Serializable {
 
     @Override
     public String toString() {
-        return "NullValueWrapper{version=" + version + "}";
+        return "NullValueWrapper{version=" + VERSION + "}";
     }
 }

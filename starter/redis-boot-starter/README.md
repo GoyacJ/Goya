@@ -142,7 +142,7 @@ redisService.setCounter("visitCount", 100);
 
 // 发布订阅
 redisService.publish("notification", message);
-redisService.subscribe("notification", msg -> {
+redisService.subscribe("notification", String.class, (channel, msg) -> {
     System.out.println("Received: " + msg);
 });
 

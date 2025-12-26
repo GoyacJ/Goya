@@ -1,6 +1,8 @@
 package com.ysmjjsy.goya.component.cache.resolver;
 
 import com.ysmjjsy.goya.component.cache.configuration.properties.CacheProperties;
+import com.ysmjjsy.goya.component.cache.constants.ICacheConstants;
+import com.ysmjjsy.goya.component.cache.enums.CacheLevel;
 import com.ysmjjsy.goya.component.cache.ttl.TtlStrategy;
 import com.ysmjjsy.goya.component.cache.ttl.FallbackStrategy;
 import lombok.Getter;
@@ -64,6 +66,16 @@ public class CacheSpecification {
      */
     private final TtlStrategy localTtlStrategy;
 
+    /**
+     * 缓存级别：L1_ONLY、L2_ONLY、L1_L2
+     */
+    private final CacheLevel cacheLevel;
+
+    /**
+     * 缓存键前缀（用于构建完整的缓存键）
+     */
+    private final String keyPrefix;
+
     // ========== 布隆过滤器配置 ==========
 
     /**
@@ -108,6 +120,10 @@ public class CacheSpecification {
         this.allowNullValues = builder.allowNullValues;
         this.localMaxSize = builder.localMaxSize;
         this.localTtlStrategy = builder.localTtlStrategy;
+        this.cacheLevel = builder.cacheLevel;
+        this.keyPrefix = builder.keyPrefix != null && !builder.keyPrefix.isEmpty() 
+                ? builder.keyPrefix 
+                : ICacheConstants.CACHE_PREFIX;
         this.enableBloomFilter = builder.enableBloomFilter;
         this.bloomFilterExpectedInsertions = builder.bloomFilterExpectedInsertions;
         this.bloomFilterFalsePositiveRate = builder.bloomFilterFalsePositiveRate;
@@ -184,6 +200,8 @@ public class CacheSpecification {
         private boolean allowNullValues = true;
         private long localMaxSize = 10000;
         private TtlStrategy localTtlStrategy;
+        private CacheLevel cacheLevel = CacheLevel.L1_L2;
+        private String keyPrefix;
         private boolean enableBloomFilter = false;
         private long bloomFilterExpectedInsertions = 1000000;
         private double bloomFilterFalsePositiveRate = 0.03;
@@ -205,6 +223,8 @@ public class CacheSpecification {
             this.allowNullValues = spec.allowNullValues;
             this.localMaxSize = spec.localMaxSize;
             this.localTtlStrategy = spec.localTtlStrategy;
+            this.cacheLevel = spec.cacheLevel;
+            this.keyPrefix = spec.keyPrefix;
             this.enableBloomFilter = spec.enableBloomFilter;
             this.bloomFilterExpectedInsertions = spec.bloomFilterExpectedInsertions;
             this.bloomFilterFalsePositiveRate = spec.bloomFilterFalsePositiveRate;
@@ -230,6 +250,16 @@ public class CacheSpecification {
 
         public Builder localTtlStrategy(TtlStrategy localTtlStrategy) {
             this.localTtlStrategy = localTtlStrategy;
+            return this;
+        }
+
+        public Builder cacheLevel(CacheLevel cacheLevel) {
+            this.cacheLevel = cacheLevel;
+            return this;
+        }
+
+        public Builder keyPrefix(String keyPrefix) {
+            this.keyPrefix = keyPrefix;
             return this;
         }
 

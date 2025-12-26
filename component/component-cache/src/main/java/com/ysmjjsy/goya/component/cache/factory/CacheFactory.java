@@ -4,10 +4,13 @@ import com.ysmjjsy.goya.component.cache.core.GoyaCache;
 import com.ysmjjsy.goya.component.cache.core.GoyaCacheManager;
 import com.ysmjjsy.goya.component.cache.core.LocalCache;
 import com.ysmjjsy.goya.component.cache.core.RemoteCache;
+import com.ysmjjsy.goya.component.cache.enums.CacheLevel;
 import com.ysmjjsy.goya.component.cache.event.CacheEventPublisher;
 import com.ysmjjsy.goya.component.cache.exception.CacheException;
 import com.ysmjjsy.goya.component.cache.filter.BloomFilterManager;
+import com.ysmjjsy.goya.component.cache.local.NoOpLocalCache;
 import com.ysmjjsy.goya.component.cache.metrics.CacheMetrics;
+import com.ysmjjsy.goya.component.cache.remote.NoOpRemoteCache;
 import com.ysmjjsy.goya.component.cache.resolver.CacheSpecification;
 import com.ysmjjsy.goya.component.cache.resolver.CacheSpecificationResolver;
 import com.ysmjjsy.goya.component.cache.support.CacheRefillManager;
@@ -91,6 +94,7 @@ public class CacheFactory {
      * 根据 cacheName 和 CacheSpecification 创建 GoyaCache 实例
      *
      * <p>使用指定的配置规范创建缓存实例。创建的实例是独立的，不会注册到 GoyaCacheManager。
+     * 根据 cacheLevel 配置自动创建对应的 L1/L2 实例（L1_ONLY 使用 NoOpRemoteCache，L2_ONLY 使用 NoOpLocalCache）。
      *
      * @param cacheName 缓存名称
      * @param spec 缓存配置规范
@@ -107,9 +111,33 @@ public class CacheFactory {
         }
 
         try {
-            // 1. 创建 LocalCache 和 RemoteCache
-            LocalCache l1 = localCacheFactory.create(cacheName, spec);
-            RemoteCache l2 = remoteCacheFactory.create(cacheName, spec);
+            // 1. 根据缓存级别创建 LocalCache 和 RemoteCache
+            LocalCache l1;
+            RemoteCache l2;
+
+            CacheLevel cacheLevel = spec.getCacheLevel();
+            if (cacheLevel == null) {
+                // 默认多级缓存
+                cacheLevel = CacheLevel.L1_L2;
+            }
+
+            l2 = switch (cacheLevel) {
+                case L1_ONLY -> {
+                    // 仅本地缓存：L1 使用实际实现，L2 使用 NoOp
+                    l1 = localCacheFactory.create(cacheName, spec);
+                    yield new NoOpRemoteCache(cacheName);
+                }
+                case L2_ONLY -> {
+                    // 仅远程缓存：L1 使用 NoOp，L2 使用实际实现
+                    l1 = new NoOpLocalCache(cacheName);
+                    yield remoteCacheFactory.create(cacheName, spec);
+                }
+                default -> {
+                    // 多级缓存：L1 和 L2 都使用实际实现
+                    l1 = localCacheFactory.create(cacheName, spec);
+                    yield remoteCacheFactory.create(cacheName, spec);
+                }
+            };
 
             if (l1 == null || l2 == null) {
                 throw new IllegalStateException("Failed to create LocalCache or RemoteCache for: " + cacheName);
@@ -122,14 +150,53 @@ public class CacheFactory {
             GoyaCache cache = new GoyaCache(cacheName, l1, l2, spec, bloomFilterManager, refillManager,
                     eventPublisher, fallbackStrategy, metrics);
 
-            log.info("Created independent GoyaCache: name={}, ttl={}, localMaxSize={}, bloomFilterEnabled={}",
-                    cacheName, spec.getTtl(), spec.getLocalMaxSize(), spec.isEnableBloomFilter());
+            log.info("Created independent GoyaCache: name={}, level={}, ttl={}, localMaxSize={}, bloomFilterEnabled={}",
+                    cacheName, cacheLevel, spec.getTtl(), spec.getLocalMaxSize(), spec.isEnableBloomFilter());
 
             return cache;
         } catch (Exception e) {
             log.error("Failed to create GoyaCache: cacheName={}", cacheName, e);
             throw new CommonException("Failed to create GoyaCache: " + cacheName, e);
         }
+    }
+
+    /**
+     * 创建仅本地缓存（L1_ONLY）
+     *
+     * @param cacheName 缓存名称
+     * @param spec 缓存配置规范
+     * @return GoyaCache 实例
+     */
+    public GoyaCache createL1Only(String cacheName, CacheSpecification spec) {
+        CacheSpecification.Builder builder = new CacheSpecification.Builder(spec);
+        builder.cacheLevel(CacheLevel.L1_ONLY);
+        return createCache(cacheName, builder.build());
+    }
+
+    /**
+     * 创建仅远程缓存（L2_ONLY）
+     *
+     * @param cacheName 缓存名称
+     * @param spec 缓存配置规范
+     * @return GoyaCache 实例
+     */
+    public GoyaCache createL2Only(String cacheName, CacheSpecification spec) {
+        CacheSpecification.Builder builder = new CacheSpecification.Builder(spec);
+        builder.cacheLevel(CacheLevel.L2_ONLY);
+        return createCache(cacheName, builder.build());
+    }
+
+    /**
+     * 创建多级缓存（L1_L2）
+     *
+     * @param cacheName 缓存名称
+     * @param spec 缓存配置规范
+     * @return GoyaCache 实例
+     */
+    public GoyaCache createL1L2(String cacheName, CacheSpecification spec) {
+        CacheSpecification.Builder builder = new CacheSpecification.Builder(spec);
+        builder.cacheLevel(CacheLevel.L1_L2);
+        return createCache(cacheName, builder.build());
     }
 
     /**
@@ -204,5 +271,28 @@ public class CacheFactory {
             builder.ttl(ttl);
             builder.localMaxSize(localMaxSize);
         });
+    }
+
+    /**
+     * 根据 cacheName 创建缓存实例（从配置解析）
+     *
+     * <p>从配置解析器获取 cacheName 对应的配置，然后创建缓存实例。
+     * 此方法主要用于 GoyaCacheManager 委托创建缓存。
+     *
+     * @param cacheName 缓存名称
+     * @return GoyaCache 实例
+     * @throws IllegalArgumentException 如果 cacheName 为 null
+     * @throws IllegalStateException 如果配置解析失败
+     * @throws RuntimeException 如果缓存创建失败
+     */
+    public GoyaCache createCacheFromName(String cacheName) {
+        if (cacheName == null) {
+            throw new IllegalArgumentException("CacheName cannot be null");
+        }
+        CacheSpecification spec = specificationResolver.resolve(cacheName);
+        if (spec == null) {
+            throw new IllegalStateException("Failed to resolve cache specification for: " + cacheName);
+        }
+        return createCache(cacheName, spec);
     }
 }

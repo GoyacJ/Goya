@@ -200,31 +200,13 @@ public class CacheAutoConfiguration {
     /**
      * GoyaCacheManager Bean
      *
-     * <p>注意：需要 RemoteCacheFactory，如果不存在则使用 NoOpRemoteCache（仅用于测试）
+     * <p>使用 CacheFactory 创建缓存实例，统一缓存创建逻辑。
      */
     @Bean
     @Primary
     @ConditionalOnMissingBean(CacheManager.class)
-    public GoyaCacheManager goyaCacheManager(
-            CacheSpecificationResolver specificationResolver,
-            GoyaCacheManager.LocalCacheFactory localCacheFactory,
-            GoyaCacheManager.RemoteCacheFactory remoteCacheFactory,
-            BloomFilterManager bloomFilterManager,
-            CacheRefillManager refillManager,
-            CacheEventPublisher eventPublisher,
-            GoyaCacheManager.FallbackStrategyFactory fallbackStrategyFactory,
-            CacheMetrics metrics) {
-
-        GoyaCacheManager manager = new GoyaCacheManager(
-                specificationResolver,
-                localCacheFactory,
-                remoteCacheFactory,
-                bloomFilterManager,
-                refillManager,
-                eventPublisher,
-                fallbackStrategyFactory,
-                metrics
-        );
+    public GoyaCacheManager goyaCacheManager(CacheFactory cacheFactory) {
+        GoyaCacheManager manager = new GoyaCacheManager(cacheFactory);
         log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [goyaCacheManager] register.");
         return manager;
     }

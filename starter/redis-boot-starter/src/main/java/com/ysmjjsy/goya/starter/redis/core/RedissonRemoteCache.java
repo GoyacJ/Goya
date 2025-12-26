@@ -4,7 +4,6 @@ import com.ysmjjsy.goya.component.cache.core.GoyaCache;
 import com.ysmjjsy.goya.component.cache.core.RemoteCache;
 import com.ysmjjsy.goya.component.cache.resolver.CacheSpecification;
 import com.ysmjjsy.goya.component.cache.serializer.CacheKeySerializer;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
@@ -78,7 +77,6 @@ import java.util.concurrent.TimeUnit;
  * @since 2025/12/26 14:59
  */
 @Slf4j
-@RequiredArgsConstructor
 public class RedissonRemoteCache implements RemoteCache {
 
     /**
@@ -102,14 +100,33 @@ public class RedissonRemoteCache implements RemoteCache {
     private final CacheKeySerializer keySerializer;
 
     /**
-     * Redis key 前缀
+     * Redis key 前缀（从配置获取，默认值："cache:"）
      */
-    private static final String KEY_PREFIX = "goya:cache:";
+    private final String keyPrefix;
 
     /**
      * 缓存配置规范
      */
     private final CacheSpecification spec;
+
+    /**
+     * 构造函数
+     *
+     * @param name 缓存名称
+     * @param redisson Redisson 客户端
+     * @param codec 编解码器（可选）
+     * @param spec 缓存配置规范
+     * @param keySerializer 缓存键序列化器（可选）
+     */
+    public RedissonRemoteCache(String name, RedissonClient redisson, Codec codec,
+                               CacheSpecification spec, CacheKeySerializer keySerializer) {
+        this.name = name;
+        this.redisson = redisson;
+        this.codec = codec;
+        this.spec = spec;
+        this.keySerializer = keySerializer;
+        this.keyPrefix = spec.getKeyPrefix();
+    }
 
     @Override
     @NullMarked
@@ -210,7 +227,7 @@ public class RedissonRemoteCache implements RemoteCache {
     public void clear() {
         // 删除所有以该 cacheName 为前缀的 key
         // 注意：这是一个昂贵的操作，应该谨慎使用
-        String pattern = KEY_PREFIX + name + ":*";
+        String pattern = keyPrefix + name + ":*";
         redisson.getKeys().deleteByPattern(pattern);
 
         log.info("Cleared RedissonRemoteCache: name={}", name);
@@ -333,17 +350,22 @@ public class RedissonRemoteCache implements RemoteCache {
 
         // 优化：常见类型直接使用字符串拼接
         if (key instanceof String) {
-            return KEY_PREFIX + name + ":" + key;
+            return keyPrefix + name + ":" + key;
         }
 
         if (key instanceof Long || key instanceof Integer) {
-            return KEY_PREFIX + name + ":" + key.toString();
+            return keyPrefix + name + ":" + key.toString();
         }
 
         // 其他类型：使用序列化器序列化后转换为 Base64 字符串
-        byte[] keyBytes = keySerializer.serialize(key);
-        String serializedKey = Base64.getEncoder().encodeToString(keyBytes);
-        return KEY_PREFIX + name + ":" + serializedKey;
+        if (keySerializer != null) {
+            byte[] keyBytes = keySerializer.serialize(key);
+            String serializedKey = Base64.getEncoder().encodeToString(keyBytes);
+            return keyPrefix + name + ":" + serializedKey;
+        } else {
+            // 如果没有序列化器，使用 toString()
+            return keyPrefix + name + ":" + key.toString();
+        }
     }
 
     // ValueRetrievalException 使用 Spring Cache 的标准异常

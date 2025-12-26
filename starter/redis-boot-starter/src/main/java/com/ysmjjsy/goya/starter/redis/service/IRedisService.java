@@ -3,9 +3,9 @@ package com.ysmjjsy.goya.starter.redis.service;
 import org.redisson.api.*;
 import org.redisson.api.listener.MessageListener;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -97,12 +97,13 @@ public interface IRedisService {
      * <p>订阅指定频道，接收消息。
      *
      * @param channel 频道名称
+     * @param messageClass 消息类型
      * @param listener 消息监听器
      * @param <T> 消息类型
      * @return 订阅 ID（用于取消订阅）
-     * @throws IllegalArgumentException 如果 channel 或 listener 为 null
+     * @throws IllegalArgumentException 如果 channel、messageClass 或 listener 为 null
      */
-    <T> int subscribe(String channel, MessageListener<T> listener);
+    <T> int subscribe(String channel, Class<T> messageClass, MessageListener<T> listener);
 
     /**
      * 取消订阅
@@ -317,16 +318,16 @@ public interface IRedisService {
     // ========== 高级数据结构 - SortedSet ==========
 
     /**
-     * 获取 SortedSet
+     * 获取 SortedSet（带分数）
      *
-     * <p>获取指定 key 的 SortedSet 数据结构。
+     * <p>获取指定 key 的 SortedSet 数据结构（带分数）。
      *
      * @param key 键
      * @param <T> 元素类型
-     * @return SortedSet 实例
+     * @return SortedSet 实例（带分数）
      * @throws IllegalArgumentException 如果 key 为 null
      */
-    <T> RSortedSet<T> getSortedSet(String key);
+    <T> RScoredSortedSet<T> getSortedSet(String key);
 
     /**
      * 向 SortedSet 添加元素
@@ -353,7 +354,7 @@ public interface IRedisService {
      * @return 元素集合
      * @throws IllegalArgumentException 如果 key 为 null
      */
-    <T> Set<T> getSortedSetRange(String key, int startRank, int endRank);
+    <T> Collection<T> getSortedSetRange(String key, int startRank, int endRank);
 
     // ========== 高级数据结构 - Hash ==========
 

@@ -1,6 +1,7 @@
 package com.ysmjjsy.goya.component.cache.configuration.properties;
 
 import com.ysmjjsy.goya.component.cache.constants.ICacheConstants;
+import com.ysmjjsy.goya.component.cache.enums.CacheLevel;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -21,6 +22,14 @@ import java.util.Map;
 @Schema(description = "缓存配置属性")
 @ConfigurationProperties(prefix = ICacheConstants.PROPERTY_CACHE)
 public record CacheProperties(
+        /*
+          缓存键前缀（全局配置）
+          默认值："cache:"
+         */
+        @Schema(description = "缓存键前缀")
+        @DefaultValue("cache:")
+        String keyPrefix,
+
         /*
           默认配置
          */
@@ -82,6 +91,13 @@ public record CacheProperties(
              */
             @Schema(description = "L1TTL策略配置")
             TtlStrategyConfig localTtlStrategy,
+
+            /*
+              缓存级别：L1_ONLY（仅本地）、L2_ONLY（仅远程）、L1_L2（多级缓存）
+             */
+            @Schema(description = "缓存级别")
+            @DefaultValue("L1_L2")
+            CacheLevel cacheLevel,
 
             /*
               是否启用布隆过滤器
