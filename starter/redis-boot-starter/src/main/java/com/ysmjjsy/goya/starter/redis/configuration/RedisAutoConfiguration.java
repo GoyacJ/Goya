@@ -6,6 +6,7 @@ import com.ysmjjsy.goya.component.cache.serializer.DefaultCacheKeySerializer;
 import com.ysmjjsy.goya.starter.redis.codec.TypedJsonMapperCodec;
 import com.ysmjjsy.goya.starter.redis.configuration.properties.RedisProperties;
 import com.ysmjjsy.goya.starter.redis.core.RedissonRemoteCache;
+import com.ysmjjsy.goya.starter.redis.factory.MultiClusterRemoteCacheFactory;
 import com.ysmjjsy.goya.starter.redis.service.DefaultRedisService;
 import com.ysmjjsy.goya.starter.redis.service.IRedisService;
 import com.ysmjjsy.goya.starter.redis.subscriber.RedisCacheEvictionSubscriber;
@@ -68,23 +69,29 @@ public class RedisAutoConfiguration {
     }
 
     /**
-     * 远程缓存工厂 Bean
+     * 远程缓存工厂 Bean（多集群支持，默认）
      *
-     * <p>使用 Redisson 和 TypedJsonMapperCodec 创建 RemoteCache 实例。
+     * <p>使用 MultiClusterRemoteCacheFactory 作为默认实现，支持多集群场景。
+     * 向后兼容：如果 CacheSpecification 中未指定 clusterName，使用默认集群。
+     *
+     * <p><b>使用方式：</b>
+     * <ul>
+     *   <li>单集群场景：无需配置，自动使用默认 RedissonClient</li>
+     *   <li>多集群场景：通过 MultiClusterRemoteCacheFactory.registerCluster() 注册额外集群</li>
+     *   <li>在 CacheSpecification 中指定 clusterName 选择对应集群</li>
+     * </ul>
      */
-    @Bean
+    @Bean(name = "remoteCacheFactory")
     @ConditionalOnMissingBean(name = "remoteCacheFactory")
-    public GoyaCacheManager.RemoteCacheFactory remoteCacheFactory(
+    public MultiClusterRemoteCacheFactory remoteCacheFactory(
             RedissonClient redissonClient,
             JsonMapper jsonMapper,
             CacheKeySerializer cacheKeySerializer) {
-        log.info("Creating RemoteCacheFactory with Redisson, JsonMapper and CacheKeySerializer");
-        // 创建统一序列化 Codec
-        TypedJsonMapperCodec codec = new TypedJsonMapperCodec(jsonMapper);
-        return (cacheName, spec) -> {
-            log.debug("Creating RedissonRemoteCache: cacheName={}, codec=TypedJsonMapperCodec", cacheName);
-            return new RedissonRemoteCache(cacheName, redissonClient, codec, spec, cacheKeySerializer);
-        };
+        log.info("Creating MultiClusterRemoteCacheFactory with default RedissonClient");
+        MultiClusterRemoteCacheFactory factory = new MultiClusterRemoteCacheFactory(
+                redissonClient, jsonMapper, cacheKeySerializer);
+        log.info("MultiClusterRemoteCacheFactory created. Use registerCluster() to add more clusters.");
+        return factory;
     }
 
     /**

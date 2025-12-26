@@ -3,7 +3,6 @@ package com.ysmjjsy.goya.component.cache.core;
 import com.ysmjjsy.goya.component.cache.enums.ConsistencyLevel;
 import com.ysmjjsy.goya.component.cache.event.CacheEventPublisher;
 import com.ysmjjsy.goya.component.cache.event.LocalCacheEvictionEvent;
-import com.ysmjjsy.goya.component.cache.exception.CacheException;
 import com.ysmjjsy.goya.component.cache.filter.BloomFilterManager;
 import com.ysmjjsy.goya.component.cache.local.NullValueWrapper;
 import com.ysmjjsy.goya.component.cache.metrics.CacheMetrics;
@@ -11,7 +10,6 @@ import com.ysmjjsy.goya.component.cache.resolver.CacheSpecification;
 import com.ysmjjsy.goya.component.cache.support.CacheRefillManager;
 import com.ysmjjsy.goya.component.cache.support.SingleFlightLoader;
 import com.ysmjjsy.goya.component.cache.ttl.FallbackStrategy;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
@@ -94,7 +92,6 @@ import java.util.stream.Collectors;
  * @since 2025/12/26 14:42
  */
 @Slf4j
-@RequiredArgsConstructor
 public class GoyaCache<K, V> implements Cache {
 
     /**
@@ -147,6 +144,71 @@ public class GoyaCache<K, V> implements Cache {
      */
     private final SingleFlightLoader singleFlightLoader;
 
+    /**
+     * 缓存编排器（负责 L1/L2 编排逻辑）
+     */
+    private final CacheOrchestrator orchestrator;
+
+    /**
+     * 构造函数
+     *
+     * <p>创建 GoyaCache 实例，并初始化 CacheOrchestrator 负责编排逻辑。
+     * GoyaCache 专注于 Spring Cache 适配，编排逻辑委托给 CacheOrchestrator。
+     */
+    public GoyaCache(
+            String name,
+            LocalCache l1,
+            RemoteCache l2,
+            CacheSpecification spec,
+            BloomFilterManager bloomFilter,
+            CacheRefillManager refillManager,
+            CacheEventPublisher eventPublisher,
+            FallbackStrategy fallbackStrategy,
+            CacheMetrics metrics,
+            SingleFlightLoader singleFlightLoader) {
+        if (name == null) {
+            throw new IllegalArgumentException("Name cannot be null");
+        }
+        if (l1 == null) {
+            throw new IllegalArgumentException("LocalCache cannot be null");
+        }
+        if (l2 == null) {
+            throw new IllegalArgumentException("RemoteCache cannot be null");
+        }
+        if (spec == null) {
+            throw new IllegalArgumentException("CacheSpecification cannot be null");
+        }
+        if (bloomFilter == null) {
+            throw new IllegalArgumentException("BloomFilterManager cannot be null");
+        }
+        if (refillManager == null) {
+            throw new IllegalArgumentException("CacheRefillManager cannot be null");
+        }
+        if (eventPublisher == null) {
+            throw new IllegalArgumentException("CacheEventPublisher cannot be null");
+        }
+        if (fallbackStrategy == null) {
+            throw new IllegalArgumentException("FallbackStrategy cannot be null");
+        }
+        if (singleFlightLoader == null) {
+            throw new IllegalArgumentException("SingleFlightLoader cannot be null");
+        }
+        this.name = name;
+        this.l1 = l1;
+        this.l2 = l2;
+        this.spec = spec;
+        this.bloomFilter = bloomFilter;
+        this.refillManager = refillManager;
+        this.eventPublisher = eventPublisher;
+        this.fallbackStrategy = fallbackStrategy;
+        this.metrics = metrics;
+        this.singleFlightLoader = singleFlightLoader;
+        // 初始化编排器，将编排逻辑委托给它
+        this.orchestrator = new CacheOrchestrator(
+                name, l1, l2, spec, bloomFilter, refillManager,
+                fallbackStrategy, metrics, singleFlightLoader);
+    }
+
     @Override
     @NullMarked
     public String getName() {
@@ -170,77 +232,13 @@ public class GoyaCache<K, V> implements Cache {
     /**
      * 类型安全的获取方法
      *
+     * <p>委托给 CacheOrchestrator 执行编排逻辑。
+     *
      * @param key 缓存键
      * @return ValueWrapper，如果不存在则返回 null
      */
     public ValueWrapper getTyped(K key) {
-        // 记录Key访问（用于热Key检测）
-        if (metrics != null) {
-            metrics.recordKeyAccess(name, key);
-        }
-
-        // 1. 布隆过滤器快速路径（仅优化，不阻塞）
-        // 即使布隆过滤器判断"不存在"，仍查询 L2，避免误判
-        boolean bloomFilterCheck = true;
-        if (spec.isEnableBloomFilter()) {
-            bloomFilterCheck = bloomFilter.mightContain(name, key);
-            if (!bloomFilterCheck) {
-                // 布隆过滤器判断"不存在"，记录快速过滤指标
-                // 但仍查询 L2（避免误判）
-                recordBloomFilterFiltered();
-            }
-        }
-
-        // 2. 查询 L1（记录延迟）
-        long l1StartNanos = System.nanoTime();
-        ValueWrapper l1Value = l1.get(key);
-        long l1DurationNanos = System.nanoTime() - l1StartNanos;
-        if (metrics != null) {
-            metrics.recordL1Latency(name, l1DurationNanos);
-        }
-
-        if (l1Value != null) {
-            recordHit(HitLevel.L1);
-            return unwrapNullValue(l1Value);
-        }
-
-        // 3. 查询 L2（即使布隆过滤器判断"不存在"也查询，避免误判）
-        long l2StartNanos = System.nanoTime();
-        try {
-            ValueWrapper l2Value = l2.get(key);
-            long l2DurationNanos = System.nanoTime() - l2StartNanos;
-            if (metrics != null) {
-                metrics.recordL2Latency(name, l2DurationNanos);
-            }
-
-            if (l2Value != null) {
-                recordHit(HitLevel.L2);
-
-                // 如果布隆过滤器误判（判断"不存在"但 L2 命中），记录误判指标
-                if (spec.isEnableBloomFilter() && !bloomFilterCheck) {
-                    recordBloomFilterFalsePositive();
-                }
-
-                // 异步回填 L1（并发控制）
-                refillManager.refillAsync(name, key, l2Value, l1);
-                return unwrapNullValue(l2Value);
-            }
-        } catch (Exception e) {
-            long l2DurationNanos = System.nanoTime() - l2StartNanos;
-            if (metrics != null) {
-                metrics.recordL2Latency(name, l2DurationNanos);
-            }
-            // L2 查询失败，根据降级策略处理
-            log.warn("Failed to query L2 cache for key: {}", key, e);
-            ValueWrapper fallbackValue = fallbackStrategy.onL2Failure(key, l1, e);
-            if (fallbackValue != null) {
-                return unwrapNullValue(fallbackValue);
-            }
-        }
-
-        // 4. 未命中
-        recordMiss();
-        return null;
+        return orchestrator.get(key);
     }
 
     /**
@@ -287,20 +285,13 @@ public class GoyaCache<K, V> implements Cache {
             return value;
         }
 
-        // 使用 SingleFlight 机制防止缓存击穿：同一 key 的并发回源请求合并为一个
+        // 委托给 orchestrator，使用 SingleFlight 机制防止缓存击穿
         long sourceLoadStartNanos = System.nanoTime();
         T value;
         try {
-            // 使用 SingleFlight 加载，确保同一 key 的并发请求只执行一次
-            Callable<T> wrappedLoader = () -> {
-                T loadedValue = valueLoader.call();
-                // 写入缓存
-                @SuppressWarnings("unchecked")
-                V typedValue = (V) loadedValue;
-                putTyped(typedKey, typedValue);
-                return loadedValue;
-            };
-            value = singleFlightLoader.load(typedKey, wrappedLoader);
+            @SuppressWarnings("unchecked")
+            Callable<T> loader = (Callable<T>) valueLoader;
+            value = orchestrator.get(typedKey, loader);
         } catch (Exception e) {
             long sourceLoadDurationNanos = System.nanoTime() - sourceLoadStartNanos;
             if (metrics != null) {
@@ -373,7 +364,8 @@ public class GoyaCache<K, V> implements Cache {
     /**
      * 类型安全的写入方法（带自定义 TTL 和一致性等级）
      *
-     * <p>根据指定的一致性等级决定写入策略。
+     * <p>委托给 CacheOrchestrator 执行编排逻辑。
+     * 注意：写入操作不发布失效事件，只有失效操作（evict）才发布失效事件。
      *
      * @param key 缓存键
      * @param value 缓存值
@@ -383,126 +375,10 @@ public class GoyaCache<K, V> implements Cache {
      * @throws RuntimeException 如果一致性等级为 STRONG 且写入失败
      */
     public void putTyped(K key, V value, Duration ttl, ConsistencyLevel consistencyLevel) {
-        if (ttl == null || ttl.isNegative() || ttl.isZero()) {
-            throw new IllegalArgumentException("TTL must be positive, got: " + ttl);
-        }
-        if (consistencyLevel == null) {
-            consistencyLevel = ConsistencyLevel.EVENTUAL;
-        }
-
-        // 1. Null 值处理
-        Object actualValue = wrapNullValue(value);
-
-        // 2. 根据一致性等级执行写入策略
-        switch (consistencyLevel) {
-            case STRONG -> putWithStrongConsistency(key, actualValue, ttl);
-            case EVENTUAL -> putWithEventualConsistency(key, actualValue, ttl);
-            case BEST_EFFORT -> putWithBestEffort(key, actualValue, ttl);
-        }
-
-        // 3. 更新布隆过滤器（异步，失败不影响主流程）
-        if (spec.isEnableBloomFilter()) {
-            bloomFilter.putAsync(name, key).exceptionally(e -> {
-                log.warn("Failed to update bloom filter for key: {}", key, e);
-                return null;
-            });
-        }
-    }
-
-    /**
-     * 强一致性写入
-     *
-     * <p>要求 L2 写入成功 + L1 写入成功 + 跨节点同步完成。
-     * 如果任何一步失败，抛出异常。
-     */
-    private void putWithStrongConsistency(K key, Object actualValue, Duration ttl) {
-        // L2 写入（必须成功）
-        try {
-            l2.put(key, actualValue, ttl);
-        } catch (Exception e) {
-            log.error("Failed to write to L2 cache with STRONG consistency for key: {}", key, e);
-            throw new CacheException("L2 write failed with STRONG consistency", e);
-        }
-
-        // L1 写入（必须成功）
-        try {
-            l1.put(key, actualValue, ttl);
-        } catch (Exception e) {
-            log.error("Failed to write to L1 cache with STRONG consistency for key: {}", key, e);
-            // 尝试回滚 L2（如果可能）
-            try {
-                l2.evict(key);
-            } catch (Exception rollbackException) {
-                log.warn("Failed to rollback L2 cache for key: {}", key, rollbackException);
-            }
-            throw new CacheException("L1 write failed with STRONG consistency", e);
-        }
-
-        // 等待跨节点同步完成（发布事件后等待一小段时间，确保事件已发送）
-        eventPublisher.publishEviction(name, key);
-        // 注意：当前实现无法真正等待跨节点同步完成，这里只是发布事件
-        // 未来可以通过事件确认机制实现真正的等待
-    }
-
-    /**
-     * 最终一致性写入（默认）
-     *
-     * <p>L2 写入成功即可返回，L1 写入失败不影响主流程。
-     */
-    private void putWithEventualConsistency(K key, Object actualValue, Duration ttl) {
-        // L2 写入（必须成功）
-        boolean l2Success = false;
-        try {
-            l2.put(key, actualValue, ttl);
-            l2Success = true;
-        } catch (Exception e) {
-            // L2 写入失败，根据降级策略处理
-            log.error("Failed to write to L2 cache for key: {}", key, e);
-            fallbackStrategy.onL2WriteFailure(key, actualValue, l1, e);
-            return;
-        }
-
-        // L1 写入（失败不影响主流程）
-        if (l2Success) {
-            try {
-                l1.put(key, actualValue, ttl);
-            } catch (Exception e) {
-                log.error("Failed to write to L1 cache for key: {}", key, e);
-                // L1 写入失败不影响 L2，但记录错误
-            }
-        }
-
-        // 发布失效事件（异步，不等待）
-        eventPublisher.publishEviction(name, key);
-    }
-
-    /**
-     * 尽力而为写入
-     *
-     * <p>写入失败时降级，不保证一致性，不抛出异常。
-     */
-    private void putWithBestEffort(K key, Object actualValue, Duration ttl) {
-        // 尝试写入 L2
-        boolean l2Success = false;
-        try {
-            l2.put(key, actualValue, ttl);
-            l2Success = true;
-        } catch (Exception e) {
-            log.warn("Failed to write to L2 cache with BEST_EFFORT for key: {}", key, e);
-            // 降级到 L1
-            fallbackStrategy.onL2WriteFailure(key, actualValue, l1, e);
-        }
-
-        // 尝试写入 L1（即使 L2 失败也尝试）
-        try {
-            l1.put(key, actualValue, ttl);
-        } catch (Exception e) {
-            log.warn("Failed to write to L1 cache with BEST_EFFORT for key: {}", key, e);
-            // 不抛出异常，尽力而为
-        }
-
-        // 发布失效事件（异步，不等待）
-        eventPublisher.publishEviction(name, key);
+        // 委托给 orchestrator 执行编排逻辑
+        orchestrator.put(key, value, ttl, consistencyLevel);
+        // 注意：写入操作不应该发布失效事件，否则会导致刚写入的缓存被清除
+        // 只有失效操作（evict）才应该发布失效事件
     }
 
     @Override
@@ -515,44 +391,22 @@ public class GoyaCache<K, V> implements Cache {
     /**
      * 类型安全的失效方法
      *
+     * <p>委托给 CacheOrchestrator 执行编排逻辑，然后发布事件。
+     *
      * @param key 缓存键
      */
     public void evictTyped(K key) {
-        // 1. 失效 L1
-        try {
-            l1.evict(key);
-        } catch (Exception e) {
-            log.warn("Failed to evict from L1 cache for key: {}", key, e);
-        }
-
-        // 2. 失效 L2
-        try {
-            l2.evict(key);
-        } catch (Exception e) {
-            log.error("Failed to evict from L2 cache for key: {}", key, e);
-        }
-
-        // 3. 发布失效事件（其他节点会收到通知）
+        // 委托给 orchestrator 执行编排逻辑
+        orchestrator.evict(key);
+        // 发布失效事件（Spring Cache 适配职责）
         eventPublisher.publishEviction(name, key);
     }
 
     @Override
     public void clear() {
-        // 1. 清空 L1
-        try {
-            l1.clear();
-        } catch (Exception e) {
-            log.warn("Failed to clear L1 cache", e);
-        }
-
-        // 2. 清空 L2
-        try {
-            l2.clear();
-        } catch (Exception e) {
-            log.error("Failed to clear L2 cache", e);
-        }
-
-        // 3. 发布清空事件
+        // 委托给 orchestrator 执行编排逻辑
+        orchestrator.clear();
+        // 发布清空事件（Spring Cache 适配职责）
         eventPublisher.publishClear(name);
     }
 
@@ -774,99 +628,23 @@ public class GoyaCache<K, V> implements Cache {
             return Collections.emptyMap();
         }
 
+        // 委托给 orchestrator 执行编排逻辑
+        Map<Object, ValueWrapper> wrapperResults = orchestrator.batchGet(validKeys);
+
+        // 转换为类型安全的 Map<K, V>
         Map<K, V> result = new HashMap<>();
-
-        // 记录Key访问（用于热Key检测）
-        if (metrics != null) {
-            for (Object key : validKeys) {
-                metrics.recordKeyAccess(name, key);
-            }
-        }
-
-        // 1. 批量查询 L1（记录延迟）
-        long l1StartNanos = System.nanoTime();
-        Map<Object, ValueWrapper> l1Results = l1.getAll(validKeys);
-        long l1DurationNanos = System.nanoTime() - l1StartNanos;
-        if (metrics != null && !validKeys.isEmpty()) {
-            // 平均延迟 = 总延迟 / Key数量
-            metrics.recordL1Latency(name, l1DurationNanos / validKeys.size());
-        }
-
-        for (Map.Entry<Object, ValueWrapper> entry : l1Results.entrySet()) {
+        for (Map.Entry<Object, ValueWrapper> entry : wrapperResults.entrySet()) {
             @SuppressWarnings("unchecked")
             K key = (K) entry.getKey();
             ValueWrapper wrapper = entry.getValue();
             if (wrapper != null) {
-                Object value = unwrapNullValue(wrapper).get();
+                Object value = wrapper.get();
                 if (value != null) {
-                    result.put(key, (V) value);
-                    recordHit(HitLevel.L1);
-                }
-            }
-        }
-
-        // 2. 找出 L1 未命中的 key
-        Set<Object> l2Keys = validKeys.stream()
-                .filter(key -> !result.containsKey(key))
-                .collect(Collectors.toSet());
-
-        if (l2Keys.isEmpty()) {
-            return result;
-        }
-
-        // 3. 批量查询 L2（使用批量 API，记录延迟）
-        long l2StartNanos = System.nanoTime();
-        try {
-            Map<Object, ValueWrapper> l2Results = l2.getAll(l2Keys);
-            long l2DurationNanos = System.nanoTime() - l2StartNanos;
-            if (metrics != null && !l2Keys.isEmpty()) {
-                // 平均延迟 = 总延迟 / Key数量
-                metrics.recordL2Latency(name, l2DurationNanos / l2Keys.size());
-            }
-
-            for (Map.Entry<Object, ValueWrapper> entry : l2Results.entrySet()) {
-                @SuppressWarnings("unchecked")
-                K key = (K) entry.getKey();
-                ValueWrapper wrapper = entry.getValue();
-                if (wrapper != null) {
-                    Object value = unwrapNullValue(wrapper).get();
-                    if (value != null) {
-                        result.put(key, (V) value);
-                        recordHit(HitLevel.L2);
-
-                        // 异步回填 L1
-                        refillManager.refillAsync(name, key, wrapper, l1);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            long l2DurationNanos = System.nanoTime() - l2StartNanos;
-            if (metrics != null && !l2Keys.isEmpty()) {
-                metrics.recordL2Latency(name, l2DurationNanos / l2Keys.size());
-            }
-            // L2 批量查询失败，降级到单个查询
-            log.warn("Failed to batch query L2 cache, falling back to individual queries", e);
-            for (Object key : l2Keys) {
-                try {
                     @SuppressWarnings("unchecked")
-                    K typedKey = (K) key;
-                    ValueWrapper wrapper = getTyped(typedKey);
-                    if (wrapper != null) {
-                        Object value = unwrapNullValue(wrapper).get();
-                        if (value != null) {
-                            result.put(typedKey, (V) value);
-                        }
-                    }
-                } catch (Exception ex) {
-                    log.warn("Failed to get key from L2 cache: {}", key, ex);
+                    V typedValue = (V) value;
+                    result.put(key, typedValue);
                 }
             }
-        }
-
-        // 4. 记录未命中
-        long misses = validKeys.size() - result.size();
-        for (int i = 0; i < misses; i++) {
-            recordMiss();
         }
 
         return result;
@@ -908,68 +686,12 @@ public class GoyaCache<K, V> implements Cache {
      * @param ttl 过期时间
      */
     public void batchPutTyped(Map<K, V> entries, Duration ttl) {
-        if (entries == null || entries.isEmpty()) {
-            return;
-        }
-        if (ttl == null || ttl.isNegative() || ttl.isZero()) {
-            throw new IllegalArgumentException("TTL must be positive, got: " + ttl);
-        }
-
-        // 过滤 null key 并包装 null value
-        Map<Object, Object> l2Entries = new HashMap<>();
-        for (Map.Entry<K, V> entry : entries.entrySet()) {
-            if (entry.getKey() == null) {
-                continue;
-            }
-            Object wrappedValue = wrapNullValue(entry.getValue());
-            l2Entries.put(entry.getKey(), wrappedValue);
-        }
-
-        if (l2Entries.isEmpty()) {
-            return;
-        }
-
-        // 1. 批量写入 L2（使用批量 API）
-        boolean l2Success = false;
-        try {
-            l2.putAll(l2Entries, ttl);
-            l2Success = true;
-        } catch (Exception e) {
-            log.error("Failed to batch write to L2 cache", e);
-            // 降级到单个写入
-            for (Map.Entry<Object, Object> entry : l2Entries.entrySet()) {
-                try {
-                    @SuppressWarnings("unchecked")
-                    K key = (K) entry.getKey();
-                    V value = (V) unwrapNullValue(new SimpleValueWrapper(entry.getValue())).get();
-                    putTyped(key, value, ttl);
-                } catch (Exception ex) {
-                    log.warn("Failed to put key to cache: {}", entry.getKey(), ex);
-                }
-            }
-        }
-
-        // 2. 如果 L2 写入成功，批量写入 L1
-        if (l2Success) {
-            try {
-                l1.putAll(l2Entries, ttl);
-            } catch (Exception e) {
-                log.error("Failed to batch write to L1 cache", e);
-                // L1 写入失败不影响 L2，但记录错误
-            }
-        }
-
-        // 3. 更新布隆过滤器（异步）
-        if (spec.isEnableBloomFilter()) {
-            for (K key : entries.keySet()) {
-                if (key != null) {
-                    bloomFilter.putAsync(name, key).exceptionally(e -> {
-                        log.warn("Failed to update bloom filter for key: {}", key, e);
-                        return null;
-                    });
-                }
-            }
-        }
+        // 委托给 orchestrator 执行编排逻辑
+        @SuppressWarnings("unchecked")
+        Map<Object, Object> objectEntries = (Map<Object, Object>) (Map<?, ?>) entries;
+        orchestrator.batchPut(objectEntries, ttl);
+        // 注意：写入操作不应该发布失效事件，否则会导致刚写入的缓存被清除
+        // 只有失效操作（evict）才应该发布失效事件
     }
 
     /**

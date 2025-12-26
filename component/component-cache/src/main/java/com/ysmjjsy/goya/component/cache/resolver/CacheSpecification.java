@@ -113,6 +113,16 @@ public class CacheSpecification {
      */
     private final ConsistencyLevel consistencyLevel;
 
+    // ========== 多集群配置 ==========
+
+    /**
+     * Redis 集群名称（可选，用于多集群场景）
+     *
+     * <p>如果指定了集群名称，将使用对应的 RedissonClient 实例。
+     * 如果为 null，使用默认的 RedissonClient。
+     */
+    private final String clusterName;
+
     // ========== 扩展配置 ==========
 
     /**
@@ -140,6 +150,7 @@ public class CacheSpecification {
         this.consistencyLevel = builder.consistencyLevel != null 
                 ? builder.consistencyLevel 
                 : ConsistencyLevel.EVENTUAL;
+        this.clusterName = builder.clusterName;
         this.extendedProperties = new HashMap<>(builder.extendedProperties);
     }
 
@@ -219,6 +230,7 @@ public class CacheSpecification {
         private boolean bloomFilterPersistent = false;
         private FallbackStrategy.Type fallbackStrategyType = FallbackStrategy.Type.DEGRADE_TO_L1;
         private ConsistencyLevel consistencyLevel = ConsistencyLevel.EVENTUAL;
+        private String clusterName;
         private final Map<String, Object> extendedProperties = new HashMap<>();
 
         /**
@@ -243,6 +255,7 @@ public class CacheSpecification {
             this.bloomFilterPersistent = spec.bloomFilterPersistent;
             this.fallbackStrategyType = spec.fallbackStrategyType;
             this.consistencyLevel = spec.consistencyLevel;
+            this.clusterName = spec.clusterName;
             this.extendedProperties.putAll(spec.extendedProperties);
         }
 
@@ -303,6 +316,11 @@ public class CacheSpecification {
 
         public Builder consistencyLevel(ConsistencyLevel consistencyLevel) {
             this.consistencyLevel = consistencyLevel;
+            return this;
+        }
+
+        public Builder clusterName(String clusterName) {
+            this.clusterName = clusterName;
             return this;
         }
 
