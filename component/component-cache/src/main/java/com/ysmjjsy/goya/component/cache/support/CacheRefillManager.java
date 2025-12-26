@@ -2,6 +2,7 @@ package com.ysmjjsy.goya.component.cache.support;
 
 import com.ysmjjsy.goya.component.cache.core.GoyaCache;
 import com.ysmjjsy.goya.component.cache.core.LocalCache;
+import com.ysmjjsy.goya.component.cache.metrics.CacheMetrics;
 import com.ysmjjsy.goya.component.cache.resolver.CacheSpecification;
 import com.ysmjjsy.goya.component.cache.resolver.CacheSpecificationResolver;
 import lombok.extern.slf4j.Slf4j;
@@ -63,6 +64,11 @@ public class CacheRefillManager {
     private final CacheSpecificationResolver specificationResolver;
 
     /**
+     * 监控指标（可选，用于记录回填成功/失败）
+     */
+    private final CacheMetrics metrics;
+
+    /**
      * 正在回填的任务 Map
      * Key: CacheKey（cacheName + key）
      * Value: CompletableFuture（回填任务）
@@ -81,23 +87,41 @@ public class CacheRefillManager {
      * @throws IllegalArgumentException 如果 specificationResolver 为 null
      */
     public CacheRefillManager(CacheSpecificationResolver specificationResolver) {
+        this(specificationResolver, null);
+    }
+
+    /**
+     * 构造函数（带监控指标）
+     *
+     * @param specificationResolver 配置规范解析器
+     * @param metrics 监控指标（可选，如果为 null 则不记录回填指标）
+     * @throws IllegalArgumentException 如果 specificationResolver 为 null
+     */
+    public CacheRefillManager(CacheSpecificationResolver specificationResolver, CacheMetrics metrics) {
         if (specificationResolver == null) {
             throw new IllegalArgumentException("CacheSpecificationResolver cannot be null");
         }
         this.specificationResolver = specificationResolver;
+        this.metrics = metrics;
     }
 
     /**
      * 异步回填 L1（带并发控制）
      *
-     * <p>如果该 key 已有回填任务，不重复执行。使用 computeIfAbsent 确保原子性操作，避免竞态条件。
+     * <p>使用双重检查机制防止重复回填：
+     * <ol>
+     *   <li>第一次检查：如果已有回填任务，直接返回（避免重复创建任务）</li>
+     *   <li>第二次检查：在回填前检查 L1 是否已有值（避免重复回填）</li>
+     * </ol>
      *
      * <p><b>执行流程：</b>
      * <ol>
      *   <li>构建 CacheKey（cacheName + key）</li>
+     *   <li>快速检查：如果 L1 已有值，直接返回（避免不必要的回填）</li>
      *   <li>使用 computeIfAbsent 原子性创建或获取回填任务</li>
      *   <li>如果任务已存在，直接返回（避免重复回填）</li>
      *   <li>如果任务不存在，创建异步回填任务</li>
+     *   <li>在回填前再次检查 L1（双重检查，防止并发回填）</li>
      *   <li>添加 whenComplete 回调，确保任务完成后从 Map 中移除</li>
      * </ol>
      *
@@ -106,6 +130,7 @@ public class CacheRefillManager {
      *   <li>使用 computeIfAbsent 确保原子性，避免竞态条件</li>
      *   <li>多个线程同时调用时，只有一个线程会创建任务</li>
      *   <li>其他线程会获取已存在的任务，避免重复回填</li>
+     *   <li>双重检查机制确保即使任务创建失败，也不会重复回填</li>
      * </ul>
      *
      * <p><b>异常处理：</b>
@@ -127,21 +152,48 @@ public class CacheRefillManager {
 
         CacheKey cacheKey = new CacheKey(cacheName, key);
 
+        // 快速检查：如果 L1 已有值，直接返回（避免不必要的回填）
+        Cache.ValueWrapper existing = l1.get(key);
+        if (existing != null) {
+            if (log.isTraceEnabled()) {
+                log.trace("L1 cache already contains key: {}, skipping refill", cacheKey);
+            }
+            return;
+        }
+
         // 使用 computeIfAbsent 原子性创建或获取回填任务
         CompletableFuture<Void> future = refillingTasks.computeIfAbsent(cacheKey, k -> {
             // 创建异步回填任务
             CompletableFuture<Void> newFuture = CompletableFuture.runAsync(() -> {
                 try {
+                    // 双重检查：在回填前再次检查 L1（防止并发回填）
+                    Cache.ValueWrapper checkAgain = l1.get(key);
+                    if (checkAgain != null) {
+                        if (log.isTraceEnabled()) {
+                            log.trace("L1 cache already contains key after double-check: {}, skipping refill", cacheKey);
+                        }
+                        return;
+                    }
+
                     // 计算回填 TTL（使用 L1 TTL 的 90%）
                     Duration refillTtl = calculateRefillTtl(cacheName);
 
                     // 回填 L1
                     l1.put(key, value.get(), refillTtl);
 
+                    // 记录回填成功
+                    if (metrics != null) {
+                        metrics.recordRefillSuccess(cacheName);
+                    }
+
                     if (log.isTraceEnabled()) {
                         log.trace("Successfully refilled L1 cache for key: {}", cacheKey);
                     }
                 } catch (Exception e) {
+                    // 记录回填失败
+                    if (metrics != null) {
+                        metrics.recordRefillFailure(cacheName);
+                    }
                     log.warn("Failed to refill L1 cache for key: {}", cacheKey, e);
                     // 不抛出异常，不影响主流程
                 }

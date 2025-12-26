@@ -120,8 +120,8 @@ public class CacheAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    public CacheRefillManager cacheRefillManager(CacheSpecificationResolver specificationResolver) {
-        CacheRefillManager manager = new CacheRefillManager(specificationResolver);
+    public CacheRefillManager cacheRefillManager(CacheSpecificationResolver specificationResolver, CacheMetrics metrics) {
+        CacheRefillManager manager = new CacheRefillManager(specificationResolver, metrics);
         log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [cacheRefillManager] register.");
         return manager;
     }

@@ -9,10 +9,16 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * 缓存服务实现
@@ -201,6 +207,7 @@ public class DefaultCacheService implements ICacheService {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <K, V> Map<K, V> batchGet(String cacheName, Set<K> keys) {
         if (cacheName == null) {
             throw new IllegalArgumentException("CacheName cannot be null");
@@ -211,6 +218,20 @@ public class DefaultCacheService implements ICacheService {
         if (keys.isEmpty()) {
             return Collections.emptyMap();
         }
+
+        Cache cache = cacheManager.getCache(cacheName);
+        if (cache == null) {
+            log.warn("Cache not found: cacheName={}", cacheName);
+            return Collections.emptyMap();
+        }
+
+        // 如果缓存是 GoyaCache，使用批量 API 提升性能
+        if (cache instanceof GoyaCache) {
+            GoyaCache<K, V> goyaCache = (GoyaCache<K, V>) cache;
+            return goyaCache.batchGetTyped(keys);
+        }
+
+        // 降级到循环调用单个操作（非 GoyaCache 实现）
         Map<K, V> result = new HashMap<>();
         for (K key : keys) {
             if (key == null) {
@@ -225,6 +246,7 @@ public class DefaultCacheService implements ICacheService {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <K, V> void batchPut(String cacheName, Map<K, V> entries) {
         if (cacheName == null) {
             throw new IllegalArgumentException("CacheName cannot be null");
@@ -235,6 +257,22 @@ public class DefaultCacheService implements ICacheService {
         if (entries.isEmpty()) {
             return;
         }
+
+        Cache cache = cacheManager.getCache(cacheName);
+        if (cache == null) {
+            log.warn("Cache not found: cacheName={}", cacheName);
+            return;
+        }
+
+        // 如果缓存是 GoyaCache，使用批量 API 提升性能
+        if (cache instanceof GoyaCache) {
+            GoyaCache<K, V> goyaCache = (GoyaCache<K, V>) cache;
+            // 使用缓存的默认 TTL（从配置获取）
+            goyaCache.batchPutTyped(entries);
+            return;
+        }
+
+        // 降级到循环调用单个操作（非 GoyaCache 实现）
         for (Map.Entry<K, V> entry : entries.entrySet()) {
             if (entry.getKey() == null) {
                 continue;
@@ -244,6 +282,7 @@ public class DefaultCacheService implements ICacheService {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <K> void batchEvict(String cacheName, Set<K> keys) {
         if (cacheName == null) {
             throw new IllegalArgumentException("CacheName cannot be null");
@@ -254,6 +293,21 @@ public class DefaultCacheService implements ICacheService {
         if (keys.isEmpty()) {
             return;
         }
+
+        Cache cache = cacheManager.getCache(cacheName);
+        if (cache == null) {
+            log.warn("Cache not found: cacheName={}", cacheName);
+            return;
+        }
+
+        // 如果缓存是 GoyaCache，使用批量 API 提升性能
+        if (cache instanceof GoyaCache) {
+            GoyaCache<K, ?> goyaCache = (GoyaCache<K, ?>) cache;
+            goyaCache.batchEvictTyped(keys);
+            return;
+        }
+
+        // 降级到循环调用单个操作（非 GoyaCache 实现）
         for (K key : keys) {
             if (key == null) {
                 continue;
@@ -320,7 +374,39 @@ public class DefaultCacheService implements ICacheService {
         long bloomFilterFalsePositives = defaultMetrics.getBloomFilterFalsePositives(cacheName);
         double refillSuccessRate = defaultMetrics.getRefillSuccessRate(cacheName);
 
-        return new CacheStatistics(l1Hits, l2Hits, misses, bloomFilterFalsePositives, refillSuccessRate);
+        // 企业级指标
+        double l1AvgLatencyMs = defaultMetrics.getL1AvgLatencyMs(cacheName);
+        double l2AvgLatencyMs = defaultMetrics.getL2AvgLatencyMs(cacheName);
+        double l1P99LatencyMs = defaultMetrics.getL1P99LatencyMs(cacheName);
+        double l2P99LatencyMs = defaultMetrics.getL2P99LatencyMs(cacheName);
+        long sourceLoadCount = defaultMetrics.getSourceLoadCount(cacheName);
+        double sourceLoadAvgLatencyMs = defaultMetrics.getSourceLoadAvgLatencyMs(cacheName);
+
+        return new CacheStatistics(l1Hits, l2Hits, misses, bloomFilterFalsePositives, refillSuccessRate,
+                l1AvgLatencyMs, l2AvgLatencyMs, l1P99LatencyMs, l2P99LatencyMs,
+                sourceLoadCount, sourceLoadAvgLatencyMs);
+    }
+
+    @Override
+    public List<HotKey> getHotKeys(String cacheName, int topN) {
+        if (cacheName == null) {
+            throw new IllegalArgumentException("CacheName cannot be null");
+        }
+        if (topN <= 0) {
+            throw new IllegalArgumentException("TopN must be positive, got: " + topN);
+        }
+
+        if (metrics == null) {
+            return Collections.emptyList();
+        }
+
+        DefaultCacheMetrics defaultMetrics = (DefaultCacheMetrics) metrics;
+        List<DefaultCacheMetrics.HotKey> hotKeys = defaultMetrics.getHotKeys(cacheName, topN);
+
+        // 转换为 ICacheService.HotKey
+        return hotKeys.stream()
+                .map(hk -> new HotKey(hk.getKey(), hk.getAccessCount()))
+                .collect(Collectors.toList());
     }
 
     /**

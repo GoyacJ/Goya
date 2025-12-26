@@ -3,6 +3,7 @@ package com.ysmjjsy.goya.component.cache.service;
 import lombok.Getter;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -188,7 +189,7 @@ public interface ICacheService {
     /**
      * 获取缓存统计信息
      *
-     * <p>获取指定缓存的统计信息，包括命中率、未命中次数等。
+     * <p>获取指定缓存的统计信息，包括命中率、未命中次数、延迟、热Key等企业级指标。
      *
      * @param cacheName 缓存名称
      * @return 缓存统计信息，如果监控未启用则返回空统计
@@ -197,9 +198,21 @@ public interface ICacheService {
     CacheStatistics getStatistics(String cacheName);
 
     /**
+     * 获取热Key列表（Top N）
+     *
+     * <p>返回访问频率最高的Key列表，用于识别热Key和容量规划。
+     *
+     * @param cacheName 缓存名称
+     * @param topN 返回前N个热Key
+     * @return 热Key列表，按访问频率降序排列
+     * @throws IllegalArgumentException 如果 cacheName 为 null 或 topN <= 0
+     */
+    List<HotKey> getHotKeys(String cacheName, int topN);
+
+    /**
      * 缓存统计信息
      *
-     * <p>包含缓存的各项统计指标。
+     * <p>包含缓存的各项统计指标，包括基础指标和企业级指标。
      */
     @Getter
     class CacheStatistics {
@@ -209,9 +222,48 @@ public interface ICacheService {
         private final double hitRate;
         private final long bloomFilterFalsePositives;
         private final double refillSuccessRate;
+        private final double l1AvgLatencyMs;
+        private final double l2AvgLatencyMs;
+        private final double l1P99LatencyMs;
+        private final double l2P99LatencyMs;
+        private final long sourceLoadCount;
+        private final double sourceLoadAvgLatencyMs;
 
+        /**
+         * 构造函数（基础指标）
+         *
+         * @param l1Hits L1 命中次数
+         * @param l2Hits L2 命中次数
+         * @param misses 未命中次数
+         * @param bloomFilterFalsePositives 布隆过滤器误判次数
+         * @param refillSuccessRate 回填成功率
+         */
         public CacheStatistics(long l1Hits, long l2Hits, long misses,
                                long bloomFilterFalsePositives, double refillSuccessRate) {
+            this(l1Hits, l2Hits, misses, bloomFilterFalsePositives, refillSuccessRate,
+                    0.0, 0.0, 0.0, 0.0, 0, 0.0);
+        }
+
+        /**
+         * 构造函数（完整指标）
+         *
+         * @param l1Hits L1 命中次数
+         * @param l2Hits L2 命中次数
+         * @param misses 未命中次数
+         * @param bloomFilterFalsePositives 布隆过滤器误判次数
+         * @param refillSuccessRate 回填成功率
+         * @param l1AvgLatencyMs L1 平均延迟（毫秒）
+         * @param l2AvgLatencyMs L2 平均延迟（毫秒）
+         * @param l1P99LatencyMs L1 P99 延迟（毫秒）
+         * @param l2P99LatencyMs L2 P99 延迟（毫秒）
+         * @param sourceLoadCount 回源次数
+         * @param sourceLoadAvgLatencyMs 回源平均延迟（毫秒）
+         */
+        public CacheStatistics(long l1Hits, long l2Hits, long misses,
+                               long bloomFilterFalsePositives, double refillSuccessRate,
+                               double l1AvgLatencyMs, double l2AvgLatencyMs,
+                               double l1P99LatencyMs, double l2P99LatencyMs,
+                               long sourceLoadCount, double sourceLoadAvgLatencyMs) {
             this.l1Hits = l1Hits;
             this.l2Hits = l2Hits;
             this.misses = misses;
@@ -219,6 +271,12 @@ public interface ICacheService {
             this.hitRate = total > 0 ? (double) (l1Hits + l2Hits) / total : 0.0;
             this.bloomFilterFalsePositives = bloomFilterFalsePositives;
             this.refillSuccessRate = refillSuccessRate;
+            this.l1AvgLatencyMs = l1AvgLatencyMs;
+            this.l2AvgLatencyMs = l2AvgLatencyMs;
+            this.l1P99LatencyMs = l1P99LatencyMs;
+            this.l2P99LatencyMs = l2P99LatencyMs;
+            this.sourceLoadCount = sourceLoadCount;
+            this.sourceLoadAvgLatencyMs = sourceLoadAvgLatencyMs;
         }
 
         @Override
@@ -230,7 +288,41 @@ public interface ICacheService {
                     ", hitRate=" + hitRate +
                     ", bloomFilterFalsePositives=" + bloomFilterFalsePositives +
                     ", refillSuccessRate=" + refillSuccessRate +
+                    ", l1AvgLatencyMs=" + l1AvgLatencyMs +
+                    ", l2AvgLatencyMs=" + l2AvgLatencyMs +
+                    ", l1P99LatencyMs=" + l1P99LatencyMs +
+                    ", l2P99LatencyMs=" + l2P99LatencyMs +
+                    ", sourceLoadCount=" + sourceLoadCount +
+                    ", sourceLoadAvgLatencyMs=" + sourceLoadAvgLatencyMs +
                     '}';
+        }
+    }
+
+    /**
+     * 热Key信息
+     *
+     * <p>包含Key和其访问频率，用于识别热Key和容量规划。
+     */
+    class HotKey {
+        private final Object key;
+        private final long accessCount;
+
+        public HotKey(Object key, long accessCount) {
+            this.key = key;
+            this.accessCount = accessCount;
+        }
+
+        public Object getKey() {
+            return key;
+        }
+
+        public long getAccessCount() {
+            return accessCount;
+        }
+
+        @Override
+        public String toString() {
+            return "HotKey{key=" + key + ", accessCount=" + accessCount + '}';
         }
     }
 }

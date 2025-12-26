@@ -17,7 +17,13 @@ import org.springframework.cache.support.SimpleValueWrapper;
 import org.springframework.context.event.EventListener;
 
 import java.time.Duration;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 /**
  * 多级缓存编排实现
@@ -164,6 +170,11 @@ public class GoyaCache<K, V> implements Cache {
      * @return ValueWrapper，如果不存在则返回 null
      */
     public ValueWrapper getTyped(K key) {
+        // 记录Key访问（用于热Key检测）
+        if (metrics != null) {
+            metrics.recordKeyAccess(name, key);
+        }
+
         // 1. 布隆过滤器快速路径（仅优化，不阻塞）
         // 即使布隆过滤器判断"不存在"，仍查询 L2，避免误判
         boolean bloomFilterCheck = true;
@@ -176,16 +187,28 @@ public class GoyaCache<K, V> implements Cache {
             }
         }
 
-        // 2. 查询 L1
+        // 2. 查询 L1（记录延迟）
+        long l1StartNanos = System.nanoTime();
         ValueWrapper l1Value = l1.get(key);
+        long l1DurationNanos = System.nanoTime() - l1StartNanos;
+        if (metrics != null) {
+            metrics.recordL1Latency(name, l1DurationNanos);
+        }
+
         if (l1Value != null) {
             recordHit(HitLevel.L1);
             return unwrapNullValue(l1Value);
         }
 
         // 3. 查询 L2（即使布隆过滤器判断"不存在"也查询，避免误判）
+        long l2StartNanos = System.nanoTime();
         try {
             ValueWrapper l2Value = l2.get(key);
+            long l2DurationNanos = System.nanoTime() - l2StartNanos;
+            if (metrics != null) {
+                metrics.recordL2Latency(name, l2DurationNanos);
+            }
+
             if (l2Value != null) {
                 recordHit(HitLevel.L2);
 
@@ -199,6 +222,10 @@ public class GoyaCache<K, V> implements Cache {
                 return unwrapNullValue(l2Value);
             }
         } catch (Exception e) {
+            long l2DurationNanos = System.nanoTime() - l2StartNanos;
+            if (metrics != null) {
+                metrics.recordL2Latency(name, l2DurationNanos);
+            }
             // L2 查询失败，根据降级策略处理
             log.warn("Failed to query L2 cache for key: {}", key, e);
             ValueWrapper fallbackValue = fallbackStrategy.onL2Failure(key, l1, e);
@@ -257,11 +284,21 @@ public class GoyaCache<K, V> implements Cache {
         }
 
         // 执行 valueLoader（可能包含锁，防止缓存击穿）
+        // 记录回源操作
+        long sourceLoadStartNanos = System.nanoTime();
         T value;
         try {
             value = valueLoader.call();
         } catch (Exception e) {
+            long sourceLoadDurationNanos = System.nanoTime() - sourceLoadStartNanos;
+            if (metrics != null) {
+                metrics.recordSourceLoad(name, sourceLoadDurationNanos);
+            }
             throw new ValueRetrievalException(key, valueLoader, e);
+        }
+        long sourceLoadDurationNanos = System.nanoTime() - sourceLoadStartNanos;
+        if (metrics != null) {
+            metrics.recordSourceLoad(name, sourceLoadDurationNanos);
         }
 
         // 写入缓存
@@ -293,8 +330,22 @@ public class GoyaCache<K, V> implements Cache {
     /**
      * 类型安全的写入方法（带自定义 TTL）
      *
-     * <p>使用指定的 TTL 写入缓存。L2 使用传入的 ttl，L1 也使用传入的 ttl
-     * （注意：Caffeine 本地缓存可能不支持每个 key 独立的 TTL，会使用全局策略）。
+     * <p>使用指定的 TTL 写入缓存。采用 Write-Through 模式，确保 L1/L2 一致性：
+     * <ol>
+     *   <li>先写入 L2（同步，确保持久化）</li>
+     *   <li>L2 写入成功后，再写入 L1（同步，保证当前节点一致性）</li>
+     *   <li>如果 L2 写入失败，根据降级策略决定是否写入 L1</li>
+     * </ol>
+     *
+     * <p><b>一致性保证：</b>
+     * <ul>
+     *   <li>如果 L2 写入成功，L1 也会写入（保证一致性）</li>
+     *   <li>如果 L2 写入失败，根据降级策略决定是否写入 L1（保证可用性）</li>
+     *   <li>如果 L1 写入失败，记录错误但不影响 L2（L2 已成功，数据可用）</li>
+     * </ul>
+     *
+     * <p>注意：Caffeine 本地缓存可能不支持每个 key 独立的 TTL，会使用全局策略。
+     * 但为了接口一致性，仍然传入 ttl 参数。
      *
      * @param key 缓存键
      * @param value 缓存值
@@ -310,23 +361,28 @@ public class GoyaCache<K, V> implements Cache {
         Object actualValue = wrapNullValue(value);
 
         // 2. 写入 L2（同步，确保持久化，使用自定义 TTL）
+        boolean l2Success = false;
         try {
             l2.put(key, actualValue, ttl);
+            l2Success = true;
         } catch (Exception e) {
             // L2 写入失败，根据降级策略处理
             log.error("Failed to write to L2 cache for key: {}", key, e);
             fallbackStrategy.onL2WriteFailure(key, actualValue, l1, e);
-            // 继续写入 L1（保证当前节点可用）
+            // 降级策略可能已经写入 L1，也可能抛出异常，这里不继续写入 L1
+            // 如果降级策略为 IGNORE 或 DEGRADE_TO_L1，会在 onL2WriteFailure 中处理
         }
 
-        // 3. 写入 L1（同步，保证当前节点一致性，使用自定义 TTL）
-        // 注意：Caffeine 本地缓存可能不支持每个 key 独立的 TTL，会使用全局策略
-        // 但为了接口一致性，仍然传入 ttl 参数
-        try {
-            l1.put(key, actualValue, ttl);
-        } catch (Exception e) {
-            log.error("Failed to write to L1 cache for key: {}", key, e);
-            // L1 写入失败不影响 L2，但记录错误
+        // 3. 如果 L2 写入成功，写入 L1（同步，保证当前节点一致性，使用自定义 TTL）
+        // 采用 Write-Through 模式：只有 L2 成功后才写 L1，避免不一致
+        if (l2Success) {
+            try {
+                l1.put(key, actualValue, ttl);
+            } catch (Exception e) {
+                log.error("Failed to write to L1 cache for key: {}", key, e);
+                // L1 写入失败不影响 L2，但记录错误
+                // L2 已成功，数据可用，只是当前节点无法从 L1 读取
+            }
         }
 
         // 4. 更新布隆过滤器（异步，失败不影响主流程）
@@ -565,6 +621,310 @@ public class GoyaCache<K, V> implements Cache {
         } catch (Exception e) {
             log.warn("Failed to check and evict L2 cache: cacheName={}, key={}", name, key, e);
             return false;
+        }
+    }
+
+    /**
+     * 批量获取缓存值（类型安全）
+     *
+     * <p>利用 L1/L2 的批量 API 提升性能，减少网络往返次数。
+     *
+     * <p><b>执行流程：</b>
+     * <ol>
+     *   <li>批量查询 L1，获取命中的 key-value 对</li>
+     *   <li>找出 L1 未命中的 key</li>
+     *   <li>批量查询 L2（使用批量 API，如 Redis MGET）</li>
+     *   <li>异步回填 L1（对于 L2 命中的 key）</li>
+     *   <li>合并 L1 和 L2 的结果并返回</li>
+     * </ol>
+     *
+     * <p><b>性能优化：</b>
+     * <ul>
+     *   <li>使用 L1.getAll() 批量查询本地缓存</li>
+     *   <li>使用 L2.getAll() 批量查询远程缓存（减少网络往返）</li>
+     *   <li>异步回填 L1，不阻塞主流程</li>
+     * </ul>
+     *
+     * @param keys 缓存键集合
+     * @return key-value 映射，只包含命中的 key
+     */
+    @SuppressWarnings("unchecked")
+    public Map<K, V> batchGetTyped(Set<K> keys) {
+        if (keys == null || keys.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        // 过滤 null key
+        Set<Object> validKeys = keys.stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        if (validKeys.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Map<K, V> result = new HashMap<>();
+
+        // 记录Key访问（用于热Key检测）
+        if (metrics != null) {
+            for (Object key : validKeys) {
+                metrics.recordKeyAccess(name, key);
+            }
+        }
+
+        // 1. 批量查询 L1（记录延迟）
+        long l1StartNanos = System.nanoTime();
+        Map<Object, ValueWrapper> l1Results = l1.getAll(validKeys);
+        long l1DurationNanos = System.nanoTime() - l1StartNanos;
+        if (metrics != null && !validKeys.isEmpty()) {
+            // 平均延迟 = 总延迟 / Key数量
+            metrics.recordL1Latency(name, l1DurationNanos / validKeys.size());
+        }
+
+        for (Map.Entry<Object, ValueWrapper> entry : l1Results.entrySet()) {
+            @SuppressWarnings("unchecked")
+            K key = (K) entry.getKey();
+            ValueWrapper wrapper = entry.getValue();
+            if (wrapper != null) {
+                Object value = unwrapNullValue(wrapper).get();
+                if (value != null) {
+                    result.put(key, (V) value);
+                    recordHit(HitLevel.L1);
+                }
+            }
+        }
+
+        // 2. 找出 L1 未命中的 key
+        Set<Object> l2Keys = validKeys.stream()
+                .filter(key -> !result.containsKey(key))
+                .collect(Collectors.toSet());
+
+        if (l2Keys.isEmpty()) {
+            return result;
+        }
+
+        // 3. 批量查询 L2（使用批量 API，记录延迟）
+        long l2StartNanos = System.nanoTime();
+        try {
+            Map<Object, ValueWrapper> l2Results = l2.getAll(l2Keys);
+            long l2DurationNanos = System.nanoTime() - l2StartNanos;
+            if (metrics != null && !l2Keys.isEmpty()) {
+                // 平均延迟 = 总延迟 / Key数量
+                metrics.recordL2Latency(name, l2DurationNanos / l2Keys.size());
+            }
+
+            for (Map.Entry<Object, ValueWrapper> entry : l2Results.entrySet()) {
+                @SuppressWarnings("unchecked")
+                K key = (K) entry.getKey();
+                ValueWrapper wrapper = entry.getValue();
+                if (wrapper != null) {
+                    Object value = unwrapNullValue(wrapper).get();
+                    if (value != null) {
+                        result.put(key, (V) value);
+                        recordHit(HitLevel.L2);
+
+                        // 异步回填 L1
+                        refillManager.refillAsync(name, key, wrapper, l1);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            long l2DurationNanos = System.nanoTime() - l2StartNanos;
+            if (metrics != null && !l2Keys.isEmpty()) {
+                metrics.recordL2Latency(name, l2DurationNanos / l2Keys.size());
+            }
+            // L2 批量查询失败，降级到单个查询
+            log.warn("Failed to batch query L2 cache, falling back to individual queries", e);
+            for (Object key : l2Keys) {
+                try {
+                    @SuppressWarnings("unchecked")
+                    K typedKey = (K) key;
+                    ValueWrapper wrapper = getTyped(typedKey);
+                    if (wrapper != null) {
+                        Object value = unwrapNullValue(wrapper).get();
+                        if (value != null) {
+                            result.put(typedKey, (V) value);
+                        }
+                    }
+                } catch (Exception ex) {
+                    log.warn("Failed to get key from L2 cache: {}", key, ex);
+                }
+            }
+        }
+
+        // 4. 记录未命中
+        long misses = validKeys.size() - result.size();
+        for (int i = 0; i < misses; i++) {
+            recordMiss();
+        }
+
+        return result;
+    }
+
+    /**
+     * 批量写入缓存（类型安全，使用配置的默认 TTL）
+     *
+     * <p>利用 L1/L2 的批量 API 提升性能，减少网络往返次数。
+     * 使用缓存配置的默认 TTL。
+     *
+     * @param entries 键值对映射
+     */
+    public void batchPutTyped(Map<K, V> entries) {
+        batchPutTyped(entries, spec.getTtl());
+    }
+
+    /**
+     * 批量写入缓存（类型安全，带自定义 TTL）
+     *
+     * <p>利用 L1/L2 的批量 API 提升性能，减少网络往返次数。
+     *
+     * <p><b>执行流程：</b>
+     * <ol>
+     *   <li>包装 null 值（如果允许）</li>
+     *   <li>批量写入 L2（使用批量 API，如 Redis Pipeline）</li>
+     *   <li>如果 L2 写入成功，批量写入 L1</li>
+     *   <li>更新布隆过滤器（异步）</li>
+     * </ol>
+     *
+     * <p><b>性能优化：</b>
+     * <ul>
+     *   <li>使用 L2.putAll() 批量写入远程缓存（减少网络往返）</li>
+     *   <li>使用 L1.putAll() 批量写入本地缓存</li>
+     *   <li>异步更新布隆过滤器，不阻塞主流程</li>
+     * </ul>
+     *
+     * @param entries 键值对映射
+     * @param ttl 过期时间
+     */
+    public void batchPutTyped(Map<K, V> entries, Duration ttl) {
+        if (entries == null || entries.isEmpty()) {
+            return;
+        }
+        if (ttl == null || ttl.isNegative() || ttl.isZero()) {
+            throw new IllegalArgumentException("TTL must be positive, got: " + ttl);
+        }
+
+        // 过滤 null key 并包装 null value
+        Map<Object, Object> l2Entries = new HashMap<>();
+        for (Map.Entry<K, V> entry : entries.entrySet()) {
+            if (entry.getKey() == null) {
+                continue;
+            }
+            Object wrappedValue = wrapNullValue(entry.getValue());
+            l2Entries.put(entry.getKey(), wrappedValue);
+        }
+
+        if (l2Entries.isEmpty()) {
+            return;
+        }
+
+        // 1. 批量写入 L2（使用批量 API）
+        boolean l2Success = false;
+        try {
+            l2.putAll(l2Entries, ttl);
+            l2Success = true;
+        } catch (Exception e) {
+            log.error("Failed to batch write to L2 cache", e);
+            // 降级到单个写入
+            for (Map.Entry<Object, Object> entry : l2Entries.entrySet()) {
+                try {
+                    @SuppressWarnings("unchecked")
+                    K key = (K) entry.getKey();
+                    V value = (V) unwrapNullValue(new SimpleValueWrapper(entry.getValue())).get();
+                    putTyped(key, value, ttl);
+                } catch (Exception ex) {
+                    log.warn("Failed to put key to cache: {}", entry.getKey(), ex);
+                }
+            }
+        }
+
+        // 2. 如果 L2 写入成功，批量写入 L1
+        if (l2Success) {
+            try {
+                l1.putAll(l2Entries, ttl);
+            } catch (Exception e) {
+                log.error("Failed to batch write to L1 cache", e);
+                // L1 写入失败不影响 L2，但记录错误
+            }
+        }
+
+        // 3. 更新布隆过滤器（异步）
+        if (spec.isEnableBloomFilter()) {
+            for (K key : entries.keySet()) {
+                if (key != null) {
+                    bloomFilter.putAsync(name, key).exceptionally(e -> {
+                        log.warn("Failed to update bloom filter for key: {}", key, e);
+                        return null;
+                    });
+                }
+            }
+        }
+    }
+
+    /**
+     * 批量失效缓存（类型安全）
+     *
+     * <p>批量失效多个 key，提升性能。虽然 L1/L2 接口没有批量失效方法，
+     * 但可以通过批量发布事件来优化跨节点同步。
+     *
+     * <p><b>执行流程：</b>
+     * <ol>
+     *   <li>循环失效 L1（同步）</li>
+     *   <li>循环失效 L2（同步）</li>
+     *   <li>批量发布失效事件（其他节点会收到通知）</li>
+     * </ol>
+     *
+     * <p><b>性能优化：</b>
+     * <ul>
+     *   <li>虽然 L1/L2 接口没有批量失效方法，但批量发布事件可以减少事件发布次数</li>
+     *   <li>未来如果 L1/L2 接口支持批量失效，可以进一步优化</li>
+     * </ul>
+     *
+     * <p><b>注意：</b>
+     * <ul>
+     *   <li>当前实现仍然循环调用单个失效操作，因为 LocalCache 和 RemoteCache 接口没有批量失效方法</li>
+     *   <li>如果某个 key 失效失败，记录日志但继续处理其他 key</li>
+     * </ul>
+     *
+     * @param keys 缓存键集合
+     */
+    public void batchEvictTyped(Set<K> keys) {
+        if (keys == null || keys.isEmpty()) {
+            return;
+        }
+
+        // 过滤 null key
+        Set<K> validKeys = keys.stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        if (validKeys.isEmpty()) {
+            return;
+        }
+
+        // 1. 批量失效 L1
+        for (K key : validKeys) {
+            try {
+                l1.evict(key);
+            } catch (Exception e) {
+                log.warn("Failed to evict from L1 cache for key: {}", key, e);
+            }
+        }
+
+        // 2. 批量失效 L2
+        for (K key : validKeys) {
+            try {
+                l2.evict(key);
+            } catch (Exception e) {
+                log.error("Failed to evict from L2 cache for key: {}", key, e);
+            }
+        }
+
+        // 3. 批量发布失效事件（每个 key 发布一个事件）
+        // 注意：当前 CacheEventPublisher 没有批量发布方法，所以仍然循环发布
+        // 未来可以考虑添加批量发布方法，减少事件发布次数
+        for (K key : validKeys) {
+            eventPublisher.publishEviction(name, key);
         }
     }
 

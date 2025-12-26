@@ -127,6 +127,18 @@ public class RedisCacheEvictionSubscriber {
     });
 
     /**
+     * 已处理消息ID的Redis Set键前缀
+     * 用于实现幂等性检查，防止重复处理消息
+     */
+    private static final String PROCESSED_MESSAGE_IDS_KEY = "goya:cache:evict:processed:ids";
+
+    /**
+     * 已处理消息ID的TTL（1小时）
+     * 超过此时间后，消息ID会自动过期，允许重新处理（防止Set无限增长）
+     */
+    private static final long PROCESSED_MESSAGE_IDS_TTL_SECONDS = 3600;
+
+    /**
      * 初始化：订阅 Redis Pub/Sub
      *
      * <p>订阅固定频道，接收所有节点的缓存失效消息。
@@ -166,20 +178,27 @@ public class RedisCacheEvictionSubscriber {
     /**
      * 订阅 Spring 事件：缓存失效
      *
+     * <p>将本地缓存失效事件转发到 Redis Pub/Sub，通知其他节点失效 L1 缓存。
+     * 消息包含唯一ID和时间戳，用于幂等性检查。
+     *
      * @param event 缓存失效事件
      */
     @EventListener
     public void onCacheEviction(CacheEvictionEvent event) {
         try {
+            // 生成唯一消息ID（UUID + 时间戳）
+            String messageId = java.util.UUID.randomUUID().toString();
+            long timestamp = System.currentTimeMillis();
+
             // 转发到 Redis Pub/Sub（使用统一频道）
-            EvictionMessage message = new EvictionMessage(event.getCacheName(), event.getKey());
+            EvictionMessage message = new EvictionMessage(messageId, timestamp, event.getCacheName(), event.getKey());
 
             RTopic evictionTopic = redisson.getTopic(EVICTION_CHANNEL);
             evictionTopic.publish(message);
 
             if (log.isTraceEnabled()) {
-                log.trace("Published eviction message to Redis: cacheName={}, key={}, channel={}",
-                        event.getCacheName(), event.getKey(), EVICTION_CHANNEL);
+                log.trace("Published eviction message to Redis: messageId={}, cacheName={}, key={}, channel={}",
+                        messageId, event.getCacheName(), event.getKey(), EVICTION_CHANNEL);
             }
 
             // 延迟检查机制：确保 L2 已失效
@@ -215,23 +234,51 @@ public class RedisCacheEvictionSubscriber {
     /**
      * 处理远程失效消息
      *
-     * <p>收到其他节点的失效消息后，发布本地失效事件，通知本地 L1 缓存失效。
+     * <p>收到其他节点的失效消息后，先进行幂等性检查，然后发布本地失效事件。
      *
      * <p><b>执行流程：</b>
      * <ol>
+     *   <li>检查消息ID是否已处理（幂等性检查）</li>
+     *   <li>如果已处理，跳过（避免重复处理）</li>
+     *   <li>如果未处理，标记为已处理（使用Redis Set，TTL 1小时）</li>
      *   <li>创建 LocalCacheEvictionEvent 事件</li>
      *   <li>发布事件到 Spring 事件机制</li>
      *   <li>GoyaCache 订阅事件并失效本地 L1</li>
      * </ol>
      *
+     * <p><b>幂等性保证：</b>
+     * <ul>
+     *   <li>使用消息ID（UUID）唯一标识每条消息</li>
+     *   <li>使用Redis Set存储已处理的消息ID（TTL 1小时）</li>
+     *   <li>处理前检查消息ID是否已存在，避免重复处理</li>
+     * </ul>
+     *
      * <p><b>异常处理：</b>
      * <ul>
+     *   <li>如果幂等性检查失败，记录警告日志但继续处理（保证可用性）</li>
      *   <li>如果事件发布失败，记录错误日志但不抛出异常</li>
      * </ul>
      *
      * @param message 失效消息
      */
     private void handleRemoteEviction(EvictionMessage message) {
+        // 幂等性检查：如果消息ID为空或已处理，跳过
+        if (message.getMessageId() == null || message.getMessageId().isEmpty()) {
+            log.warn("Received eviction message without messageId, skipping idempotency check: cacheName={}, key={}",
+                    message.getCacheName(), message.getKey());
+            // 继续处理，但不保证幂等性
+        } else {
+            // 检查消息ID是否已处理
+            boolean alreadyProcessed = checkAndMarkProcessed(message.getMessageId());
+            if (alreadyProcessed) {
+                if (log.isTraceEnabled()) {
+                    log.trace("Eviction message already processed, skipping: messageId={}, cacheName={}, key={}",
+                            message.getMessageId(), message.getCacheName(), message.getKey());
+                }
+                return;
+            }
+        }
+
         try {
             // 发布本地失效事件（通知本地 L1 失效）
             LocalCacheEvictionEvent event = new LocalCacheEvictionEvent(
@@ -239,12 +286,54 @@ public class RedisCacheEvictionSubscriber {
             eventPublisher.publishEvent(event);
 
             if (log.isTraceEnabled()) {
-                log.trace("Published local cache eviction event: cacheName={}, key={}",
-                        message.getCacheName(), message.getKey());
+                log.trace("Published local cache eviction event: messageId={}, cacheName={}, key={}",
+                        message.getMessageId(), message.getCacheName(), message.getKey());
             }
         } catch (Exception e) {
-            log.error("Failed to handle remote eviction message: cacheName={}, key={}",
-                    message.getCacheName(), message.getKey(), e);
+            log.error("Failed to handle remote eviction message: messageId={}, cacheName={}, key={}",
+                    message.getMessageId(), message.getCacheName(), message.getKey(), e);
+        }
+    }
+
+    /**
+     * 检查并标记消息为已处理（幂等性检查）
+     *
+     * <p>使用Redis Set存储已处理的消息ID，TTL为1小时。
+     * 如果消息ID已存在，返回true（已处理）；如果不存在，添加并返回false（未处理）。
+     *
+     * <p><b>执行流程：</b>
+     * <ol>
+     *   <li>使用Redis Set的SADD命令尝试添加消息ID</li>
+     *   <li>如果返回1（成功添加），说明未处理，设置TTL并返回false</li>
+     *   <li>如果返回0（已存在），说明已处理，返回true</li>
+     * </ol>
+     *
+     * <p><b>异常处理：</b>
+     * <ul>
+     *   <li>如果Redis操作失败，记录警告日志但返回false（继续处理，保证可用性）</li>
+     * </ul>
+     *
+     * @param messageId 消息ID
+     * @return true 如果消息已处理，false 如果消息未处理
+     */
+    private boolean checkAndMarkProcessed(String messageId) {
+        try {
+            // 使用Redis Set存储已处理的消息ID
+            org.redisson.api.RSet<String> processedIds = redisson.getSet(PROCESSED_MESSAGE_IDS_KEY);
+
+            // 尝试添加消息ID（如果已存在，返回false）
+            boolean added = processedIds.add(messageId);
+            if (added) {
+                // 首次添加，设置TTL（1小时）
+                processedIds.expire(PROCESSED_MESSAGE_IDS_TTL_SECONDS, java.util.concurrent.TimeUnit.SECONDS);
+                return false; // 未处理
+            } else {
+                return true; // 已处理
+            }
+        } catch (Exception e) {
+            log.warn("Failed to check message idempotency: messageId={}, continuing processing", messageId, e);
+            // 幂等性检查失败，继续处理（保证可用性）
+            return false;
         }
     }
 
@@ -309,6 +398,17 @@ public class RedisCacheEvictionSubscriber {
 
     /**
      * 失效消息
+     *
+     * <p>包含消息ID和时间戳，用于幂等性检查和消息追踪。
+     * 消息ID使用UUID生成，确保全局唯一性。
+     *
+     * <p><b>字段说明：</b>
+     * <ul>
+     *   <li>messageId：唯一消息ID（UUID），用于幂等性检查</li>
+     *   <li>timestamp：消息时间戳（毫秒），用于消息排序和追踪</li>
+     *   <li>cacheName：缓存名称</li>
+     *   <li>key：缓存键</li>
+     * </ul>
      */
     @Setter
     @Getter
@@ -317,15 +417,58 @@ public class RedisCacheEvictionSubscriber {
         @Serial
         private static final long serialVersionUID = 1L;
 
+        /**
+         * 唯一消息ID（UUID），用于幂等性检查
+         */
+        private String messageId;
+
+        /**
+         * 消息时间戳（毫秒），用于消息排序和追踪
+         */
+        private long timestamp;
+
+        /**
+         * 缓存名称
+         */
         private String cacheName;
+
+        /**
+         * 缓存键
+         */
         private Object key;
 
+        /**
+         * 默认构造函数（用于反序列化）
+         */
         public EvictionMessage() {
         }
 
-        public EvictionMessage(String cacheName, Object key) {
+        /**
+         * 构造函数
+         *
+         * @param messageId 唯一消息ID（UUID）
+         * @param timestamp 消息时间戳（毫秒）
+         * @param cacheName 缓存名称
+         * @param key 缓存键
+         */
+        public EvictionMessage(String messageId, long timestamp, String cacheName, Object key) {
+            this.messageId = messageId;
+            this.timestamp = timestamp;
             this.cacheName = cacheName;
             this.key = key;
+        }
+
+        /**
+         * 兼容旧版本的构造函数（用于向后兼容）
+         * 自动生成消息ID和时间戳
+         *
+         * @param cacheName 缓存名称
+         * @param key 缓存键
+         * @deprecated 使用 {@link #EvictionMessage(String, long, String, Object)} 替代
+         */
+        @Deprecated
+        public EvictionMessage(String cacheName, Object key) {
+            this(java.util.UUID.randomUUID().toString(), System.currentTimeMillis(), cacheName, key);
         }
 
     }

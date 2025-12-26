@@ -64,6 +64,21 @@ public class TypedJsonMapperCodec extends BaseCodec {
     private static final String NULL_VALUE_WRAPPER_MARKER = "@nullValueWrapper";
 
     /**
+     * 版本号字段名（可选，用于版本兼容性控制）
+     */
+    private static final String VERSION_FIELD = "@version";
+
+    /**
+     * Schema 字段名（可选，用于类型别名和版本映射）
+     */
+    private static final String SCHEMA_FIELD = "@schema";
+
+    /**
+     * 默认版本号（用于向后兼容，旧数据没有版本号时使用）
+     */
+    private static final String DEFAULT_VERSION = "1";
+
+    /**
      * JsonMapper 实例
      */
     private final JsonMapper jsonMapper;
@@ -128,6 +143,8 @@ public class TypedJsonMapperCodec extends BaseCodec {
                     // 创建包装对象
                     ObjectNode wrapper = jsonMapper.createObjectNode();
                     wrapper.put(TYPE_FIELD, typeName);
+                    // 添加版本号（默认版本 1，用于未来版本兼容性控制）
+                    wrapper.put(VERSION_FIELD, DEFAULT_VERSION);
 
                     // 序列化实际数据
                     JsonNode dataNode = jsonMapper.valueToTree(in);
@@ -183,13 +200,29 @@ public class TypedJsonMapperCodec extends BaseCodec {
                 }
 
                 String typeName = rootNode.get(TYPE_FIELD).asText();
+                // 获取版本号（如果存在）
+                String version = DEFAULT_VERSION;
+                if (rootNode.has(VERSION_FIELD)) {
+                    version = rootNode.get(VERSION_FIELD).asText();
+                }
+
                 Class<?> targetType;
                 try {
                     targetType = Class.forName(typeName);
                 } catch (ClassNotFoundException e) {
-                    log.error("Class not found: typeName={}", typeName, e);
-                    // 降级到 Object 类型
+                    log.error("Class not found: typeName={}, version={}", typeName, version, e);
+                    // 尝试使用类型别名或版本映射（未来扩展点）
+                    // 当前实现：降级到 Object 类型
                     targetType = Object.class;
+                }
+
+                // 版本兼容性检查（未来扩展点）
+                // 当前实现：记录版本信息，但不进行版本转换
+                if (!DEFAULT_VERSION.equals(version)) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Deserializing object with version: typeName={}, version={}", typeName, version);
+                    }
+                    // 未来可以在这里实现版本转换逻辑
                 }
 
                 // 获取数据节点

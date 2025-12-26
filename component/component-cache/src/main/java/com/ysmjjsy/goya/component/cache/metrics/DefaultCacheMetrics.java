@@ -3,8 +3,11 @@ package com.ysmjjsy.goya.component.cache.metrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.stream.Collectors;
 
 /**
  * 默认缓存监控指标实现
@@ -83,6 +86,45 @@ public class DefaultCacheMetrics implements CacheMetrics {
      */
     private final ConcurrentHashMap<String, LongAdder> bloomFilterResizes = new ConcurrentHashMap<>();
 
+    /**
+     * L1 延迟统计
+     * Key: cacheName
+     * Value: 延迟统计器（用于计算平均延迟、P99延迟等）
+     */
+    private final ConcurrentHashMap<String, LatencyStats> l1Latencies = new ConcurrentHashMap<>();
+
+    /**
+     * L2 延迟统计
+     * Key: cacheName
+     * Value: 延迟统计器
+     */
+    private final ConcurrentHashMap<String, LatencyStats> l2Latencies = new ConcurrentHashMap<>();
+
+    /**
+     * Key 访问频率统计
+     * Key: cacheName
+     * Value: Key访问计数器（Key -> 访问次数）
+     */
+    private final ConcurrentHashMap<String, ConcurrentHashMap<Object, LongAdder>> keyAccessCounts = new ConcurrentHashMap<>();
+
+    /**
+     * 回源操作统计
+     * Key: cacheName
+     * Value: 回源次数和延迟统计
+     */
+    private final ConcurrentHashMap<String, SourceLoadStats> sourceLoadStats = new ConcurrentHashMap<>();
+
+    /**
+     * 热Key检测的采样率（0.0 - 1.0）
+     * 为了控制内存开销，只采样部分Key的访问
+     */
+    private static final double KEY_ACCESS_SAMPLING_RATE = 0.1;
+
+    /**
+     * 热Key统计的最大Key数量（防止内存无限增长）
+     */
+    private static final int MAX_TRACKED_KEYS = 10000;
+
     @Override
     public void recordL1Hit(String cacheName) {
         l1Hits.computeIfAbsent(cacheName, k -> new LongAdder()).increment();
@@ -125,6 +167,70 @@ public class DefaultCacheMetrics implements CacheMetrics {
             log.info("Bloom filter resize recorded: cacheName={}, oldInsertions={}, oldExpected={}, newExpected={}",
                     cacheName, oldInsertions, oldExpectedInsertions, newExpectedInsertions);
         }
+    }
+
+    @Override
+    public void recordL1Latency(String cacheName, long durationNanos) {
+        LatencyStats stats = l1Latencies.computeIfAbsent(cacheName, k -> new LatencyStats());
+        stats.record(durationNanos);
+    }
+
+    @Override
+    public void recordL2Latency(String cacheName, long durationNanos) {
+        LatencyStats stats = l2Latencies.computeIfAbsent(cacheName, k -> new LatencyStats());
+        stats.record(durationNanos);
+    }
+
+    @Override
+    public void recordKeyAccess(String cacheName, Object key) {
+        if (key == null) {
+            return;
+        }
+
+        // 采样：只记录部分Key的访问（控制内存开销）
+        if (Math.random() > KEY_ACCESS_SAMPLING_RATE) {
+            return;
+        }
+
+        ConcurrentHashMap<Object, LongAdder> keyCounts = keyAccessCounts.computeIfAbsent(cacheName, k -> new ConcurrentHashMap<>());
+
+        // 如果已跟踪的Key数量超过限制，清理低频Key
+        if (keyCounts.size() >= MAX_TRACKED_KEYS && !keyCounts.containsKey(key)) {
+            cleanupLowFrequencyKeys(keyCounts);
+        }
+
+        keyCounts.computeIfAbsent(key, k -> new LongAdder()).increment();
+    }
+
+    @Override
+    public void recordSourceLoad(String cacheName, long durationNanos) {
+        SourceLoadStats stats = sourceLoadStats.computeIfAbsent(cacheName, k -> new SourceLoadStats());
+        stats.record(durationNanos);
+    }
+
+    /**
+     * 清理低频Key（保留访问频率最高的Key）
+     *
+     * <p>当跟踪的Key数量超过限制时，清理访问频率最低的Key，保留高频Key。
+     * 使用简单的策略：随机清理部分低频Key。
+     *
+     * @param keyCounts Key访问计数器
+     */
+    private void cleanupLowFrequencyKeys(ConcurrentHashMap<Object, LongAdder> keyCounts) {
+        // 计算平均访问次数
+        long totalAccess = keyCounts.values().stream()
+                .mapToLong(LongAdder::sum)
+                .sum();
+        long avgAccess = keyCounts.isEmpty() ? 0 : totalAccess / keyCounts.size();
+
+        // 清理访问次数低于平均值的Key（保留50%）
+        List<Object> keysToRemove = keyCounts.entrySet().stream()
+                .filter(entry -> entry.getValue().sum() < avgAccess)
+                .limit(keyCounts.size() / 2)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+
+        keysToRemove.forEach(keyCounts::remove);
     }
 
     /**
@@ -213,6 +319,184 @@ public class DefaultCacheMetrics implements CacheMetrics {
             return 1.0;
         }
         return (double) successes / total;
+    }
+
+    /**
+     * 获取 L1 平均延迟（毫秒）
+     *
+     * @param cacheName 缓存名称
+     * @return 平均延迟（毫秒），如果没有数据则返回 0
+     */
+    public double getL1AvgLatencyMs(String cacheName) {
+        LatencyStats stats = l1Latencies.get(cacheName);
+        return stats != null ? stats.getAvgLatencyMs() : 0.0;
+    }
+
+    /**
+     * 获取 L2 平均延迟（毫秒）
+     *
+     * @param cacheName 缓存名称
+     * @return 平均延迟（毫秒），如果没有数据则返回 0
+     */
+    public double getL2AvgLatencyMs(String cacheName) {
+        LatencyStats stats = l2Latencies.get(cacheName);
+        return stats != null ? stats.getAvgLatencyMs() : 0.0;
+    }
+
+    /**
+     * 获取 L1 P99 延迟（毫秒）
+     *
+     * @param cacheName 缓存名称
+     * @return P99 延迟（毫秒），如果没有数据则返回 0
+     */
+    public double getL1P99LatencyMs(String cacheName) {
+        LatencyStats stats = l1Latencies.get(cacheName);
+        return stats != null ? stats.getP99LatencyMs() : 0.0;
+    }
+
+    /**
+     * 获取 L2 P99 延迟（毫秒）
+     *
+     * @param cacheName 缓存名称
+     * @return P99 延迟（毫秒），如果没有数据则返回 0
+     */
+    public double getL2P99LatencyMs(String cacheName) {
+        LatencyStats stats = l2Latencies.get(cacheName);
+        return stats != null ? stats.getP99LatencyMs() : 0.0;
+    }
+
+    /**
+     * 获取热Key列表（Top N）
+     *
+     * <p>返回访问频率最高的Key列表，用于识别热Key和容量规划。
+     *
+     * @param cacheName 缓存名称
+     * @param topN 返回前N个热Key
+     * @return 热Key列表，按访问频率降序排列
+     */
+    public List<HotKey> getHotKeys(String cacheName, int topN) {
+        ConcurrentHashMap<Object, LongAdder> keyCounts = keyAccessCounts.get(cacheName);
+        if (keyCounts == null || keyCounts.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return keyCounts.entrySet().stream()
+                .map(entry -> new HotKey(entry.getKey(), entry.getValue().sum()))
+                .sorted(Comparator.comparing(HotKey::getAccessCount).reversed())
+                .limit(Math.min(topN, keyCounts.size()))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 获取回源次数
+     *
+     * @param cacheName 缓存名称
+     * @return 回源次数
+     */
+    public long getSourceLoadCount(String cacheName) {
+        SourceLoadStats stats = sourceLoadStats.get(cacheName);
+        return stats != null ? stats.getCount() : 0;
+    }
+
+    /**
+     * 获取回源平均延迟（毫秒）
+     *
+     * @param cacheName 缓存名称
+     * @return 平均延迟（毫秒），如果没有数据则返回 0
+     */
+    public double getSourceLoadAvgLatencyMs(String cacheName) {
+        SourceLoadStats stats = sourceLoadStats.get(cacheName);
+        return stats != null ? stats.getAvgLatencyMs() : 0.0;
+    }
+
+    /**
+     * 延迟统计器
+     *
+     * <p>使用滑动窗口统计延迟，支持计算平均值和P99延迟。
+     * 为了简化实现，使用固定大小的数组存储最近的延迟值。
+     */
+    private static class LatencyStats {
+        private static final int WINDOW_SIZE = 1000;
+        private final long[] latencies = new long[WINDOW_SIZE];
+        private volatile int index = 0;
+        private volatile long count = 0;
+        private volatile long sum = 0;
+
+        synchronized void record(long durationNanos) {
+            latencies[index] = durationNanos;
+            index = (index + 1) % WINDOW_SIZE;
+            count++;
+            sum += durationNanos;
+        }
+
+        double getAvgLatencyMs() {
+            if (count == 0) {
+                return 0.0;
+            }
+            return (sum / (double) count) / 1_000_000.0; // 纳秒转毫秒
+        }
+
+        double getP99LatencyMs() {
+            if (count == 0) {
+                return 0.0;
+            }
+            // 简化实现：使用最近WINDOW_SIZE个样本计算P99
+            long[] sorted = Arrays.copyOf(latencies, Math.min(WINDOW_SIZE, (int) count));
+            Arrays.sort(sorted);
+            int p99Index = (int) (sorted.length * 0.99);
+            return sorted[p99Index] / 1_000_000.0; // 纳秒转毫秒
+        }
+    }
+
+    /**
+     * 回源操作统计
+     */
+    private static class SourceLoadStats {
+        private final LongAdder count = new LongAdder();
+        private final LongAdder totalLatencyNanos = new LongAdder();
+
+        void record(long durationNanos) {
+            count.increment();
+            totalLatencyNanos.add(durationNanos);
+        }
+
+        long getCount() {
+            return count.sum();
+        }
+
+        double getAvgLatencyMs() {
+            long cnt = count.sum();
+            if (cnt == 0) {
+                return 0.0;
+            }
+            return (totalLatencyNanos.sum() / (double) cnt) / 1_000_000.0; // 纳秒转毫秒
+        }
+    }
+
+    /**
+     * 热Key信息
+     */
+    public static class HotKey {
+        private final Object key;
+        private final long accessCount;
+
+        public HotKey(Object key, long accessCount) {
+            this.key = key;
+            this.accessCount = accessCount;
+        }
+
+        public Object getKey() {
+            return key;
+        }
+
+        public long getAccessCount() {
+            return accessCount;
+        }
+
+        @Override
+        public String toString() {
+            return "HotKey{key=" + key + ", accessCount=" + accessCount + '}';
+        }
     }
 }
 

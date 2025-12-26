@@ -90,4 +90,46 @@ public interface CacheMetrics {
      * @param newExpectedInsertions 扩容后的预期插入量
      */
     void recordBloomFilterResize(String cacheName, long oldInsertions, long oldExpectedInsertions, long newExpectedInsertions);
+
+    /**
+     * 记录 L1 查询延迟
+     *
+     * <p>用于监控 L1 缓存的查询性能，识别慢查询。
+     *
+     * @param cacheName 缓存名称
+     * @param durationNanos 查询耗时（纳秒）
+     */
+    void recordL1Latency(String cacheName, long durationNanos);
+
+    /**
+     * 记录 L2 查询延迟
+     *
+     * <p>用于监控 L2 缓存的查询性能，识别慢查询和网络问题。
+     *
+     * @param cacheName 缓存名称
+     * @param durationNanos 查询耗时（纳秒）
+     */
+    void recordL2Latency(String cacheName, long durationNanos);
+
+    /**
+     * 记录 Key 访问
+     *
+     * <p>用于追踪热 Key 和 Top N Key 统计。
+     * 此方法会被频繁调用，实现应该考虑性能开销。
+     *
+     * @param cacheName 缓存名称
+     * @param key 缓存键
+     */
+    void recordKeyAccess(String cacheName, Object key);
+
+    /**
+     * 记录回源操作
+     *
+     * <p>当缓存未命中后，从数据源加载数据时调用。
+     * 用于监控回源频率和性能。
+     *
+     * @param cacheName 缓存名称
+     * @param durationNanos 回源耗时（纳秒）
+     */
+    void recordSourceLoad(String cacheName, long durationNanos);
 }
