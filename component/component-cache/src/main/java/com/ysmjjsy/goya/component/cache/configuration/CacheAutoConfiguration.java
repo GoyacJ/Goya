@@ -1,42 +1,58 @@
 package com.ysmjjsy.goya.component.cache.configuration;
 
 import com.ysmjjsy.goya.component.cache.configuration.properties.CacheProperties;
-import com.ysmjjsy.goya.component.cache.factory.CacheServiceFactory;
-import com.ysmjjsy.goya.component.cache.factory.CaffeineFactory;
-import com.ysmjjsy.goya.component.cache.manager.LocalCaffeineCacheManager;
-import com.ysmjjsy.goya.component.cache.manager.PlatformCacheManager;
-import com.ysmjjsy.goya.component.cache.properties.DefaultPropertiesCacheService;
-import com.ysmjjsy.goya.component.cache.properties.PropertiesCacheProcessor;
-import com.ysmjjsy.goya.component.cache.publisher.ICacheInvalidatePublisher;
-import com.ysmjjsy.goya.component.cache.service.HybridCacheService;
+import com.ysmjjsy.goya.component.cache.core.GoyaCacheManager;
+import com.ysmjjsy.goya.component.cache.event.CacheEventPublisher;
+import com.ysmjjsy.goya.component.cache.factory.CacheFactory;
+import com.ysmjjsy.goya.component.cache.filter.BloomFilterManager;
+import com.ysmjjsy.goya.component.cache.local.CaffeineLocalCache;
+import com.ysmjjsy.goya.component.cache.metrics.CacheMetrics;
+import com.ysmjjsy.goya.component.cache.metrics.DefaultCacheMetrics;
+import com.ysmjjsy.goya.component.cache.resolver.CacheSpecification;
+import com.ysmjjsy.goya.component.cache.resolver.CacheSpecificationResolver;
+import com.ysmjjsy.goya.component.cache.resolver.DefaultCacheSpecificationResolver;
+import com.ysmjjsy.goya.component.cache.service.DefaultCacheService;
 import com.ysmjjsy.goya.component.cache.service.ICacheService;
-import com.ysmjjsy.goya.component.cache.service.IL2Cache;
-import com.ysmjjsy.goya.component.common.service.IPropertiesCacheService;
+import com.ysmjjsy.goya.component.cache.support.CacheRefillManager;
+import com.ysmjjsy.goya.component.cache.ttl.DefaultFallbackStrategy;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.CacheManager;
-import org.springframework.cache.caffeine.CaffeineCacheManager;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 
 /**
- * <p>缓存自动配置类</p>
- * <p>提供默认的混合缓存服务（HybridCacheService）和缓存服务工厂（CacheServiceFactory）</p>
- * <p>装配逻辑：</p>
+ * GoyaCache Spring Boot 自动配置类
+ *
+ * <p>自动配置 GoyaCache 相关的 Bean，包括：
  * <ul>
- *     <li>注册 CacheServiceFactory：供用户创建各种缓存实例</li>
- *     <li>注册 HybridCacheService：默认的 ICacheService 实现（L1 固定启用，L2 可选）</li>
- *     <li>启动失效监听器：处理跨节点缓存同步</li>
+ *   <li>CacheProperties - 配置属性绑定</li>
+ *   <li>CacheSpecificationResolver - 配置解析器</li>
+ *   <li>BloomFilterManager - 布隆过滤器管理器</li>
+ *   <li>CacheRefillManager - 缓存回填管理器</li>
+ *   <li>CacheEventPublisher - 缓存事件发布器</li>
+ *   <li>GoyaCacheManager - 缓存管理器</li>
+ * </ul>
+ *
+ * <p><b>条件：</b>
+ * <ul>
+ *   <li>存在 Caffeine 类（@ConditionalOnClass）</li>
+ *   <li>不存在 CacheManager Bean（@ConditionalOnMissingBean）</li>
+ * </ul>
+ *
+ * <p><b>与 Spring Boot 的集成点：</b>
+ * <ul>
+ *   <li>使用 @AutoConfiguration 注册为自动配置类</li>
+ *   <li>使用 @EnableConfigurationProperties 启用配置属性绑定</li>
+ *   <li>注册的 CacheManager Bean 会被 Spring Cache 使用</li>
  * </ul>
  *
  * @author goya
  * @see CacheProperties
- * @see HybridCacheService
- * @see CacheServiceFactory
  * @since 2025/12/22
  */
 @Slf4j
@@ -50,92 +66,166 @@ public class CacheAutoConfiguration {
     }
 
     /**
-     * 注册缓存服务工厂
-     * <p>供用户创建各种缓存实例</p>
-     *
-     * @return CacheServiceFactory 实例
+     * 配置解析器 Bean
      */
     @Bean
-    @ConditionalOnMissingBean(CacheServiceFactory.class)
-    public CacheServiceFactory cacheServiceFactory(CacheProperties properties,
-                                                   ObjectProvider<IL2Cache> l2Cache,
-                                                   ObjectProvider<ICacheInvalidatePublisher> publisher,
-                                                   CaffeineFactory caffeineFactory) {
-        CacheServiceFactory factory = new CacheServiceFactory(properties, l2Cache.getIfAvailable(), publisher.getIfAvailable(), caffeineFactory);
-        log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [cacheServiceFactory] register.");
-        return factory;
-    }
-
-    @Bean
-    public CaffeineFactory caffeineFactory(CacheProperties properties) {
-        CaffeineFactory factory = new CaffeineFactory(properties);
-        log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [caffeineFactory] register.");
-        return factory;
+    @ConditionalOnMissingBean
+    public CacheSpecificationResolver cacheSpecificationResolver(CacheProperties properties) {
+        DefaultCacheSpecificationResolver resolver = new DefaultCacheSpecificationResolver(properties);
+        log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [cacheSpecificationResolver] register.");
+        return resolver;
     }
 
     /**
-     * 注册平台缓存管理器（Spring Cache 集成）
-     * <p>作为 @Primary 的 CacheManager，支持 Spring Cache 注解</p>
-     * <p>使用 ICacheService（HybridCacheService）作为底层实现</p>
+     * 布隆过滤器管理器 Bean
      *
-     * @param cacheService 缓存服务（HybridCacheService）
-     * @param cacheProperties 缓存配置
-     * @return PlatformCacheManager 实例
+     * <p>注意：需要实现 BloomFilterConfigProvider，当前使用临时实现
      */
-    @Primary
     @Bean
-    @ConditionalOnMissingBean(name = "cacheManager")
-    public CacheManager platformCacheManager(ICacheService cacheService, CacheProperties cacheProperties) {
-        PlatformCacheManager manager = new PlatformCacheManager(cacheService, cacheProperties);
-        log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [platformCacheManager] register.");
+    @ConditionalOnMissingBean
+    public BloomFilterManager bloomFilterManager(CacheSpecificationResolver resolver, CacheMetrics metrics) {
+        log.info("Creating BloomFilterManager");
+        // 创建 BloomFilterConfigProvider 实现
+        BloomFilterManager.BloomFilterConfigProvider configProvider = cacheName -> {
+            CacheSpecification spec = resolver.resolve(cacheName);
+            if (!spec.isEnableBloomFilter()) {
+                return null;
+            }
+            return new BloomFilterManager.BloomFilterConfig(
+                    true,
+                    spec.getBloomFilterExpectedInsertions(),
+                    spec.getBloomFilterFalsePositiveRate()
+            );
+        };
+        // 使用默认 key 序列化器和监控指标
+        BloomFilterManager bloomFilterManager = new BloomFilterManager(configProvider, null, metrics);
+        log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [bloomFilterManager] register.");
+        return bloomFilterManager;
+    }
+
+    /**
+     * 缓存回填管理器 Bean
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public CacheRefillManager cacheRefillManager(CacheSpecificationResolver specificationResolver) {
+        CacheRefillManager manager = new CacheRefillManager(specificationResolver);
+        log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [cacheRefillManager] register.");
         return manager;
     }
 
     /**
-     * 注册本地 Caffeine 缓存管理器（备选）
-     * <p>仅在 PlatformCacheManager 不存在时注册，作为备选方案</p>
-     *
-     * @param caffeineFactory Caffeine 工厂
-     * @return CaffeineCacheManager 实例
+     * 缓存事件发布器 Bean
      */
     @Bean
-    @ConditionalOnMissingBean(CacheManager.class)
-    public CaffeineCacheManager caffeineCacheManager(CaffeineFactory caffeineFactory) {
-        LocalCaffeineCacheManager caffeineCacheManager = new LocalCaffeineCacheManager(caffeineFactory);
-        caffeineCacheManager.setCaffeine(caffeineFactory.create());
-        log.trace("[GOYA] |- component [cache] CacheAutoConfiguration |- bean [caffeineCacheManager] register.");
-        return caffeineCacheManager;
+    @ConditionalOnMissingBean
+    public CacheEventPublisher cacheEventPublisher(ApplicationEventPublisher eventPublisher) {
+        CacheEventPublisher publisher = new CacheEventPublisher(eventPublisher);
+        log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [cacheEventPublisher] register.");
+        return publisher;
     }
 
     /**
-     * 注册默认缓存服务（混合缓存）
-     * <p>这是唯一注册为 ICacheService 的 bean</p>
-     * <p>L1 固定启用，L2 根据 IL2Cache bean 存在性自动启用</p>
-     *
-     * @param factory 缓存服务工厂
-     * @return HybridCacheService 实例
+     * 降级策略工厂 Bean
      */
-    @Primary
     @Bean
-    @ConditionalOnMissingBean(ICacheService.class)
-    public HybridCacheService hybridCacheService(CacheServiceFactory factory) {
-        HybridCacheService service = factory.createHybrid();
-        log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [hybridCacheService] register.");
-        return service;
+    @ConditionalOnMissingBean(name = "fallbackStrategyFactory")
+    public GoyaCacheManager.FallbackStrategyFactory fallbackStrategyFactory(CacheSpecificationResolver specificationResolver) {
+        log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [fallbackStrategyFactory] register.");
+        return type -> new DefaultFallbackStrategy(type, specificationResolver);
     }
 
+    /**
+     * 本地缓存工厂 Bean
+     *
+     * <p>注意：RemoteCache 工厂需要由 redis 模块提供
+     */
     @Bean
-    public PropertiesCacheProcessor propertiesCacheProcessor(ICacheService iCacheService) {
-        PropertiesCacheProcessor processor = new PropertiesCacheProcessor(iCacheService);
-        log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [propertiesCacheProcessor] register.");
-        return processor;
+    @ConditionalOnMissingBean(name = "localCacheFactory")
+    public GoyaCacheManager.LocalCacheFactory localCacheFactory() {
+        log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [localCacheFactory] register.");
+        return CaffeineLocalCache::new;
     }
 
+    /**
+     * 监控指标 Bean（可选）
+     */
     @Bean
     @ConditionalOnMissingBean
-    public IPropertiesCacheService propertiesCacheService(PropertiesCacheProcessor processor) {
-        DefaultPropertiesCacheService service = new DefaultPropertiesCacheService(processor);
-        log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [propertiesCacheService] register.");
+    public CacheMetrics cacheMetrics() {
+        DefaultCacheMetrics metrics = new DefaultCacheMetrics();
+        log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [cacheMetrics] register.");
+        return metrics;
+    }
+
+    /**
+     * 缓存服务 Bean
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public ICacheService cacheService(CacheManager cacheManager, CacheMetrics metrics) {
+        DefaultCacheService service = new DefaultCacheService(cacheManager, metrics);
+        log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [cacheService] register.");
         return service;
+    }
+
+    /**
+     * 缓存工厂 Bean
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public CacheFactory cacheFactory(
+            CacheSpecificationResolver specificationResolver,
+            GoyaCacheManager.LocalCacheFactory localCacheFactory,
+            GoyaCacheManager.RemoteCacheFactory remoteCacheFactory,
+            BloomFilterManager bloomFilterManager,
+            CacheRefillManager refillManager,
+            CacheEventPublisher eventPublisher,
+            GoyaCacheManager.FallbackStrategyFactory fallbackStrategyFactory,
+            CacheMetrics metrics) {
+        CacheFactory cacheFactory = new CacheFactory(
+                specificationResolver,
+                localCacheFactory,
+                remoteCacheFactory,
+                bloomFilterManager,
+                refillManager,
+                eventPublisher,
+                fallbackStrategyFactory,
+                metrics
+        );
+        log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [cacheFactory] register.");
+        return cacheFactory;
+    }
+
+    /**
+     * GoyaCacheManager Bean
+     *
+     * <p>注意：需要 RemoteCacheFactory，如果不存在则使用 NoOpRemoteCache（仅用于测试）
+     */
+    @Bean
+    @Primary
+    @ConditionalOnMissingBean(CacheManager.class)
+    public GoyaCacheManager goyaCacheManager(
+            CacheSpecificationResolver specificationResolver,
+            GoyaCacheManager.LocalCacheFactory localCacheFactory,
+            GoyaCacheManager.RemoteCacheFactory remoteCacheFactory,
+            BloomFilterManager bloomFilterManager,
+            CacheRefillManager refillManager,
+            CacheEventPublisher eventPublisher,
+            GoyaCacheManager.FallbackStrategyFactory fallbackStrategyFactory,
+            CacheMetrics metrics) {
+
+        GoyaCacheManager manager = new GoyaCacheManager(
+                specificationResolver,
+                localCacheFactory,
+                remoteCacheFactory,
+                bloomFilterManager,
+                refillManager,
+                eventPublisher,
+                fallbackStrategyFactory,
+                metrics
+        );
+        log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [goyaCacheManager] register.");
+        return manager;
     }
 }

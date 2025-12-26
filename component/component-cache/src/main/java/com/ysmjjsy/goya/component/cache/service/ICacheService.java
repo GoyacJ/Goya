@@ -1,216 +1,207 @@
 package com.ysmjjsy.goya.component.cache.service;
 
-import com.ysmjjsy.goya.component.cache.warmup.ICacheWarmup;
-import jakarta.validation.constraints.NotBlank;
-import org.apache.commons.lang3.ObjectUtils;
-import org.jspecify.annotations.NonNull;
+import lombok.Getter;
 
-import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.function.Function;
 
 /**
- * <p>缓存通用能力</p>
+ * 缓存服务接口
+ *
+ * <p>提供便捷的缓存操作方法，封装 Spring Cache API，简化日常开发使用。
+ * 支持基础操作、批量操作和高级功能。
+ *
+ * <p><b>职责：</b>
+ * <ul>
+ *   <li>封装 Spring Cache API，提供类型安全的操作方法</li>
+ *   <li>提供批量操作，提升性能</li>
+ *   <li>提供高级功能（缓存预热、统计信息等）</li>
+ * </ul>
+ *
+ * <p><b>使用场景：</b>
+ * <ul>
+ *   <li>需要手动操作缓存时（不使用 @Cacheable 注解）</li>
+ *   <li>需要批量操作缓存时</li>
+ *   <li>需要缓存预热或查看统计信息时</li>
+ * </ul>
  *
  * @author goya
- * @since 2025/12/21 22:47
+ * @since 2025/12/26 15:03
  */
-public interface ICacheService extends ICacheWarmup {
+public interface ICacheService {
 
     /**
-     * 获取缓存
+     * 获取缓存值
+     *
+     * <p>从缓存中获取指定 key 的值，如果不存在则返回 null。
      *
      * @param cacheName 缓存名称
-     * @param key       key
-     * @return value
+     * @param key 缓存键
+     * @param type 值类型
+     * @param <T> 值类型
+     * @return 缓存值，如果不存在则返回 null
+     * @throws IllegalArgumentException 如果 cacheName 或 key 为 null
      */
-    <K, V> V get(String cacheName, @NotBlank K key);
+    <T> T get(String cacheName, Object key, Class<T> type);
 
     /**
-     * 根据 key 获取缓存值，如果不存在，则使用 {@code mappingFunction} 计算并缓存。
+     * 获取缓存值（带加载器）
      *
-     * @param cacheName       缓存名称
-     * @param key             缓存 key
-     * @param mappingFunction 值加载函数
-     * @param <K>             key 类型
-     * @param <V>             value 类型
-     * @return 缓存中已有的值或计算得到的值
-     */
-    <K, V> V get(String cacheName, K key, Function<? super K, ? extends V> mappingFunction);
-
-    /**
-     * 批量获取缓存中已存在的值，不存在的 key 不会返回。
+     * <p>从缓存中获取指定 key 的值，如果不存在则调用 valueLoader 加载并缓存。
      *
      * @param cacheName 缓存名称
-     * @param keys      要获取的 key 集合
-     * @param <K>       key 类型
-     * @param <V>       value 类型
-     * @return 包含已缓存 key 对应的 value 的 map，不可包含 null
+     * @param key 缓存键
+     * @param valueLoader 值加载器（当缓存不存在时调用）
+     * @param <T> 值类型
+     * @return 缓存值或加载的值
+     * @throws IllegalArgumentException 如果 cacheName 或 key 为 null
+     * @throws RuntimeException 如果 valueLoader 执行失败
      */
-    <K, V> Map<K, @NonNull V> get(String cacheName, Set<? extends K> keys);
+    <T> T get(String cacheName, Object key, Callable<T> valueLoader);
 
     /**
-     * 批量获取缓存值，对于不存在的 key 使用 {@code mappingFunction} 计算并缓存。
+     * 写入缓存
      *
-     * @param cacheName       缓存名称
-     * @param keys            要获取的 key 集合
-     * @param mappingFunction 批量计算值的函数
-     * @param <K>             key 类型
-     * @param <V>             value 类型
-     * @return 包含所有 key 对应的 value 的 map
-     */
-    <K, V> Map<K, @NonNull V> get(
-            String cacheName,
-            Set<? extends K> keys,
-            Function<? super Set<? extends K>, ? extends Map<? extends K, ? extends @NonNull V>> mappingFunction
-    );
-
-    /**
-     * 放入缓存
+     * <p>将键值对写入缓存，使用配置的默认 TTL。
      *
      * @param cacheName 缓存名称
-     * @param key       key
-     * @param value     value
+     * @param key 缓存键
+     * @param value 缓存值（可以为 null，如果配置允许）
+     * @throws IllegalArgumentException 如果 cacheName 或 key 为 null
+     * @throws IllegalArgumentException 如果 value 为 null 且配置不允许 null 值
      */
-    <K, V> void put(String cacheName, @NotBlank K key, V value);
+    void put(String cacheName, Object key, Object value);
 
     /**
-     * 保存与Key对应的值
+     * 失效缓存
+     *
+     * <p>从缓存中移除指定 key 的数据。
      *
      * @param cacheName 缓存名称
-     * @param key       存储Key
-     * @param value     与Key对应的value
-     * @param duration  过期时间
+     * @param key 缓存键
+     * @throws IllegalArgumentException 如果 cacheName 或 key 为 null
      */
-    <K, V> void put(String cacheName, K key, V value, Duration duration);
+    void evict(String cacheName, Object key);
 
     /**
-     * <p>放入缓存（永不过期）</p>
-     * <p>适用场景：</p>
-     * <ul>
-     *     <li>系统配置数据（如全局参数）</li>
-     *     <li>字典数据（如国家、地区列表）</li>
-     *     <li>枚举映射（如状态码、类型）</li>
-     * </ul>
-     * <p>注意事项：</p>
-     * <ul>
-     *     <li>数据更新时必须手动失效</li>
-     *     <li>占用内存不会自动释放</li>
-     *     <li>需要定期评估是否仍需要</li>
-     * </ul>
+     * 清空缓存
+     *
+     * <p>清空指定缓存的所有数据。
      *
      * @param cacheName 缓存名称
-     * @param key       存储Key
-     * @param value     与Key对应的value
-     * @param <K>       键类型
-     * @param <V>       值类型
+     * @throws IllegalArgumentException 如果 cacheName 为 null
      */
-    <K, V> void putEternal(String cacheName, @NotBlank K key, V value);
+    void clear(String cacheName);
 
     /**
-     * 删除缓存
+     * 检查缓存是否存在
+     *
+     * <p>检查指定 key 是否存在于缓存中。
      *
      * @param cacheName 缓存名称
-     * @param key       key
-     * @return 是否删除成功
+     * @param key 缓存键
+     * @return true 如果存在，false 如果不存在
+     * @throws IllegalArgumentException 如果 cacheName 或 key 为 null
      */
-    <K> Boolean remove(String cacheName, @NotBlank K key);
+    boolean exists(String cacheName, Object key);
 
     /**
-     * 删除缓存
+     * 批量获取缓存值
+     *
+     * <p>一次性获取多个 key 的缓存值，提升性能。
      *
      * @param cacheName 缓存名称
-     * @param keys      keys
+     * @param keys 缓存键集合
+     * @param type 值类型
+     * @param <T> 值类型
+     * @return key-value 映射，只包含命中的 key
+     * @throws IllegalArgumentException 如果 cacheName 或 keys 为 null
      */
-    <K> void remove(String cacheName, @NotBlank Set<? extends K> keys);
+    <T> Map<Object, T> batchGet(String cacheName, Set<Object> keys, Class<T> type);
 
     /**
-     * 是否存在
+     * 批量写入缓存
+     *
+     * <p>一次性写入多个键值对，提升性能。
      *
      * @param cacheName 缓存名称
-     * @param key       key
-     * @return 是否存在
+     * @param entries 键值对映射
+     * @throws IllegalArgumentException 如果 cacheName 或 entries 为 null
      */
-    default <K, V> boolean containKey(String cacheName, K key) {
-        V value = get(cacheName, key);
-        return ObjectUtils.isNotEmpty(value);
+    void batchPut(String cacheName, Map<Object, Object> entries);
+
+    /**
+     * 批量失效缓存
+     *
+     * <p>一次性失效多个 key，提升性能。
+     *
+     * @param cacheName 缓存名称
+     * @param keys 缓存键集合
+     * @throws IllegalArgumentException 如果 cacheName 或 keys 为 null
+     */
+    void batchEvict(String cacheName, Set<Object> keys);
+
+    /**
+     * 缓存预热
+     *
+     * <p>使用指定的加载器预加载一批 key 到缓存中。
+     * 支持并发加载，提升预热速度。
+     *
+     * @param cacheName 缓存名称
+     * @param loader 值加载器（根据 key 加载值）
+     * @param keys 需要预热的 key 集合
+     * @throws IllegalArgumentException 如果 cacheName、loader 或 keys 为 null
+     */
+    void warmUp(String cacheName, Function<Object, Object> loader, Set<Object> keys);
+
+    /**
+     * 获取缓存统计信息
+     *
+     * <p>获取指定缓存的统计信息，包括命中率、未命中次数等。
+     *
+     * @param cacheName 缓存名称
+     * @return 缓存统计信息，如果监控未启用则返回空统计
+     * @throws IllegalArgumentException 如果 cacheName 为 null
+     */
+    CacheStatistics getStatistics(String cacheName);
+
+    /**
+     * 缓存统计信息
+     *
+     * <p>包含缓存的各项统计指标。
+     */
+    @Getter
+    class CacheStatistics {
+        private final long l1Hits;
+        private final long l2Hits;
+        private final long misses;
+        private final double hitRate;
+        private final long bloomFilterFalsePositives;
+        private final double refillSuccessRate;
+
+        public CacheStatistics(long l1Hits, long l2Hits, long misses,
+                               long bloomFilterFalsePositives, double refillSuccessRate) {
+            this.l1Hits = l1Hits;
+            this.l2Hits = l2Hits;
+            this.misses = misses;
+            long total = l1Hits + l2Hits + misses;
+            this.hitRate = total > 0 ? (double) (l1Hits + l2Hits) / total : 0.0;
+            this.bloomFilterFalsePositives = bloomFilterFalsePositives;
+            this.refillSuccessRate = refillSuccessRate;
+        }
+
+        @Override
+        public String toString() {
+            return "CacheStatistics{" +
+                    "l1Hits=" + l1Hits +
+                    ", l2Hits=" + l2Hits +
+                    ", misses=" + misses +
+                    ", hitRate=" + hitRate +
+                    ", bloomFilterFalsePositives=" + bloomFilterFalsePositives +
+                    ", refillSuccessRate=" + refillSuccessRate +
+                    '}';
+        }
     }
-
-    /**
-     * 如果key不存在则放入缓存
-     *
-     * @param cacheName 缓存名称
-     * @param key       key
-     * @param loader    loader
-     * @return value
-     */
-    <K, V> V computeIfAbsent(String cacheName, K key, Function<K, V> loader);
-
-    /**
-     * <p>锁定并执行操作</p>
-     * <p>非堵塞的尝试获取一个锁，如果对应的key还没有锁，执行操作后自动释放，否则立即返回false。</p>
-     * <p>如果Cache实例是本地的，它是一个本地锁，在本JVM中有效；如果是redis等远程缓存，它是一个分布式锁。</p>
-     * <p>锁会在操作完成后自动释放，或在expire超时后自动释放。</p>
-     *
-     * @param cacheName 缓存名称
-     * @param key       存储Key
-     * @param expire    锁过期时间{@link Duration}
-     * @param action    需要执行的操作 {@link Runnable}
-     * @return 是否成功获取锁并执行操作
-     * @see <a href="https://github.com/alibaba/jetcache/wiki/CacheAPI_CN">JetCache Wiki</a>
-     */
-    <K> boolean lockAndRun(String cacheName, K key, Duration expire, Runnable action);
-
-    // ==================== 缓存穿透防护（布隆过滤器）====================
-
-    /**
-     * <p>判断 key 是否可能存在（布隆过滤器）</p>
-     * <p>用于防止缓存穿透：快速判断不存在的 key，避免查询数据库</p>
-     * <p>布隆过滤器特性：</p>
-     * <ul>
-     *     <li>返回 false：key 一定不存在</li>
-     *     <li>返回 true：key 可能存在（存在误判率）</li>
-     * </ul>
-     *
-     * @param cacheName 缓存名称
-     * @param key       缓存键
-     * @param <K>       键类型
-     * @return true 可能存在，false 一定不存在
-     */
-    <K> boolean mightContain(String cacheName, K key);
-
-    /**
-     * <p>添加 key 到布隆过滤器</p>
-     * <p>在写入缓存时自动调用，用户通常不需要手动调用</p>
-     *
-     * @param cacheName 缓存名称
-     * @param key       缓存键
-     * @param <K>       键类型
-     */
-    <K> void addToBloomFilter(String cacheName, K key);
-
-    // ==================== 缓存击穿防护（分布式锁）====================
-
-    /**
-     * <p>使用分布式锁获取缓存，防止缓存击穿</p>
-     * <p>适用场景：热点 key 过期时，避免大量并发请求同时打到数据库</p>
-     * <p>实现机制：</p>
-     * <ul>
-     *     <li>先尝试从缓存获取（快速路径）</li>
-     *     <li>未命中时使用分布式锁（仅一个请求加载数据）</li>
-     *     <li>双重检查（DCL）避免重复加载</li>
-     *     <li>结合布隆过滤器防止穿透</li>
-     * </ul>
-     *
-     * @param cacheName   缓存名称
-     * @param key         缓存键
-     * @param lockTimeout 锁超时时间
-     * @param loader      数据加载函数
-     * @param <K>         键类型
-     * @param <V>         值类型
-     * @return 缓存值
-     */
-    <K, V> V getWithLock(String cacheName, K key, Duration lockTimeout, Function<K, V> loader);
-
 }
