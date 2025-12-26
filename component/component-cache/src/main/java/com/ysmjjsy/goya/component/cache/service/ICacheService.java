@@ -2,6 +2,7 @@ package com.ysmjjsy.goya.component.cache.service;
 
 import lombok.Getter;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -76,6 +77,24 @@ public interface ICacheService {
      * @throws IllegalArgumentException 如果 value 为 null 且配置不允许 null 值
      */
     <K, V> void put(String cacheName, K key, V value);
+
+    /**
+     * 写入缓存（带自定义 TTL）
+     *
+     * <p>将键值对写入缓存，使用指定的 TTL。L2 缓存使用传入的 ttl，L1 缓存也使用传入的 ttl
+     * （注意：Caffeine 本地缓存可能不支持每个 key 独立的 TTL，会使用全局策略）。
+     *
+     * @param cacheName 缓存名称
+     * @param key 缓存键
+     * @param value 缓存值（可以为 null，如果配置允许）
+     * @param ttl 过期时间，必须大于 0
+     * @param <K> 键类型
+     * @param <V> 值类型
+     * @throws IllegalArgumentException 如果 cacheName 或 key 为 null
+     * @throws IllegalArgumentException 如果 value 为 null 且配置不允许 null 值
+     * @throws IllegalArgumentException 如果 ttl 为 null 或无效
+     */
+    <K, V> void put(String cacheName, K key, V value, Duration ttl);
 
     /**
      * 失效缓存

@@ -1,16 +1,17 @@
 package com.ysmjjsy.goya.starter.redis.codec;
 
 import com.ysmjjsy.goya.component.cache.local.NullValueWrapper;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.client.codec.BaseCodec;
+import org.redisson.client.handler.State;
 import org.redisson.client.protocol.Decoder;
 import org.redisson.client.protocol.Encoder;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ObjectNode;
-
-import java.nio.charset.StandardCharsets;
 
 /**
  * 基于 JsonMapper 的 Redisson Codec，支持类型信息保存和恢复
@@ -106,34 +107,38 @@ public class TypedJsonMapperCodec extends BaseCodec {
      */
     private class TypedEncoder implements Encoder {
         @Override
-        public byte[] encode(Object in) {
+        public ByteBuf encode(Object in) {
             if (in == null) {
                 return null;
             }
 
             try {
+                byte[] bytes;
                 // 处理 NullValueWrapper
                 if (NullValueWrapper.isNullValue(in)) {
                     ObjectNode node = jsonMapper.createObjectNode();
                     node.put(TYPE_FIELD, NullValueWrapper.class.getName());
                     node.put(NULL_VALUE_WRAPPER_MARKER, true);
-                    return jsonMapper.writeValueAsBytes(node);
+                    bytes = jsonMapper.writeValueAsBytes(node);
+                } else {
+                    // 获取实际类型
+                    Class<?> actualType = in.getClass();
+                    String typeName = actualType.getName();
+
+                    // 创建包装对象
+                    ObjectNode wrapper = jsonMapper.createObjectNode();
+                    wrapper.put(TYPE_FIELD, typeName);
+
+                    // 序列化实际数据
+                    JsonNode dataNode = jsonMapper.valueToTree(in);
+                    wrapper.set(DATA_FIELD, dataNode);
+
+                    // 序列化为字节数组
+                    bytes = jsonMapper.writeValueAsBytes(wrapper);
                 }
 
-                // 获取实际类型
-                Class<?> actualType = in.getClass();
-                String typeName = actualType.getName();
-
-                // 创建包装对象
-                ObjectNode wrapper = jsonMapper.createObjectNode();
-                wrapper.put(TYPE_FIELD, typeName);
-
-                // 序列化实际数据
-                JsonNode dataNode = jsonMapper.valueToTree(in);
-                wrapper.set(DATA_FIELD, dataNode);
-
-                // 序列化为字节数组
-                return jsonMapper.writeValueAsBytes(wrapper);
+                // 将字节数组包装为 ByteBuf
+                return Unpooled.wrappedBuffer(bytes);
             } catch (JacksonException e) {
                 log.error("Failed to encode object: type={}", in.getClass().getName(), e);
                 throw new RuntimeException("Failed to encode object", e);
@@ -148,14 +153,18 @@ public class TypedJsonMapperCodec extends BaseCodec {
      */
     private class TypedDecoder implements Decoder<Object> {
         @Override
-        public Object decode(byte[] buf, int state) {
-            if (buf == null || buf.length == 0) {
+        public Object decode(ByteBuf buf, State state) {
+            if (buf == null || buf.readableBytes() == 0) {
                 return null;
             }
 
             try {
+                // 从 ByteBuf 读取字节数组
+                byte[] bytes = new byte[buf.readableBytes()];
+                buf.readBytes(bytes);
+
                 // 解析 JSON
-                JsonNode rootNode = jsonMapper.readTree(buf);
+                JsonNode rootNode = jsonMapper.readTree(bytes);
 
                 // 检查是否是 NullValueWrapper
                 if (rootNode.isObject()) {
@@ -195,9 +204,6 @@ public class TypedJsonMapperCodec extends BaseCodec {
             } catch (JacksonException e) {
                 log.error("Failed to decode object", e);
                 throw new RuntimeException("Failed to decode object", e);
-            } catch (ClassNotFoundException e) {
-                log.error("Class not found during deserialization", e);
-                throw new RuntimeException("Failed to decode object: class not found", e);
             }
         }
     }

@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -130,6 +131,29 @@ public class DefaultCacheService implements ICacheService {
             goyaCache.putTyped(key, value);
             return;
         }
+        cache.put(key, value);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <K, V> void put(String cacheName, K key, V value, Duration ttl) {
+        validateCacheNameAndKey(cacheName, key);
+        if (ttl == null || ttl.isNegative() || ttl.isZero()) {
+            throw new IllegalArgumentException("TTL must be positive, got: " + ttl);
+        }
+        Cache cache = cacheManager.getCache(cacheName);
+        if (cache == null) {
+            log.warn("Cache not found: cacheName={}", cacheName);
+            return;
+        }
+        if (cache instanceof GoyaCache) {
+            GoyaCache<K, V> goyaCache = (GoyaCache<K, V>) cache;
+            goyaCache.putTyped(key, value, ttl);
+            return;
+        }
+        // 对于非 GoyaCache 实现，降级到标准 Spring Cache API
+        // Spring Cache 的 Cache 接口没有带 TTL 的 put 方法，所以只能使用默认 TTL
+        log.warn("Cache implementation does not support custom TTL, using default TTL: cacheName={}", cacheName);
         cache.put(key, value);
     }
 

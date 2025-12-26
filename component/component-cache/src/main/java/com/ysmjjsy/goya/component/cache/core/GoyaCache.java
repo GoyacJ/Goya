@@ -16,6 +16,7 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.support.SimpleValueWrapper;
 import org.springframework.context.event.EventListener;
 
+import java.time.Duration;
 import java.util.concurrent.Callable;
 
 /**
@@ -286,12 +287,31 @@ public class GoyaCache<K, V> implements Cache {
      * @param value 缓存值
      */
     public void putTyped(K key, V value) {
+        putTyped(key, value, spec.getTtl());
+    }
+
+    /**
+     * 类型安全的写入方法（带自定义 TTL）
+     *
+     * <p>使用指定的 TTL 写入缓存。L2 使用传入的 ttl，L1 也使用传入的 ttl
+     * （注意：Caffeine 本地缓存可能不支持每个 key 独立的 TTL，会使用全局策略）。
+     *
+     * @param key 缓存键
+     * @param value 缓存值
+     * @param ttl 过期时间
+     * @throws IllegalArgumentException 如果 ttl 为 null 或无效
+     */
+    public void putTyped(K key, V value, Duration ttl) {
+        if (ttl == null || ttl.isNegative() || ttl.isZero()) {
+            throw new IllegalArgumentException("TTL must be positive, got: " + ttl);
+        }
+
         // 1. Null 值处理
         Object actualValue = wrapNullValue(value);
 
-        // 2. 写入 L2（同步，确保持久化）
+        // 2. 写入 L2（同步，确保持久化，使用自定义 TTL）
         try {
-            l2.put(key, actualValue, spec.getTtl());
+            l2.put(key, actualValue, ttl);
         } catch (Exception e) {
             // L2 写入失败，根据降级策略处理
             log.error("Failed to write to L2 cache for key: {}", key, e);
@@ -299,9 +319,11 @@ public class GoyaCache<K, V> implements Cache {
             // 继续写入 L1（保证当前节点可用）
         }
 
-        // 3. 写入 L1（同步，保证当前节点一致性）
+        // 3. 写入 L1（同步，保证当前节点一致性，使用自定义 TTL）
+        // 注意：Caffeine 本地缓存可能不支持每个 key 独立的 TTL，会使用全局策略
+        // 但为了接口一致性，仍然传入 ttl 参数
         try {
-            l1.put(key, actualValue, spec.getLocalTtl());
+            l1.put(key, actualValue, ttl);
         } catch (Exception e) {
             log.error("Failed to write to L1 cache for key: {}", key, e);
             // L1 写入失败不影响 L2，但记录错误
