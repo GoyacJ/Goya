@@ -89,7 +89,7 @@ import java.util.concurrent.Callable;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class GoyaCache implements Cache {
+public class GoyaCache<K, V> implements Cache {
 
     /**
      * 缓存名称
@@ -151,6 +151,18 @@ public class GoyaCache implements Cache {
 
     @Override
     public ValueWrapper get(@NonNull Object key) {
+        @SuppressWarnings("unchecked")
+        K typedKey = (K) key;
+        return getTyped(typedKey);
+    }
+
+    /**
+     * 类型安全的获取方法
+     *
+     * @param key 缓存键
+     * @return ValueWrapper，如果不存在则返回 null
+     */
+    public ValueWrapper getTyped(K key) {
         // 1. 布隆过滤器快速路径（仅优化，不阻塞）
         // 即使布隆过滤器判断"不存在"，仍查询 L2，避免误判
         boolean bloomFilterCheck = true;
@@ -199,9 +211,28 @@ public class GoyaCache implements Cache {
         return null;
     }
 
+    /**
+     * 类型安全的获取值方法（直接返回类型化值）
+     *
+     * @param key 缓存键
+     * @return 缓存值，如果不存在则返回 null
+     */
+    @SuppressWarnings("unchecked")
+    public V getTypedValue(K key) {
+        ValueWrapper wrapper = getTyped(key);
+        if (wrapper == null) {
+            return null;
+        }
+        Object value = wrapper.get();
+        if (value == null) {
+            return null;
+        }
+        return (V) value;
+    }
+
     @Override
     public <T> T get(@NonNull Object key, Class<T> type) {
-        ValueWrapper wrapper = get(key);
+        ValueWrapper wrapper = getTyped((K) key);
         if (wrapper == null) {
             return null;
         }
@@ -215,7 +246,9 @@ public class GoyaCache implements Cache {
     @Override
     public <T> T get(@NonNull Object key, @NonNull Callable<T> valueLoader) {
         // Spring Cache 标准方法：支持缓存穿透保护
-        ValueWrapper existing = get(key);
+        @SuppressWarnings("unchecked")
+        K typedKey = (K) key;
+        ValueWrapper existing = getTyped(typedKey);
         if (existing != null) {
             @SuppressWarnings("unchecked")
             T value = (T) existing.get();
@@ -231,12 +264,28 @@ public class GoyaCache implements Cache {
         }
 
         // 写入缓存
-        put(key, value);
+        @SuppressWarnings("unchecked")
+        V typedValue = (V) value;
+        putTyped(typedKey, typedValue);
         return value;
     }
 
     @Override
     public void put(@NonNull Object key, Object value) {
+        @SuppressWarnings("unchecked")
+        K typedKey = (K) key;
+        @SuppressWarnings("unchecked")
+        V typedValue = (V) value;
+        putTyped(typedKey, typedValue);
+    }
+
+    /**
+     * 类型安全的写入方法
+     *
+     * @param key 缓存键
+     * @param value 缓存值
+     */
+    public void putTyped(K key, V value) {
         // 1. Null 值处理
         Object actualValue = wrapNullValue(value);
 
@@ -269,6 +318,17 @@ public class GoyaCache implements Cache {
 
     @Override
     public void evict(@NonNull Object key) {
+        @SuppressWarnings("unchecked")
+        K typedKey = (K) key;
+        evictTyped(typedKey);
+    }
+
+    /**
+     * 类型安全的失效方法
+     *
+     * @param key 缓存键
+     */
+    public void evictTyped(K key) {
         // 1. 失效 L1
         try {
             l1.evict(key);

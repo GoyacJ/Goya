@@ -39,12 +39,12 @@ public interface ICacheService {
      *
      * @param cacheName 缓存名称
      * @param key 缓存键
-     * @param type 值类型
-     * @param <T> 值类型
+     * @param <K> 键类型
+     * @param <V> 值类型
      * @return 缓存值，如果不存在则返回 null
      * @throws IllegalArgumentException 如果 cacheName 或 key 为 null
      */
-    <T> T get(String cacheName, Object key, Class<T> type);
+    <K, V> V get(String cacheName, K key);
 
     /**
      * 获取缓存值（带加载器）
@@ -54,12 +54,13 @@ public interface ICacheService {
      * @param cacheName 缓存名称
      * @param key 缓存键
      * @param valueLoader 值加载器（当缓存不存在时调用）
-     * @param <T> 值类型
+     * @param <K> 键类型
+     * @param <V> 值类型
      * @return 缓存值或加载的值
      * @throws IllegalArgumentException 如果 cacheName 或 key 为 null
      * @throws RuntimeException 如果 valueLoader 执行失败
      */
-    <T> T get(String cacheName, Object key, Callable<T> valueLoader);
+    <K, V> V get(String cacheName, K key, Callable<V> valueLoader);
 
     /**
      * 写入缓存
@@ -69,10 +70,12 @@ public interface ICacheService {
      * @param cacheName 缓存名称
      * @param key 缓存键
      * @param value 缓存值（可以为 null，如果配置允许）
+     * @param <K> 键类型
+     * @param <V> 值类型
      * @throws IllegalArgumentException 如果 cacheName 或 key 为 null
      * @throws IllegalArgumentException 如果 value 为 null 且配置不允许 null 值
      */
-    void put(String cacheName, Object key, Object value);
+    <K, V> void put(String cacheName, K key, V value);
 
     /**
      * 失效缓存
@@ -81,9 +84,10 @@ public interface ICacheService {
      *
      * @param cacheName 缓存名称
      * @param key 缓存键
+     * @param <K> 键类型
      * @throws IllegalArgumentException 如果 cacheName 或 key 为 null
      */
-    void evict(String cacheName, Object key);
+    <K> void evict(String cacheName, K key);
 
     /**
      * 清空缓存
@@ -102,10 +106,11 @@ public interface ICacheService {
      *
      * @param cacheName 缓存名称
      * @param key 缓存键
+     * @param <K> 键类型
      * @return true 如果存在，false 如果不存在
      * @throws IllegalArgumentException 如果 cacheName 或 key 为 null
      */
-    boolean exists(String cacheName, Object key);
+    <K> boolean exists(String cacheName, K key);
 
     /**
      * 批量获取缓存值
@@ -114,12 +119,12 @@ public interface ICacheService {
      *
      * @param cacheName 缓存名称
      * @param keys 缓存键集合
-     * @param type 值类型
-     * @param <T> 值类型
+     * @param <K> 键类型
+     * @param <V> 值类型
      * @return key-value 映射，只包含命中的 key
      * @throws IllegalArgumentException 如果 cacheName 或 keys 为 null
      */
-    <T> Map<Object, T> batchGet(String cacheName, Set<Object> keys, Class<T> type);
+    <K, V> Map<K, V> batchGet(String cacheName, Set<K> keys);
 
     /**
      * 批量写入缓存
@@ -128,9 +133,11 @@ public interface ICacheService {
      *
      * @param cacheName 缓存名称
      * @param entries 键值对映射
+     * @param <K> 键类型
+     * @param <V> 值类型
      * @throws IllegalArgumentException 如果 cacheName 或 entries 为 null
      */
-    void batchPut(String cacheName, Map<Object, Object> entries);
+    <K, V> void batchPut(String cacheName, Map<K, V> entries);
 
     /**
      * 批量失效缓存
@@ -139,9 +146,10 @@ public interface ICacheService {
      *
      * @param cacheName 缓存名称
      * @param keys 缓存键集合
+     * @param <K> 键类型
      * @throws IllegalArgumentException 如果 cacheName 或 keys 为 null
      */
-    void batchEvict(String cacheName, Set<Object> keys);
+    <K> void batchEvict(String cacheName, Set<K> keys);
 
     /**
      * 缓存预热
@@ -152,9 +160,11 @@ public interface ICacheService {
      * @param cacheName 缓存名称
      * @param loader 值加载器（根据 key 加载值）
      * @param keys 需要预热的 key 集合
+     * @param <K> 键类型
+     * @param <V> 值类型
      * @throws IllegalArgumentException 如果 cacheName、loader 或 keys 为 null
      */
-    void warmUp(String cacheName, Function<Object, Object> loader, Set<Object> keys);
+    <K, V> void warmUp(String cacheName, Function<K, V> loader, Set<K> keys);
 
     /**
      * 获取缓存统计信息

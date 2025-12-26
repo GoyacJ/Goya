@@ -1,6 +1,9 @@
 package com.ysmjjsy.goya.starter.redis.configuration;
 
 import com.ysmjjsy.goya.component.cache.core.GoyaCacheManager;
+import com.ysmjjsy.goya.component.cache.serializer.CacheKeySerializer;
+import com.ysmjjsy.goya.component.cache.serializer.DefaultCacheKeySerializer;
+import com.ysmjjsy.goya.starter.redis.codec.TypedJsonMapperCodec;
 import com.ysmjjsy.goya.starter.redis.configuration.properties.RedisProperties;
 import com.ysmjjsy.goya.starter.redis.core.RedissonRemoteCache;
 import com.ysmjjsy.goya.starter.redis.service.DefaultRedisService;
@@ -15,6 +18,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * <p>Redis 自动配置类</p>
@@ -42,18 +46,44 @@ public class RedisAutoConfiguration {
     }
 
     /**
+     * 缓存键序列化器 Bean
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public CacheKeySerializer cacheKeySerializer() {
+        log.info("Creating CacheKeySerializer");
+        return new DefaultCacheKeySerializer();
+    }
+
+    /**
+     * TypedJsonMapperCodec Bean
+     *
+     * <p>基于 JsonMapper 的统一序列化 Codec，支持类型信息保存和恢复。
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public TypedJsonMapperCodec typedJsonMapperCodec(JsonMapper jsonMapper) {
+        log.info("Creating TypedJsonMapperCodec with JsonMapper");
+        return new TypedJsonMapperCodec(jsonMapper);
+    }
+
+    /**
      * 远程缓存工厂 Bean
      *
-     * <p>使用 Redisson 创建 RemoteCache 实例。
+     * <p>使用 Redisson 和 TypedJsonMapperCodec 创建 RemoteCache 实例。
      */
     @Bean
     @ConditionalOnMissingBean(name = "remoteCacheFactory")
-    public GoyaCacheManager.RemoteCacheFactory remoteCacheFactory(RedissonClient redissonClient) {
-        log.info("Creating RemoteCacheFactory with Redisson");
+    public GoyaCacheManager.RemoteCacheFactory remoteCacheFactory(
+            RedissonClient redissonClient,
+            JsonMapper jsonMapper,
+            CacheKeySerializer cacheKeySerializer) {
+        log.info("Creating RemoteCacheFactory with Redisson, JsonMapper and CacheKeySerializer");
+        // 创建统一序列化 Codec
+        TypedJsonMapperCodec codec = new TypedJsonMapperCodec(jsonMapper);
         return (cacheName, spec) -> {
-            log.debug("Creating RedissonRemoteCache: cacheName={}", cacheName);
-            // 使用默认 key 序列化器
-            return new RedissonRemoteCache(cacheName, redissonClient, null, spec, null);
+            log.debug("Creating RedissonRemoteCache: cacheName={}, codec=TypedJsonMapperCodec", cacheName);
+            return new RedissonRemoteCache(cacheName, redissonClient, codec, spec, cacheKeySerializer);
         };
     }
 

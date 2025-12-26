@@ -72,9 +72,9 @@ public class GoyaCacheManager implements CacheManager {
     /**
      * Cache 实例 Map
      * Key: cacheName
-     * Value: GoyaCache 实例
+     * Value: GoyaCache 实例（类型擦除，实际是 GoyaCache<?, ?>）
      */
-    private final ConcurrentHashMap<String, GoyaCache> caches = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, GoyaCache<?, ?>> caches = new ConcurrentHashMap<>();
 
     /**
      * 缓存工厂
@@ -111,7 +111,7 @@ public class GoyaCacheManager implements CacheManager {
      * <p><b>执行流程：</b>
      * <ol>
      *   <li>委托给 CacheFactory 创建缓存实例</li>
-     *   <li>返回 GoyaCache 实例</li>
+     *   <li>返回 GoyaCache 实例（类型擦除，实际是 GoyaCache<?, ?>）</li>
      * </ol>
      *
      * <p><b>异常处理：</b>
@@ -121,12 +121,14 @@ public class GoyaCacheManager implements CacheManager {
      * </ul>
      *
      * @param name 缓存名称
-     * @return GoyaCache 实例
+     * @return GoyaCache 实例（类型擦除）
      * @throws IllegalStateException 如果配置解析失败
      * @throws RuntimeException      如果 Cache 创建失败
      */
-    private GoyaCache createCache(String name) {
+    @SuppressWarnings("unchecked")
+    private GoyaCache<?, ?> createCache(String name) {
         try {
+            // CacheFactory 返回的是 GoyaCache（类型擦除），实际是 GoyaCache<?, ?>
             return cacheFactory.createCacheFromName(name);
         } catch (IllegalStateException e) {
             log.error("Failed to create GoyaCache due to configuration error: {}", name, e);

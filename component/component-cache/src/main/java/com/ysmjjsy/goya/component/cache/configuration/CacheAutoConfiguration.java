@@ -11,6 +11,8 @@ import com.ysmjjsy.goya.component.cache.metrics.DefaultCacheMetrics;
 import com.ysmjjsy.goya.component.cache.resolver.CacheSpecification;
 import com.ysmjjsy.goya.component.cache.resolver.CacheSpecificationResolver;
 import com.ysmjjsy.goya.component.cache.resolver.DefaultCacheSpecificationResolver;
+import com.ysmjjsy.goya.component.cache.serializer.CacheKeySerializer;
+import com.ysmjjsy.goya.component.cache.serializer.DefaultCacheKeySerializer;
 import com.ysmjjsy.goya.component.cache.service.DefaultCacheService;
 import com.ysmjjsy.goya.component.cache.service.ICacheService;
 import com.ysmjjsy.goya.component.cache.support.CacheRefillManager;
@@ -77,13 +79,23 @@ public class CacheAutoConfiguration {
     }
 
     /**
+     * 缓存键序列化器 Bean
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public CacheKeySerializer cacheKeySerializer() {
+        log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [cacheKeySerializer] register.");
+        return new DefaultCacheKeySerializer();
+    }
+
+    /**
      * 布隆过滤器管理器 Bean
      *
      * <p>注意：需要实现 BloomFilterConfigProvider，当前使用临时实现
      */
     @Bean
     @ConditionalOnMissingBean
-    public BloomFilterManager bloomFilterManager(CacheSpecificationResolver resolver, CacheMetrics metrics) {
+    public BloomFilterManager bloomFilterManager(CacheSpecificationResolver resolver, CacheMetrics metrics, CacheKeySerializer cacheKeySerializer) {
         log.info("Creating BloomFilterManager");
         // 创建 BloomFilterConfigProvider 实现
         BloomFilterManager.BloomFilterConfigProvider configProvider = cacheName -> {
@@ -97,8 +109,8 @@ public class CacheAutoConfiguration {
                     spec.getBloomFilterFalsePositiveRate()
             );
         };
-        // 使用默认 key 序列化器和监控指标
-        BloomFilterManager bloomFilterManager = new BloomFilterManager(configProvider, null, metrics);
+        // 使用注入的 key 序列化器和监控指标
+        BloomFilterManager bloomFilterManager = new BloomFilterManager(configProvider, cacheKeySerializer, metrics);
         log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [bloomFilterManager] register.");
         return bloomFilterManager;
     }

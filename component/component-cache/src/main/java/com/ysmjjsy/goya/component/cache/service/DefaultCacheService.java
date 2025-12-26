@@ -1,5 +1,6 @@
 package com.ysmjjsy.goya.component.cache.service;
 
+import com.ysmjjsy.goya.component.cache.core.GoyaCache;
 import com.ysmjjsy.goya.component.cache.exception.CacheException;
 import com.ysmjjsy.goya.component.cache.metrics.CacheMetrics;
 import com.ysmjjsy.goya.component.cache.metrics.DefaultCacheMetrics;
@@ -63,35 +64,42 @@ public class DefaultCacheService implements ICacheService {
     }
 
     @Override
-    public <T> T get(String cacheName, Object key, Class<T> type) {
+    @SuppressWarnings("unchecked")
+    public <K, V> V get(String cacheName, K key) {
         validateCacheNameAndKey(cacheName, key);
-
         Cache cache = cacheManager.getCache(cacheName);
         if (cache == null) {
             log.warn("Cache not found: cacheName={}", cacheName);
             return null;
         }
-
+        if (cache instanceof GoyaCache) {
+            GoyaCache<K, V> goyaCache = (GoyaCache<K, V>) cache;
+            return goyaCache.getTypedValue(key);
+        }
         Cache.ValueWrapper wrapper = cache.get(key);
         if (wrapper == null) {
             return null;
         }
-
         Object value = wrapper.get();
-        if (type.isInstance(value)) {
-            return type.cast(value);
+        if (value == null) {
+            return null;
         }
-
-        return null;
+        try {
+            return (V) value;
+        } catch (ClassCastException e) {
+            log.warn("Value type mismatch: cacheName={}, key={}, expected V, got {}",
+                    cacheName, key, value.getClass().getName());
+            return null;
+        }
     }
 
     @Override
-    public <T> T get(String cacheName, Object key, Callable<T> valueLoader) {
+    @SuppressWarnings("unchecked")
+    public <K, V> V get(String cacheName, K key, Callable<V> valueLoader) {
         validateCacheNameAndKey(cacheName, key);
         if (valueLoader == null) {
             throw new IllegalArgumentException("ValueLoader cannot be null");
         }
-
         Cache cache = cacheManager.getCache(cacheName);
         if (cache == null) {
             log.warn("Cache not found: cacheName={}", cacheName);
@@ -101,7 +109,6 @@ public class DefaultCacheService implements ICacheService {
                 throw new CacheException("ValueLoader failed", e);
             }
         }
-
         try {
             return cache.get(key, valueLoader);
         } catch (Cache.ValueRetrievalException e) {
@@ -110,28 +117,36 @@ public class DefaultCacheService implements ICacheService {
     }
 
     @Override
-    public void put(String cacheName, Object key, Object value) {
+    @SuppressWarnings("unchecked")
+    public <K, V> void put(String cacheName, K key, V value) {
         validateCacheNameAndKey(cacheName, key);
-
         Cache cache = cacheManager.getCache(cacheName);
         if (cache == null) {
             log.warn("Cache not found: cacheName={}", cacheName);
             return;
         }
-
+        if (cache instanceof GoyaCache) {
+            GoyaCache<K, V> goyaCache = (GoyaCache<K, V>) cache;
+            goyaCache.putTyped(key, value);
+            return;
+        }
         cache.put(key, value);
     }
 
     @Override
-    public void evict(String cacheName, Object key) {
+    @SuppressWarnings("unchecked")
+    public <K> void evict(String cacheName, K key) {
         validateCacheNameAndKey(cacheName, key);
-
         Cache cache = cacheManager.getCache(cacheName);
         if (cache == null) {
             log.warn("Cache not found: cacheName={}", cacheName);
             return;
         }
-
+        if (cache instanceof GoyaCache) {
+            GoyaCache<K, ?> goyaCache = (GoyaCache<K, ?>) cache;
+            goyaCache.evictTyped(key);
+            return;
+        }
         cache.evict(key);
     }
 
@@ -151,20 +166,18 @@ public class DefaultCacheService implements ICacheService {
     }
 
     @Override
-    public boolean exists(String cacheName, Object key) {
+    public <K> boolean exists(String cacheName, K key) {
         validateCacheNameAndKey(cacheName, key);
-
         Cache cache = cacheManager.getCache(cacheName);
         if (cache == null) {
             return false;
         }
-
         Cache.ValueWrapper wrapper = cache.get(key);
         return wrapper != null;
     }
 
     @Override
-    public <T> Map<Object, T> batchGet(String cacheName, Set<Object> keys, Class<T> type) {
+    public <K, V> Map<K, V> batchGet(String cacheName, Set<K> keys) {
         if (cacheName == null) {
             throw new IllegalArgumentException("CacheName cannot be null");
         }
@@ -174,30 +187,21 @@ public class DefaultCacheService implements ICacheService {
         if (keys.isEmpty()) {
             return Collections.emptyMap();
         }
-
-        Cache cache = cacheManager.getCache(cacheName);
-        if (cache == null) {
-            log.warn("Cache not found: cacheName={}", cacheName);
-            return Collections.emptyMap();
-        }
-
-        // 批量获取（当前使用循环，未来可优化为真正的批量 API）
-        Map<Object, T> result = new HashMap<>();
-        for (Object key : keys) {
+        Map<K, V> result = new HashMap<>();
+        for (K key : keys) {
             if (key == null) {
                 continue;
             }
-            T value = get(cacheName, key, type);
+            V value = get(cacheName, key);
             if (value != null) {
                 result.put(key, value);
             }
         }
-
         return result;
     }
 
     @Override
-    public void batchPut(String cacheName, Map<Object, Object> entries) {
+    public <K, V> void batchPut(String cacheName, Map<K, V> entries) {
         if (cacheName == null) {
             throw new IllegalArgumentException("CacheName cannot be null");
         }
@@ -207,15 +211,7 @@ public class DefaultCacheService implements ICacheService {
         if (entries.isEmpty()) {
             return;
         }
-
-        Cache cache = cacheManager.getCache(cacheName);
-        if (cache == null) {
-            log.warn("Cache not found: cacheName={}", cacheName);
-            return;
-        }
-
-        // 批量写入（当前使用循环，未来可优化为真正的批量 API）
-        for (Map.Entry<Object, Object> entry : entries.entrySet()) {
+        for (Map.Entry<K, V> entry : entries.entrySet()) {
             if (entry.getKey() == null) {
                 continue;
             }
@@ -224,7 +220,7 @@ public class DefaultCacheService implements ICacheService {
     }
 
     @Override
-    public void batchEvict(String cacheName, Set<Object> keys) {
+    public <K> void batchEvict(String cacheName, Set<K> keys) {
         if (cacheName == null) {
             throw new IllegalArgumentException("CacheName cannot be null");
         }
@@ -234,15 +230,7 @@ public class DefaultCacheService implements ICacheService {
         if (keys.isEmpty()) {
             return;
         }
-
-        Cache cache = cacheManager.getCache(cacheName);
-        if (cache == null) {
-            log.warn("Cache not found: cacheName={}", cacheName);
-            return;
-        }
-
-        // 批量失效（当前使用循环，未来可优化为真正的批量 API）
-        for (Object key : keys) {
+        for (K key : keys) {
             if (key == null) {
                 continue;
             }
@@ -251,7 +239,7 @@ public class DefaultCacheService implements ICacheService {
     }
 
     @Override
-    public void warmUp(String cacheName, Function<Object, Object> loader, Set<Object> keys) {
+    public <K, V> void warmUp(String cacheName, Function<K, V> loader, Set<K> keys) {
         if (cacheName == null) {
             throw new IllegalArgumentException("CacheName cannot be null");
         }
@@ -264,31 +252,27 @@ public class DefaultCacheService implements ICacheService {
         if (keys.isEmpty()) {
             return;
         }
-
         Cache cache = cacheManager.getCache(cacheName);
         if (cache == null) {
             log.warn("Cache not found: cacheName={}", cacheName);
             return;
         }
-
         // 并发预热
         List<CompletableFuture<Void>> futures = keys.stream()
                 .filter(Objects::nonNull)
                 .map(key -> CompletableFuture.runAsync(() -> {
                     try {
-                        Object value = loader.apply(key);
+                        V value = loader.apply(key);
                         if (value != null) {
-                            cache.put(key, value);
+                            put(cacheName, key, value);
                         }
                     } catch (Exception e) {
                         log.warn("Failed to warm up cache: cacheName={}, key={}", cacheName, key, e);
                     }
                 }))
                 .toList();
-
         // 等待所有预热任务完成
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-
         if (log.isDebugEnabled()) {
             log.debug("Cache warm up completed: cacheName={}, keys={}", cacheName, keys.size());
         }
