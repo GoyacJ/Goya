@@ -8,6 +8,7 @@ import com.ysmjjsy.goya.component.cache.resolver.CacheSpecification;
 import com.ysmjjsy.goya.component.cache.support.CacheRefillManager;
 import com.ysmjjsy.goya.component.cache.support.SingleFlightLoader;
 import com.ysmjjsy.goya.component.cache.ttl.FallbackStrategy;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;
 import org.springframework.cache.support.SimpleValueWrapper;
@@ -51,6 +52,7 @@ import java.util.concurrent.Callable;
  * @since 2025/12/26
  */
 @Slf4j
+@RequiredArgsConstructor
 public class CacheOrchestrator {
 
     /**
@@ -97,64 +99,6 @@ public class CacheOrchestrator {
      * SingleFlight 加载器
      */
     private final SingleFlightLoader singleFlightLoader;
-
-    /**
-     * 构造函数
-     *
-     * @param cacheName 缓存名称
-     * @param l1 本地缓存
-     * @param l2 远程缓存
-     * @param spec 缓存配置规范
-     * @param bloomFilter 布隆过滤器管理器
-     * @param refillManager 缓存回填管理器
-     * @param fallbackStrategy 降级策略
-     * @param metrics 监控指标
-     * @param singleFlightLoader SingleFlight 加载器
-     */
-    public CacheOrchestrator(
-            String cacheName,
-            LocalCache l1,
-            RemoteCache l2,
-            CacheSpecification spec,
-            BloomFilterManager bloomFilter,
-            CacheRefillManager refillManager,
-            FallbackStrategy fallbackStrategy,
-            CacheMetrics metrics,
-            SingleFlightLoader singleFlightLoader) {
-        if (cacheName == null) {
-            throw new IllegalArgumentException("CacheName cannot be null");
-        }
-        if (l1 == null) {
-            throw new IllegalArgumentException("LocalCache cannot be null");
-        }
-        if (l2 == null) {
-            throw new IllegalArgumentException("RemoteCache cannot be null");
-        }
-        if (spec == null) {
-            throw new IllegalArgumentException("CacheSpecification cannot be null");
-        }
-        if (bloomFilter == null) {
-            throw new IllegalArgumentException("BloomFilterManager cannot be null");
-        }
-        if (refillManager == null) {
-            throw new IllegalArgumentException("CacheRefillManager cannot be null");
-        }
-        if (fallbackStrategy == null) {
-            throw new IllegalArgumentException("FallbackStrategy cannot be null");
-        }
-        if (singleFlightLoader == null) {
-            throw new IllegalArgumentException("SingleFlightLoader cannot be null");
-        }
-        this.cacheName = cacheName;
-        this.l1 = l1;
-        this.l2 = l2;
-        this.spec = spec;
-        this.bloomFilter = bloomFilter;
-        this.refillManager = refillManager;
-        this.fallbackStrategy = fallbackStrategy;
-        this.metrics = metrics;
-        this.singleFlightLoader = singleFlightLoader;
-    }
 
     /**
      * 获取缓存值
@@ -579,10 +523,8 @@ public class CacheOrchestrator {
      */
     private void putWithBestEffort(Object key, Object actualValue, Duration ttl) {
         // 尝试写入 L2
-        boolean l2Success = false;
         try {
             l2.put(key, actualValue, ttl);
-            l2Success = true;
         } catch (Exception e) {
             log.warn("Failed to write to L2 cache with BEST_EFFORT for key: {}", key, e);
             // 降级到 L1
@@ -664,10 +606,8 @@ public class CacheOrchestrator {
      */
     private void batchPutWithBestEffort(Map<Object, Object> entries, Duration ttl) {
         // 尝试批量写入 L2
-        boolean l2Success = false;
         try {
             l2.putAll(entries, ttl);
-            l2Success = true;
         } catch (Exception e) {
             log.warn("Failed to batch write to L2 cache with BEST_EFFORT", e);
             // 降级到单个写入
