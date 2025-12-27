@@ -1,5 +1,6 @@
 package com.ysmjjsy.goya.component.bus.publish;
 
+import com.ysmjjsy.goya.component.bus.capabilities.Capabilities;
 import com.ysmjjsy.goya.component.bus.definition.BusHeaders;
 import com.ysmjjsy.goya.component.bus.definition.IEvent;
 import lombok.RequiredArgsConstructor;
@@ -67,6 +68,13 @@ public class StreamEventPublisher implements IRemoteEventPublisher {
         if (!sent) {
             log.warn("[Goya] |- component [bus] StreamEventPublisher |- failed to send message to destination [{}]", destination);
         }
+    }
+
+    @Override
+    public Capabilities getCapabilities() {
+        // StreamEventPublisher 是基础实现，不声明具体能力
+        // 具体能力由实现类（如 KafkaStreamEventPublisher）声明
+        return Capabilities.NONE;
     }
 }
 

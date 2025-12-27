@@ -3,6 +3,7 @@ package com.ysmjjsy.goya.component.bus.service;
 import com.ysmjjsy.goya.component.bus.configuration.properties.BusProperties;
 import com.ysmjjsy.goya.component.bus.definition.EventScope;
 import com.ysmjjsy.goya.component.bus.definition.IEvent;
+import com.ysmjjsy.goya.component.bus.metrics.EventMetrics;
 import com.ysmjjsy.goya.component.bus.publish.IRemoteEventPublisher;
 import com.ysmjjsy.goya.component.bus.publish.MetadataAccessor;
 import com.ysmjjsy.goya.component.common.definition.exception.CommonException;
@@ -16,6 +17,8 @@ import org.slf4j.MDC;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -44,8 +47,18 @@ public class DefaultBusService implements IBusService {
         }
 
         log.debug("[Goya] |- component [bus] BusServiceImpl |- publish local event [{}]", event.eventName());
-        IStrategyExecute publisher = strategyChoose.choose("LOCAL");
-        publisher.execute(event);
+        long startTime = System.currentTimeMillis();
+        try {
+            IStrategyExecute publisher = strategyChoose.choose("LOCAL");
+            publisher.execute(event);
+            EventMetrics.recordPublish(event.eventName(), EventScope.LOCAL);
+        } catch (Exception e) {
+            EventMetrics.recordFailure(event.eventName(), e.getMessage());
+            throw e;
+        } finally {
+            long duration = System.currentTimeMillis() - startTime;
+            EventMetrics.recordSuccess(event.eventName(), duration);
+        }
     }
 
     @Override
@@ -54,6 +67,7 @@ public class DefaultBusService implements IBusService {
             throw new CommonException("Event cannot be null");
         }
 
+        long startTime = System.currentTimeMillis();
         try {
             log.debug("[Goya] |- component [bus] BusServiceImpl |- publish remote event [{}]", event.eventName());
             IRemoteEventPublisher publisher = (IRemoteEventPublisher) strategyChoose.choose(busProperties.defaultRemoteBus());
@@ -62,6 +76,7 @@ public class DefaultBusService implements IBusService {
                 log.warn("[Goya] |- component [bus] BusServiceImpl |- remote event publishing is not available. " +
                         "Please introduce a corresponding starter (e.g., kafka-boot-starter). Event [{}] will not be published remotely.",
                         event.eventName());
+                EventMetrics.recordFailure(event.eventName(), "Publisher not available");
                 return;
             }
             
@@ -76,23 +91,35 @@ public class DefaultBusService implements IBusService {
             // 构建 destination
             String destination = buildDestination(event);
             publisher.publish(destination, message);
+            EventMetrics.recordPublish(event.eventName(), EventScope.REMOTE);
         } catch (Exception e) {
             log.warn("[Goya] |- component [bus] BusServiceImpl |- remote event publishing is not available. " +
                     "Please introduce a corresponding starter (e.g., kafka-boot-starter). Event [{}] will not be published remotely. Error: {}",
                     event.eventName(), e.getMessage());
+            EventMetrics.recordFailure(event.eventName(), e.getMessage());
+        } finally {
+            long duration = System.currentTimeMillis() - startTime;
+            EventMetrics.recordSuccess(event.eventName(), duration);
         }
     }
 
     @Override
+    @Deprecated
     public <E extends IEvent> void publishAll(E event) {
         if (event == null) {
             throw new CommonException("Event cannot be null");
         }
 
+        log.warn("[Goya] |- component [bus] BusServiceImpl |- publishAll() is deprecated due to transaction semantic confusion. " +
+                "Local events execute synchronously within the transaction, while remote events execute asynchronously outside the transaction. " +
+                "If the local event succeeds but the remote event fails, data inconsistency may occur. " +
+                "Consider using publishInTransaction() or calling publishLocal() and publishRemote() separately. Event: [{}]",
+                event.eventName());
+
         log.debug("[Goya] |- component [bus] BusServiceImpl |- publish all event [{}]", event.eventName());
-        // 先发布本地事件
+        // 先发布本地事件（在事务内同步执行）
         publishLocal(event);
-        // 再发布远程事件（如果可用）
+        // 再发布远程事件（在事务外异步执行，可能失败）
         publishRemote(event);
     }
 
@@ -116,6 +143,28 @@ public class DefaultBusService implements IBusService {
                         "Please introduce a corresponding starter (e.g., kafka-boot-starter). Delayed event [{}] will not be published remotely.",
                         event.eventName());
                 return;
+            }
+
+            // 检查能力
+            com.ysmjjsy.goya.component.bus.capabilities.Capabilities capabilities = publisher.getCapabilities();
+            long delayMillis = delay.toMillis();
+
+            if (!capabilities.supportsDelayedMessages()) {
+                log.warn("[Goya] |- component [bus] BusServiceImpl |- delayed messages are not natively supported by the MQ. " +
+                        "The event [{}] will be published immediately. Consider using a MQ that supports delayed messages (e.g., RabbitMQ, RocketMQ) " +
+                        "or check if the starter provides a fallback implementation.",
+                        event.eventName());
+                // 降级：立即发布（不设置延迟）
+                publishRemote(event);
+                return;
+            }
+
+            if (!capabilities.isDelaySupported(delayMillis)) {
+                log.warn("[Goya] |- component [bus] BusServiceImpl |- delay [{}ms] exceeds the maximum supported delay [{}ms]. " +
+                        "The event [{}] will be published with the maximum delay.",
+                        delayMillis, capabilities.maxDelayMillis(), event.eventName());
+                // 降级：使用最大支持的延迟时间
+                delay = java.time.Duration.ofMillis(capabilities.maxDelayMillis());
             }
             
             // 构建 Message Headers，包含延迟时间
@@ -156,6 +205,24 @@ public class DefaultBusService implements IBusService {
                         "Please introduce a corresponding starter (e.g., kafka-boot-starter). Ordered event [{}] will not be published remotely.",
                         event.eventName());
                 return;
+            }
+
+            // 检查能力
+            com.ysmjjsy.goya.component.bus.capabilities.Capabilities capabilities = publisher.getCapabilities();
+
+            if (!capabilities.supportsOrderedMessages()) {
+                log.warn("[Goya] |- component [bus] BusServiceImpl |- ordered messages are not supported by the MQ. " +
+                        "The event [{}] will be published without ordering guarantee. Consider using a MQ that supports ordered messages (e.g., Kafka, RabbitMQ, RocketMQ).",
+                        event.eventName());
+                // 降级：发布但不保证顺序
+                publishRemote(event);
+                return;
+            }
+
+            if (!capabilities.supportsPartitioning() && partitionKey != null) {
+                log.debug("[Goya] |- component [bus] BusServiceImpl |- partitioning is not supported by the MQ, " +
+                        "but partition key [{}] will still be set in headers for potential use by the MQ.",
+                        partitionKey);
             }
             
             // 构建 Message Headers，包含分区键
@@ -274,6 +341,45 @@ public class DefaultBusService implements IBusService {
                     e.getMessage());
             // 如果生成失败，使用 UUID 作为后备方案
             return event.eventName() + ":" + UUID.randomUUID().toString();
+        }
+    }
+
+    @Override
+    public <E extends IEvent> void publishInTransaction(E event, Runnable transactionCallback) {
+        if (event == null) {
+            throw new CommonException("Event cannot be null");
+        }
+        if (transactionCallback == null) {
+            throw new CommonException("Transaction callback cannot be null");
+        }
+
+        log.debug("[Goya] |- component [bus] BusServiceImpl |- publish in transaction event [{}]", event.eventName());
+
+        // 1. 在事务内执行回调
+        transactionCallback.run();
+
+        // 2. 在事务内发布本地事件（同步执行）
+        publishLocal(event);
+
+        // 3. 在事务提交后发布远程事件（异步执行）
+        // 注意：这里需要事务同步机制，确保在事务提交后才发布远程事件
+        // 由于 Spring 事务管理的复杂性，这里先使用简单实现
+        // 实际生产环境建议使用事务性发件箱模式（Transactional Outbox Pattern）
+        try {
+            // 使用事务同步器，在事务提交后执行
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            // 事务提交后发布远程事件
+                            publishRemote(event);
+                        }
+                    }
+            );
+        } catch (IllegalStateException _) {
+            // 如果不在事务中，直接发布远程事件
+            log.debug("[Goya] |- component [bus] BusServiceImpl |- not in transaction, publish remote event directly");
+            publishRemote(event);
         }
     }
 }

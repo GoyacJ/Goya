@@ -1,5 +1,6 @@
 package com.ysmjjsy.goya.component.bus.publish;
 
+import com.ysmjjsy.goya.component.bus.capabilities.Capabilities;
 import com.ysmjjsy.goya.component.bus.constants.IBusConstants;
 import com.ysmjjsy.goya.component.common.strategy.IStrategyExecute;
 import org.springframework.messaging.Message;
@@ -22,6 +23,11 @@ import org.springframework.messaging.Message;
  *     @Override
  *     public void publish(String destination, Message<?> message) {
  *         streamBridge.send(destination, message);
+ *     }
+ *
+ *     @Override
+ *     public Capabilities getCapabilities() {
+ *         return Capabilities.BASIC; // Kafka 支持顺序消息，但不支持原生延迟消息
  *     }
  * }
  * }</pre>
@@ -72,6 +78,23 @@ public interface IRemoteEventPublisher extends IStrategyExecute<Message<?>, Void
     default Void executeResp(Message<?> request) {
         execute(request);
         return null;
+    }
+
+    /**
+     * 获取 MQ 能力声明
+     * <p>用于声明该发布器支持的能力，避免"能力错觉"</p>
+     * <p>不同 MQ 的能力差异：</p>
+     * <ul>
+     *   <li>Kafka: 支持分区、顺序消息，不支持原生延迟消息</li>
+     *   <li>RabbitMQ: 支持延迟消息、顺序消息，不支持分区</li>
+     *   <li>RocketMQ: 支持延迟消息、顺序消息、分区</li>
+     * </ul>
+     * <p>默认返回 NONE（不支持任何高级特性）</p>
+     *
+     * @return 能力声明
+     */
+    default Capabilities getCapabilities() {
+        return Capabilities.NONE;
     }
 }
 

@@ -1,6 +1,8 @@
 package com.ysmjjsy.goya.component.bus.definition;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * <p>事件接口</p>
@@ -28,6 +30,50 @@ public interface IEvent extends Serializable {
      */
     default String eventName() {
         return getClass().getSimpleName();
+    }
+
+    /**
+     * 获取事件版本
+     * <p>用于事件演进和版本管理，默认版本为 "1.0"</p>
+     * <p>当事件结构发生变更时，应更新版本号，如 "1.1"、"2.0" 等</p>
+     *
+     * @return 事件版本
+     */
+    default String eventVersion() {
+        return "1.0";
+    }
+
+    /**
+     * 获取事件 ID
+     * <p>用于事件追踪和回放，每个事件实例都有唯一的 ID</p>
+     * <p>默认自动生成 UUID，可在 BaseEvent 中重写</p>
+     *
+     * @return 事件 ID
+     */
+    default String eventId() {
+        return UUID.randomUUID().toString();
+    }
+
+    /**
+     * 获取关联 ID
+     * <p>用于关联相关事件，如订单创建事件和订单支付事件可以使用相同的 correlationId</p>
+     * <p>默认返回 null，可在 BaseEvent 中设置</p>
+     *
+     * @return 关联 ID，如果不存在则返回 null
+     */
+    default String correlationId() {
+        return null;
+    }
+
+    /**
+     * 获取事件时间戳
+     * <p>事件发生的时间，用于审计和排序</p>
+     * <p>默认返回当前时间，可在 BaseEvent 中重写</p>
+     *
+     * @return 事件时间戳
+     */
+    default LocalDateTime timestamp() {
+        return LocalDateTime.now();
     }
 }
 

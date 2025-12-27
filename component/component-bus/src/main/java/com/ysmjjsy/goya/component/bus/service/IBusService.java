@@ -62,10 +62,19 @@ public interface IBusService {
     /**
      * 发布到本地和远程
      * <p>先发布本地事件，再发布远程事件</p>
+     * <p><strong>注意：此方法存在事务语义混淆风险</strong></p>
+     * <ul>
+     *   <li>本地事件：同步执行，在当前事务内</li>
+     *   <li>远程事件：异步执行，在事务外，可能失败</li>
+     * </ul>
+     * <p>如果本地事件成功但远程事件失败，可能导致数据不一致</p>
+     * <p>建议使用 {@link #publishInTransaction(IEvent, Runnable)} 或分别调用 {@link #publishLocal(IEvent)} 和 {@link #publishRemote(IEvent)}</p>
      *
      * @param event 事件对象
      * @param <E>   事件类型
+     * @deprecated 此方法存在事务语义混淆风险，建议使用 {@link #publishInTransaction(IEvent, Runnable)} 或分别调用本地和远程发布方法
      */
+    @Deprecated
     <E extends IEvent> void publishAll(E event);
 
     /**
@@ -88,5 +97,39 @@ public interface IBusService {
      * @param <E>         事件类型
      */
     <E extends IEvent> void publishOrdered(E event, String partitionKey);
+
+    /**
+     * 在事务内发布事件（事务性发件箱模式）
+     * <p>先执行事务回调，然后在事务提交后发布远程事件</p>
+     * <p>本地事件在事务内同步执行，远程事件在事务提交后异步执行</p>
+     * <p>使用示例：</p>
+     * <pre>{@code
+     * @Transactional
+     * public void createOrder(Order order) {
+     *     // 保存订单
+     *     orderRepository.save(order);
+     *     
+     *     // 在事务内发布事件（事务性发件箱模式）
+     *     busService.publishInTransaction(
+     *         new OrderCreatedEvent(order.getId()),
+     *         () -> {
+     *             // 事务内的其他操作
+     *             // 如果事务回滚，远程事件不会发布
+     *         }
+     *     );
+     * }
+     * }</pre>
+     * <p><strong>事务语义说明：</strong></p>
+     * <ul>
+     *   <li>事务回调在事务内执行</li>
+     *   <li>本地事件在事务内同步执行</li>
+     *   <li>远程事件在事务提交后异步执行（如果事务回滚，远程事件不会发布）</li>
+     * </ul>
+     *
+     * @param event              事件对象
+     * @param transactionCallback 事务回调（在事务内执行）
+     * @param <E>                事件类型
+     */
+    <E extends IEvent> void publishInTransaction(E event, Runnable transactionCallback);
 }
 

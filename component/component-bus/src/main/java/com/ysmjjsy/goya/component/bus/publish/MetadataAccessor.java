@@ -71,6 +71,12 @@ public final class MetadataAccessor {
             headers.put(BusHeaders.EVENT_SCOPE, scope.name());
             // 设置事件类型（用于跨服务反序列化）
             headers.put(BusHeaders.EVENT_TYPE, event.getClass().getName());
+            // 自动设置事件元数据
+            headers.put(BusHeaders.EVENT_ID, event.eventId());
+            headers.put(BusHeaders.EVENT_VERSION, event.eventVersion());
+            if (event.correlationId() != null) {
+                headers.put(BusHeaders.CORRELATION_ID, event.correlationId());
+            }
         }
 
         /**
@@ -121,6 +127,45 @@ public final class MetadataAccessor {
         public HeaderBuilder withIdempotencyKey(String idempotencyKey) {
             if (idempotencyKey != null && !idempotencyKey.isBlank()) {
                 headers.put(BusHeaders.IDEMPOTENCY_KEY, idempotencyKey);
+            }
+            return this;
+        }
+
+        /**
+         * 设置事件 ID
+         *
+         * @param eventId 事件 ID
+         * @return Builder
+         */
+        public HeaderBuilder withEventId(String eventId) {
+            if (eventId != null && !eventId.isBlank()) {
+                headers.put(BusHeaders.EVENT_ID, eventId);
+            }
+            return this;
+        }
+
+        /**
+         * 设置关联 ID
+         *
+         * @param correlationId 关联 ID
+         * @return Builder
+         */
+        public HeaderBuilder withCorrelationId(String correlationId) {
+            if (correlationId != null && !correlationId.isBlank()) {
+                headers.put(BusHeaders.CORRELATION_ID, correlationId);
+            }
+            return this;
+        }
+
+        /**
+         * 设置事件版本
+         *
+         * @param eventVersion 事件版本
+         * @return Builder
+         */
+        public HeaderBuilder withEventVersion(String eventVersion) {
+            if (eventVersion != null && !eventVersion.isBlank()) {
+                headers.put(BusHeaders.EVENT_VERSION, eventVersion);
             }
             return this;
         }
@@ -232,6 +277,39 @@ public final class MetadataAccessor {
             }
         }
         return null;
+    }
+
+    /**
+     * 从 Message Headers 中提取事件 ID
+     *
+     * @param headers Message Headers
+     * @return 事件 ID，如果不存在则返回 null
+     */
+    public static String getEventId(MessageHeaders headers) {
+        Object eventId = headers.get(BusHeaders.EVENT_ID);
+        return eventId != null ? eventId.toString() : null;
+    }
+
+    /**
+     * 从 Message Headers 中提取关联 ID
+     *
+     * @param headers Message Headers
+     * @return 关联 ID，如果不存在则返回 null
+     */
+    public static String getCorrelationId(MessageHeaders headers) {
+        Object correlationId = headers.get(BusHeaders.CORRELATION_ID);
+        return correlationId != null ? correlationId.toString() : null;
+    }
+
+    /**
+     * 从 Message Headers 中提取事件版本
+     *
+     * @param headers Message Headers
+     * @return 事件版本，如果不存在则返回 null
+     */
+    public static String getEventVersion(MessageHeaders headers) {
+        Object eventVersion = headers.get(BusHeaders.EVENT_VERSION);
+        return eventVersion != null ? eventVersion.toString() : null;
     }
 }
 

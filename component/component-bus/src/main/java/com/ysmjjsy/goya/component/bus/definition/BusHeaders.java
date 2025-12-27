@@ -66,5 +66,40 @@ public final class BusHeaders {
      * <p>如果 Header 中的类型不存在，会通过 eventName 自动查找本地类型</p>
      */
     public static final String EVENT_TYPE = "x-goya-event-type";
+
+    /**
+     * 事件版本
+     * <p>用于事件演进和版本管理</p>
+     * <p>Header 名称：x-goya-event-version</p>
+     */
+    public static final String EVENT_VERSION = "x-goya-event-version";
+
+    /**
+     * 事件 ID
+     * <p>用于事件追踪和回放，每个事件实例都有唯一的 ID</p>
+     * <p>Header 名称：x-goya-event-id</p>
+     */
+    public static final String EVENT_ID = "x-goya-event-id";
+
+    /**
+     * 关联 ID
+     * <p>用于关联相关事件，如订单创建事件和订单支付事件可以使用相同的 correlationId</p>
+     * <p>Header 名称：x-goya-correlation-id</p>
+     */
+    public static final String CORRELATION_ID = "x-goya-correlation-id";
+
+    /**
+     * 事件来源
+     * <p>用于标识事件的来源服务或系统</p>
+     * <p>Header 名称：x-goya-event-source</p>
+     */
+    public static final String EVENT_SOURCE = "x-goya-event-source";
+
+    /**
+     * 事件标签
+     * <p>用于事件分类和过滤，格式为 JSON 字符串或逗号分隔的键值对</p>
+     * <p>Header 名称：x-goya-event-tags</p>
+     */
+    public static final String EVENT_TAGS = "x-goya-event-tags";
 }
 

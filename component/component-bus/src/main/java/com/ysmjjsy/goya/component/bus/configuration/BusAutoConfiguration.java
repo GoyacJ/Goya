@@ -96,16 +96,43 @@ public class BusAutoConfiguration {
      * @param scanner                     扫描器
      * @param idempotencyHandlerProvider  幂等性处理器提供者（延迟注入）
      * @param eventDeserializerProvider  事件反序列化器提供者（延迟注入）
+     * @param interceptorsProvider       拦截器列表提供者（延迟注入）
      * @return BusEventListenerHandler 实例
      */
     @Bean
     @ConditionalOnMissingBean
     public BusEventListenerHandler busEventListenerHandler(BusEventListenerScanner scanner,
                                                            ObjectProvider<IIdempotencyHandler> idempotencyHandlerProvider,
-                                                           ObjectProvider<EventDeserializer> eventDeserializerProvider) {
-        BusEventListenerHandler handler = new BusEventListenerHandler(scanner, idempotencyHandlerProvider, eventDeserializerProvider);
+                                                           ObjectProvider<EventDeserializer> eventDeserializerProvider,
+                                                           ObjectProvider<java.util.List<com.ysmjjsy.goya.component.bus.processor.IEventInterceptor>> interceptorsProvider) {
+        BusEventListenerHandler handler = new BusEventListenerHandler(scanner, idempotencyHandlerProvider, eventDeserializerProvider, interceptorsProvider);
         log.trace("[Goya] |- component [bus] BusAutoConfiguration |- bean [busEventListenerHandler] register.");
         return handler;
+    }
+
+    /**
+     * 注册默认拦截器
+     * <p>按顺序注册：DeserializeInterceptor、IdempotencyInterceptor、RouteInterceptor、InvokeInterceptor</p>
+     *
+     * @param scanner                     扫描器
+     * @param idempotencyHandlerProvider  幂等性处理器提供者
+     * @param eventDeserializerProvider  事件反序列化器提供者
+     * @return 默认拦截器列表
+     */
+    @Bean
+    @ConditionalOnMissingBean(name = "eventInterceptors")
+    public java.util.List<com.ysmjjsy.goya.component.bus.processor.IEventInterceptor> eventInterceptors(
+            BusEventListenerScanner scanner,
+            ObjectProvider<IIdempotencyHandler> idempotencyHandlerProvider,
+            ObjectProvider<EventDeserializer> eventDeserializerProvider) {
+        java.util.List<com.ysmjjsy.goya.component.bus.processor.IEventInterceptor> interceptors = new java.util.ArrayList<>();
+        interceptors.add(new com.ysmjjsy.goya.component.bus.processor.interceptor.DeserializeInterceptor(eventDeserializerProvider));
+        interceptors.add(new com.ysmjjsy.goya.component.bus.processor.interceptor.IdempotencyInterceptor(idempotencyHandlerProvider));
+        interceptors.add(new com.ysmjjsy.goya.component.bus.processor.interceptor.RouteInterceptor(scanner));
+        interceptors.add(new com.ysmjjsy.goya.component.bus.processor.interceptor.InvokeInterceptor(idempotencyHandlerProvider));
+        log.trace("[Goya] |- component [bus] BusAutoConfiguration |- bean [eventInterceptors] register with [{}] interceptors.",
+                interceptors.size());
+        return interceptors;
     }
 
     /**
