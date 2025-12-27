@@ -58,11 +58,10 @@ public class KafkaStreamEventPublisher implements IRemoteEventPublisher {
         }
 
         Object payload = message.getPayload();
-        if (!(payload instanceof IEvent)) {
+        if (!(payload instanceof IEvent event)) {
             throw new IllegalArgumentException("Payload must be an instance of IEvent");
         }
 
-        IEvent event = (IEvent) payload;
         MessageHeaders headers = message.getHeaders();
 
         // 确保 Header 中包含事件类型信息（如果还没有）
@@ -112,12 +111,17 @@ public class KafkaStreamEventPublisher implements IRemoteEventPublisher {
     @Override
     public Capabilities getCapabilities() {
         return new Capabilities(
-                false,  // 不支持原生延迟消息（通过 ScheduledExecutorService 模拟）
-                true,   // 支持顺序消息（通过分区键）
-                true,   // 支持分区
-                -1,     // 延迟消息无限制（因为是模拟实现）
+                // 不支持原生延迟消息（通过 ScheduledExecutorService 模拟）
+                false,
+                // 支持顺序消息（通过分区键）
+                true,
+                // 支持分区
+                true,
+                // 延迟消息无限制（因为是模拟实现）
+                -1,
                 "Kafka capabilities: ordered messages and partitioning supported, delayed messages via ScheduledExecutorService (not reliable across restarts)",
-                true    // 允许降级（延迟消息可以降级为立即发送）
+                // 允许降级（延迟消息可以降级为立即发送）
+                true
         );
     }
 }
