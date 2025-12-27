@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.ReflectionUtils;
@@ -21,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * <p>事件监听器扫描器</p>
- * <p>扫描 @BusEventListener 注解的方法，建立事件名称索引和参数类型索引</p>
+ * <p>扫描 @BusEventListener 注解的方法，建立事件名称索引</p>
  * <p>不依赖任何业务 Bean，避免 BeanPostProcessor 警告</p>
  * <p>使用示例：</p>
  * <pre>{@code
@@ -34,7 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 2025/12/21
  */
 @Slf4j
-public class BusEventListenerScanner implements BeanPostProcessor {
+public class BusEventListenerScanner implements BeanPostProcessor, SmartInitializingSingleton {
 
     /**
      * 所有监听器元数据列表
@@ -50,9 +51,17 @@ public class BusEventListenerScanner implements BeanPostProcessor {
     private final Map<String, List<EventListenerMetadata>> eventNameIndex = new ConcurrentHashMap<>();
 
     /**
-     * 参数类型索引：按参数类型的 getSimpleName() 查找监听器
-     * <p>key: 参数类型的 getSimpleName()</p>
+     * 事件名称重复检查：用于启动时检查重复的事件名称
+     * <p>key: eventName</p>
+     * <p>value: 监听器数量</p>
+     */
+    private final Map<String, Integer> eventNameCount = new ConcurrentHashMap<>();
+
+    /**
+     * 参数类型索引：按参数类型的完整类名查找监听器（仅用于性能优化，不用于路由匹配）
+     * <p>key: 参数类型的完整类名（getClass().getName()）</p>
      * <p>value: 监听器列表</p>
+     * <p>注意：此索引仅用于性能优化，路由匹配仍然只使用 eventName</p>
      */
     private final Map<String, List<EventListenerMetadata>> paramTypeIndex = new ConcurrentHashMap<>();
 
@@ -120,17 +129,24 @@ public class BusEventListenerScanner implements BeanPostProcessor {
             for (String eventName : eventNames) {
                 if (eventName != null && !eventName.isBlank()) {
                     eventNameIndex.computeIfAbsent(eventName, k -> new ArrayList<>()).add(metadata);
+                    // 记录事件名称出现次数，用于重复检查
+                    eventNameCount.merge(eventName, 1, Integer::sum);
                 }
             }
+        } else {
+            // 如果没有指定 eventNames，记录警告
+            log.warn("[Goya] |- component [bus] BusEventListenerScanner |- listener method [{}] does not specify eventNames. " +
+                            "Event matching will fail. Please specify eventNames in @BusEventListener annotation.",
+                    method.getName());
         }
 
-        // 建立参数类型索引（基于参数类型的 getSimpleName()）
-        String paramTypeSimpleName = firstParamType.getSimpleName();
-        paramTypeIndex.computeIfAbsent(paramTypeSimpleName, k -> new ArrayList<>()).add(metadata);
+        // 建立参数类型索引（基于参数类型的完整类名，仅用于性能优化，不用于路由匹配）
+        String paramTypeFullName = firstParamType.getName();
+        paramTypeIndex.computeIfAbsent(paramTypeFullName, k -> new ArrayList<>()).add(metadata);
 
         log.debug("[Goya] |- component [bus] BusEventListenerScanner |- registered listener for method [{}] with scope {}, eventNames: {}, paramType: {}",
                 method.getName(), java.util.Arrays.toString(annotation.scope()),
-                java.util.Arrays.toString(eventNames), paramTypeSimpleName);
+                java.util.Arrays.toString(eventNames), paramTypeFullName);
     }
 
     /**
@@ -148,17 +164,49 @@ public class BusEventListenerScanner implements BeanPostProcessor {
     }
 
     /**
-     * 根据参数类型 SimpleName 查找监听器
-     * <p>用于匹配参数类型的 getSimpleName() 等于指定值的监听器</p>
+     * 根据参数类型完整类名查找监听器（仅用于性能优化，不用于路由匹配）
+     * <p>注意：路由匹配仍然只使用 eventName，此方法仅用于性能优化场景</p>
      *
-     * @param paramTypeSimpleName 参数类型的 getSimpleName()
+     * @param paramTypeFullName 参数类型的完整类名（getClass().getName()）
      * @return 监听器列表，如果未找到返回空列表
      */
-    public List<EventListenerMetadata> findByParamType(String paramTypeSimpleName) {
-        if (paramTypeSimpleName == null || paramTypeSimpleName.isBlank()) {
+    public List<EventListenerMetadata> findByParamTypeFullName(String paramTypeFullName) {
+        if (paramTypeFullName == null || paramTypeFullName.isBlank()) {
             return Collections.emptyList();
         }
-        return paramTypeIndex.getOrDefault(paramTypeSimpleName, Collections.emptyList());
+        return paramTypeIndex.getOrDefault(paramTypeFullName, Collections.emptyList());
+    }
+
+    /**
+     * 检查重复的事件名称
+     * <p>在启动时调用，检查是否有多个监听器监听同一个事件名称</p>
+     * <p>如果有重复，输出警告日志</p>
+     */
+    public void checkDuplicateEventNames() {
+        for (Map.Entry<String, Integer> entry : eventNameCount.entrySet()) {
+            if (entry.getValue() > 1) {
+                log.warn("[Goya] |- component [bus] BusEventListenerScanner |- event name [{}] has {} listeners. " +
+                                "This may cause duplicate event processing. Consider using namespaces to avoid conflicts.",
+                        entry.getKey(), entry.getValue());
+            }
+        }
+    }
+
+    /**
+     * 在所有单例Bean初始化完成后，检查重复的事件名称
+     */
+    @Override
+    public void afterSingletonsInstantiated() {
+        log.debug("[Goya] |- component [bus] BusEventListenerScanner |- checking duplicate event names after all beans initialized");
+        checkDuplicateEventNames();
+        
+        // 检查监听器数量，超过50个时输出警告
+        int listenerCount = allListeners.size();
+        if (listenerCount > 50) {
+            log.warn("[Goya] |- component [bus] BusEventListenerScanner |- total listener count [{}] exceeds recommended limit (50). " +
+                            "This may impact routing performance. Consider optimizing listener distribution.",
+                    listenerCount);
+        }
     }
 
     /**

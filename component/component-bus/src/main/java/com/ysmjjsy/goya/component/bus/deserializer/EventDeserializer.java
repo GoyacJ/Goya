@@ -3,7 +3,9 @@ package com.ysmjjsy.goya.component.bus.deserializer;
 import com.ysmjjsy.goya.component.bus.definition.BusHeaders;
 import com.ysmjjsy.goya.component.bus.definition.IEvent;
 import com.ysmjjsy.goya.component.common.utils.JsonUtils;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.messaging.Message;
 
 import java.nio.charset.StandardCharsets;
@@ -13,6 +15,7 @@ import java.util.Map;
  * <p>事件反序列化器</p>
  * <p>从 Message<?> 中提取事件信息，尝试反序列化为 IEvent 对象</p>
  * <p>供所有 starter（kafka、rabbitmq 等）复用</p>
+ * <p>支持类加载白名单，防止恶意类加载攻击</p>
  * <p>使用示例：</p>
  * <pre>{@code
  * DeserializationResult result = eventDeserializer.deserialize(message);
@@ -27,7 +30,10 @@ import java.util.Map;
  * @since 2025/12/21
  */
 @Slf4j
+@RequiredArgsConstructor
 public class EventDeserializer {
+
+    private final ObjectProvider<EventClassWhitelist> whitelistProvider;
 
     /**
      * 反序列化消息
@@ -68,27 +74,42 @@ public class EventDeserializer {
         // 3. 尝试反序列化为 IEvent
         IEvent event = null;
         if (eventTypeName != null && !eventTypeName.isBlank()) {
-            try {
-                @SuppressWarnings("unchecked")
-                Class<? extends IEvent> eventType = (Class<? extends IEvent>) Class.forName(eventTypeName);
-                event = deserializeToEventType(payload, eventType);
-                if (event != null) {
-                    String actualEventName = event.eventName();
-                    log.debug("[Goya] |- component [bus] EventDeserializer |- deserialized event [{}] from payload",
-                            actualEventName);
-                    return DeserializationResult.builder()
-                            .event(event)
-                            .eventName(actualEventName)
-                            .jsonString(JsonUtils.toJson(event))
-                            .isDeserialized(true)
-                            .build();
-                }
-            } catch (ClassNotFoundException e) {
-                log.debug("[Goya] |- component [bus] EventDeserializer |- event type class not found: {}",
+            // 检查类加载白名单
+            EventClassWhitelist whitelist = whitelistProvider.getIfAvailable();
+            if (whitelist != null && !whitelist.isAllowed(eventTypeName)) {
+                log.warn("[Goya] |- component [bus] EventDeserializer |- event type [{}] is not in whitelist, denied",
                         eventTypeName);
-            } catch (Exception e) {
-                log.debug("[Goya] |- component [bus] EventDeserializer |- failed to deserialize to {}: {}",
-                        eventTypeName, e.getMessage());
+                // 不在白名单中，返回反序列化失败
+            } else {
+                try {
+                    @SuppressWarnings("unchecked")
+                    Class<? extends IEvent> eventType = (Class<? extends IEvent>) Class.forName(eventTypeName);
+                    
+                    // 验证加载的类是否实现 IEvent 接口
+                    if (!IEvent.class.isAssignableFrom(eventType)) {
+                        log.warn("[Goya] |- component [bus] EventDeserializer |- class [{}] does not implement IEvent interface, denied",
+                                eventTypeName);
+                    } else {
+                        event = deserializeToEventType(payload, eventType);
+                        if (event != null) {
+                            String actualEventName = event.eventName();
+                            log.debug("[Goya] |- component [bus] EventDeserializer |- deserialized event [{}] from payload",
+                                    actualEventName);
+                            return DeserializationResult.builder()
+                                    .event(event)
+                                    .eventName(actualEventName)
+                                    .jsonString(JsonUtils.toJson(event))
+                                    .isDeserialized(true)
+                                    .build();
+                        }
+                    }
+                } catch (ClassNotFoundException e) {
+                    log.debug("[Goya] |- component [bus] EventDeserializer |- event type class not found: {}",
+                            eventTypeName);
+                } catch (Exception e) {
+                    log.debug("[Goya] |- component [bus] EventDeserializer |- failed to deserialize to {}: {}",
+                            eventTypeName, e.getMessage());
+                }
             }
         }
 

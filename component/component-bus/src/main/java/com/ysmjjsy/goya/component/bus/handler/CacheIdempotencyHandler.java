@@ -6,7 +6,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -49,8 +51,39 @@ public class CacheIdempotencyHandler implements IIdempotencyHandler {
      * 本地锁映射（基于幂等键的锁）
      * <p>用于保证单 JVM 内的原子性</p>
      * <p>Key: 幂等键，Value: 对应的锁</p>
+     * <p>使用 LRU 缓存机制，限制最大大小为 1000</p>
+     * <p>使用 Collections.synchronizedMap 包装，确保线程安全</p>
      */
-    private final ConcurrentHashMap<String, ReentrantLock> lockMap = new ConcurrentHashMap<>();
+    private final Map<String, ReentrantLock> lockMap = Collections.synchronizedMap(
+            createLRULockMap(1000)
+    );
+
+    /**
+     * 创建 LRU 锁映射
+     * <p>限制最大大小为 maxSize，超过时自动移除最旧的条目</p>
+     *
+     * @param maxSize 最大大小
+     * @return LRU 锁映射
+     */
+    private Map<String, ReentrantLock> createLRULockMap(int maxSize) {
+        return new LinkedHashMap<String, ReentrantLock>(16, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<String, ReentrantLock> eldest) {
+                // 当大小超过 maxSize 时，移除最旧的条目
+                if (size() > maxSize) {
+                    ReentrantLock lock = eldest.getValue();
+                    // 只有在锁没有被任何线程持有时才移除
+                    if (!lock.isLocked() && lock.getQueueLength() == 0) {
+                        log.trace("[Goya] |- component [bus] CacheIdempotencyHandler |- removing lock for idempotency key: [{}]",
+                                eldest.getKey());
+                        return true;
+                    }
+                    // 如果锁正在被使用，不移除（可能导致大小超过 maxSize，但这是可接受的）
+                }
+                return false;
+            }
+        };
+    }
 
     @Override
     public boolean checkAndSet(String idempotencyKey) {
@@ -86,6 +119,7 @@ public class CacheIdempotencyHandler implements IIdempotencyHandler {
         Duration ttl = busProperties.idempotency().ttl();
 
         // 获取或创建对应的锁（基于幂等键）
+        // lockMap 已经使用 Collections.synchronizedMap 包装，确保线程安全
         ReentrantLock lock = lockMap.computeIfAbsent(idempotencyKey, k -> new ReentrantLock());
 
         try {
@@ -131,16 +165,28 @@ public class CacheIdempotencyHandler implements IIdempotencyHandler {
             } finally {
                 // 释放锁
                 lock.unlock();
+                
+                // 尝试清理锁映射（如果锁没有被其他线程持有）
+                // LRU 机制会自动处理，但这里可以主动清理以释放内存
+                if (!lock.isLocked() && lock.getQueueLength() == 0) {
+                    // 锁没有被持有且没有等待的线程，可以安全移除
+                    lockMap.remove(idempotencyKey);
+                    log.trace("[Goya] |- component [bus] CacheIdempotencyHandler |- removed lock for idempotency key: [{}]",
+                            idempotencyKey);
+                }
+                
+                // 监控锁映射大小
+                int lockMapSize = lockMap.size();
+                if (lockMapSize > 500) {
+                    log.warn("[Goya] |- component [bus] CacheIdempotencyHandler |- lock map size [{}] exceeds warning threshold (500). " +
+                                    "This may indicate high concurrency or memory pressure.",
+                            lockMapSize);
+                }
             }
         } catch (Exception e) {
             log.warn("[Goya] |- component [bus] CacheIdempotencyHandler |- failed to use atomic operation, " +
                     "fallback to non-atomic operation: {}", e.getMessage());
             return checkAndSet(idempotencyKey);
-        } finally {
-            // 清理锁映射（如果锁没有被其他线程持有）
-            // 注意：这里不能直接移除，因为可能有其他线程正在等待
-            // 使用定期清理机制或让锁自然过期
-            // 为了简化，这里不清理，锁会一直存在（但数量有限，可以接受）
         }
     }
 }

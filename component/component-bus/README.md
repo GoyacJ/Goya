@@ -43,9 +43,9 @@
 
 - **声明式监听**：通过 `@BusEventListener` 注解声明事件监听器
 - **多种匹配方式**：
-  - 事件名称匹配（`eventNames`）
-  - 参数类型匹配（基于 `getSimpleName()`）
+  - 事件名称匹配（`eventNames`，必须显式指定）
   - SpEL 条件表达式（`condition`）
+  - 命名空间支持（避免事件名称冲突）
 - **作用域控制**：支持 `LOCAL`、`REMOTE`、`ALL` 三种作用域
 - **异步执行**：支持异步处理事件（`async = true`）
 
@@ -150,7 +150,7 @@ component-bus/
 
 - `publishLocal(E event)`：发布本地事件
 - `publishRemote(E event)`：发布远程事件
-- `publishAll(E event)`：发布到本地和远程
+- `publishInTransaction(E event, Runnable transactionCallback)`：在事务内发布事件
 - `publishDelayed(E event, Duration delay)`：延迟发布事件
 - `publishOrdered(E event, String partitionKey)`：有序发布事件
 
@@ -168,7 +168,8 @@ component-bus/
 扫描 `@BusEventListener` 注解的方法，建立索引：
 
 - 事件名称索引：按 `eventNames` 建立索引
-- 参数类型索引：按参数类型的 `getSimpleName()` 建立索引
+- 参数类型索引：按参数类型的完整类名建立索引（仅用于性能优化，不用于路由匹配）
+- 启动时检查：检查重复的事件名称，输出警告日志
 
 #### 4. EventDeserializer（事件反序列化器）
 
@@ -363,7 +364,7 @@ public class OrderService {
 }
 ```
 
-#### 本地和远程
+#### 事务内发布
 
 ```java
 @Service
@@ -371,9 +372,19 @@ public class OrderService {
 public class OrderService {
     private final IBusService busService;
 
+    @Transactional
     public void createOrder(Order order) {
-        // 同时发布本地和远程事件
-        busService.publishAll(new OrderCreatedEvent(order.getId()));
+        // 保存订单
+        orderRepository.save(order);
+        
+        // 在事务内发布事件（事务性发件箱模式）
+        busService.publishInTransaction(
+            new OrderCreatedEvent(order.getId()),
+            () -> {
+                // 事务内的其他操作
+                // 如果事务回滚，远程事件不会发布
+            }
+        );
     }
 }
 ```
@@ -488,7 +499,7 @@ public class OrderEventListener {
         scope = {EventScope.REMOTE},
         ackMode = AckMode.MANUAL
     )
-    public void handleOrderCreated(OrderCreatedEvent event, Acknowledgment ack) {
+    public void handleOrderCreated(OrderCreatedEvent event, IEventAcknowledgment ack) {
         try {
             // 处理事件
             processOrder(event);
@@ -585,6 +596,23 @@ goya:
       mappings:
         "order.created": "bus.order-created"
         "user.updated": "bus.user-updated"
+    
+    # 反序列化配置
+    deserialization:
+      # 允许加载的事件类包名前缀列表（类加载白名单）
+      allowedPackages:
+        - "com.ysmjjsy.goya"
+        - "com.example.events"
+    
+    # 能力配置
+    capabilities:
+      # 是否允许降级（当 MQ 不支持某项能力时，是否允许降级为普通发布）
+      allow-degradation: false
+    
+    # 监听器配置
+    listener:
+      # 业务异常时是否继续执行其他监听器（默认 false，继续执行）
+      continue-on-business-exception: false
 ```
 
 ### 配置说明
@@ -609,6 +637,33 @@ Destination 配置（用于远程事件）：
   - 示例：`"bus.{eventName}"` → `"bus.order-created"`
 - `mappings`：事件名称到 destination 的映射表
   - 优先级：`mappings` > `defaultTemplate` > 默认行为（`"bus.{eventName}"`）
+
+#### deserialization
+
+反序列化配置（安全相关）：
+
+- `allowedPackages`：允许加载的事件类包名前缀列表（类加载白名单）
+  - 默认只允许加载 `com.ysmjjsy.goya` 包下的类
+  - 如果事件类在其他包中，需要添加对应的包名前缀
+  - **安全提示**：此配置用于防止恶意类加载攻击，建议只添加可信的包名
+
+#### capabilities
+
+能力配置：
+
+- `allow-degradation`：是否允许降级（默认 `false`）
+  - 当 MQ 不支持某项能力（如延迟消息、顺序消息）时：
+    - `false`：抛出异常，不允许降级
+    - `true`：降级为普通发布，并记录警告日志
+
+#### listener
+
+监听器配置：
+
+- `continue-on-business-exception`：业务异常时是否继续执行其他监听器（默认 `false`）
+  - `false`：业务异常时继续执行其他监听器（默认行为）
+  - `true`：业务异常时中断后续监听器的执行
+  - **注意**：系统异常（如 RuntimeException、SystemException）总是会中断执行
 
 ---
 
@@ -761,12 +816,42 @@ spring:
 1. **作用域匹配**（必须）
    - 监听器的 `scope` 必须包含事件的作用域或 `ALL`
 
-2. **事件匹配**（满足任一即可）
-   - `@BusEventListener.eventNames` 包含事件的 `eventName()`
-   - 参数类型的 `getSimpleName()` 等于事件的 `eventName()`
+2. **事件名称匹配**（必须）
+   - `@BusEventListener.eventNames` 必须包含事件的 `eventName()`
+   - **注意**：不再支持通过参数类型的 `getSimpleName()` 匹配，必须显式指定 `eventNames`
 
 3. **SpEL 条件匹配**（如果指定，必须满足）
    - `@BusEventListener.condition` 表达式计算结果为 `true`
+
+#### 事件命名空间
+
+事件支持命名空间机制，用于区分不同团队或系统的事件，避免事件名称冲突：
+
+```java
+public record OrderCreatedEvent(String orderId) extends BaseEvent {
+    @Override
+    public String eventName() {
+        return "team-a.order.created";  // 包含命名空间
+    }
+    
+    @Override
+    public String eventNamespace() {
+        return "team-a";  // 命名空间
+    }
+}
+```
+
+监听器必须使用完整的事件名称（包含命名空间）：
+
+```java
+@BusEventListener(
+    scope = {EventScope.REMOTE},
+    eventNames = {"team-a.order.created"}  // 必须包含命名空间
+)
+public void handleOrderCreated(OrderCreatedEvent event) {
+    // 处理事件
+}
+```
 
 #### 示例
 
@@ -788,12 +873,13 @@ public void handleOrderCreated(OrderCreatedEvent event) {
     // 匹配成功
 }
 
-// 监听器 2：通过参数类型 SimpleName 匹配
-@BusEventListener(scope = {EventScope.REMOTE})
+// 监听器 2：必须显式指定 eventNames
+@BusEventListener(
+    scope = {EventScope.REMOTE},
+    eventNames = {"order.created"}  // 必须显式指定
+)
 public void handleOrderCreated(OrderCreatedEvent event) {
-    // 匹配成功（参数类型 SimpleName = "OrderCreatedEvent"）
-    // 但事件的 eventName() = "order.created"，不匹配
-    // 注意：此示例不会匹配，因为 eventName() 不等于 SimpleName
+    // 匹配成功
 }
 
 // 监听器 3：通过 SpEL 条件匹配
@@ -925,7 +1011,7 @@ public class CustomIdempotencyHandler implements IIdempotencyHandler {
 **A**: 
 
 1. 设置 `ackMode = AckMode.MANUAL`
-2. 在监听器方法中添加 `Acknowledgment` 参数
+2. 在监听器方法中添加 `IEventAcknowledgment` 参数
 3. 处理成功后调用 `ack.acknowledge()`
 
 ```java
@@ -933,7 +1019,7 @@ public class CustomIdempotencyHandler implements IIdempotencyHandler {
     scope = {EventScope.REMOTE},
     ackMode = AckMode.MANUAL
 )
-public void handleOrderCreated(OrderCreatedEvent event, Acknowledgment ack) {
+public void handleOrderCreated(OrderCreatedEvent event, IEventAcknowledgment ack) {
     try {
         processOrder(event);
         ack.acknowledge();
@@ -1020,15 +1106,59 @@ public record OrderCreatedEvent(String orderId) implements IEvent {
 }
 ```
 
-#### 2. 事务语义明确
+#### 2. 事件命名空间
 
-**变更**：`publishAll()` 方法被标记为 `@Deprecated`，新增 `publishInTransaction()` 方法。
+**变更**：新增事件命名空间机制，删除通过 `getSimpleName()` 匹配的逻辑。
+
+**影响**：
+- 所有监听器必须显式指定 `eventNames`，不再支持通过参数类型 `getSimpleName()` 匹配
+- 事件建议使用命名空间，格式：`{namespace}.{domain}.{action}`
+
+**迁移步骤**：
+
+1. **为事件添加命名空间**：
+```java
+// 1.1.0
+public record OrderCreatedEvent(String orderId) extends BaseEvent {
+    @Override
+    public String eventName() {
+        return "team-a.order.created";  // 包含命名空间
+    }
+    
+    @Override
+    public String eventNamespace() {
+        return "team-a";
+    }
+}
+```
+
+2. **更新监听器，显式指定 eventNames**：
+```java
+// 1.0.0（不再支持）
+@BusEventListener(scope = {EventScope.REMOTE})
+public void handleOrderCreated(OrderCreatedEvent event) {
+    // 这种方式不再工作
+}
+
+// 1.1.0（必须显式指定）
+@BusEventListener(
+    scope = {EventScope.REMOTE},
+    eventNames = {"team-a.order.created"}  // 必须显式指定
+)
+public void handleOrderCreated(OrderCreatedEvent event) {
+    // 正常工作
+}
+```
+
+#### 3. 事务语义明确
+
+**变更**：删除 `publishAll()` 方法，新增 `publishInTransaction()` 方法。
 
 **迁移步骤**：
 
 1. **替换 `publishAll()` 调用**：
 ```java
-// 1.0.0
+// 1.0.0（已删除）
 @Transactional
 public void createOrder(Order order) {
     orderRepository.save(order);
@@ -1062,7 +1192,7 @@ public void createOrder(Order order) {
    - `publishRemote()`：在事务外异步执行（可能失败）
    - `publishInTransaction()`：本地事件在事务内，远程事件在事务提交后
 
-#### 3. 幂等性原子操作
+#### 4. 幂等性原子操作
 
 **变更**：新增 `checkAndSetAtomic()` 方法，用于高并发场景。
 
@@ -1084,7 +1214,7 @@ if (idempotencyHandler.checkAndSetAtomic(idempotencyKey)) {
 
 **注意**：`checkAndSet()` 方法仍然可用，适用于低并发场景。
 
-#### 4. 统一 ACK 抽象
+#### 5. 统一 ACK 抽象
 
 **变更**：新增 `IEventAcknowledgment` 接口，统一不同 MQ 的 ACK 机制。
 
@@ -1093,13 +1223,6 @@ if (idempotencyHandler.checkAndSetAtomic(idempotencyKey)) {
 如果使用手动 ACK：
 
 ```java
-// 1.0.0（Kafka 特定）
-@BusEventListener(scope = {EventScope.REMOTE}, ackMode = AckMode.MANUAL)
-public void handleEvent(OrderCreatedEvent event, org.springframework.kafka.support.Acknowledgment ack) {
-    processEvent(event);
-    ack.acknowledge();
-}
-
 // 1.1.0（统一接口）
 @BusEventListener(scope = {EventScope.REMOTE}, ackMode = AckMode.MANUAL)
 public void handleEvent(OrderCreatedEvent event, IEventAcknowledgment ack) {
@@ -1108,9 +1231,7 @@ public void handleEvent(OrderCreatedEvent event, IEventAcknowledgment ack) {
 }
 ```
 
-**注意**：仍然支持原始 Acknowledgment 类型（向后兼容）。
-
-#### 5. 能力声明与降级
+#### 6. 能力声明与降级
 
 **变更**：新增 `Capabilities` 和 `getCapabilities()` 方法。
 
@@ -1126,7 +1247,7 @@ busService.publishDelayed(event, Duration.ofSeconds(10));
 // 如果 MQ 不支持延迟消息，会自动降级为立即发布，并记录警告日志
 ```
 
-#### 6. Pipeline 模式
+#### 7. Pipeline 模式
 
 **变更**：事件处理使用 Pipeline 模式，支持自定义拦截器。
 
@@ -1151,7 +1272,27 @@ public class CustomInterceptor implements IEventInterceptor {
 }
 ```
 
-#### 7. 可观测性
+#### 8. 安全配置（类加载白名单）
+
+**变更**：新增类加载白名单机制，防止恶意类加载攻击。
+
+**配置**：
+
+```yaml
+goya:
+  bus:
+    deserialization:
+      allowedPackages:
+        - "com.ysmjjsy.goya"
+        - "com.example.events"
+```
+
+**说明**：
+- 默认只允许加载 `com.ysmjjsy.goya` 包下的类
+- 如果事件类在其他包中，需要添加对应的包名前缀
+- 此配置用于防止恶意类加载攻击，建议只添加可信的包名
+
+#### 9. 可观测性
 
 **变更**：新增 `EventMetrics` 工具类，自动记录指标。
 
@@ -1165,26 +1306,13 @@ System.out.println(snapshot);
 
 ---
 
-## 兼容性说明
-
-### 向后兼容
-
-- ✅ `publishAll()` 方法仍然可用（但已废弃）
-- ✅ `checkAndSet()` 方法仍然可用
-- ✅ 原始 Acknowledgment 类型仍然支持
-- ✅ 所有现有 API 保持不变
-
-### 不兼容变更
-
-- ⚠️ 无（所有变更都是向后兼容的）
-
----
-
 ## 升级建议
 
-1. **立即升级**：如果使用 `publishAll()`，建议尽快迁移到 `publishInTransaction()`
-2. **逐步迁移**：其他功能可以逐步迁移，不影响现有功能
-3. **测试验证**：升级后建议进行充分测试，特别是事务相关场景
+1. **事件命名空间**：建议为所有事件添加命名空间，避免事件名称冲突
+2. **显式指定 eventNames**：所有监听器必须显式指定 `eventNames`，不再支持通过参数类型匹配
+3. **安全配置**：如果事件类在其他包中，需要配置类加载白名单
+4. **能力降级**：根据业务需求配置是否允许能力降级
+5. **测试验证**：升级后建议进行充分测试，特别是事件匹配和事务相关场景
 
 ---
 

@@ -14,10 +14,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.MDC;
+import com.ysmjjsy.goya.component.bus.transaction.EventTransactionSynchronization;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.nio.charset.StandardCharsets;
@@ -104,26 +104,6 @@ public class DefaultBusService implements IBusService {
     }
 
     @Override
-    @Deprecated
-    public <E extends IEvent> void publishAll(E event) {
-        if (event == null) {
-            throw new CommonException("Event cannot be null");
-        }
-
-        log.warn("[Goya] |- component [bus] BusServiceImpl |- publishAll() is deprecated due to transaction semantic confusion. " +
-                "Local events execute synchronously within the transaction, while remote events execute asynchronously outside the transaction. " +
-                "If the local event succeeds but the remote event fails, data inconsistency may occur. " +
-                "Consider using publishInTransaction() or calling publishLocal() and publishRemote() separately. Event: [{}]",
-                event.eventName());
-
-        log.debug("[Goya] |- component [bus] BusServiceImpl |- publish all event [{}]", event.eventName());
-        // 先发布本地事件（在事务内同步执行）
-        publishLocal(event);
-        // 再发布远程事件（在事务外异步执行，可能失败）
-        publishRemote(event);
-    }
-
-    @Override
     public <E extends IEvent> void publishDelayed(E event, Duration delay) {
         if (event == null) {
             throw new CommonException("Event cannot be null");
@@ -150,9 +130,19 @@ public class DefaultBusService implements IBusService {
             long delayMillis = delay.toMillis();
 
             if (!capabilities.supportsDelayedMessages()) {
+                // 检查是否允许降级（优先使用全局配置）
+                boolean allowDegradation = busProperties.capabilities().allowDegradation() || capabilities.allowDegradation();
+                if (!allowDegradation) {
+                    // 不允许降级，抛出异常
+                    throw new CommonException(
+                            String.format("Delayed messages are not supported by the MQ and degradation is not allowed. " +
+                                    "Event [%s] cannot be published. Please use a MQ that supports delayed messages (e.g., RabbitMQ, RocketMQ) " +
+                                    "or enable degradation in configuration (goya.bus.capabilities.allow-degradation=true).",
+                                    event.eventName())
+                    );
+                }
                 log.warn("[Goya] |- component [bus] BusServiceImpl |- delayed messages are not natively supported by the MQ. " +
-                        "The event [{}] will be published immediately. Consider using a MQ that supports delayed messages (e.g., RabbitMQ, RocketMQ) " +
-                        "or check if the starter provides a fallback implementation.",
+                                "The event [{}] will be published immediately (degradation enabled). Consider using a MQ that supports delayed messages (e.g., RabbitMQ, RocketMQ).",
                         event.eventName());
                 // 降级：立即发布（不设置延迟）
                 publishRemote(event);
@@ -211,8 +201,20 @@ public class DefaultBusService implements IBusService {
             com.ysmjjsy.goya.component.bus.capabilities.Capabilities capabilities = publisher.getCapabilities();
 
             if (!capabilities.supportsOrderedMessages()) {
+                // 检查是否允许降级（优先使用全局配置）
+                boolean allowDegradation = busProperties.capabilities().allowDegradation() || capabilities.allowDegradation();
+                if (!allowDegradation) {
+                    // 不允许降级，抛出异常
+                    throw new CommonException(
+                            String.format("Ordered messages are not supported by the MQ and degradation is not allowed. " +
+                                    "Event [%s] cannot be published. Please use a MQ that supports ordered messages (e.g., Kafka, RabbitMQ, RocketMQ) " +
+                                    "or enable degradation in configuration (goya.bus.capabilities.allow-degradation=true).",
+                                    event.eventName())
+                    );
+                }
                 log.warn("[Goya] |- component [bus] BusServiceImpl |- ordered messages are not supported by the MQ. " +
-                        "The event [{}] will be published without ordering guarantee. Consider using a MQ that supports ordered messages (e.g., Kafka, RabbitMQ, RocketMQ).",
+                                "The event [{}] will be published without ordering guarantee (degradation enabled). " +
+                                "Consider using a MQ that supports ordered messages (e.g., Kafka, RabbitMQ, RocketMQ).",
                         event.eventName());
                 // 降级：发布但不保证顺序
                 publishRemote(event);
@@ -355,6 +357,17 @@ public class DefaultBusService implements IBusService {
 
         log.debug("[Goya] |- component [bus] BusServiceImpl |- publish in transaction event [{}]", event.eventName());
 
+        // 检查是否在事务中
+        boolean isTransactionActive = TransactionSynchronizationManager.isActualTransactionActive();
+        if (!isTransactionActive) {
+            log.debug("[Goya] |- component [bus] BusServiceImpl |- not in transaction, executing callback and publishing events directly");
+            // 如果不在事务中，直接执行回调和发布事件
+            transactionCallback.run();
+            publishLocal(event);
+            publishRemote(event);
+            return;
+        }
+
         // 1. 在事务内执行回调
         transactionCallback.run();
 
@@ -362,23 +375,25 @@ public class DefaultBusService implements IBusService {
         publishLocal(event);
 
         // 3. 在事务提交后发布远程事件（异步执行）
-        // 注意：这里需要事务同步机制，确保在事务提交后才发布远程事件
-        // 由于 Spring 事务管理的复杂性，这里先使用简单实现
-        // 实际生产环境建议使用事务性发件箱模式（Transactional Outbox Pattern）
+        // 使用 EventTransactionSynchronization 包装类，支持完整的生命周期管理
         try {
-            // 使用事务同步器，在事务提交后执行
-            TransactionSynchronizationManager.registerSynchronization(
-                    new TransactionSynchronization() {
-                        @Override
-                        public void afterCommit() {
-                            // 事务提交后发布远程事件
-                            publishRemote(event);
-                        }
+            EventTransactionSynchronization synchronization = new EventTransactionSynchronization(
+                    event,
+                    () -> {
+                        // 事务提交后发布远程事件
+                        log.debug("[Goya] |- component [bus] BusServiceImpl |- transaction committed, publishing remote event [{}]",
+                                event.eventName());
+                        publishRemote(event);
                     }
             );
-        } catch (IllegalStateException _) {
-            // 如果不在事务中，直接发布远程事件
-            log.debug("[Goya] |- component [bus] BusServiceImpl |- not in transaction, publish remote event directly");
+            TransactionSynchronizationManager.registerSynchronization(synchronization);
+            log.trace("[Goya] |- component [bus] BusServiceImpl |- registered transaction synchronization for event [{}]",
+                    event.eventName());
+        } catch (IllegalStateException e) {
+            // 如果注册失败（理论上不应该发生，因为已经检查了事务状态），记录错误并直接发布
+            log.error("[Goya] |- component [bus] BusServiceImpl |- failed to register transaction synchronization for event [{}]: {}. " +
+                            "Publishing remote event directly.",
+                    event.eventName(), e.getMessage());
             publishRemote(event);
         }
     }

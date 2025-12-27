@@ -66,6 +66,14 @@ public abstract class BaseEvent implements IEvent {
     private final String eventVersion = "1.0";
 
     /**
+     * 事件命名空间
+     * <p>用于区分不同团队或系统的事件，避免事件名称冲突</p>
+     * <p>默认命名空间为 "default"</p>
+     * <p>子类可以通过构造函数或 setter 设置命名空间</p>
+     */
+    private String namespace = "default";
+
+    /**
      * 设置关联 ID
      * <p>用于关联相关事件</p>
      *
@@ -73,6 +81,16 @@ public abstract class BaseEvent implements IEvent {
      */
     public void setCorrelationId(String correlationId) {
         this.correlationId = correlationId;
+    }
+
+    /**
+     * 设置命名空间
+     * <p>用于区分不同团队或系统的事件</p>
+     *
+     * @param namespace 命名空间
+     */
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
     }
 
     @Override
@@ -93,6 +111,11 @@ public abstract class BaseEvent implements IEvent {
     @Override
     public LocalDateTime timestamp() {
         return timestamp;
+    }
+
+    @Override
+    public String eventNamespace() {
+        return namespace;
     }
 }
 

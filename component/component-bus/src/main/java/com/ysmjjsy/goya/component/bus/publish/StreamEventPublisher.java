@@ -74,6 +74,7 @@ public class StreamEventPublisher implements IRemoteEventPublisher {
     public Capabilities getCapabilities() {
         // StreamEventPublisher 是基础实现，不声明具体能力
         // 具体能力由实现类（如 KafkaStreamEventPublisher）声明
+        // 默认不允许降级
         return Capabilities.NONE;
     }
 }

@@ -24,6 +24,7 @@ package com.ysmjjsy.goya.component.bus.capabilities;
  * @param supportsPartitioning    是否支持分区（Kafka、RocketMQ 支持）
  * @param maxDelayMillis           最大延迟时间（毫秒），-1 表示无限制
  * @param description              能力描述
+ * @param allowDegradation         是否允许降级（当能力不支持时，是否允许降级为普通发布）
  * @author goya
  * @since 2025/12/21
  */
@@ -32,40 +33,56 @@ public record Capabilities(
         boolean supportsOrderedMessages,
         boolean supportsPartitioning,
         long maxDelayMillis,
-        String description
+        String description,
+        boolean allowDegradation
 ) {
 
     /**
-     * 默认能力（不支持任何高级特性）
+     * 默认能力（不支持任何高级特性，不允许降级）
      */
     public static final Capabilities NONE = new Capabilities(
             false,
             false,
             false,
             -1,
-            "No advanced capabilities"
+            "No advanced capabilities",
+            false
     );
 
     /**
-     * 基础能力（仅支持顺序消息）
+     * 基础能力（仅支持顺序消息，不允许降级）
      */
     public static final Capabilities BASIC = new Capabilities(
             false,
             true,
             false,
             -1,
-            "Basic capabilities: ordered messages only"
+            "Basic capabilities: ordered messages only",
+            false
     );
 
     /**
-     * 完整能力（支持所有特性）
+     * 完整能力（支持所有特性，不允许降级）
      */
     public static final Capabilities FULL = new Capabilities(
             true,
             true,
             true,
             -1,
-            "Full capabilities: delayed, ordered, and partitioned messages"
+            "Full capabilities: delayed, ordered, and partitioned messages",
+            false
+    );
+
+    /**
+     * 默认能力（不支持任何高级特性，但允许降级）
+     */
+    public static final Capabilities DEFAULT = new Capabilities(
+            false,
+            false,
+            false,
+            -1,
+            "No advanced capabilities (degradation allowed)",
+            true
     );
 
     /**

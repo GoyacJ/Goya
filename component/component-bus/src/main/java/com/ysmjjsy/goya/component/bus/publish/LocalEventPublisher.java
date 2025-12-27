@@ -49,16 +49,15 @@ public class LocalEventPublisher implements IStrategyExecute<IEvent, Void> {
 
         log.debug("[Goya] |- component [bus] LocalEventPublisher |- publish local event [{}]", request.eventName());
         
-        // 先通过 BusEventListenerHandler 进行过滤和路由（如果存在）
+        // 通过 BusEventListenerHandler 进行过滤和路由
         BusEventListenerHandler handler = handlerProvider.getIfAvailable();
-        if (handler != null) {
-            // 创建本地事件的 Message，用于统一处理
-            Message<IEvent> message = MessageBuilder.withPayload(request).build();
-            handler.handleLocalEvent(message);
-        } else {
-            // 如果没有 handler，直接发布（向后兼容）
-            eventPublisher.publishEvent(request);
+        if (handler == null) {
+            throw new CommonException("BusEventListenerHandler is not available. Please ensure component-bus is properly configured.");
         }
+        
+        // 创建本地事件的 Message，用于统一处理
+        Message<IEvent> message = MessageBuilder.withPayload(request).build();
+        handler.handleLocalEvent(message);
     }
 
     @Override

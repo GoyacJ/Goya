@@ -7,6 +7,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -52,7 +53,28 @@ public record BusProperties(
          */
         @Schema(description = "Destination 配置")
         @DefaultValue
-        Destination destination
+        Destination destination,
+
+        /**
+         * 反序列化配置
+         */
+        @Schema(description = "反序列化配置")
+        @DefaultValue
+        Deserialization deserialization,
+
+        /**
+         * 能力配置
+         */
+        @Schema(description = "能力配置")
+        @DefaultValue
+        CapabilitiesConfig capabilities,
+
+        /**
+         * 监听器配置
+         */
+        @Schema(description = "监听器配置")
+        @DefaultValue
+        ListenerConfig listener
 ) {
     /**
      * 幂等性配置
@@ -175,5 +197,109 @@ public record BusProperties(
      */
     public Destination destination() {
         return destination != null ? destination : new Destination("bus.{eventName}", new HashMap<>());
+    }
+
+    /**
+     * 获取反序列化配置，提供默认值
+     *
+     * @return 反序列化配置
+     */
+    public Deserialization deserialization() {
+        return deserialization != null ? deserialization : new Deserialization(List.of("com.ysmjjsy.goya"));
+    }
+
+    /**
+     * 反序列化配置
+     */
+    @Schema(description = "反序列化配置")
+    public record Deserialization(
+            /**
+             * 允许加载的事件类包名前缀列表
+             * <p>默认只允许加载 com.ysmjjsy.goya 包下的类</p>
+             * <p>如果事件类在其他包中，需要添加对应的包名前缀</p>
+             */
+            @Schema(description = "允许加载的事件类包名前缀列表", example = "[\"com.ysmjjsy.goya\", \"com.example.events\"]")
+            @DefaultValue("[\"com.ysmjjsy.goya\"]")
+            List<String> allowedPackages
+    ) {
+        /**
+         * 获取允许的包名列表，提供默认值
+         *
+         * @return 允许的包名列表
+         */
+        public List<String> allowedPackages() {
+            return allowedPackages != null && !allowedPackages.isEmpty()
+                    ? allowedPackages
+                    : List.of("com.ysmjjsy.goya");
+        }
+    }
+
+    /**
+     * 获取能力配置，提供默认值
+     *
+     * @return 能力配置
+     */
+    public CapabilitiesConfig capabilities() {
+        return capabilities != null ? capabilities : new CapabilitiesConfig(false);
+    }
+
+    /**
+     * 能力配置
+     */
+    @Schema(description = "能力配置")
+    public record CapabilitiesConfig(
+            /**
+             * 是否允许降级
+             * <p>当 MQ 不支持某个能力（如延迟消息、顺序消息）时，是否允许降级为普通发布</p>
+             * <p>默认值为 false，不允许降级</p>
+             * <p>如果设置为 true，当能力不支持时会降级为普通发布并记录警告日志</p>
+             * <p>如果设置为 false，当能力不支持时会抛出异常</p>
+             */
+            @Schema(description = "是否允许降级", example = "false")
+            @DefaultValue("false")
+            Boolean allowDegradation
+    ) {
+        /**
+         * 获取是否允许降级，提供默认值
+         *
+         * @return 是否允许降级
+         */
+        public Boolean allowDegradation() {
+            return allowDegradation != null ? allowDegradation : false;
+        }
+    }
+
+    /**
+     * 获取监听器配置，提供默认值
+     *
+     * @return 监听器配置
+     */
+    public ListenerConfig listener() {
+        return listener != null ? listener : new ListenerConfig(false);
+    }
+
+    /**
+     * 监听器配置
+     */
+    @Schema(description = "监听器配置")
+    public record ListenerConfig(
+            /**
+             * 业务异常时是否继续执行其他监听器
+             * <p>默认值为 false，业务异常时继续执行其他监听器</p>
+             * <p>如果设置为 true，业务异常时会中断后续监听器的执行</p>
+             * <p>系统异常（如 RuntimeException、SystemException）总是会中断执行</p>
+             */
+            @Schema(description = "业务异常时是否继续执行其他监听器", example = "false")
+            @DefaultValue("false")
+            Boolean continueOnBusinessException
+    ) {
+        /**
+         * 获取业务异常时是否继续执行其他监听器，提供默认值
+         *
+         * @return 是否继续执行
+         */
+        public Boolean continueOnBusinessException() {
+            return continueOnBusinessException != null ? continueOnBusinessException : false;
+        }
     }
 }

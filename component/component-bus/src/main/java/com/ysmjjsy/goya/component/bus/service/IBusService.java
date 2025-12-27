@@ -22,9 +22,6 @@ import java.time.Duration;
  *         // 发布远程事件
  *         busService.publishRemote(new OrderCreatedEvent(order.getId()));
  *
- *         // 发布到本地和远程
- *         busService.publishAll(new OrderCreatedEvent(order.getId()));
- *
  *         // 延迟发布
  *         busService.publishDelayed(new OrderCreatedEvent(order.getId()), Duration.ofSeconds(10));
  *
@@ -58,24 +55,6 @@ public interface IBusService {
      * @throws IllegalStateException 如果未引入对应的 starter
      */
     <E extends IEvent> void publishRemote(E event);
-
-    /**
-     * 发布到本地和远程
-     * <p>先发布本地事件，再发布远程事件</p>
-     * <p><strong>注意：此方法存在事务语义混淆风险</strong></p>
-     * <ul>
-     *   <li>本地事件：同步执行，在当前事务内</li>
-     *   <li>远程事件：异步执行，在事务外，可能失败</li>
-     * </ul>
-     * <p>如果本地事件成功但远程事件失败，可能导致数据不一致</p>
-     * <p>建议使用 {@link #publishInTransaction(IEvent, Runnable)} 或分别调用 {@link #publishLocal(IEvent)} 和 {@link #publishRemote(IEvent)}</p>
-     *
-     * @param event 事件对象
-     * @param <E>   事件类型
-     * @deprecated 此方法存在事务语义混淆风险，建议使用 {@link #publishInTransaction(IEvent, Runnable)} 或分别调用本地和远程发布方法
-     */
-    @Deprecated
-    <E extends IEvent> void publishAll(E event);
 
     /**
      * 延迟发布事件

@@ -3,6 +3,7 @@ package com.ysmjjsy.goya.component.bus.processor.interceptor;
 import com.ysmjjsy.goya.component.bus.ack.AcknowledgmentAdapter;
 import com.ysmjjsy.goya.component.bus.ack.IEventAcknowledgment;
 import com.ysmjjsy.goya.component.bus.annotation.BusEventListener;
+import com.ysmjjsy.goya.component.bus.configuration.properties.BusProperties;
 import com.ysmjjsy.goya.component.bus.definition.IEvent;
 import com.ysmjjsy.goya.component.bus.deserializer.DeserializationResult;
 import com.ysmjjsy.goya.component.bus.enums.AckMode;
@@ -37,6 +38,7 @@ import java.util.Map;
 public class InvokeInterceptor implements IEventInterceptor {
 
     private final ObjectProvider<IIdempotencyHandler> idempotencyHandlerProvider;
+    private final BusProperties busProperties;
 
     @Override
     public void intercept(EventContext context) {
@@ -76,10 +78,24 @@ public class InvokeInterceptor implements IEventInterceptor {
                 if (isSystemException(e)) {
                     log.error("[Goya] |- component [bus] InvokeInterceptor |- system exception in listener [{}]: {}",
                             metadata.method().getName(), e.getMessage(), e);
+                    // 系统异常总是中断执行
                     throw e;
                 } else {
+                    // 业务异常
                     log.warn("[Goya] |- component [bus] InvokeInterceptor |- business exception in listener [{}]: {}",
                             metadata.method().getName(), e.getMessage());
+                    
+                    // 根据配置决定是否继续执行其他监听器
+                    boolean continueOnBusinessException = busProperties.listener().continueOnBusinessException();
+                    if (!continueOnBusinessException) {
+                        // 如果配置为 false（默认值），继续执行其他监听器
+                        // 这里不抛出异常，继续循环
+                        log.debug("[Goya] |- component [bus] InvokeInterceptor |- continue processing other listeners after business exception");
+                    } else {
+                        // 如果配置为 true，中断执行
+                        log.warn("[Goya] |- component [bus] InvokeInterceptor |- interrupt processing other listeners due to business exception (continueOnBusinessException=true)");
+                        throw e;
+                    }
                 }
             }
         }
@@ -141,19 +157,12 @@ public class InvokeInterceptor implements IEventInterceptor {
                 IEventAcknowledgment acknowledgment = AcknowledgmentAdapter.adapt(message);
                 if (acknowledgment != null) {
                     Class<?> ackType = parameterTypes[1];
-                    // 支持 IEventAcknowledgment 接口或原始 Acknowledgment 类型
                     if (ackType == IEventAcknowledgment.class || ackType.isAssignableFrom(acknowledgment.getClass())) {
                         args[1] = acknowledgment;
                     } else {
-                        // 尝试适配原始 Acknowledgment 类型（向后兼容）
-                        Object rawAck = getAcknowledgment(message);
-                        if (rawAck != null && ackType.isAssignableFrom(rawAck.getClass())) {
-                            args[1] = rawAck;
-                        } else {
-                            log.warn("[Goya] |- component [bus] InvokeInterceptor |- Acknowledgment type mismatch for method [{}], " +
-                                    "expected IEventAcknowledgment or compatible type, got [{}]",
-                                    method.getName(), ackType.getName());
-                        }
+                        log.warn("[Goya] |- component [bus] InvokeInterceptor |- Acknowledgment type mismatch for method [{}], " +
+                                "expected IEventAcknowledgment, got [{}]",
+                                method.getName(), ackType.getName());
                     }
                 }
             }
@@ -196,32 +205,6 @@ public class InvokeInterceptor implements IEventInterceptor {
                     method.getName(), e.getMessage(), e);
             throw e;
         }
-    }
-
-    /**
-     * 获取原始 Acknowledgment 对象（用于向后兼容）
-     *
-     * @param message 消息
-     * @return Acknowledgment 对象，如果不存在则返回 null
-     */
-    private static Object getAcknowledgment(Message<?> message) {
-        MessageHeaders headers = message.getHeaders();
-
-        // 尝试多种方式获取 Acknowledgment
-        Object acknowledgment = headers.get("kafka_acknowledgment");
-        if (acknowledgment == null) {
-            acknowledgment = headers.get(org.springframework.integration.IntegrationMessageHeaderAccessor.ACKNOWLEDGMENT_CALLBACK);
-        }
-        if (acknowledgment == null) {
-            for (Map.Entry<String, Object> entry : headers.entrySet()) {
-                Object value = entry.getValue();
-                if (value != null && value.getClass().getName().contains("Acknowledgment")) {
-                    acknowledgment = value;
-                    break;
-                }
-            }
-        }
-        return acknowledgment;
     }
 
     /**

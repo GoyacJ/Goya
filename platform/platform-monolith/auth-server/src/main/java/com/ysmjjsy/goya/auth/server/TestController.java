@@ -100,22 +100,22 @@ public class TestController {
     public Response<Void> test6() {
 
         TestEvent testEvent = new TestEvent("123");
-        iBusService.publishAll(testEvent);
+        iBusService.publishRemote(testEvent);
 
         return Response.success();
     }
 
-    @BusEventListener(scope = EventScope.REMOTE)
+    @BusEventListener(scope = EventScope.REMOTE, eventNames = "TestEvent")
     public void test6Remote(TestEvent testEvent) {
         log.warn("event:{}", testEvent);
     }
 
-    @BusEventListener(scope = EventScope.LOCAL)
+    @BusEventListener(scope = EventScope.LOCAL, eventNames = "TestEvent")
     public void test6Local(TestEvent testEvent) {
         log.warn("event:{}", testEvent);
     }
 
-    @BusEventListener(scope = EventScope.ALL)
+    @BusEventListener(scope = EventScope.ALL, eventNames = "TestEvent")
     public void test6All(TestEvent testEvent) {
         log.warn("event:{}", testEvent);
     }

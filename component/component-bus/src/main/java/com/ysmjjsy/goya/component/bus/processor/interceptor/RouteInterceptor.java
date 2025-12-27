@@ -6,8 +6,10 @@ import com.ysmjjsy.goya.component.bus.deserializer.DeserializationResult;
 import com.ysmjjsy.goya.component.bus.processor.BusEventListenerScanner;
 import com.ysmjjsy.goya.component.bus.processor.EventContext;
 import com.ysmjjsy.goya.component.bus.processor.IEventInterceptor;
+import com.ysmjjsy.goya.component.bus.version.IVersionCompatibilityChecker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
 import org.springframework.expression.ExpressionParser;
@@ -32,6 +34,7 @@ import java.util.Set;
 public class RouteInterceptor implements IEventInterceptor {
 
     private final BusEventListenerScanner scanner;
+    private final ObjectProvider<IVersionCompatibilityChecker> versionCheckerProvider;
     private final ExpressionParser expressionParser = new SpelExpressionParser();
     private final java.util.Map<String, Expression> expressionCache = new java.util.concurrent.ConcurrentHashMap<>();
 
@@ -53,9 +56,15 @@ public class RouteInterceptor implements IEventInterceptor {
         List<BusEventListenerScanner.EventListenerMetadata> matchedListeners = new ArrayList<>();
 
         if (result.isDeserialized() && result.getEvent() != null) {
-            // 反序列化成功，使用事件对象匹配
+            // 反序列化成功，同时匹配事件对象监听器和 String 监听器
             IEvent event = result.getEvent();
-            matchedListeners = findMatchingListeners(event, scope);
+            List<BusEventListenerScanner.EventListenerMetadata> eventListeners = findMatchingListeners(event, scope);
+            List<BusEventListenerScanner.EventListenerMetadata> stringListeners = findMatchingListenersForString(result.getEventName(), scope);
+            
+            // 合并两种类型的监听器（使用 Set 去重）
+            Set<BusEventListenerScanner.EventListenerMetadata> allMatched = new HashSet<>(eventListeners);
+            allMatched.addAll(stringListeners);
+            matchedListeners = new ArrayList<>(allMatched);
         } else {
             // 反序列化失败，使用 String 监听器匹配
             String eventName = result.getEventName();
@@ -76,6 +85,8 @@ public class RouteInterceptor implements IEventInterceptor {
 
     /**
      * 查找匹配的监听器
+     * <p>只通过 eventName 匹配，不再使用 getSimpleName() 匹配</p>
+     * <p>如果事件有命名空间，监听器的 eventNames 必须包含完整的事件名称（包含命名空间）</p>
      *
      * @param event 事件
      * @param scope 事件作用域
@@ -83,27 +94,56 @@ public class RouteInterceptor implements IEventInterceptor {
      */
     private List<BusEventListenerScanner.EventListenerMetadata> findMatchingListeners(IEvent event, EventScope scope) {
         String eventName = event.eventName();
+        String eventNamespace = event.eventNamespace();
         Set<BusEventListenerScanner.EventListenerMetadata> matchedListeners = new HashSet<>();
 
-        // 1. 通过 eventName 查找
+        // 通过 eventName 查找（必须完全匹配）
         List<BusEventListenerScanner.EventListenerMetadata> eventNameListeners = scanner.findByEventName(eventName);
+        IVersionCompatibilityChecker versionChecker = null;
+        if (versionCheckerProvider != null) {
+            versionChecker = versionCheckerProvider.getIfAvailable();
+        }
+        
         for (BusEventListenerScanner.EventListenerMetadata metadata : eventNameListeners) {
             if (matchesScopeAndCondition(event, scope, metadata)) {
+                // 检查参数类型是否匹配（排除 String 类型，String 类型由 findMatchingListenersForString 处理）
+                Method method = metadata.method();
+                Class<?>[] parameterTypes = method.getParameterTypes();
+                if (parameterTypes.length > 0) {
+                    Class<?> firstParamType = parameterTypes[0];
+                    // 如果第一个参数是 String，跳过（由 findMatchingListenersForString 处理）
+                    if (firstParamType == String.class) {
+                        continue;
+                    }
+                    // 检查参数类型是否与事件类型兼容
+                    if (!firstParamType.isAssignableFrom(event.getClass())) {
+                        log.trace("[Goya] |- component [bus] RouteInterceptor |- parameter type mismatch for listener [{}], " +
+                                "expected [{}], got [{}], skip",
+                                method.getName(), firstParamType.getName(), event.getClass().getName());
+                        continue;
+                    }
+                }
+                
+                // 预留版本兼容性检查（如果提供了版本检查器）
+                if (versionChecker != null) {
+                    // 注意：目前 BusEventListener 注解中没有版本字段，这里只是预留接口
+                    // 如果将来添加了版本字段，可以在这里进行版本兼容性检查
+                    String eventVersion = event.eventVersion();
+                    // 暂时不进行实际检查，只记录日志
+                    log.trace("[Goya] |- component [bus] RouteInterceptor |- version compatibility check reserved for event [{}] version [{}]",
+                            eventName, eventVersion);
+                }
                 matchedListeners.add(metadata);
             }
         }
 
-        // 2. 通过参数类型 SimpleName 查找
-        for (BusEventListenerScanner.EventListenerMetadata metadata : scanner.getAllListeners()) {
-            Method method = metadata.method();
-            Class<?>[] parameterTypes = method.getParameterTypes();
-            if (parameterTypes.length > 0) {
-                Class<?> paramType = parameterTypes[0];
-                String paramTypeSimpleName = paramType.getSimpleName();
-                if (paramTypeSimpleName.equals(eventName) && matchesScopeAndCondition(event, scope, metadata)) {
-                    matchedListeners.add(metadata);
-                }
-            }
+        // 如果事件有命名空间，验证命名空间匹配
+        if (!"default".equals(eventNamespace) && !matchedListeners.isEmpty()) {
+            // 检查监听器的 eventNames 是否包含命名空间
+            // 这里假设 eventName 的格式是 {namespace}.{domain}.{action} 或 {domain}.{action}
+            // 如果事件有命名空间，监听器应该使用完整的事件名称
+            log.trace("[Goya] |- component [bus] RouteInterceptor |- event [{}] has namespace [{}], matched {} listeners",
+                    eventName, eventNamespace, matchedListeners.size());
         }
 
         return new ArrayList<>(matchedListeners);

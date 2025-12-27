@@ -1,11 +1,14 @@
 package com.ysmjjsy.goya.component.bus.processor;
 
+import com.ysmjjsy.goya.component.bus.configuration.properties.BusProperties;
 import com.ysmjjsy.goya.component.bus.definition.EventScope;
 import com.ysmjjsy.goya.component.bus.definition.IEvent;
+import com.ysmjjsy.goya.component.bus.deserializer.DeserializationResult;
 import com.ysmjjsy.goya.component.bus.deserializer.EventDeserializer;
 import com.ysmjjsy.goya.component.bus.handler.IIdempotencyHandler;
 import com.ysmjjsy.goya.component.bus.metrics.EventMetrics;
 import com.ysmjjsy.goya.component.bus.publish.MetadataAccessor;
+import com.ysmjjsy.goya.component.common.utils.JsonUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
@@ -39,6 +42,7 @@ public class BusEventListenerHandler {
     private final ObjectProvider<IIdempotencyHandler> idempotencyHandlerProvider;
     private final ObjectProvider<EventDeserializer> eventDeserializerProvider;
     private final ObjectProvider<List<IEventInterceptor>> interceptorsProvider;
+    private final BusProperties busProperties;
 
     /**
      * 处理本地事件
@@ -65,16 +69,26 @@ public class BusEventListenerHandler {
         try {
             EventMetrics.recordConsume(event.eventName(), EventScope.LOCAL);
 
+            // 为本地事件创建 DeserializationResult（本地事件不需要反序列化，事件对象已存在）
+            DeserializationResult deserializationResult = DeserializationResult.builder()
+                    .event(event)
+                    .eventName(event.eventName())
+                    .jsonString(JsonUtils.toJson(event))
+                    .isDeserialized(true)
+                    .build();
+
             // 构建 EventContext（简化版，仅用于本地事件）
             EventContext context = EventContext.builder()
                     .message(message)
                     .scope(EventScope.LOCAL)
                     .event(event)
+                    .deserializationResult(deserializationResult)
                     .build();
 
             // 使用 RouteInterceptor 查找匹配的监听器
+            // 注意：本地事件处理不需要版本检查器，传入 null
             com.ysmjjsy.goya.component.bus.processor.interceptor.RouteInterceptor routeInterceptor =
-                    new com.ysmjjsy.goya.component.bus.processor.interceptor.RouteInterceptor(scanner);
+                    new com.ysmjjsy.goya.component.bus.processor.interceptor.RouteInterceptor(scanner, null);
             routeInterceptor.intercept(context);
 
             if (context.isAborted() || context.getMatchedListeners() == null || context.getMatchedListeners().isEmpty()) {
@@ -85,7 +99,7 @@ public class BusEventListenerHandler {
 
             // 使用 InvokeInterceptor 调用监听器
             com.ysmjjsy.goya.component.bus.processor.interceptor.InvokeInterceptor invokeInterceptor =
-                    new com.ysmjjsy.goya.component.bus.processor.interceptor.InvokeInterceptor(idempotencyHandlerProvider);
+                    new com.ysmjjsy.goya.component.bus.processor.interceptor.InvokeInterceptor(idempotencyHandlerProvider, busProperties);
             invokeInterceptor.intercept(context);
 
             long duration = System.currentTimeMillis() - startTime;
@@ -186,15 +200,19 @@ public class BusEventListenerHandler {
     /**
      * 创建默认拦截器列表
      * <p>如果未注册自定义拦截器，使用默认拦截器</p>
+     * <p>注意：这里无法注入 versionCheckerProvider，因为 BusEventListenerHandler 的构造函数中没有这个参数</p>
+     * <p>实际使用时，应该通过 BusAutoConfiguration 注册的拦截器列表</p>
      *
      * @return 默认拦截器列表
      */
     private List<IEventInterceptor> createDefaultInterceptors() {
+        // 注意：versionCheckerProvider 传入 null，RouteInterceptor 会使用 getIfAvailable() 处理
+        // 实际使用时，应该通过 BusAutoConfiguration 注册的拦截器列表
         return List.of(
                 new com.ysmjjsy.goya.component.bus.processor.interceptor.DeserializeInterceptor(eventDeserializerProvider),
                 new com.ysmjjsy.goya.component.bus.processor.interceptor.IdempotencyInterceptor(idempotencyHandlerProvider),
-                new com.ysmjjsy.goya.component.bus.processor.interceptor.RouteInterceptor(scanner),
-                new com.ysmjjsy.goya.component.bus.processor.interceptor.InvokeInterceptor(idempotencyHandlerProvider)
+                new com.ysmjjsy.goya.component.bus.processor.interceptor.RouteInterceptor(scanner, null),
+                new com.ysmjjsy.goya.component.bus.processor.interceptor.InvokeInterceptor(idempotencyHandlerProvider, busProperties)
         );
     }
 
