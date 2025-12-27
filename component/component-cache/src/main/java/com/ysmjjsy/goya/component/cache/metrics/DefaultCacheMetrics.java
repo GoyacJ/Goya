@@ -1,9 +1,7 @@
 package com.ysmjjsy.goya.component.cache.metrics;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
-import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.LongAdder;
@@ -25,10 +23,8 @@ import java.util.stream.Collectors;
  * @author goya
  * @since 2025/12/26 14:33
  */
-
+@Slf4j
 public class DefaultCacheMetrics implements CacheMetrics {
-
-    private static final Logger log = LoggerFactory.getLogger(DefaultCacheMetrics.class);
 
     /**
      * L1 命中计数器
@@ -228,7 +224,7 @@ public class DefaultCacheMetrics implements CacheMetrics {
                 .filter(entry -> entry.getValue().sum() < avgAccess)
                 .limit(keyCounts.size() / 2)
                 .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
+                .toList();
 
         keysToRemove.forEach(keyCounts::remove);
     }
@@ -371,7 +367,7 @@ public class DefaultCacheMetrics implements CacheMetrics {
      * <p>返回访问频率最高的Key列表，用于识别热Key和容量规划。
      *
      * @param cacheName 缓存名称
-     * @param topN 返回前N个热Key
+     * @param topN      返回前N个热Key
      * @return 热Key列表，按访问频率降序排列
      */
     public List<HotKey> getHotKeys(String cacheName, int topN) {
@@ -382,7 +378,7 @@ public class DefaultCacheMetrics implements CacheMetrics {
 
         return keyCounts.entrySet().stream()
                 .map(entry -> new HotKey(entry.getKey(), entry.getValue().sum()))
-                .sorted(Comparator.comparing(HotKey::getAccessCount).reversed())
+                .sorted(Comparator.comparing(HotKey::accessCount).reversed())
                 .limit(Math.min(topN, keyCounts.size()))
                 .collect(Collectors.toList());
     }
@@ -476,27 +472,7 @@ public class DefaultCacheMetrics implements CacheMetrics {
     /**
      * 热Key信息
      */
-    public static class HotKey {
-        private final Object key;
-        private final long accessCount;
-
-        public HotKey(Object key, long accessCount) {
-            this.key = key;
-            this.accessCount = accessCount;
-        }
-
-        public Object getKey() {
-            return key;
-        }
-
-        public long getAccessCount() {
-            return accessCount;
-        }
-
-        @Override
-        public String toString() {
-            return "HotKey{key=" + key + ", accessCount=" + accessCount + '}';
-        }
+    public record HotKey(Object key, long accessCount) {
     }
 }
 

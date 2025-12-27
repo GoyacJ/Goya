@@ -1,8 +1,7 @@
 package com.ysmjjsy.goya.component.cache.serializer;
 
 import com.ysmjjsy.goya.component.common.utils.JsonUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -22,9 +21,8 @@ import java.util.Base64;
  * @author goya
  * @since 2025/12/26 14:32
  */
+@Slf4j
 public class DefaultCacheKeySerializer implements CacheKeySerializer {
-
-    private static final Logger log = LoggerFactory.getLogger(DefaultCacheKeySerializer.class);
 
     @Override
     public byte[] serialize(Object key) {

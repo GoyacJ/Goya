@@ -5,7 +5,6 @@ import com.google.common.hash.Funnels;
 import com.ysmjjsy.goya.component.cache.metrics.CacheMetrics;
 import com.ysmjjsy.goya.component.cache.serializer.CacheKeySerializer;
 import com.ysmjjsy.goya.component.cache.serializer.DefaultCacheKeySerializer;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.CompletableFuture;
@@ -212,13 +211,13 @@ public class BloomFilterManager {
      */
     private BloomFilterWrapper createFilter(String cacheName) {
         BloomFilterConfig config = configProvider.getConfig(cacheName);
-        if (config == null || !config.isEnabled()) {
+        if (config == null || !config.enabled()) {
             // 未启用布隆过滤器，返回 null（但不会到达这里，因为调用前已检查）
             throw new IllegalStateException("Bloom filter is not enabled for cache: " + cacheName);
         }
 
-        long expectedInsertions = config.getExpectedInsertions();
-        double fpp = config.getFalsePositiveRate();
+        long expectedInsertions = config.expectedInsertions();
+        double fpp = config.falsePositiveRate();
 
         BloomFilter<byte[]> filter = BloomFilter.create(
                 Funnels.byteArrayFunnel(),
@@ -268,7 +267,7 @@ public class BloomFilterManager {
         BloomFilter<byte[]> newFilter = BloomFilter.create(
                 Funnels.byteArrayFunnel(),
                 newExpectedInsertions,
-                config.getFalsePositiveRate()
+                config.falsePositiveRate()
         );
 
         BloomFilterWrapper newWrapper = new BloomFilterWrapper(
@@ -337,19 +336,9 @@ public class BloomFilterManager {
     }
 
     /**
-     * 布隆过滤器配置
-     */
-    @Getter
-    public static class BloomFilterConfig {
-        private final boolean enabled;
-        private final long expectedInsertions;
-        private final double falsePositiveRate;
-
-        public BloomFilterConfig(boolean enabled, long expectedInsertions, double falsePositiveRate) {
-            this.enabled = enabled;
-            this.expectedInsertions = expectedInsertions;
-            this.falsePositiveRate = falsePositiveRate;
-        }
+         * 布隆过滤器配置
+         */
+        public record BloomFilterConfig(boolean enabled, long expectedInsertions, double falsePositiveRate) {
 
     }
 }

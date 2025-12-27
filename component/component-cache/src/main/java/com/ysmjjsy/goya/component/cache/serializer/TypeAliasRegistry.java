@@ -177,7 +177,7 @@ public class TypeAliasRegistry {
                     // 找到了迁移映射，尝试加载新类名
                     try {
                         return Class.forName(entry.getKey());
-                    } catch (ClassNotFoundException ignored) {
+                    } catch (ClassNotFoundException _) {
                         // 继续查找
                     }
                 }
@@ -188,7 +188,7 @@ public class TypeAliasRegistry {
                 if (entry.getValue().contains(aliasOrClassName)) {
                     try {
                         return Class.forName(entry.getKey());
-                    } catch (ClassNotFoundException ignored) {
+                    } catch (ClassNotFoundException _) {
                         // 继续查找
                     }
                 }

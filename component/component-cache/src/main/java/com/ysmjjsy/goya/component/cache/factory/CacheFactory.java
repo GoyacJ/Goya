@@ -108,7 +108,7 @@ public class CacheFactory {
      * @throws IllegalArgumentException 如果 cacheName 或 spec 为 null
      * @throws RuntimeException 如果缓存创建失败
      */
-    public GoyaCache createCache(String cacheName, CacheSpecification spec) {
+    public GoyaCache<Object, Object> createCache(String cacheName, CacheSpecification spec) {
         if (cacheName == null) {
             throw new IllegalArgumentException("CacheName cannot be null");
         }
@@ -153,7 +153,7 @@ public class CacheFactory {
             FallbackStrategy fallbackStrategy = fallbackStrategyFactory.create(spec.getFallbackStrategyType());
 
             // 3. 创建 GoyaCache（不注册到 GoyaCacheManager）
-            GoyaCache cache = new GoyaCache(cacheName, l1, l2, spec, bloomFilterManager, refillManager,
+            GoyaCache<Object, Object> cache = new GoyaCache<>(cacheName, l1, l2, spec, bloomFilterManager, refillManager,
                     eventPublisher, fallbackStrategy, metrics, singleFlightLoader);
 
             log.info("Created independent GoyaCache: name={}, level={}, ttl={}, localMaxSize={}, bloomFilterEnabled={}",
@@ -173,7 +173,7 @@ public class CacheFactory {
      * @param spec 缓存配置规范
      * @return GoyaCache 实例
      */
-    public GoyaCache createL1Only(String cacheName, CacheSpecification spec) {
+    public GoyaCache<Object, Object> createL1Only(String cacheName, CacheSpecification spec) {
         CacheSpecification.Builder builder = new CacheSpecification.Builder(spec);
         builder.cacheLevel(CacheLevel.L1_ONLY);
         return createCache(cacheName, builder.build());
@@ -186,7 +186,7 @@ public class CacheFactory {
      * @param spec 缓存配置规范
      * @return GoyaCache 实例
      */
-    public GoyaCache createL2Only(String cacheName, CacheSpecification spec) {
+    public GoyaCache<Object, Object> createL2Only(String cacheName, CacheSpecification spec) {
         CacheSpecification.Builder builder = new CacheSpecification.Builder(spec);
         builder.cacheLevel(CacheLevel.L2_ONLY);
         return createCache(cacheName, builder.build());
@@ -199,7 +199,7 @@ public class CacheFactory {
      * @param spec 缓存配置规范
      * @return GoyaCache 实例
      */
-    public GoyaCache createL1L2(String cacheName, CacheSpecification spec) {
+    public GoyaCache<Object, Object> createL1L2(String cacheName, CacheSpecification spec) {
         CacheSpecification.Builder builder = new CacheSpecification.Builder(spec);
         builder.cacheLevel(CacheLevel.L1_L2);
         return createCache(cacheName, builder.build());
@@ -216,7 +216,7 @@ public class CacheFactory {
      * @throws IllegalArgumentException 如果 cacheName 或 configurator 为 null
      * @throws RuntimeException 如果缓存创建失败
      */
-    public GoyaCache createCache(String cacheName, Consumer<CacheSpecification.Builder> configurator) {
+    public GoyaCache<Object, Object> createCache(String cacheName, Consumer<CacheSpecification.Builder> configurator) {
         if (cacheName == null) {
             throw new IllegalArgumentException("CacheName cannot be null");
         }
@@ -262,7 +262,7 @@ public class CacheFactory {
      * @throws IllegalArgumentException 如果参数无效
      * @throws RuntimeException 如果缓存创建失败
      */
-    public GoyaCache createCache(String cacheName, Duration ttl, long localMaxSize) {
+    public GoyaCache<Object, Object> createCache(String cacheName, Duration ttl, long localMaxSize) {
         if (cacheName == null) {
             throw new IllegalArgumentException("CacheName cannot be null");
         }
@@ -291,7 +291,7 @@ public class CacheFactory {
      * @throws IllegalStateException 如果配置解析失败
      * @throws RuntimeException 如果缓存创建失败
      */
-    public GoyaCache createCacheFromName(String cacheName) {
+    public GoyaCache<Object, Object> createCacheFromName(String cacheName) {
         if (cacheName == null) {
             throw new IllegalArgumentException("CacheName cannot be null");
         }

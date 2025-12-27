@@ -4,7 +4,6 @@ import com.ysmjjsy.goya.component.cache.enums.ConsistencyLevel;
 import com.ysmjjsy.goya.component.cache.event.CacheEventPublisher;
 import com.ysmjjsy.goya.component.cache.event.LocalCacheEvictionEvent;
 import com.ysmjjsy.goya.component.cache.filter.BloomFilterManager;
-import com.ysmjjsy.goya.component.cache.local.NullValueWrapper;
 import com.ysmjjsy.goya.component.cache.metrics.CacheMetrics;
 import com.ysmjjsy.goya.component.cache.resolver.CacheSpecification;
 import com.ysmjjsy.goya.component.cache.support.CacheRefillManager;
@@ -14,7 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
 import org.springframework.cache.Cache;
-import org.springframework.cache.support.SimpleValueWrapper;
 import org.springframework.context.event.EventListener;
 
 import java.time.Duration;
@@ -115,34 +113,14 @@ public class GoyaCache<K, V> implements Cache {
     private final CacheSpecification spec;
 
     /**
-     * 布隆过滤器管理器
-     */
-    private final BloomFilterManager bloomFilter;
-
-    /**
-     * 缓存回填管理器
-     */
-    private final CacheRefillManager refillManager;
-
-    /**
      * 缓存事件发布器
      */
     private final CacheEventPublisher eventPublisher;
 
     /**
-     * 降级策略
-     */
-    private final FallbackStrategy fallbackStrategy;
-
-    /**
      * 监控指标
      */
     private final CacheMetrics metrics;
-
-    /**
-     * SingleFlight 加载器（防止缓存击穿）
-     */
-    private final SingleFlightLoader singleFlightLoader;
 
     /**
      * 缓存编排器（负责 L1/L2 编排逻辑）
@@ -166,43 +144,12 @@ public class GoyaCache<K, V> implements Cache {
             FallbackStrategy fallbackStrategy,
             CacheMetrics metrics,
             SingleFlightLoader singleFlightLoader) {
-        if (name == null) {
-            throw new IllegalArgumentException("Name cannot be null");
-        }
-        if (l1 == null) {
-            throw new IllegalArgumentException("LocalCache cannot be null");
-        }
-        if (l2 == null) {
-            throw new IllegalArgumentException("RemoteCache cannot be null");
-        }
-        if (spec == null) {
-            throw new IllegalArgumentException("CacheSpecification cannot be null");
-        }
-        if (bloomFilter == null) {
-            throw new IllegalArgumentException("BloomFilterManager cannot be null");
-        }
-        if (refillManager == null) {
-            throw new IllegalArgumentException("CacheRefillManager cannot be null");
-        }
-        if (eventPublisher == null) {
-            throw new IllegalArgumentException("CacheEventPublisher cannot be null");
-        }
-        if (fallbackStrategy == null) {
-            throw new IllegalArgumentException("FallbackStrategy cannot be null");
-        }
-        if (singleFlightLoader == null) {
-            throw new IllegalArgumentException("SingleFlightLoader cannot be null");
-        }
         this.name = name;
         this.l1 = l1;
         this.l2 = l2;
         this.spec = spec;
-        this.bloomFilter = bloomFilter;
-        this.refillManager = refillManager;
         this.eventPublisher = eventPublisher;
-        this.fallbackStrategy = fallbackStrategy;
         this.metrics = metrics;
-        this.singleFlightLoader = singleFlightLoader;
         // 初始化编排器，将编排逻辑委托给它
         this.orchestrator = new CacheOrchestrator(
                 name, l1, l2, spec, bloomFilter, refillManager,
@@ -274,7 +221,7 @@ public class GoyaCache<K, V> implements Cache {
     }
 
     @Override
-    public <T> T get(@NonNull Object key, @NonNull Callable<T> valueLoader) {
+    public <T> T get(@NonNull Object key, @NonNull Callable<T> loader) {
         // Spring Cache 标准方法：支持缓存穿透保护和 SingleFlight 机制
         @SuppressWarnings("unchecked")
         K typedKey = (K) key;
@@ -289,15 +236,13 @@ public class GoyaCache<K, V> implements Cache {
         long sourceLoadStartNanos = System.nanoTime();
         T value;
         try {
-            @SuppressWarnings("unchecked")
-            Callable<T> loader = (Callable<T>) valueLoader;
             value = orchestrator.get(typedKey, loader);
         } catch (Exception e) {
             long sourceLoadDurationNanos = System.nanoTime() - sourceLoadStartNanos;
             if (metrics != null) {
                 metrics.recordSourceLoad(name, sourceLoadDurationNanos);
             }
-            throw new ValueRetrievalException(key, valueLoader, e);
+            throw new ValueRetrievalException(key, loader, e);
         }
         long sourceLoadDurationNanos = System.nanoTime() - sourceLoadStartNanos;
         if (metrics != null) {
@@ -408,103 +353,6 @@ public class GoyaCache<K, V> implements Cache {
         orchestrator.clear();
         // 发布清空事件（Spring Cache 适配职责）
         eventPublisher.publishClear(name);
-    }
-
-    /**
-     * 解包 NullValueWrapper
-     *
-     * <p>如果 ValueWrapper 中的值是 NullValueWrapper 实例，则返回包含 null 的 ValueWrapper。
-     *
-     * @param wrapper 原始 ValueWrapper
-     * @return 解包后的 ValueWrapper
-     */
-    private ValueWrapper unwrapNullValue(ValueWrapper wrapper) {
-        if (wrapper == null) {
-            return null;
-        }
-        Object value = wrapper.get();
-        if (NullValueWrapper.isNullValue(value)) {
-            return new SimpleValueWrapper(null);
-        }
-        return wrapper;
-    }
-
-    /**
-     * 包装 null 值为 NullValueWrapper
-     *
-     * <p>如果 value 为 null 且允许 null 值，则返回 NullValueWrapper.INSTANCE。
-     * 否则，如果 value 为 null 但不允许 null 值，抛出异常。
-     *
-     * @param value 原始值
-     * @return 包装后的值（如果为 null 则返回 NullValueWrapper.INSTANCE）
-     * @throws IllegalArgumentException 如果 value 为 null 但不允许 null 值
-     */
-    private Object wrapNullValue(Object value) {
-        if (value == null) {
-            if (!spec.isAllowNullValues()) {
-                throw new IllegalArgumentException("Null values are not allowed for cache: " + name);
-            }
-            return NullValueWrapper.INSTANCE;
-        }
-        return value;
-    }
-
-    /**
-     * 记录缓存命中
-     *
-     * @param level 命中级别（L1 或 L2）
-     */
-    private void recordHit(HitLevel level) {
-        if (metrics != null) {
-            if (level == HitLevel.L1) {
-                metrics.recordL1Hit(name);
-            } else {
-                metrics.recordL2Hit(name);
-            }
-        }
-        if (log.isTraceEnabled()) {
-            log.trace("Cache hit: cache={}, level={}", name, level);
-        }
-    }
-
-    /**
-     * 记录缓存未命中
-     */
-    private void recordMiss() {
-        if (metrics != null) {
-            metrics.recordMiss(name);
-        }
-        if (log.isTraceEnabled()) {
-            log.trace("Cache miss: cache={}", name);
-        }
-    }
-
-    /**
-     * 记录布隆过滤器快速过滤
-     *
-     * <p>当布隆过滤器判断 key "不存在"时调用，用于监控布隆过滤器的过滤效果。
-     */
-    private void recordBloomFilterFiltered() {
-        if (metrics != null) {
-            metrics.recordBloomFilterFiltered(name);
-        }
-        if (log.isTraceEnabled()) {
-            log.trace("Bloom filter filtered: cache={}", name);
-        }
-    }
-
-    /**
-     * 记录布隆过滤器误判（False Positive）
-     *
-     * <p>当布隆过滤器判断 key "不存在"但 L2 实际命中时调用，用于监控布隆过滤器的误判率。
-     */
-    private void recordBloomFilterFalsePositive() {
-        if (metrics != null) {
-            metrics.recordBloomFilterFalsePositive(name);
-        }
-        if (log.isDebugEnabled()) {
-            log.debug("Bloom filter false positive detected: cache={}", name);
-        }
     }
 
     /**
@@ -759,13 +607,6 @@ public class GoyaCache<K, V> implements Cache {
         for (K key : validKeys) {
             eventPublisher.publishEviction(name, key);
         }
-    }
-
-    /**
-     * 缓存命中级别
-     */
-    private enum HitLevel {
-        L1, L2
     }
 }
 

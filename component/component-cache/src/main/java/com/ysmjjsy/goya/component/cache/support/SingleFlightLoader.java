@@ -1,5 +1,6 @@
 package com.ysmjjsy.goya.component.cache.support;
 
+import com.ysmjjsy.goya.component.common.definition.exception.CommonException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.Callable;
@@ -94,16 +95,15 @@ public class SingleFlightLoader {
             // 创建异步加载任务
             CompletableFuture<Object> newFuture = CompletableFuture.supplyAsync(() -> {
                 try {
-                    Object value = valueLoader.call();
-                    return value;
+                    return valueLoader.call();
                 } catch (Exception e) {
                     // 将检查异常包装为运行时异常，CompletableFuture 会自动处理
-                    throw new RuntimeException(e);
+                    throw new CommonException(e);
                 }
             });
 
             // 添加完成回调，确保任务完成后从 Map 中移除
-            newFuture.whenComplete((result, throwable) -> {
+            newFuture.whenComplete((_, throwable) -> {
                 loadingTasks.remove(key);
                 if (log.isTraceEnabled()) {
                     if (throwable != null) {
@@ -128,11 +128,11 @@ public class SingleFlightLoader {
             if (cause instanceof RuntimeException && cause.getCause() != null) {
                 cause = cause.getCause();
             }
-            if (cause instanceof Exception) {
-                throw (Exception) cause;
+            if (cause instanceof Exception ex) {
+                throw ex;
             }
             throw new RuntimeException("Failed to load cache value", cause);
-        } catch (TimeoutException e) {
+        } catch (TimeoutException _) {
             // 超时时，从 Map 中移除任务（如果还在）
             loadingTasks.remove(key, future);
             log.warn("SingleFlight load task timeout for key: {}", key);
@@ -167,7 +167,7 @@ public class SingleFlightLoader {
                 try {
                     return valueLoader.call();
                 } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    throw new CommonException(e);
                 }
             });
 
@@ -187,11 +187,11 @@ public class SingleFlightLoader {
             if (cause instanceof RuntimeException && cause.getCause() != null) {
                 cause = cause.getCause();
             }
-            if (cause instanceof Exception) {
-                throw (Exception) cause;
+            if (cause instanceof Exception ex) {
+                throw ex;
             }
             throw new RuntimeException("Failed to load cache value", cause);
-        } catch (TimeoutException e) {
+        } catch (TimeoutException _) {
             loadingTasks.remove(key, future);
             log.warn("SingleFlight load task timeout for key: {}, timeout: {}s", key, timeoutSeconds);
             throw new TimeoutException("Load task timeout for key: " + key);

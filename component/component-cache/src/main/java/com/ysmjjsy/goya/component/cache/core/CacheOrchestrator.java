@@ -498,10 +498,8 @@ public class CacheOrchestrator {
      */
     private void putWithEventualConsistency(Object key, Object actualValue, Duration ttl) {
         // L2 写入（必须成功）
-        boolean l2Success = false;
         try {
             l2.put(key, actualValue, ttl);
-            l2Success = true;
         } catch (Exception e) {
             log.error("Failed to write to L2 cache for key: {}", key, e);
             fallbackStrategy.onL2WriteFailure(key, actualValue, l1, e);
@@ -509,12 +507,10 @@ public class CacheOrchestrator {
         }
 
         // L1 写入（失败不影响主流程）
-        if (l2Success) {
-            try {
-                l1.put(key, actualValue, ttl);
-            } catch (Exception e) {
-                log.error("Failed to write to L1 cache for key: {}", key, e);
-            }
+        try {
+            l1.put(key, actualValue, ttl);
+        } catch (Exception e) {
+            log.error("Failed to write to L1 cache for key: {}", key, e);
         }
     }
 

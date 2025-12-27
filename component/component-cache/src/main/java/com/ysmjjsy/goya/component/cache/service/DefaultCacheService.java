@@ -405,7 +405,7 @@ public class DefaultCacheService implements ICacheService {
 
         // 转换为 ICacheService.HotKey
         return hotKeys.stream()
-                .map(hk -> new HotKey(hk.getKey(), hk.getAccessCount()))
+                .map(hk -> new HotKey(hk.key(), hk.accessCount()))
                 .collect(Collectors.toList());
     }
 

@@ -125,7 +125,6 @@ public class GoyaCacheManager implements CacheManager {
      * @throws IllegalStateException 如果配置解析失败
      * @throws RuntimeException      如果 Cache 创建失败
      */
-    @SuppressWarnings("unchecked")
     private GoyaCache<?, ?> createCache(String name) {
         try {
             // CacheFactory 返回的是 GoyaCache（类型擦除），实际是 GoyaCache<?, ?>

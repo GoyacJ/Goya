@@ -215,7 +215,7 @@ public class CacheRefillManager {
         });
 
         // 如果任务已存在（computeIfAbsent 返回已存在的任务），记录日志
-        if (log.isTraceEnabled() && future != null) {
+        if (log.isTraceEnabled()) {
             log.trace("Refill task already exists for key: {}, using existing task", cacheKey);
         }
     }
@@ -268,10 +268,10 @@ public class CacheRefillManager {
     private record CacheKey(String cacheName, Object key) {
         @Override
         public boolean equals(Object o) {
-            if (!(o instanceof CacheKey cacheKey)) {
+            if (!(o instanceof CacheKey(String name, Object key1))) {
                 return false;
             }
-            return Objects.equals(key(), cacheKey.key()) && Objects.equals(cacheName(), cacheKey.cacheName());
+            return Objects.equals(key(), key1) && Objects.equals(cacheName(), name);
         }
 
         @Override
