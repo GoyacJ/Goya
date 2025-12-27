@@ -7,10 +7,7 @@ import com.ysmjjsy.goya.component.cache.serializer.CacheKeySerializer;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
-import org.redisson.api.RBatch;
-import org.redisson.api.RBucket;
-import org.redisson.api.RBucketAsync;
-import org.redisson.api.RedissonClient;
+import org.redisson.api.*;
 import org.redisson.client.codec.Codec;
 import org.springframework.cache.support.SimpleValueWrapper;
 
@@ -242,14 +239,62 @@ public class RedissonRemoteCache implements RemoteCache {
             return new HashMap<>();
         }
 
-        Map<Object, ValueWrapper> result = new HashMap<>();
+        // 使用 Redisson 的 RBatch 实现批量操作（Pipeline）
+        // 减少网络往返次数，提升性能
+        RBatch batch = redisson.createBatch();
+        Map<Object, RFuture<Object>> futureMap = new HashMap<>();
+
+        // 过滤 null key 并构建批量请求
         for (Object key : keys) {
             if (key == null) {
                 continue; // 跳过 null key
             }
-            ValueWrapper wrapper = get(key);
-            if (wrapper != null) {
-                result.put(key, wrapper);
+            String redisKey = buildKey(key);
+            RBucketAsync<Object> bucketAsync = codec != null
+                    ? batch.getBucket(redisKey, codec)
+                    : batch.getBucket(redisKey);
+            // 使用 getAsync() 获取 RFuture
+            futureMap.put(key, bucketAsync.getAsync());
+        }
+
+        if (futureMap.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        // 批量执行获取操作
+        Map<Object, ValueWrapper> result = new HashMap<>();
+        try {
+            batch.execute();
+            // 收集批量结果
+            for (Map.Entry<Object, RFuture<Object>> entry : futureMap.entrySet()) {
+                Object key = entry.getKey();
+                org.redisson.api.RFuture<Object> future = entry.getValue();
+                try {
+                    Object value = future.get();
+                    if (value != null) {
+                        result.put(key, new SimpleValueWrapper(value));
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to get value from batch result for key: {}", key, e);
+                }
+            }
+            if (log.isTraceEnabled()) {
+                log.trace("Batch get from RedissonRemoteCache: name={}, requested={}, found={}",
+                        name, futureMap.size(), result.size());
+            }
+        } catch (Exception e) {
+            log.error("Failed to batch get from RedissonRemoteCache: name={}, count={}",
+                    name, futureMap.size(), e);
+            // 批量操作失败，降级到逐个获取
+            for (Object key : futureMap.keySet()) {
+                try {
+                    ValueWrapper wrapper = get(key);
+                    if (wrapper != null) {
+                        result.put(key, wrapper);
+                    }
+                } catch (Exception ex) {
+                    log.warn("Failed to get entry from RedissonRemoteCache during fallback: key={}", key, ex);
+                }
             }
         }
         return result;

@@ -105,6 +105,25 @@
 - `localTtlStrategy`：L1 TTL 计算策略
 - `enableBloomFilter`：是否启用布隆过滤器
 - `fallbackStrategy`：降级策略类型
+- `consistencyLevel`：一致性等级（STRONG / EVENTUAL）
+
+### 一致性等级说明
+
+缓存写入时的一致性保证语义：
+
+- **STRONG（强一致性）**：
+  - 要求 L2 写入成功 + L1 写入成功，确保当前节点的 L1 和 L2 缓存一致
+  - L2 写入失败时，不写入 L1，抛出异常
+  - L1 写入失败时，回滚 L2（如果可能），抛出异常
+  - **注意**：此等级仅保证当前节点的 L1 和 L2 缓存一致，不保证跨节点立即一致。跨节点一致性通过事件机制异步保证
+  - 适用于对数据一致性要求极高的场景，如金融交易、库存扣减等
+
+- **EVENTUAL（最终一致性，默认）**：
+  - 要求 L2 写入成功，L1 和跨节点同步异步执行
+  - L2 写入成功即可返回，不等待 L1 和跨节点同步
+  - L2 写入失败时，根据降级策略处理（可能降级到 L1）
+  - L1 写入失败时，记录日志但不影响主流程
+  - 适用于大多数业务场景，如用户信息、配置数据等
 
 ## 配置示例
 
@@ -539,10 +558,20 @@ public class CacheMonitorService {
 
 ## 扩展指南
 
+### SPI 扩展点
+
+`component-cache` 提供了以下 SPI 扩展点，允许开发者自定义实现：
+
+1. **LocalCacheFactory**：本地缓存工厂接口（位于 `GoyaCacheManager` 内部）
+2. **RemoteCacheFactory**：远程缓存工厂接口（位于 `GoyaCacheManager` 内部）
+3. **FallbackStrategyFactory**：降级策略工厂接口（位于 `GoyaCacheManager` 内部）
+4. **CacheKeySerializer**：缓存键序列化器接口
+5. **CacheMetrics**：监控指标接口
+
 ### 实现新的 RemoteCache
 
 1. 实现 `RemoteCache` 接口
-2. 在 starter 中注册 `RemoteCacheFactory` Bean
+2. 在 starter 中注册 `RemoteCacheFactory` Bean（实现 `GoyaCacheManager.RemoteCacheFactory` 接口）
 3. 自动被 `CacheFactory` 使用
 
 示例：
@@ -561,6 +590,8 @@ public class CustomCacheAutoConfiguration {
     }
 }
 ```
+
+**注意**：工厂接口定义在 `GoyaCacheManager` 内部，这是设计选择，用于减少包暴露。这些接口是 SPI 扩展点，开发者应该通过实现这些接口来扩展功能。
 
 ### 自定义序列化器
 

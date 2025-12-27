@@ -276,16 +276,14 @@ public class GoyaCache<K, V> implements Cache {
      *
      * <p>使用指定的 TTL 写入缓存。根据配置的一致性等级决定写入策略：
      * <ul>
-     *   <li><b>STRONG</b>：L2 写入成功 + L1 写入成功 + 跨节点同步完成（带超时）</li>
-     *   <li><b>EVENTUAL</b>（默认）：L2 写入成功，L1 和跨节点同步异步执行</li>
-     *   <li><b>BEST_EFFORT</b>：写入失败时降级，不保证一致性</li>
+     *   <li><b>STRONG</b>：L2 写入成功 + L1 写入成功，确保当前节点 L1/L2 一致</li>
+     *   <li><b>EVENTUAL</b>（默认）：L2 写入成功，L1 异步执行，跨节点同步异步执行</li>
      * </ul>
      *
      * <p><b>一致性保证：</b>
      * <ul>
-     *   <li>STRONG：如果 L2 或 L1 写入失败，抛出异常；等待跨节点同步完成</li>
+     *   <li>STRONG：如果 L2 或 L1 写入失败，抛出异常；不等待跨节点同步（异步完成）</li>
      *   <li>EVENTUAL：如果 L2 写入成功，L1 写入失败不影响主流程；不等待跨节点同步</li>
-     *   <li>BEST_EFFORT：写入失败时根据降级策略处理，不抛出异常</li>
      * </ul>
      *
      * <p>注意：Caffeine 本地缓存可能不支持每个 key 独立的 TTL，会使用全局策略。

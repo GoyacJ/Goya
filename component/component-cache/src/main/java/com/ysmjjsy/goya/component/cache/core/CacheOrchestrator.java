@@ -248,7 +248,7 @@ public class CacheOrchestrator {
         switch (consistencyLevel) {
             case STRONG -> putWithStrongConsistency(key, actualValue, ttl);
             case EVENTUAL -> putWithEventualConsistency(key, actualValue, ttl);
-            case BEST_EFFORT -> putWithBestEffort(key, actualValue, ttl);
+            default -> putWithEventualConsistency(key, actualValue, ttl);
         }
 
         // 更新布隆过滤器（异步，失败不影响主流程）
@@ -417,7 +417,7 @@ public class CacheOrchestrator {
         switch (consistencyLevel) {
             case STRONG -> batchPutWithStrongConsistency(l2Entries, ttl);
             case EVENTUAL -> batchPutWithEventualConsistency(l2Entries, ttl);
-            case BEST_EFFORT -> batchPutWithBestEffort(l2Entries, ttl);
+            default -> batchPutWithEventualConsistency(l2Entries, ttl);
         }
 
         // 更新布隆过滤器（异步）
@@ -514,26 +514,6 @@ public class CacheOrchestrator {
         }
     }
 
-    /**
-     * 尽力而为写入
-     */
-    private void putWithBestEffort(Object key, Object actualValue, Duration ttl) {
-        // 尝试写入 L2
-        try {
-            l2.put(key, actualValue, ttl);
-        } catch (Exception e) {
-            log.warn("Failed to write to L2 cache with BEST_EFFORT for key: {}", key, e);
-            // 降级到 L1
-            fallbackStrategy.onL2WriteFailure(key, actualValue, l1, e);
-        }
-
-        // 尝试写入 L1（即使 L2 失败也尝试）
-        try {
-            l1.put(key, actualValue, ttl);
-        } catch (Exception e) {
-            log.warn("Failed to write to L1 cache with BEST_EFFORT for key: {}", key, e);
-        }
-    }
 
     /**
      * 批量写入（强一致性）
@@ -577,10 +557,10 @@ public class CacheOrchestrator {
             l2Success = true;
         } catch (Exception e) {
             log.error("Failed to batch write to L2 cache", e);
-            // 降级到单个写入
+            // 降级到单个写入（直接调用最终一致性写入方法，避免递归）
             for (Map.Entry<Object, Object> entry : entries.entrySet()) {
                 try {
-                    put(entry.getKey(), entry.getValue(), ttl);
+                    putWithEventualConsistency(entry.getKey(), entry.getValue(), ttl);
                 } catch (Exception ex) {
                     log.warn("Failed to put key to cache: {}", entry.getKey(), ex);
                 }
@@ -594,33 +574,6 @@ public class CacheOrchestrator {
             } catch (Exception e) {
                 log.error("Failed to batch write to L1 cache", e);
             }
-        }
-    }
-
-    /**
-     * 批量写入（尽力而为）
-     */
-    private void batchPutWithBestEffort(Map<Object, Object> entries, Duration ttl) {
-        // 尝试批量写入 L2
-        try {
-            l2.putAll(entries, ttl);
-        } catch (Exception e) {
-            log.warn("Failed to batch write to L2 cache with BEST_EFFORT", e);
-            // 降级到单个写入
-            for (Map.Entry<Object, Object> entry : entries.entrySet()) {
-                try {
-                    put(entry.getKey(), entry.getValue(), ttl, ConsistencyLevel.BEST_EFFORT);
-                } catch (Exception ex) {
-                    log.warn("Failed to put key to cache: {}", entry.getKey(), ex);
-                }
-            }
-        }
-
-        // 尝试批量写入 L1（即使 L2 失败也尝试）
-        try {
-            l1.putAll(entries, ttl);
-        } catch (Exception e) {
-            log.warn("Failed to batch write to L1 cache with BEST_EFFORT", e);
         }
     }
 
