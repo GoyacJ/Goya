@@ -49,17 +49,20 @@ public interface IEventAcknowledgment {
      * 拒绝消息（重新入队）
      * <p>表示消息处理失败，但应重试</p>
      * <p>消息会被重新投递（取决于 MQ 配置）</p>
+     * <p>注意：当 requeue=true 时，不调用任何确认方法，让 MQ 自动重试</p>
+     * <p>如果 MQ 不支持 requeue 操作，会抛出 UnsupportedOperationException</p>
      *
      * @param requeue 是否重新入队
      * @throws Exception 如果拒绝失败
      */
     default void reject(boolean requeue) throws Exception {
         if (requeue) {
-            // 重新入队：不确认，让 MQ 重试
-            // 注意：某些 MQ 可能不支持此操作，会降级为 reject(false)
-            reject();
+            // 重新入队：不调用任何方法，让 MQ 重试
+            // 注意：某些 MQ 可能不支持此操作，需要特殊处理
+            throw new UnsupportedOperationException(
+                    "Requeue is not supported. The MQ will handle retry automatically if configured.");
         } else {
-            reject();
+            reject();  // 不重新入队，拒绝消息
         }
     }
 }

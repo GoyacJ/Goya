@@ -57,13 +57,6 @@ public class BusEventListenerScanner implements BeanPostProcessor, SmartInitiali
      */
     private final Map<String, Integer> eventNameCount = new ConcurrentHashMap<>();
 
-    /**
-     * 参数类型索引：按参数类型的完整类名查找监听器（仅用于性能优化，不用于路由匹配）
-     * <p>key: 参数类型的完整类名（getClass().getName()）</p>
-     * <p>value: 监听器列表</p>
-     * <p>注意：此索引仅用于性能优化，路由匹配仍然只使用 eventName</p>
-     */
-    private final Map<String, List<EventListenerMetadata>> paramTypeIndex = new ConcurrentHashMap<>();
 
     @Override
     public Object postProcessAfterInitialization(@NonNull Object bean, @NonNull String beanName) throws BeansException {
@@ -140,13 +133,9 @@ public class BusEventListenerScanner implements BeanPostProcessor, SmartInitiali
                     method.getName());
         }
 
-        // 建立参数类型索引（基于参数类型的完整类名，仅用于性能优化，不用于路由匹配）
-        String paramTypeFullName = firstParamType.getName();
-        paramTypeIndex.computeIfAbsent(paramTypeFullName, k -> new ArrayList<>()).add(metadata);
-
-        log.debug("[Goya] |- component [bus] BusEventListenerScanner |- registered listener for method [{}] with scope {}, eventNames: {}, paramType: {}",
+        log.debug("[Goya] |- component [bus] BusEventListenerScanner |- registered listener for method [{}] with scope {}, eventNames: {}",
                 method.getName(), java.util.Arrays.toString(annotation.scope()),
-                java.util.Arrays.toString(eventNames), paramTypeFullName);
+                java.util.Arrays.toString(eventNames));
     }
 
     /**
@@ -161,20 +150,6 @@ public class BusEventListenerScanner implements BeanPostProcessor, SmartInitiali
             return Collections.emptyList();
         }
         return eventNameIndex.getOrDefault(eventName, Collections.emptyList());
-    }
-
-    /**
-     * 根据参数类型完整类名查找监听器（仅用于性能优化，不用于路由匹配）
-     * <p>注意：路由匹配仍然只使用 eventName，此方法仅用于性能优化场景</p>
-     *
-     * @param paramTypeFullName 参数类型的完整类名（getClass().getName()）
-     * @return 监听器列表，如果未找到返回空列表
-     */
-    public List<EventListenerMetadata> findByParamTypeFullName(String paramTypeFullName) {
-        if (paramTypeFullName == null || paramTypeFullName.isBlank()) {
-            return Collections.emptyList();
-        }
-        return paramTypeIndex.getOrDefault(paramTypeFullName, Collections.emptyList());
     }
 
     /**

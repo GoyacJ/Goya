@@ -14,6 +14,13 @@ import java.util.List;
 /**
  * <p>事件处理上下文</p>
  * <p>在 Pipeline 中传递事件处理相关的所有信息</p>
+ * <p><strong>设计说明：</strong></p>
+ * <ul>
+ *   <li>Builder 模式用于初始化：使用 Lombok 的 @Builder 注解，方便创建初始状态的 EventContext。</li>
+ *   <li>字段可变用于拦截器链状态传递：虽然使用 Builder 初始化，但字段使用 @Setter 标记为可变，
+ *       这是为了在拦截器链中传递和修改状态（如 deserializationResult、matchedListeners、aborted 等）。</li>
+ *   <li>线程安全：每个事件处理流程都有独立的 EventContext 实例，不存在线程安全问题。</li>
+ * </ul>
  * <p>使用示例：</p>
  * <pre>{@code
  * EventContext context = EventContext.builder()

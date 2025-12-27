@@ -15,6 +15,14 @@ import java.util.concurrent.locks.ReentrantLock;
  * <p>基于缓存的幂等性处理器</p>
  * <p>使用 ICacheService 存储已处理的事件标识</p>
  * <p>支持原子操作（使用本地锁配合缓存操作，保证单 JVM 内的原子性）</p>
+ * <p><strong>设计说明：</strong></p>
+ * <ul>
+ *   <li>为什么使用本地锁而非分布式锁：component-bus 不直接依赖 redis-boot-starter，只依赖 component-cache 模块。
+ *       本地锁配合 ICacheService 可以在单 JVM 内保证原子性，满足大多数场景需求。</li>
+ *   <li>LRU 锁映射的限制：锁映射使用 LRU 机制，最大大小为 1000。超过时自动移除最旧的条目（仅当锁未被持有时）。
+ *       这意味着在高并发场景下，锁映射大小可能超过 1000，但这是可接受的权衡。</li>
+ *   <li>跨 JVM 场景：如果需要在多个 JVM 实例间保证幂等性，需要确保 ICacheService 的底层实现（如 Redis）支持分布式操作。</li>
+ * </ul>
  * <p>使用示例：</p>
  * <pre>{@code
  * // 检查幂等性（非原子，适用于低并发场景）

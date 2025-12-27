@@ -6,6 +6,7 @@ import com.ysmjjsy.goya.component.bus.definition.IEvent;
 import com.ysmjjsy.goya.component.bus.metrics.EventMetrics;
 import com.ysmjjsy.goya.component.bus.publish.IRemoteEventPublisher;
 import com.ysmjjsy.goya.component.bus.publish.MetadataAccessor;
+import com.ysmjjsy.goya.component.common.context.SpringContext;
 import com.ysmjjsy.goya.component.common.definition.exception.CommonException;
 import com.ysmjjsy.goya.component.common.strategy.IStrategyExecute;
 import com.ysmjjsy.goya.component.common.strategy.StrategyChoose;
@@ -25,6 +26,7 @@ import java.security.MessageDigest;
 import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
 
 /**
  * <p>事件总线服务实现</p>
@@ -70,7 +72,7 @@ public class DefaultBusService implements IBusService {
         long startTime = System.currentTimeMillis();
         try {
             log.debug("[Goya] |- component [bus] BusServiceImpl |- publish remote event [{}]", event.eventName());
-            IRemoteEventPublisher publisher = (IRemoteEventPublisher) strategyChoose.choose(busProperties.defaultRemoteBus());
+            IRemoteEventPublisher publisher = chooseRemotePublisher(busProperties.defaultRemoteBus());
             
             if (publisher == null) {
                 log.warn("[Goya] |- component [bus] BusServiceImpl |- remote event publishing is not available. " +
@@ -116,7 +118,7 @@ public class DefaultBusService implements IBusService {
                 event.eventName(), delay.toMillis());
 
         try {
-            IRemoteEventPublisher publisher = (IRemoteEventPublisher) strategyChoose.choose("DISTRIBUTED");
+            IRemoteEventPublisher publisher = chooseRemotePublisher("DISTRIBUTED");
             
             if (publisher == null) {
                 log.warn("[Goya] |- component [bus] BusServiceImpl |- remote event publishing is not available. " +
@@ -125,30 +127,21 @@ public class DefaultBusService implements IBusService {
                 return;
             }
 
-            // 检查能力
+            // 检查能力并处理降级
             com.ysmjjsy.goya.component.bus.capabilities.Capabilities capabilities = publisher.getCapabilities();
             long delayMillis = delay.toMillis();
 
             if (!capabilities.supportsDelayedMessages()) {
-                // 检查是否允许降级（优先使用全局配置）
-                boolean allowDegradation = busProperties.capabilities().allowDegradation() || capabilities.allowDegradation();
-                if (!allowDegradation) {
-                    // 不允许降级，抛出异常
-                    throw new CommonException(
-                            String.format("Delayed messages are not supported by the MQ and degradation is not allowed. " +
-                                    "Event [%s] cannot be published. Please use a MQ that supports delayed messages (e.g., RabbitMQ, RocketMQ) " +
-                                    "or enable degradation in configuration (goya.bus.capabilities.allow-degradation=true).",
-                                    event.eventName())
-                    );
+                // 检查是否允许降级
+                if (!checkAndHandleDegradation(capabilities, "delayed messages", event.eventName(),
+                        "Please use a MQ that supports delayed messages (e.g., RabbitMQ, RocketMQ)")) {
+                    // 降级：立即发布（不设置延迟）
+                    publishRemote(event);
+                    return;
                 }
-                log.warn("[Goya] |- component [bus] BusServiceImpl |- delayed messages are not natively supported by the MQ. " +
-                                "The event [{}] will be published immediately (degradation enabled). Consider using a MQ that supports delayed messages (e.g., RabbitMQ, RocketMQ).",
-                        event.eventName());
-                // 降级：立即发布（不设置延迟）
-                publishRemote(event);
-                return;
             }
 
+            // 检查延迟时间是否在支持范围内
             if (!capabilities.isDelaySupported(delayMillis)) {
                 log.warn("[Goya] |- component [bus] BusServiceImpl |- delay [{}ms] exceeds the maximum supported delay [{}ms]. " +
                         "The event [{}] will be published with the maximum delay.",
@@ -188,7 +181,7 @@ public class DefaultBusService implements IBusService {
                 event.eventName(), partitionKey);
 
         try {
-            IRemoteEventPublisher publisher = (IRemoteEventPublisher) strategyChoose.choose("DISTRIBUTED");
+            IRemoteEventPublisher publisher = chooseRemotePublisher("DISTRIBUTED");
             
             if (publisher == null) {
                 log.warn("[Goya] |- component [bus] BusServiceImpl |- remote event publishing is not available. " +
@@ -197,28 +190,17 @@ public class DefaultBusService implements IBusService {
                 return;
             }
 
-            // 检查能力
+            // 检查能力并处理降级
             com.ysmjjsy.goya.component.bus.capabilities.Capabilities capabilities = publisher.getCapabilities();
 
             if (!capabilities.supportsOrderedMessages()) {
-                // 检查是否允许降级（优先使用全局配置）
-                boolean allowDegradation = busProperties.capabilities().allowDegradation() || capabilities.allowDegradation();
-                if (!allowDegradation) {
-                    // 不允许降级，抛出异常
-                    throw new CommonException(
-                            String.format("Ordered messages are not supported by the MQ and degradation is not allowed. " +
-                                    "Event [%s] cannot be published. Please use a MQ that supports ordered messages (e.g., Kafka, RabbitMQ, RocketMQ) " +
-                                    "or enable degradation in configuration (goya.bus.capabilities.allow-degradation=true).",
-                                    event.eventName())
-                    );
+                // 检查是否允许降级
+                if (!checkAndHandleDegradation(capabilities, "ordered messages", event.eventName(),
+                        "Please use a MQ that supports ordered messages (e.g., Kafka, RabbitMQ, RocketMQ)")) {
+                    // 降级：发布但不保证顺序
+                    publishRemote(event);
+                    return;
                 }
-                log.warn("[Goya] |- component [bus] BusServiceImpl |- ordered messages are not supported by the MQ. " +
-                                "The event [{}] will be published without ordering guarantee (degradation enabled). " +
-                                "Consider using a MQ that supports ordered messages (e.g., Kafka, RabbitMQ, RocketMQ).",
-                        event.eventName());
-                // 降级：发布但不保证顺序
-                publishRemote(event);
-                return;
             }
 
             if (!capabilities.supportsPartitioning() && partitionKey != null) {
@@ -242,6 +224,64 @@ public class DefaultBusService implements IBusService {
             log.warn("[Goya] |- component [bus] BusServiceImpl |- remote event publishing is not available. " +
                     "Please introduce a corresponding starter (e.g., kafka-boot-starter). Ordered event [{}] will not be published remotely. Error: {}",
                     event.eventName(), e.getMessage());
+        }
+    }
+
+    /**
+     * 检查能力并处理降级
+     * <p>如果能力不支持且允许降级，则降级为普通发布</p>
+     * <p>如果不允许降级，则抛出异常</p>
+     *
+     * @param capabilities    MQ 能力
+     * @param capabilityName 能力名称（用于日志）
+     * @param eventName      事件名称
+     * @param suggestion     建议信息
+     * @return true 如果继续处理，false 如果已降级
+     * @throws CommonException 如果不允许降级
+     */
+    private <E extends IEvent> boolean checkAndHandleDegradation(
+            com.ysmjjsy.goya.component.bus.capabilities.Capabilities capabilities,
+            String capabilityName,
+            String eventName,
+            String suggestion) {
+        // 检查是否允许降级（优先使用全局配置）
+        boolean allowDegradation = busProperties.capabilities().allowDegradation() || capabilities.allowDegradation();
+        if (!allowDegradation) {
+            // 不允许降级，抛出异常
+            throw new CommonException(
+                    String.format("%s are not supported by the MQ and degradation is not allowed. " +
+                            "Event [%s] cannot be published. %s " +
+                            "or enable degradation in configuration (goya.bus.capabilities.allow-degradation=true).",
+                            capabilityName, eventName, suggestion)
+            );
+        }
+        log.warn("[Goya] |- component [bus] BusServiceImpl |- {} are not supported by the MQ. " +
+                        "The event [{}] will be published with degradation enabled. Consider {}.", 
+                capabilityName, eventName, suggestion.toLowerCase());
+        // 降级：使用普通发布
+        return false;
+    }
+
+    /**
+     * 选择远程事件发布器
+     * <p>根据 mark 从 Spring 容器中选择对应的 IRemoteEventPublisher 实现</p>
+     *
+     * @param mark 发布器标记
+     * @return IRemoteEventPublisher 实例，如果不存在则返回 null
+     */
+    private IRemoteEventPublisher chooseRemotePublisher(String mark) {
+        try {
+            Map<String, IRemoteEventPublisher> publishers = SpringContext.getBeanMapsOfType(IRemoteEventPublisher.class);
+            for (IRemoteEventPublisher publisher : publishers.values()) {
+                if (mark.equals(publisher.mark())) {
+                    return publisher;
+                }
+            }
+            return null;
+        } catch (Exception e) {
+            log.debug("[Goya] |- component [bus] BusServiceImpl |- failed to choose remote publisher with mark [{}]: {}",
+                    mark, e.getMessage());
+            return null;
         }
     }
 

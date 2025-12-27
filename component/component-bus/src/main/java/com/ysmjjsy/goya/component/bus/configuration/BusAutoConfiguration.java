@@ -145,12 +145,11 @@ public class BusAutoConfiguration {
             BusEventListenerScanner scanner,
             ObjectProvider<IIdempotencyHandler> idempotencyHandlerProvider,
             ObjectProvider<EventDeserializer> eventDeserializerProvider,
-            ObjectProvider<com.ysmjjsy.goya.component.bus.version.IVersionCompatibilityChecker> versionCheckerProvider,
             BusProperties busProperties) {
         java.util.List<com.ysmjjsy.goya.component.bus.processor.IEventInterceptor> interceptors = new java.util.ArrayList<>();
         interceptors.add(new com.ysmjjsy.goya.component.bus.processor.interceptor.DeserializeInterceptor(eventDeserializerProvider));
         interceptors.add(new com.ysmjjsy.goya.component.bus.processor.interceptor.IdempotencyInterceptor(idempotencyHandlerProvider));
-        interceptors.add(new com.ysmjjsy.goya.component.bus.processor.interceptor.RouteInterceptor(scanner, versionCheckerProvider));
+        interceptors.add(new com.ysmjjsy.goya.component.bus.processor.interceptor.RouteInterceptor(scanner));
         interceptors.add(new com.ysmjjsy.goya.component.bus.processor.interceptor.InvokeInterceptor(idempotencyHandlerProvider, busProperties));
         log.trace("[Goya] |- component [bus] BusAutoConfiguration |- bean [eventInterceptors] register with [{}] interceptors.",
                 interceptors.size());

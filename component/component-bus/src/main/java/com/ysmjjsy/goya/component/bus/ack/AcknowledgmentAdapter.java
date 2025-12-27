@@ -11,6 +11,14 @@ import java.util.Map;
  * <p>确认适配器</p>
  * <p>将不同 MQ 的 Acknowledgment 对象适配为统一的 IEventAcknowledgment 接口</p>
  * <p>支持 Kafka、RabbitMQ 等不同 MQ 的 ACK 机制</p>
+ * <p><strong>设计说明：</strong></p>
+ * <ul>
+ *   <li>为什么使用反射：避免直接依赖 MQ 特定的 Acknowledgment 类型（如 Kafka 的 Acknowledgment、
+ *       RabbitMQ 的 AcknowledgmentCallback），保持 component-bus 与具体 MQ 实现的解耦。</li>
+ *   <li>性能影响：反射调用会有一定的性能开销，但 ACK 操作不是高频操作，性能影响可接受。
+ *       如果未来需要优化，可以考虑使用策略模式或动态代理。</li>
+ *   <li>错误处理：如果 MQ 的 Acknowledgment 对象不支持某个方法（如 reject），会降级为支持的方法（如 acknowledge）。</li>
+ * </ul>
  *
  * @author goya
  * @since 2025/12/21

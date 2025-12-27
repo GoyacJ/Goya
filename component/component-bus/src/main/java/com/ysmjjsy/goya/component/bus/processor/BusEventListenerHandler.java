@@ -86,9 +86,8 @@ public class BusEventListenerHandler {
                     .build();
 
             // 使用 RouteInterceptor 查找匹配的监听器
-            // 注意：本地事件处理不需要版本检查器，传入 null
             com.ysmjjsy.goya.component.bus.processor.interceptor.RouteInterceptor routeInterceptor =
-                    new com.ysmjjsy.goya.component.bus.processor.interceptor.RouteInterceptor(scanner, null);
+                    new com.ysmjjsy.goya.component.bus.processor.interceptor.RouteInterceptor(scanner);
             routeInterceptor.intercept(context);
 
             if (context.isAborted() || context.getMatchedListeners() == null || context.getMatchedListeners().isEmpty()) {
@@ -206,12 +205,11 @@ public class BusEventListenerHandler {
      * @return 默认拦截器列表
      */
     private List<IEventInterceptor> createDefaultInterceptors() {
-        // 注意：versionCheckerProvider 传入 null，RouteInterceptor 会使用 getIfAvailable() 处理
         // 实际使用时，应该通过 BusAutoConfiguration 注册的拦截器列表
         return List.of(
                 new com.ysmjjsy.goya.component.bus.processor.interceptor.DeserializeInterceptor(eventDeserializerProvider),
                 new com.ysmjjsy.goya.component.bus.processor.interceptor.IdempotencyInterceptor(idempotencyHandlerProvider),
-                new com.ysmjjsy.goya.component.bus.processor.interceptor.RouteInterceptor(scanner, null),
+                new com.ysmjjsy.goya.component.bus.processor.interceptor.RouteInterceptor(scanner),
                 new com.ysmjjsy.goya.component.bus.processor.interceptor.InvokeInterceptor(idempotencyHandlerProvider, busProperties)
         );
     }

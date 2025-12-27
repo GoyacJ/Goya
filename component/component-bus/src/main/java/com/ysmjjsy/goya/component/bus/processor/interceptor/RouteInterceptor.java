@@ -6,10 +6,8 @@ import com.ysmjjsy.goya.component.bus.deserializer.DeserializationResult;
 import com.ysmjjsy.goya.component.bus.processor.BusEventListenerScanner;
 import com.ysmjjsy.goya.component.bus.processor.EventContext;
 import com.ysmjjsy.goya.component.bus.processor.IEventInterceptor;
-import com.ysmjjsy.goya.component.bus.version.IVersionCompatibilityChecker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
 import org.springframework.expression.ExpressionParser;
@@ -34,7 +32,6 @@ import java.util.Set;
 public class RouteInterceptor implements IEventInterceptor {
 
     private final BusEventListenerScanner scanner;
-    private final ObjectProvider<IVersionCompatibilityChecker> versionCheckerProvider;
     private final ExpressionParser expressionParser = new SpelExpressionParser();
     private final java.util.Map<String, Expression> expressionCache = new java.util.concurrent.ConcurrentHashMap<>();
 
@@ -99,10 +96,6 @@ public class RouteInterceptor implements IEventInterceptor {
 
         // 通过 eventName 查找（必须完全匹配）
         List<BusEventListenerScanner.EventListenerMetadata> eventNameListeners = scanner.findByEventName(eventName);
-        IVersionCompatibilityChecker versionChecker = null;
-        if (versionCheckerProvider != null) {
-            versionChecker = versionCheckerProvider.getIfAvailable();
-        }
         
         for (BusEventListenerScanner.EventListenerMetadata metadata : eventNameListeners) {
             if (matchesScopeAndCondition(event, scope, metadata)) {
@@ -124,15 +117,6 @@ public class RouteInterceptor implements IEventInterceptor {
                     }
                 }
                 
-                // 预留版本兼容性检查（如果提供了版本检查器）
-                if (versionChecker != null) {
-                    // 注意：目前 BusEventListener 注解中没有版本字段，这里只是预留接口
-                    // 如果将来添加了版本字段，可以在这里进行版本兼容性检查
-                    String eventVersion = event.eventVersion();
-                    // 暂时不进行实际检查，只记录日志
-                    log.trace("[Goya] |- component [bus] RouteInterceptor |- version compatibility check reserved for event [{}] version [{}]",
-                            eventName, eventVersion);
-                }
                 matchedListeners.add(metadata);
             }
         }

@@ -2,7 +2,6 @@ package com.ysmjjsy.goya.component.bus.publish;
 
 import com.ysmjjsy.goya.component.bus.capabilities.Capabilities;
 import com.ysmjjsy.goya.component.bus.constants.IBusConstants;
-import com.ysmjjsy.goya.component.common.strategy.IStrategyExecute;
 import org.springframework.messaging.Message;
 
 /**
@@ -36,14 +35,15 @@ import org.springframework.messaging.Message;
  * @since 2025/12/21
  * @see org.springframework.cloud.stream.function.StreamBridge
  */
-public interface IRemoteEventPublisher extends IStrategyExecute<Message<?>, Void> {
+public interface IRemoteEventPublisher {
 
     /**
-     * 策略标记
+     * 获取发布器标记
+     * <p>用于标识不同的发布器实现，如 "REMOTE"、"DISTRIBUTED"、"KAFKA" 等</p>
+     * <p>在 DefaultBusService 中用于选择对应的发布器</p>
      *
-     * @return "DISTRIBUTED"
+     * @return 发布器标记
      */
-    @Override
     default String mark() {
         return IBusConstants.MARK_REMOTE;
     }
@@ -55,30 +55,6 @@ public interface IRemoteEventPublisher extends IStrategyExecute<Message<?>, Void
      * @param message     消息对象，包含 payload 和 headers
      */
     void publish(String destination, Message<?> message);
-
-    /**
-     * 执行策略（实现 IStrategyExecute）
-     *
-     * @param request 消息对象
-     */
-    @Override
-    default void execute(Message<?> request) {
-        // 默认实现，子类可以覆盖
-        // 注意：这里需要 destination，但 IStrategyExecute 接口不提供
-        // 实际使用时应该通过 BusServiceImpl 调用 publish 方法
-    }
-
-    /**
-     * 执行策略并返回结果（实现 IStrategyExecute）
-     *
-     * @param request 消息对象
-     * @return null
-     */
-    @Override
-    default Void executeResp(Message<?> request) {
-        execute(request);
-        return null;
-    }
 
     /**
      * 获取 MQ 能力声明
