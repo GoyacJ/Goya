@@ -89,14 +89,5 @@ public class EventContext {
         this.aborted = true;
         this.abortReason = reason;
     }
-
-    /**
-     * 检查是否已中止
-     *
-     * @return true 如果已中止
-     */
-    public boolean isAborted() {
-        return aborted;
-    }
 }
 

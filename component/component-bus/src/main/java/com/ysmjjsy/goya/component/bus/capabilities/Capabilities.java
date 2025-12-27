@@ -123,7 +123,7 @@ public record Capabilities(
             return false;
         }
         if (maxDelayMillis < 0) {
-            return true; // 无限制
+            return true;
         }
         return delayMillis <= maxDelayMillis;
     }

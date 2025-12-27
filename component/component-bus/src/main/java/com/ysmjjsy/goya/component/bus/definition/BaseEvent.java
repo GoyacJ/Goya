@@ -1,6 +1,7 @@
 package com.ysmjjsy.goya.component.bus.definition;
 
 import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serial;
 import java.time.LocalDateTime;
@@ -36,6 +37,7 @@ import java.util.UUID;
  * @since 2025/12/21
  */
 @Getter
+@Setter
 public abstract class BaseEvent implements IEvent {
 
     @Serial
@@ -55,6 +57,12 @@ public abstract class BaseEvent implements IEvent {
     /**
      * 关联 ID
      * <p>用于关联相关事件，可通过构造函数或 setter 设置</p>
+     * -- SETTER --
+     *  设置关联 ID
+     *  <p>用于关联相关事件</p>
+     *
+     * @param correlationId 关联 ID
+
      */
     private String correlationId;
 
@@ -70,52 +78,13 @@ public abstract class BaseEvent implements IEvent {
      * <p>用于区分不同团队或系统的事件，避免事件名称冲突</p>
      * <p>默认命名空间为 "default"</p>
      * <p>子类可以通过构造函数或 setter 设置命名空间</p>
-     */
-    private String namespace = "default";
-
-    /**
-     * 设置关联 ID
-     * <p>用于关联相关事件</p>
-     *
-     * @param correlationId 关联 ID
-     */
-    public void setCorrelationId(String correlationId) {
-        this.correlationId = correlationId;
-    }
-
-    /**
-     * 设置命名空间
-     * <p>用于区分不同团队或系统的事件</p>
+     * -- SETTER --
+     *  设置命名空间
+     *  <p>用于区分不同团队或系统的事件</p>
      *
      * @param namespace 命名空间
+
      */
-    public void setNamespace(String namespace) {
-        this.namespace = namespace;
-    }
-
-    @Override
-    public String eventId() {
-        return eventId;
-    }
-
-    @Override
-    public String correlationId() {
-        return correlationId;
-    }
-
-    @Override
-    public String eventVersion() {
-        return eventVersion;
-    }
-
-    @Override
-    public LocalDateTime timestamp() {
-        return timestamp;
-    }
-
-    @Override
-    public String eventNamespace() {
-        return namespace;
-    }
+    private String namespace = "default";
 }
 

@@ -7,6 +7,10 @@ import com.ysmjjsy.goya.component.bus.deserializer.DeserializationResult;
 import com.ysmjjsy.goya.component.bus.deserializer.EventDeserializer;
 import com.ysmjjsy.goya.component.bus.handler.IIdempotencyHandler;
 import com.ysmjjsy.goya.component.bus.metrics.EventMetrics;
+import com.ysmjjsy.goya.component.bus.processor.interceptor.DeserializeInterceptor;
+import com.ysmjjsy.goya.component.bus.processor.interceptor.IdempotencyInterceptor;
+import com.ysmjjsy.goya.component.bus.processor.interceptor.InvokeInterceptor;
+import com.ysmjjsy.goya.component.bus.processor.interceptor.RouteInterceptor;
 import com.ysmjjsy.goya.component.bus.publish.MetadataAccessor;
 import com.ysmjjsy.goya.component.common.utils.JsonUtils;
 import lombok.RequiredArgsConstructor;
@@ -86,8 +90,8 @@ public class BusEventListenerHandler {
                     .build();
 
             // 使用 RouteInterceptor 查找匹配的监听器
-            com.ysmjjsy.goya.component.bus.processor.interceptor.RouteInterceptor routeInterceptor =
-                    new com.ysmjjsy.goya.component.bus.processor.interceptor.RouteInterceptor(scanner);
+            RouteInterceptor routeInterceptor =
+                    new RouteInterceptor(scanner);
             routeInterceptor.intercept(context);
 
             if (context.isAborted() || context.getMatchedListeners() == null || context.getMatchedListeners().isEmpty()) {
@@ -97,8 +101,8 @@ public class BusEventListenerHandler {
             }
 
             // 使用 InvokeInterceptor 调用监听器
-            com.ysmjjsy.goya.component.bus.processor.interceptor.InvokeInterceptor invokeInterceptor =
-                    new com.ysmjjsy.goya.component.bus.processor.interceptor.InvokeInterceptor(idempotencyHandlerProvider, busProperties);
+            InvokeInterceptor invokeInterceptor =
+                    new InvokeInterceptor(idempotencyHandlerProvider, busProperties);
             invokeInterceptor.intercept(context);
 
             long duration = System.currentTimeMillis() - startTime;
@@ -207,10 +211,10 @@ public class BusEventListenerHandler {
     private List<IEventInterceptor> createDefaultInterceptors() {
         // 实际使用时，应该通过 BusAutoConfiguration 注册的拦截器列表
         return List.of(
-                new com.ysmjjsy.goya.component.bus.processor.interceptor.DeserializeInterceptor(eventDeserializerProvider),
-                new com.ysmjjsy.goya.component.bus.processor.interceptor.IdempotencyInterceptor(idempotencyHandlerProvider),
-                new com.ysmjjsy.goya.component.bus.processor.interceptor.RouteInterceptor(scanner),
-                new com.ysmjjsy.goya.component.bus.processor.interceptor.InvokeInterceptor(idempotencyHandlerProvider, busProperties)
+                new DeserializeInterceptor(eventDeserializerProvider),
+                new IdempotencyInterceptor(idempotencyHandlerProvider),
+                new RouteInterceptor(scanner),
+                new InvokeInterceptor(idempotencyHandlerProvider, busProperties)
         );
     }
 

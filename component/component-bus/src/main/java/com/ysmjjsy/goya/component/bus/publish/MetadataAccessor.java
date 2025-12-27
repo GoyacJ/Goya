@@ -5,7 +5,6 @@ import com.ysmjjsy.goya.component.bus.definition.EventScope;
 import com.ysmjjsy.goya.component.bus.definition.IEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.MessageHeaders;
-import org.springframework.messaging.support.MessageBuilder;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -211,8 +210,8 @@ public final class MetadataAccessor {
      */
     public static Long getDelay(MessageHeaders headers) {
         Object delay = headers.get(BusHeaders.DELAY);
-        if (delay instanceof Number) {
-            return ((Number) delay).longValue();
+        if (delay instanceof Number de) {
+            return de.longValue();
         }
         return null;
     }
@@ -272,7 +271,7 @@ public final class MetadataAccessor {
         if (scope != null) {
             try {
                 return EventScope.valueOf(scope.toString());
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException _) {
                 log.warn("[Goya] |- component [bus] MetadataAccessor |- invalid event scope: {}", scope);
             }
         }

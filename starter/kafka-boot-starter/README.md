@@ -19,10 +19,10 @@ Kafka 事件总线启动器，基于 Spring Cloud Stream 实现。
 spring:
   cloud:
     function:
-      definition: busEventConsumer  # 注册函数式 Consumer
+      definition: kafkaBusEventConsumer  # 注册函数式 Consumer（必须与代码中的 Bean 名称一致）
     stream:
       bindings:
-        busEventConsumer-in-0:  # Consumer binding
+        kafkaBusEventConsumer-in-0:  # Consumer binding（函数名 + "-in-0"）
           destination: bus.events  # Kafka topic
           group: ${spring.application.name}  # Consumer group
           consumer:
@@ -39,7 +39,7 @@ spring:
   cloud:
     stream:
       bindings:
-        busEventConsumer-in-0:
+        kafkaBusEventConsumer-in-0:
           consumer:
             max-attempts: 3  # 最大重试次数
             back-off-initial-interval: 1000  # 初始退避间隔（毫秒）
@@ -54,7 +54,7 @@ spring:
   cloud:
     stream:
       bindings:
-        busEventConsumer-in-0:
+        kafkaBusEventConsumer-in-0:
           producer:
             partition-key-expression: headers['x-goya-partition-key']  # 基于 Header 的分区键
             partition-count: 3  # 分区数量
@@ -62,10 +62,12 @@ spring:
 
 ### 延迟消息配置
 
-某些 binder（如 RabbitMQ）原生支持延迟消息。对于 Kafka，可以通过以下方式实现：
+某些 binder（如 RabbitMQ）原生支持延迟消息。对于 Kafka，本 starter 通过 `ScheduledExecutorService` 实现延迟发送。
 
-1. 使用延迟插件（如 `kafka-delayed-message-plugin`）
-2. 通过业务逻辑实现延迟处理
+**重要限制**：
+- ⚠️ 延迟消息使用内存调度，应用重启会丢失未发送的延迟消息
+- ⚠️ 这不是 Kafka 的原生能力，而是"模拟实现"，适用于对可靠性要求不高的场景
+- ✅ 对于生产环境，建议使用 Kafka 延迟插件（如 `kafka-delayed-message-plugin`）或业务层实现
 
 延迟时间通过 Header `x-goya-delay` 传递（毫秒数）。
 

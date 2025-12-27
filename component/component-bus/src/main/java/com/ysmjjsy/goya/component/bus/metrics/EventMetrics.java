@@ -34,23 +34,23 @@ public final class EventMetrics {
     }
 
     // 发布指标
-    private static final AtomicLong publishCount = new AtomicLong(0);
-    private static final AtomicLong publishLocalCount = new AtomicLong(0);
-    private static final AtomicLong publishRemoteCount = new AtomicLong(0);
+    private static final AtomicLong PUBLISH_COUNT = new AtomicLong(0);
+    private static final AtomicLong PUBLISH_LOCAL_COUNT = new AtomicLong(0);
+    private static final AtomicLong PUBLISH_REMOTE_COUNT = new AtomicLong(0);
 
     // 消费指标
-    private static final AtomicLong consumeCount = new AtomicLong(0);
-    private static final AtomicLong consumeLocalCount = new AtomicLong(0);
-    private static final AtomicLong consumeRemoteCount = new AtomicLong(0);
+    private static final AtomicLong CONSUME_COUNT = new AtomicLong(0);
+    private static final AtomicLong CONSUME_LOCAL_COUNT = new AtomicLong(0);
+    private static final AtomicLong CONSUME_REMOTE_COUNT = new AtomicLong(0);
 
     // 成功/失败指标
-    private static final AtomicLong successCount = new AtomicLong(0);
-    private static final AtomicLong failureCount = new AtomicLong(0);
+    private static final AtomicLong SUCCESS_COUNT = new AtomicLong(0);
+    private static final AtomicLong FAILURE_COUNT = new AtomicLong(0);
 
     // 延迟指标（毫秒）
-    private static final AtomicLong totalProcessingTime = new AtomicLong(0);
-    private static final AtomicLong maxProcessingTime = new AtomicLong(0);
-    private static final AtomicLong minProcessingTime = new AtomicLong(Long.MAX_VALUE);
+    private static final AtomicLong TOTAL_PROCESSING_TIME = new AtomicLong(0);
+    private static final AtomicLong MAX_PROCESSING_TIME = new AtomicLong(0);
+    private static final AtomicLong MIN_PROCESSING_TIME = new AtomicLong(Long.MAX_VALUE);
 
     /**
      * 记录事件发布
@@ -59,11 +59,11 @@ public final class EventMetrics {
      * @param scope     事件作用域
      */
     public static void recordPublish(String eventName, com.ysmjjsy.goya.component.bus.definition.EventScope scope) {
-        publishCount.incrementAndGet();
+        PUBLISH_COUNT.incrementAndGet();
         if (scope == com.ysmjjsy.goya.component.bus.definition.EventScope.LOCAL) {
-            publishLocalCount.incrementAndGet();
+            PUBLISH_LOCAL_COUNT.incrementAndGet();
         } else if (scope == com.ysmjjsy.goya.component.bus.definition.EventScope.REMOTE) {
-            publishRemoteCount.incrementAndGet();
+            PUBLISH_REMOTE_COUNT.incrementAndGet();
         }
         log.trace("[Goya] |- component [bus] EventMetrics |- publish event [{}] scope [{}]", eventName, scope);
     }
@@ -75,11 +75,11 @@ public final class EventMetrics {
      * @param scope     事件作用域
      */
     public static void recordConsume(String eventName, com.ysmjjsy.goya.component.bus.definition.EventScope scope) {
-        consumeCount.incrementAndGet();
+        CONSUME_COUNT.incrementAndGet();
         if (scope == com.ysmjjsy.goya.component.bus.definition.EventScope.LOCAL) {
-            consumeLocalCount.incrementAndGet();
+            CONSUME_LOCAL_COUNT.incrementAndGet();
         } else if (scope == com.ysmjjsy.goya.component.bus.definition.EventScope.REMOTE) {
-            consumeRemoteCount.incrementAndGet();
+            CONSUME_REMOTE_COUNT.incrementAndGet();
         }
         log.trace("[Goya] |- component [bus] EventMetrics |- consume event [{}] scope [{}]", eventName, scope);
     }
@@ -91,8 +91,8 @@ public final class EventMetrics {
      * @param duration  处理耗时（毫秒）
      */
     public static void recordSuccess(String eventName, long duration) {
-        successCount.incrementAndGet();
-        totalProcessingTime.addAndGet(duration);
+        SUCCESS_COUNT.incrementAndGet();
+        TOTAL_PROCESSING_TIME.addAndGet(duration);
         updateProcessingTime(duration);
         log.trace("[Goya] |- component [bus] EventMetrics |- success event [{}] duration [{}ms]", eventName, duration);
     }
@@ -104,7 +104,7 @@ public final class EventMetrics {
      * @param error     错误信息
      */
     public static void recordFailure(String eventName, String error) {
-        failureCount.incrementAndGet();
+        FAILURE_COUNT.incrementAndGet();
         log.warn("[Goya] |- component [bus] EventMetrics |- failure event [{}] error [{}]", eventName, error);
     }
 
@@ -114,14 +114,14 @@ public final class EventMetrics {
      * @param duration 处理耗时（毫秒）
      */
     private static void updateProcessingTime(long duration) {
-        long currentMax = maxProcessingTime.get();
-        while (duration > currentMax && !maxProcessingTime.compareAndSet(currentMax, duration)) {
-            currentMax = maxProcessingTime.get();
+        long currentMax = MAX_PROCESSING_TIME.get();
+        while (duration > currentMax && !MAX_PROCESSING_TIME.compareAndSet(currentMax, duration)) {
+            currentMax = MAX_PROCESSING_TIME.get();
         }
 
-        long currentMin = minProcessingTime.get();
-        while (duration < currentMin && !minProcessingTime.compareAndSet(currentMin, duration)) {
-            currentMin = minProcessingTime.get();
+        long currentMin = MIN_PROCESSING_TIME.get();
+        while (duration < currentMin && !MIN_PROCESSING_TIME.compareAndSet(currentMin, duration)) {
+            currentMin = MIN_PROCESSING_TIME.get();
         }
     }
 
@@ -131,23 +131,23 @@ public final class EventMetrics {
      * @return 指标快照
      */
     public static MetricsSnapshot getSnapshot() {
-        long totalProcessed = successCount.get() + failureCount.get();
+        long totalProcessed = SUCCESS_COUNT.get() + FAILURE_COUNT.get();
         double avgProcessingTime = totalProcessed > 0
-                ? (double) totalProcessingTime.get() / totalProcessed
+                ? (double) TOTAL_PROCESSING_TIME.get() / totalProcessed
                 : 0.0;
 
         return new MetricsSnapshot(
-                publishCount.get(),
-                publishLocalCount.get(),
-                publishRemoteCount.get(),
-                consumeCount.get(),
-                consumeLocalCount.get(),
-                consumeRemoteCount.get(),
-                successCount.get(),
-                failureCount.get(),
+                PUBLISH_COUNT.get(),
+                PUBLISH_LOCAL_COUNT.get(),
+                PUBLISH_REMOTE_COUNT.get(),
+                CONSUME_COUNT.get(),
+                CONSUME_LOCAL_COUNT.get(),
+                CONSUME_REMOTE_COUNT.get(),
+                SUCCESS_COUNT.get(),
+                FAILURE_COUNT.get(),
                 avgProcessingTime,
-                maxProcessingTime.get() == Long.MAX_VALUE ? 0 : maxProcessingTime.get(),
-                minProcessingTime.get() == Long.MAX_VALUE ? 0 : minProcessingTime.get()
+                MAX_PROCESSING_TIME.get() == Long.MAX_VALUE ? 0 : MAX_PROCESSING_TIME.get(),
+                MIN_PROCESSING_TIME.get() == Long.MAX_VALUE ? 0 : MIN_PROCESSING_TIME.get()
         );
     }
 
@@ -155,17 +155,17 @@ public final class EventMetrics {
      * 重置所有指标
      */
     public static void reset() {
-        publishCount.set(0);
-        publishLocalCount.set(0);
-        publishRemoteCount.set(0);
-        consumeCount.set(0);
-        consumeLocalCount.set(0);
-        consumeRemoteCount.set(0);
-        successCount.set(0);
-        failureCount.set(0);
-        totalProcessingTime.set(0);
-        maxProcessingTime.set(0);
-        minProcessingTime.set(Long.MAX_VALUE);
+        PUBLISH_COUNT.set(0);
+        PUBLISH_LOCAL_COUNT.set(0);
+        PUBLISH_REMOTE_COUNT.set(0);
+        CONSUME_COUNT.set(0);
+        CONSUME_LOCAL_COUNT.set(0);
+        CONSUME_REMOTE_COUNT.set(0);
+        SUCCESS_COUNT.set(0);
+        FAILURE_COUNT.set(0);
+        TOTAL_PROCESSING_TIME.set(0);
+        MAX_PROCESSING_TIME.set(0);
+        MIN_PROCESSING_TIME.set(Long.MAX_VALUE);
     }
 
     /**
@@ -204,18 +204,6 @@ public final class EventMetrics {
         public double getSuccessRate() {
             long total = successCount + failureCount;
             return total > 0 ? (double) successCount / total : 0.0;
-        }
-
-        @Override
-        public String toString() {
-            return String.format(
-                    "EventMetrics{ publish=%d (local=%d, remote=%d), consume=%d (local=%d, remote=%d), " +
-                            "success=%d, failure=%d, successRate=%.2f%%, avgTime=%.2fms, maxTime=%dms, minTime=%dms }",
-                    publishCount, publishLocalCount, publishRemoteCount,
-                    consumeCount, consumeLocalCount, consumeRemoteCount,
-                    successCount, failureCount, getSuccessRate() * 100,
-                    avgProcessingTime, maxProcessingTime, minProcessingTime
-            );
         }
     }
 }

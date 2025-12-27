@@ -34,43 +34,43 @@ import java.util.Map;
 @Schema(description = "事件总线配置属性")
 @ConfigurationProperties(prefix = IBusConstants.PROPERTY_BUS)
 public record BusProperties(
-        /**
-         * 默认远程总线标记
+        /*
+          默认远程总线标记
          */
         @Schema(description = "默认远程总线标记", example = "REMOTE")
         @DefaultValue("REMOTE")
         String defaultRemoteBus,
 
-        /**
-         * 幂等性配置
+        /*
+          幂等性配置
          */
         @Schema(description = "幂等性配置")
         @DefaultValue
         Idempotency idempotency,
 
-        /**
-         * Destination 配置
+        /*
+          Destination 配置
          */
         @Schema(description = "Destination 配置")
         @DefaultValue
         Destination destination,
 
-        /**
-         * 反序列化配置
+        /*
+          反序列化配置
          */
         @Schema(description = "反序列化配置")
         @DefaultValue
         Deserialization deserialization,
 
-        /**
-         * 能力配置
+        /*
+          能力配置
          */
         @Schema(description = "能力配置")
         @DefaultValue
         CapabilitiesConfig capabilities,
 
-        /**
-         * 监听器配置
+        /*
+          监听器配置
          */
         @Schema(description = "监听器配置")
         @DefaultValue
@@ -81,22 +81,22 @@ public record BusProperties(
      */
     @Schema(description = "幂等性配置")
     public record Idempotency(
-            /**
-             * 是否启用幂等性检查
+            /*
+              是否启用幂等性检查
              */
             @Schema(description = "是否启用幂等性检查", example = "true")
             @DefaultValue("true")
             Boolean enabled,
 
-            /**
-             * 缓存名称
+            /*
+              缓存名称
              */
             @Schema(description = "缓存名称", example = "bus:idempotency")
             @DefaultValue("bus:idempotency")
             String cacheName,
 
-            /**
-             * TTL（生存时间）
+            /*
+              TTL（生存时间）
              */
             @Schema(description = "TTL（生存时间）", example = "PT24H")
             @DefaultValue("PT24H")
@@ -135,19 +135,19 @@ public record BusProperties(
      */
     @Schema(description = "Destination 配置")
     public record Destination(
-            /**
-             * 默认模板
-             * <p>支持占位符：{eventName} 会被替换为事件名称</p>
-             * <p>示例：bus.{eventName} -> bus.order-created</p>
+            /*
+              默认模板
+              <p>支持占位符：{eventName} 会被替换为事件名称</p>
+              <p>示例：bus.{eventName} -> bus.order-created</p>
              */
             @Schema(description = "默认模板", example = "bus.{eventName}")
             @DefaultValue("bus.{eventName}")
             String defaultTemplate,
 
-            /**
-             * 事件名称到 destination 的映射
-             * <p>key: 事件名称（如 "order.created"）</p>
-             * <p>value: destination（如 "bus.order-created"）</p>
+            /*
+              事件名称到 destination 的映射
+              <p>key: 事件名称（如 "order.created"）</p>
+              <p>value: destination（如 "bus.order-created"）</p>
              */
             @Schema(description = "事件名称到 destination 的映射")
             @DefaultValue
@@ -213,10 +213,10 @@ public record BusProperties(
      */
     @Schema(description = "反序列化配置")
     public record Deserialization(
-            /**
-             * 允许加载的事件类包名前缀列表
-             * <p>默认只允许加载 com.ysmjjsy.goya 包下的类</p>
-             * <p>如果事件类在其他包中，需要添加对应的包名前缀</p>
+            /*
+              允许加载的事件类包名前缀列表
+              <p>默认只允许加载 com.ysmjjsy.goya 包下的类</p>
+              <p>如果事件类在其他包中，需要添加对应的包名前缀</p>
              */
             @Schema(description = "允许加载的事件类包名前缀列表", example = "[\"com.ysmjjsy.goya\", \"com.example.events\"]")
             @DefaultValue("[\"com.ysmjjsy.goya\"]")
@@ -248,12 +248,12 @@ public record BusProperties(
      */
     @Schema(description = "能力配置")
     public record CapabilitiesConfig(
-            /**
-             * 是否允许降级
-             * <p>当 MQ 不支持某个能力（如延迟消息、顺序消息）时，是否允许降级为普通发布</p>
-             * <p>默认值为 false，不允许降级</p>
-             * <p>如果设置为 true，当能力不支持时会降级为普通发布并记录警告日志</p>
-             * <p>如果设置为 false，当能力不支持时会抛出异常</p>
+            /*
+              是否允许降级
+              <p>当 MQ 不支持某个能力（如延迟消息、顺序消息）时，是否允许降级为普通发布</p>
+              <p>默认值为 false，不允许降级</p>
+              <p>如果设置为 true，当能力不支持时会降级为普通发布并记录警告日志</p>
+              <p>如果设置为 false，当能力不支持时会抛出异常</p>
              */
             @Schema(description = "是否允许降级", example = "false")
             @DefaultValue("false")
@@ -283,11 +283,11 @@ public record BusProperties(
      */
     @Schema(description = "监听器配置")
     public record ListenerConfig(
-            /**
-             * 业务异常时是否继续执行其他监听器
-             * <p>默认值为 false，业务异常时继续执行其他监听器</p>
-             * <p>如果设置为 true，业务异常时会中断后续监听器的执行</p>
-             * <p>系统异常（如 RuntimeException、SystemException）总是会中断执行</p>
+            /*
+              业务异常时是否继续执行其他监听器
+              <p>默认值为 false，业务异常时继续执行其他监听器</p>
+              <p>如果设置为 true，业务异常时会中断后续监听器的执行</p>
+              <p>系统异常（如 RuntimeException、SystemException）总是会中断执行</p>
              */
             @Schema(description = "业务异常时是否继续执行其他监听器", example = "false")
             @DefaultValue("false")

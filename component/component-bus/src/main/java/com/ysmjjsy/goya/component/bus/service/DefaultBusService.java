@@ -1,11 +1,13 @@
 package com.ysmjjsy.goya.component.bus.service;
 
+import com.ysmjjsy.goya.component.bus.capabilities.Capabilities;
 import com.ysmjjsy.goya.component.bus.configuration.properties.BusProperties;
 import com.ysmjjsy.goya.component.bus.definition.EventScope;
 import com.ysmjjsy.goya.component.bus.definition.IEvent;
 import com.ysmjjsy.goya.component.bus.metrics.EventMetrics;
 import com.ysmjjsy.goya.component.bus.publish.IRemoteEventPublisher;
 import com.ysmjjsy.goya.component.bus.publish.MetadataAccessor;
+import com.ysmjjsy.goya.component.bus.transaction.EventTransactionSynchronization;
 import com.ysmjjsy.goya.component.common.context.SpringContext;
 import com.ysmjjsy.goya.component.common.definition.exception.CommonException;
 import com.ysmjjsy.goya.component.common.strategy.IStrategyExecute;
@@ -15,7 +17,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.MDC;
-import com.ysmjjsy.goya.component.bus.transaction.EventTransactionSynchronization;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
@@ -26,7 +27,6 @@ import java.security.MessageDigest;
 import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Function;
 
 /**
  * <p>事件总线服务实现</p>
@@ -128,7 +128,7 @@ public class DefaultBusService implements IBusService {
             }
 
             // 检查能力并处理降级
-            com.ysmjjsy.goya.component.bus.capabilities.Capabilities capabilities = publisher.getCapabilities();
+            Capabilities capabilities = publisher.getCapabilities();
             long delayMillis = delay.toMillis();
 
             if (!capabilities.supportsDelayedMessages()) {
@@ -147,7 +147,7 @@ public class DefaultBusService implements IBusService {
                         "The event [{}] will be published with the maximum delay.",
                         delayMillis, capabilities.maxDelayMillis(), event.eventName());
                 // 降级：使用最大支持的延迟时间
-                delay = java.time.Duration.ofMillis(capabilities.maxDelayMillis());
+                delay = Duration.ofMillis(capabilities.maxDelayMillis());
             }
             
             // 构建 Message Headers，包含延迟时间
@@ -191,7 +191,7 @@ public class DefaultBusService implements IBusService {
             }
 
             // 检查能力并处理降级
-            com.ysmjjsy.goya.component.bus.capabilities.Capabilities capabilities = publisher.getCapabilities();
+            Capabilities capabilities = publisher.getCapabilities();
 
             if (!capabilities.supportsOrderedMessages()) {
                 // 检查是否允许降级
@@ -203,7 +203,7 @@ public class DefaultBusService implements IBusService {
                 }
             }
 
-            if (!capabilities.supportsPartitioning() && partitionKey != null) {
+            if (!capabilities.supportsPartitioning()) {
                 log.debug("[Goya] |- component [bus] BusServiceImpl |- partitioning is not supported by the MQ, " +
                         "but partition key [{}] will still be set in headers for potential use by the MQ.",
                         partitionKey);
@@ -240,7 +240,7 @@ public class DefaultBusService implements IBusService {
      * @throws CommonException 如果不允许降级
      */
     private <E extends IEvent> boolean checkAndHandleDegradation(
-            com.ysmjjsy.goya.component.bus.capabilities.Capabilities capabilities,
+            Capabilities capabilities,
             String capabilityName,
             String eventName,
             String suggestion) {

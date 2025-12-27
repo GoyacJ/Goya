@@ -44,11 +44,9 @@ public class StreamEventPublisher implements IRemoteEventPublisher {
         }
 
         Object payload = message.getPayload();
-        if (!(payload instanceof IEvent)) {
+        if (!(payload instanceof IEvent event)) {
             throw new IllegalArgumentException("Payload must be an instance of IEvent");
         }
-
-        IEvent event = (IEvent) payload;
 
         // 确保 Header 中包含事件类型信息（如果还没有）
         Message<?> finalMessage = message;

@@ -42,6 +42,8 @@ public class KafkaAutoConfiguration {
     /**
      * 注册延迟消息调度器
      * <p>用于实现 Kafka 延迟消息功能（Kafka 不支持原生延迟消息）</p>
+     * <p>线程池大小固定为 10，适用于大多数场景。如需自定义，可以通过注册同名 Bean 覆盖</p>
+     * <p><strong>注意</strong>：延迟消息使用内存调度，应用重启会丢失未发送的延迟消息</p>
      *
      * @return ScheduledExecutorService
      */
@@ -82,9 +84,19 @@ public class KafkaAutoConfiguration {
         };
     }
 
+    /**
+     * 注册 Kafka 流事件发布器
+     * <p>实现 IRemoteEventPublisher，提供 Kafka 特定的事件发布能力</p>
+     * <p>支持延迟消息（通过 ScheduledExecutorService）、顺序消息（通过分区键）、分区</p>
+     *
+     * @param streamBridge StreamBridge 实例
+     * @param delayedMessageScheduler 延迟消息调度器
+     * @return KafkaStreamEventPublisher 实例
+     */
     @Bean
-    public KafkaStreamEventPublisher kafkaStreamEventPublisher(StreamBridge streamBridge, ScheduledExecutorService delayedMessageScheduler){
-        KafkaStreamEventPublisher publisher = new KafkaStreamEventPublisher(streamBridge,delayedMessageScheduler);
+    @ConditionalOnMissingBean(KafkaStreamEventPublisher.class)
+    public KafkaStreamEventPublisher kafkaStreamEventPublisher(StreamBridge streamBridge, ScheduledExecutorService delayedMessageScheduler) {
+        KafkaStreamEventPublisher publisher = new KafkaStreamEventPublisher(streamBridge, delayedMessageScheduler);
         log.trace("[Goya] |- starter [kafka] KafkaAutoConfiguration |- bean [kafkaStreamEventPublisher] register.");
         return publisher;
     }
