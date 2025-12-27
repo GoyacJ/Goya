@@ -5,6 +5,7 @@ import com.ysmjjsy.goya.component.bus.definition.IEvent;
 import com.ysmjjsy.goya.component.common.utils.JsonUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.messaging.Message;
 
@@ -59,8 +60,7 @@ public class EventDeserializer {
         String eventName = (String) headers.get(BusHeaders.EVENT_NAME);
 
         // 2. 如果 payload 已经是 IEvent，直接使用
-        if (payload instanceof IEvent) {
-            IEvent event = (IEvent) payload;
+        if (payload instanceof IEvent event) {
             String actualEventName = event.eventName();
             log.debug("[Goya] |- component [bus] EventDeserializer |- payload is already IEvent: {}", actualEventName);
             return DeserializationResult.builder()
@@ -72,7 +72,7 @@ public class EventDeserializer {
         }
 
         // 3. 尝试反序列化为 IEvent
-        IEvent event = null;
+        IEvent event;
         if (eventTypeName != null && !eventTypeName.isBlank()) {
             // 检查类加载白名单
             EventClassWhitelist whitelist = whitelistProvider.getIfAvailable();
@@ -103,7 +103,7 @@ public class EventDeserializer {
                                     .build();
                         }
                     }
-                } catch (ClassNotFoundException e) {
+                } catch (ClassNotFoundException _) {
                     log.debug("[Goya] |- component [bus] EventDeserializer |- event type class not found: {}",
                             eventTypeName);
                 } catch (Exception e) {
@@ -117,11 +117,11 @@ public class EventDeserializer {
         String jsonString = convertPayloadToString(payload);
         
         // 确保 eventName 存在（从 eventType 推断）
-        if ((eventName == null || eventName.isBlank()) && eventTypeName != null && !eventTypeName.isBlank()) {
+        if (StringUtils.isNoneBlank(eventName,eventTypeName)) {
             try {
                 Class<?> eventType = Class.forName(eventTypeName);
                 eventName = eventType.getSimpleName();
-            } catch (ClassNotFoundException e) {
+            } catch (ClassNotFoundException _) {
                 log.debug("[Goya] |- component [bus] EventDeserializer |- failed to get eventName from eventType: {}",
                         eventTypeName);
             }
@@ -166,19 +166,13 @@ public class EventDeserializer {
      * @return JSON 字符串
      */
     private String convertPayloadToString(Object payload) {
-        if (payload == null) {
-            return "{}";
-        }
+        return switch (payload) {
+            case null -> "{}";
+            case String str -> str;
+            case byte[] bytes -> new String(bytes, StandardCharsets.UTF_8);
+            default -> JsonUtils.toJson(payload);
+        };
 
-        if (payload instanceof String) {
-            return (String) payload;
-        } else if (payload instanceof byte[]) {
-            return new String((byte[]) payload, StandardCharsets.UTF_8);
-        } else if (payload instanceof Map) {
-            return JsonUtils.toJson(payload);
-        } else {
-            return JsonUtils.toJson(payload);
-        }
     }
 }
 
