@@ -1,4 +1,4 @@
-package com.ysmjjsy.goya.component.cache.stamp;
+package com.ysmjjsy.goya.component.cache.template;
 
 import com.ysmjjsy.goya.component.cache.core.GoyaCache;
 import com.ysmjjsy.goya.component.cache.factory.CacheFactory;

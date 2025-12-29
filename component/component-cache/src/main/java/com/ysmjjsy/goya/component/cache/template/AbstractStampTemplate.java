@@ -1,4 +1,4 @@
-package com.ysmjjsy.goya.component.cache.stamp;
+package com.ysmjjsy.goya.component.cache.template;
 
 import lombok.extern.slf4j.Slf4j;
 
