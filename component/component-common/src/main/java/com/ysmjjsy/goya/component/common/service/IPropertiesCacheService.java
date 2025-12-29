@@ -5,7 +5,7 @@ import com.ysmjjsy.goya.component.common.definition.pojo.PropertiesCacheDTO;
 import java.util.List;
 
 /**
- * <p></p>
+ * <p>属性缓存</p>
  *
  * @author goya
  * @since 2025/12/23 23:39

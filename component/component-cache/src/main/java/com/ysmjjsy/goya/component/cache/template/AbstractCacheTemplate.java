@@ -1,9 +1,12 @@
 package com.ysmjjsy.goya.component.cache.template;
 
 import com.ysmjjsy.goya.component.cache.core.GoyaCache;
+import com.ysmjjsy.goya.component.cache.enums.CacheLevel;
+import com.ysmjjsy.goya.component.cache.enums.ConsistencyLevel;
 import com.ysmjjsy.goya.component.cache.factory.CacheFactory;
 import com.ysmjjsy.goya.component.cache.resolver.CacheSpecification;
 import com.ysmjjsy.goya.component.cache.resolver.CacheSpecificationResolver;
+import com.ysmjjsy.goya.component.cache.ttl.FallbackStrategy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -192,15 +195,14 @@ public abstract class AbstractCacheTemplate<K, V> implements InitializingBean, D
      * @return 默认配置规范
      */
     protected CacheSpecification buildDefaultSpecification() {
-        // 使用硬编码的默认值
         return new CacheSpecification.Builder()
                 .ttl(Duration.ofHours(1))
                 .localMaxSize(10000)
-                .cacheLevel(com.ysmjjsy.goya.component.cache.enums.CacheLevel.L1_L2)
+                .cacheLevel(CacheLevel.L1_L2)
                 .allowNullValues(true)
                 .enableBloomFilter(false)
-                .fallbackStrategyType(com.ysmjjsy.goya.component.cache.ttl.FallbackStrategy.Type.DEGRADE_TO_L1)
-                .consistencyLevel(com.ysmjjsy.goya.component.cache.enums.ConsistencyLevel.EVENTUAL)
+                .fallbackStrategyType(FallbackStrategy.Type.DEGRADE_TO_L1)
+                .consistencyLevel(ConsistencyLevel.EVENTUAL)
                 .build();
     }
 
@@ -352,6 +354,13 @@ public abstract class AbstractCacheTemplate<K, V> implements InitializingBean, D
     }
 
     // ========== 便捷的缓存操作方法 ==========
+
+    /**
+     * 获取缓存值
+     */
+    public V get(K key, Class<V> clazz) {
+        return getCache().get(key, clazz);
+    }
 
     /**
      * 获取缓存值

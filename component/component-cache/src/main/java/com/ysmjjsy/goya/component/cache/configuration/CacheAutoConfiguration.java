@@ -8,6 +8,7 @@ import com.ysmjjsy.goya.component.cache.filter.BloomFilterManager;
 import com.ysmjjsy.goya.component.cache.local.CaffeineLocalCache;
 import com.ysmjjsy.goya.component.cache.metrics.CacheMetrics;
 import com.ysmjjsy.goya.component.cache.metrics.DefaultCacheMetrics;
+import com.ysmjjsy.goya.component.cache.properties.PropertiesCacheService;
 import com.ysmjjsy.goya.component.cache.resolver.CacheSpecification;
 import com.ysmjjsy.goya.component.cache.resolver.CacheSpecificationResolver;
 import com.ysmjjsy.goya.component.cache.resolver.DefaultCacheSpecificationResolver;
@@ -237,5 +238,12 @@ public class CacheAutoConfiguration {
         GoyaCacheManager manager = new GoyaCacheManager(cacheFactory);
         log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [goyaCacheManager] register.");
         return manager;
+    }
+
+    @Bean
+    public PropertiesCacheService propertiesCacheService() {
+        PropertiesCacheService template = new PropertiesCacheService();
+        log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [propertiesCacheTemplate] register.");
+        return template;
     }
 }
