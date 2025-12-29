@@ -7,6 +7,7 @@ import com.ysmjjsy.goya.component.common.definition.constants.IRegexPoolConstant
 import com.ysmjjsy.goya.component.common.definition.constants.ISymbolConstants;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
 import org.springframework.context.ApplicationContext;
+import org.springframework.util.StringUtils;
 
 import java.util.Arrays;
 import java.util.LinkedHashSet;
@@ -71,5 +72,49 @@ public interface IPlatformService {
         return packageNames;
     }
 
+    /**
+     * 获取端口
+     *
+     * @return 端口信息
+     */
+    Integer getPort();
 
+    /**
+     * 获取Ip
+     *
+     * @return ip信息
+     */
+    String getIp();
+
+    /**
+     * 获取地址
+     *
+     * @return 地址信息
+     */
+    default String getAddress() {
+        return this.getIp() + ISymbolConstants.COLON + this.getPort();
+    }
+
+    /**
+     * 获取Url
+     *
+     * @return url
+     */
+    String getUrl();
+
+    /**
+     * Web上下文路径
+     *
+     * @return Web上下文路径
+     */
+    String getContextPath();
+
+    /**
+     * 是否存在ContextPath
+     *
+     * @return 结果
+     */
+    default boolean hasContextPath() {
+        return StringUtils.hasText(getContextPath());
+    }
 }

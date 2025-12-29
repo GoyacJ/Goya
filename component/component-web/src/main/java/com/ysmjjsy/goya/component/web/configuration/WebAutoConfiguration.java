@@ -3,13 +3,19 @@ package com.ysmjjsy.goya.component.web.configuration;
 import com.ysmjjsy.goya.component.common.definition.constants.IBaseConstants;
 import com.ysmjjsy.goya.component.web.converter.*;
 import com.ysmjjsy.goya.component.web.exception.GlobalExceptionHandler;
+import com.ysmjjsy.goya.component.web.jackson.XssJacksonComponent;
+import com.ysmjjsy.goya.component.web.template.ThymeleafTemplateHandler;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.format.FormatterRegistry;
 import org.springframework.format.datetime.standard.DateTimeFormatterRegistrar;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.thymeleaf.spring6.SpringTemplateEngine;
 
 import java.time.format.DateTimeFormatter;
 
@@ -21,7 +27,7 @@ import java.time.format.DateTimeFormatter;
  */
 @Slf4j
 @AutoConfiguration
-@Import(GlobalExceptionHandler.class)
+@Import({GlobalExceptionHandler.class, XssJacksonComponent.class})
 public class WebAutoConfiguration implements WebMvcConfigurer {
 
     @PostConstruct
@@ -30,7 +36,7 @@ public class WebAutoConfiguration implements WebMvcConfigurer {
     }
 
     @Override
-    public void addFormatters(FormatterRegistry registry) {
+    public void addFormatters(@NonNull FormatterRegistry registry) {
         // ========== 日期时间格式化器 ==========
         DateTimeFormatterRegistrar registrar = new DateTimeFormatterRegistrar();
         registrar.setDateTimeFormatter(DateTimeFormatter.ofPattern(IBaseConstants.DATE_FORMAT_YYYY_MM_DD_HH_MM_SS));
@@ -63,5 +69,13 @@ public class WebAutoConfiguration implements WebMvcConfigurer {
 
         // ========== 文件大小转换器 ==========
         registry.addConverter(new StringToFileSizeConverter());
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ThymeleafTemplateHandler thymeleafTemplateHandler(SpringTemplateEngine springTemplateEngine) {
+        ThymeleafTemplateHandler handler = new ThymeleafTemplateHandler(springTemplateEngine);
+        log.trace("[GOYA] |- component [web] WebAutoConfiguration |- bean [thymeleafTemplateHandler] register.");
+        return handler;
     }
 }

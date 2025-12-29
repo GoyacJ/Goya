@@ -49,6 +49,7 @@ public interface IBaseConstants {
      * PROPERTY_PREFIX_PLATFORM_ARCHITECTURE
      */
     String PROPERTY_PLATFORM_ARCHITECTURE = PROPERTY_PLATFORM + ".architecture";
+    String PROPERTY_PLATFORM_PROTOCOL = PROPERTY_PLATFORM + ".protocol";
 
     /**
      * PROPERTY_PLATFORM_LOCALE
@@ -110,4 +111,23 @@ public interface IBaseConstants {
      * 默认树形结构根节点
      */
     String TREE_ROOT_ID = ISymbolConstants.ZERO;
+
+    /**
+     * DEFAULT_TENANT_ID
+     */
+    String DEFAULT_TENANT_ID = "public";
+
+    /* ---------- OAuth2 相关常量 ---------- */
+
+    /**
+     * BEARER_TYPE
+     */
+    String BEARER_TYPE = "Bearer";
+
+    /**
+     * BEARER_TOKEN
+     */
+    String BEARER_TOKEN = BEARER_TYPE + ISymbolConstants.SPACE;
+
+    String PRINCIPAL = "principal";
 }

@@ -25,6 +25,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
@@ -61,6 +62,7 @@ import org.springframework.context.annotation.Primary;
  */
 @Slf4j
 @AutoConfiguration
+@EnableCaching
 @EnableConfigurationProperties(CacheProperties.class)
 public class CacheAutoConfiguration {
 
