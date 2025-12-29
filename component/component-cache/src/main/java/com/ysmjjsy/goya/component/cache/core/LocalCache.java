@@ -116,5 +116,87 @@ public interface LocalCache extends Cache {
      * @throws RuntimeException 如果批量写入完全失败
      */
     void putAll(Map<Object, Object> entries, Duration ttl);
+
+    // ========== 原子操作 ==========
+
+    /**
+     * 原子递增
+     *
+     * <p>将指定 key 的值递增 1，如果 key 不存在则初始化为 0 后递增。
+     * 此操作是原子的，保证并发安全。
+     *
+     * <p><b>注意：</b>如果实现类不支持原子操作，应抛出 {@link UnsupportedOperationException}。
+     *
+     * @param key 缓存键，不能为 null
+     * @return 递增后的值
+     * @throws IllegalArgumentException 如果 key 为 null
+     * @throws UnsupportedOperationException 如果实现类不支持原子操作
+     * @throws RuntimeException 如果操作失败
+     */
+    long increment(Object key);
+
+    /**
+     * 原子递增（带增量）
+     *
+     * <p>将指定 key 的值递增 delta，如果 key 不存在则初始化为 0 后递增。
+     * 此操作是原子的，保证并发安全。
+     *
+     * <p><b>注意：</b>如果实现类不支持原子操作，应抛出 {@link UnsupportedOperationException}。
+     *
+     * @param key 缓存键，不能为 null
+     * @param delta 增量（可以为负数，相当于递减）
+     * @return 递增后的值
+     * @throws IllegalArgumentException 如果 key 为 null
+     * @throws UnsupportedOperationException 如果实现类不支持原子操作
+     * @throws RuntimeException 如果操作失败
+     */
+    long incrementBy(Object key, long delta);
+
+    /**
+     * 原子递减
+     *
+     * <p>将指定 key 的值递减 1，如果 key 不存在则初始化为 0 后递减。
+     * 此操作是原子的，保证并发安全。
+     *
+     * <p><b>注意：</b>如果实现类不支持原子操作，应抛出 {@link UnsupportedOperationException}。
+     *
+     * @param key 缓存键，不能为 null
+     * @return 递减后的值
+     * @throws IllegalArgumentException 如果 key 为 null
+     * @throws UnsupportedOperationException 如果实现类不支持原子操作
+     * @throws RuntimeException 如果操作失败
+     */
+    long decrement(Object key);
+
+    /**
+     * 设置过期时间
+     *
+     * <p>为指定 key 设置过期时间。如果 key 不存在，返回 false。
+     *
+     * <p><b>注意：</b>如果实现类不支持此操作，应抛出 {@link UnsupportedOperationException}。
+     *
+     * @param key 缓存键，不能为 null
+     * @param ttl 过期时间，必须大于 0
+     * @return true 如果设置成功，false 如果 key 不存在
+     * @throws IllegalArgumentException 如果 key 为 null 或 ttl 无效
+     * @throws UnsupportedOperationException 如果实现类不支持此操作
+     * @throws RuntimeException 如果操作失败
+     */
+    boolean expire(Object key, Duration ttl);
+
+    /**
+     * 判断是否为 NoOp 实现
+     *
+     * <p>用于判断当前实现是否为 NoOp（空操作）实现。
+     * NoOp 实现通常用于禁用本地缓存或作为占位符。
+     *
+     * <p><b>默认实现：</b>返回 false，表示这是一个真实的缓存实现。
+     * NoOp 实现类应该覆盖此方法返回 true。
+     *
+     * @return true 如果是 NoOp 实现，false 如果是真实的缓存实现
+     */
+    default boolean isNoOp() {
+        return false;
+    }
 }
 

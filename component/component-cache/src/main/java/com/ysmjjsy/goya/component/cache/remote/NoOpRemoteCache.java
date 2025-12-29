@@ -120,5 +120,36 @@ public class NoOpRemoteCache implements RemoteCache {
         // 空操作：立即返回 null
         return CompletableFuture.completedFuture(null);
     }
+
+    // ========== 原子操作 ==========
+
+    @Override
+    public long increment(Object key) {
+        // 空操作：返回 0（表示没有实际计数）
+        return 0L;
+    }
+
+    @Override
+    public long incrementBy(Object key, long delta) {
+        // 空操作：返回 0（表示没有实际计数）
+        return 0L;
+    }
+
+    @Override
+    public long decrement(Object key) {
+        // 空操作：返回 0（表示没有实际计数）
+        return 0L;
+    }
+
+    @Override
+    public boolean expire(Object key, Duration ttl) {
+        // 空操作：返回 false（key 不存在）
+        return false;
+    }
+
+    @Override
+    public boolean isNoOp() {
+        return true;
+    }
 }
 

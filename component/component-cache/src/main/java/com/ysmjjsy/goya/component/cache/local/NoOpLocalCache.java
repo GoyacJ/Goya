@@ -113,5 +113,36 @@ public class NoOpLocalCache implements LocalCache {
     public void putAll(@NonNull Map<Object, Object> entries, Duration ttl) {
         // 空操作：不执行任何操作
     }
+
+    // ========== 原子操作 ==========
+
+    @Override
+    public long increment(Object key) {
+        // 空操作：返回 0（表示没有实际计数）
+        return 0L;
+    }
+
+    @Override
+    public long incrementBy(Object key, long delta) {
+        // 空操作：返回 0（表示没有实际计数）
+        return 0L;
+    }
+
+    @Override
+    public long decrement(Object key) {
+        // 空操作：返回 0（表示没有实际计数）
+        return 0L;
+    }
+
+    @Override
+    public boolean expire(Object key, Duration ttl) {
+        // 空操作：返回 false（key 不存在）
+        return false;
+    }
+
+    @Override
+    public boolean isNoOp() {
+        return true;
+    }
 }
 

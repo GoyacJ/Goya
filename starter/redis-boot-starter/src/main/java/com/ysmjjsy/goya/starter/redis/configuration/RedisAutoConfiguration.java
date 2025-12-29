@@ -5,7 +5,6 @@ import com.ysmjjsy.goya.component.cache.serializer.CacheKeySerializer;
 import com.ysmjjsy.goya.component.cache.serializer.DefaultCacheKeySerializer;
 import com.ysmjjsy.goya.starter.redis.codec.TypedJsonMapperCodec;
 import com.ysmjjsy.goya.starter.redis.configuration.properties.RedisProperties;
-import com.ysmjjsy.goya.starter.redis.core.RedissonRemoteCache;
 import com.ysmjjsy.goya.starter.redis.factory.MultiClusterRemoteCacheFactory;
 import com.ysmjjsy.goya.starter.redis.service.DefaultRedisService;
 import com.ysmjjsy.goya.starter.redis.service.IRedisService;
@@ -86,10 +85,16 @@ public class RedisAutoConfiguration {
     public MultiClusterRemoteCacheFactory remoteCacheFactory(
             RedissonClient redissonClient,
             JsonMapper jsonMapper,
-            CacheKeySerializer cacheKeySerializer) {
+            CacheKeySerializer cacheKeySerializer,
+            IRedisService redisService) {
         log.info("Creating MultiClusterRemoteCacheFactory with default RedissonClient");
         MultiClusterRemoteCacheFactory factory = new MultiClusterRemoteCacheFactory(
                 redissonClient, jsonMapper, cacheKeySerializer);
+        // 注入 IRedisService（如果可用）
+        if (redisService != null) {
+            factory.setRedisService(redisService);
+            log.debug("IRedisService injected into MultiClusterRemoteCacheFactory");
+        }
         log.info("MultiClusterRemoteCacheFactory created. Use registerCluster() to add more clusters.");
         return factory;
     }
@@ -118,9 +123,8 @@ public class RedisAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnBean(RedissonClient.class)
-    public IRedisService redisService(RedissonClient redissonClient) {
+    public IRedisService redisService(RedissonClient redissonClient, CacheKeySerializer cacheKeySerializer) {
         log.info("Creating IRedisService");
-        return new DefaultRedisService(redissonClient);
+        return new DefaultRedisService(redissonClient, cacheKeySerializer);
     }
 }

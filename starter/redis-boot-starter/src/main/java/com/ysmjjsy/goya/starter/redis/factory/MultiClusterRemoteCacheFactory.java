@@ -74,6 +74,11 @@ public class MultiClusterRemoteCacheFactory implements GoyaCacheManager.RemoteCa
     private final CacheKeySerializer cacheKeySerializer;
 
     /**
+     * Redis 服务（可选，用于高级功能）
+     */
+    private com.ysmjjsy.goya.starter.redis.service.IRedisService redisService;
+
+    /**
      * 构造函数
      *
      * @param defaultClient 默认 RedissonClient（用于向后兼容）
@@ -99,6 +104,17 @@ public class MultiClusterRemoteCacheFactory implements GoyaCacheManager.RemoteCa
         this.cacheKeySerializer = cacheKeySerializer;
         // 注册默认集群
         this.clients.put(DEFAULT_CLUSTER_NAME, defaultClient);
+    }
+
+    /**
+     * 设置 Redis 服务
+     *
+     * <p>用于注入 IRedisService，使 RedissonRemoteCache 可以使用高级功能。
+     *
+     * @param redisService Redis 服务实例
+     */
+    public void setRedisService(com.ysmjjsy.goya.starter.redis.service.IRedisService redisService) {
+        this.redisService = redisService;
     }
 
     /**
@@ -183,7 +199,7 @@ public class MultiClusterRemoteCacheFactory implements GoyaCacheManager.RemoteCa
                     cacheName, clusterName != null ? clusterName : DEFAULT_CLUSTER_NAME);
         }
 
-        return new RedissonRemoteCache(cacheName, client, codec, spec, cacheKeySerializer);
+        return new RedissonRemoteCache(cacheName, client, codec, spec, cacheKeySerializer, redisService);
     }
 
     /**

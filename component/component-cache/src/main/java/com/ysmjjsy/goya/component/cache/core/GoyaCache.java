@@ -459,7 +459,6 @@ public class GoyaCache<K, V> implements Cache {
      * @param keys 缓存键集合
      * @return key-value 映射，只包含命中的 key
      */
-    @SuppressWarnings("unchecked")
     public Map<K, V> batchGetTyped(Set<K> keys) {
         if (keys == null || keys.isEmpty()) {
             return Collections.emptyMap();
@@ -478,6 +477,10 @@ public class GoyaCache<K, V> implements Cache {
         Map<Object, ValueWrapper> wrapperResults = orchestrator.batchGet(validKeys);
 
         // 转换为类型安全的 Map<K, V>
+        return getKvMap(wrapperResults);
+    }
+
+    private @NonNull Map<K, V> getKvMap(Map<Object, ValueWrapper> wrapperResults) {
         Map<K, V> result = new HashMap<>();
         for (Map.Entry<Object, ValueWrapper> entry : wrapperResults.entrySet()) {
             @SuppressWarnings("unchecked")
@@ -492,7 +495,6 @@ public class GoyaCache<K, V> implements Cache {
                 }
             }
         }
-
         return result;
     }
 
@@ -605,6 +607,109 @@ public class GoyaCache<K, V> implements Cache {
         for (K key : validKeys) {
             eventPublisher.publishEviction(name, key);
         }
+    }
+
+    // ========== 原子操作 ==========
+
+    /**
+     * 原子递增
+     *
+     * <p>将指定 key 的值递增 1，如果 key 不存在则初始化为 0 后递增。
+     * 委托给 {@link CacheOrchestrator} 执行编排逻辑，确保 L1/L2 数据一致性。
+     *
+     * <p><b>类型约束：</b>
+     * <ul>
+     *   <li>此方法仅适用于 {@code GoyaCache<K, Long>} 类型的缓存实例</li>
+     *   <li>如果缓存值类型不是 Long，可能导致类型转换异常</li>
+     *   <li>建议使用 {@link com.ysmjjsy.goya.component.cache.template.AbstractCounterTemplate} 来保证类型安全</li>
+     * </ul>
+     *
+     * <p><b>一致性保证：</b>
+     * <ul>
+     *   <li>根据 {@link CacheSpecification#getConsistencyLevel()} 决定一致性策略</li>
+     *   <li><b>STRONG</b>：L2 原子递增成功 + L1 同步成功，任一失败则回滚并抛出异常</li>
+     *   <li><b>EVENTUAL</b>：优先使用 L2 原子递增，失败则降级到 L1，L1 结果不强制同步回 L2</li>
+     * </ul>
+     *
+     * @param key 缓存键
+     * @return 递增后的值
+     * @throws IllegalArgumentException 如果 key 为 null
+     * @throws RuntimeException 如果一致性等级为 STRONG 且操作失败
+     * @throws ClassCastException 如果缓存值类型不是 Long
+     */
+    public long increment(K key) {
+        if (key == null) {
+            throw new IllegalArgumentException("Key cannot be null");
+        }
+        // 委托给 CacheOrchestrator 执行编排逻辑
+        return orchestrator.increment(key);
+    }
+
+    /**
+     * 原子递增（带增量）
+     *
+     * <p>将指定 key 的值递增 delta，如果 key 不存在则初始化为 0 后递增。
+     * 委托给 {@link CacheOrchestrator} 执行编排逻辑，确保 L1/L2 数据一致性。
+     *
+     * <p><b>类型约束：</b>
+     * <ul>
+     *   <li>此方法仅适用于 {@code GoyaCache<K, Long>} 类型的缓存实例</li>
+     *   <li>如果缓存值类型不是 Long，可能导致类型转换异常</li>
+     *   <li>建议使用 {@link com.ysmjjsy.goya.component.cache.template.AbstractCounterTemplate} 来保证类型安全</li>
+     * </ul>
+     *
+     * @param key 缓存键
+     * @param delta 增量（可以为负数，相当于递减）
+     * @return 递增后的值
+     * @throws IllegalArgumentException 如果 key 为 null
+     * @throws RuntimeException 如果一致性等级为 STRONG 且操作失败
+     * @throws ClassCastException 如果缓存值类型不是 Long
+     */
+    public long incrementBy(K key, long delta) {
+        if (key == null) {
+            throw new IllegalArgumentException("Key cannot be null");
+        }
+        // 委托给 CacheOrchestrator 执行编排逻辑
+        return orchestrator.incrementBy(key, delta);
+    }
+
+    /**
+     * 原子递减
+     *
+     * <p>将指定 key 的值递减 1，如果 key 不存在则初始化为 0 后递减。
+     * 等价于 {@code incrementBy(key, -1)}。
+     *
+     * @param key 缓存键
+     * @return 递减后的值
+     * @throws IllegalArgumentException 如果 key 为 null
+     * @throws RuntimeException 如果一致性等级为 STRONG 且操作失败
+     * @throws ClassCastException 如果缓存值类型不是 Long
+     */
+    public long decrement(K key) {
+        // 委托给 CacheOrchestrator 执行编排逻辑
+        return orchestrator.decrement(key);
+    }
+
+    /**
+     * 设置过期时间
+     *
+     * <p>为指定 key 设置过期时间。如果 key 不存在，返回 false。
+     * 委托给 {@link CacheOrchestrator} 执行编排逻辑。
+     *
+     * @param key 缓存键
+     * @param ttl 过期时间
+     * @return true 如果设置成功，false 如果 key 不存在
+     * @throws IllegalArgumentException 如果 key 为 null 或 ttl 无效
+     */
+    public boolean expire(K key, Duration ttl) {
+        if (key == null) {
+            throw new IllegalArgumentException("Key cannot be null");
+        }
+        if (ttl == null || ttl.isNegative() || ttl.isZero()) {
+            throw new IllegalArgumentException("TTL must be positive, got: " + ttl);
+        }
+        // 委托给 CacheOrchestrator 执行编排逻辑
+        return orchestrator.expire(key, ttl);
     }
 }
 

@@ -43,5 +43,25 @@ public interface CacheKeySerializer {
      * @return 序列化后的字节数组
      * @throws RuntimeException 如果序列化失败
      */
-    byte[] serialize(Object key);
+    <K> byte[] serialize(K key);
+
+    /**
+     * 将缓存键序列化为字符串
+     *
+     * @param key 缓存键
+     * @param <K> 缓存键类型
+     * @return 序列化后的字符串
+     */
+    <K> String serializeToString(K key);
+
+    /**
+     * build key
+     *
+     * @param keyPrefix 缓存前缀
+     * @param cacheName 缓存名称
+     * @param key 缓存键
+     * @param <K> 缓存键类型
+     * @return 序列化后的字符串
+     */
+    <K> String buildKey(String keyPrefix, String cacheName, K key);
 }

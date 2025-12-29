@@ -1,6 +1,8 @@
 package com.ysmjjsy.goya.starter.redis.service;
 
 import com.ysmjjsy.goya.component.cache.exception.CacheException;
+import com.ysmjjsy.goya.component.cache.serializer.CacheKeySerializer;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.*;
 import org.redisson.api.listener.MessageListener;
@@ -17,6 +19,7 @@ import java.util.function.Function;
  * @since 2025/12/26 15:00
  */
 @Slf4j
+@RequiredArgsConstructor
 public class DefaultRedisService implements IRedisService {
 
     /**
@@ -24,12 +27,14 @@ public class DefaultRedisService implements IRedisService {
      */
     private final RedissonClient redissonClient;
 
+    private final CacheKeySerializer cacheKeySerializer;
+
     /**
      * 锁实例缓存（避免重复创建）
      * Key: lock key
      * Value: RLock 实例
      */
-    private final Map<String, RLock> lockCache = new ConcurrentHashMap<>();
+    private final Map<Object, RLock> lockCache = new ConcurrentHashMap<>();
 
     /**
      * 订阅 ID 缓存（用于管理订阅）
@@ -38,31 +43,29 @@ public class DefaultRedisService implements IRedisService {
      */
     private final Map<String, Integer> subscriptionCache = new ConcurrentHashMap<>();
 
-    /**
-     * 构造函数
-     *
-     * @param redissonClient Redisson 客户端
-     * @throws IllegalArgumentException 如果 redissonClient 为 null
-     */
-    public DefaultRedisService(RedissonClient redissonClient) {
-        if (redissonClient == null) {
-            throw new IllegalArgumentException("RedissonClient cannot be null");
+    private String serializeKey(Object key) {
+        if (Objects.isNull(key)) {
+            throw new IllegalArgumentException("Key cannot be null");
         }
-        this.redissonClient = redissonClient;
+        if (key instanceof String str) {
+            return str;
+        }
+        return cacheKeySerializer.serializeToString(key);
     }
 
     // ========== 分布式锁 ==========
 
     @Override
-    public RLock getLock(String key) {
+    public <K> RLock getLock(K key) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
         }
-        return lockCache.computeIfAbsent(key, k -> redissonClient.getLock(k));
+        String serializeKey = serializeKey(key);
+        return lockCache.computeIfAbsent(serializeKey, k -> redissonClient.getLock(serializeKey));
     }
 
     @Override
-    public boolean tryLock(String key, long waitTime, long leaseTime, TimeUnit unit) throws InterruptedException {
+    public <K> boolean tryLock(K key, long waitTime, long leaseTime, TimeUnit unit) throws InterruptedException {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
         }
@@ -84,7 +87,7 @@ public class DefaultRedisService implements IRedisService {
     }
 
     @Override
-    public void unlock(String key) {
+    public <K> void unlock(K key) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
         }
@@ -173,13 +176,13 @@ public class DefaultRedisService implements IRedisService {
     // ========== 原子操作 ==========
 
     @Override
-    public long increment(String key) {
+    public <K> long increment(K key) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
         }
 
         try {
-            RAtomicLong atomicLong = redissonClient.getAtomicLong(key);
+            RAtomicLong atomicLong = redissonClient.getAtomicLong(serializeKey(key));
             return atomicLong.incrementAndGet();
         } catch (Exception e) {
             log.error("Failed to increment: key={}", key, e);
@@ -188,13 +191,13 @@ public class DefaultRedisService implements IRedisService {
     }
 
     @Override
-    public long decrement(String key) {
+    public <K> long decrement(K key) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
         }
 
         try {
-            RAtomicLong atomicLong = redissonClient.getAtomicLong(key);
+            RAtomicLong atomicLong = redissonClient.getAtomicLong(serializeKey((key)));
             return atomicLong.decrementAndGet();
         } catch (Exception e) {
             log.error("Failed to decrement: key={}", key, e);
@@ -203,13 +206,13 @@ public class DefaultRedisService implements IRedisService {
     }
 
     @Override
-    public long incrementBy(String key, long delta) {
+    public <K> long incrementBy(K key, long delta) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
         }
 
         try {
-            RAtomicLong atomicLong = redissonClient.getAtomicLong(key);
+            RAtomicLong atomicLong = redissonClient.getAtomicLong(serializeKey(key));
             return atomicLong.addAndGet(delta);
         } catch (Exception e) {
             log.error("Failed to increment by: key={}, delta={}", key, delta, e);
@@ -218,7 +221,7 @@ public class DefaultRedisService implements IRedisService {
     }
 
     @Override
-    public int append(String key, String value) {
+    public <K> int append(K key, String value) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
         }
@@ -227,7 +230,7 @@ public class DefaultRedisService implements IRedisService {
         }
 
         try {
-            RBucket<String> bucket = redissonClient.getBucket(key);
+            RBucket<String> bucket = redissonClient.getBucket(serializeKey(key));
             String currentValue = bucket.get();
             if (currentValue == null) {
                 currentValue = "";
@@ -244,7 +247,7 @@ public class DefaultRedisService implements IRedisService {
     // ========== 过期时间管理 ==========
 
     @Override
-    public boolean expire(String key, long time, TimeUnit unit) {
+    public <K> boolean expire(K key, long time, TimeUnit unit) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
         }
@@ -256,7 +259,7 @@ public class DefaultRedisService implements IRedisService {
         }
 
         try {
-            RBucket<Object> bucket = redissonClient.getBucket(key);
+            RBucket<Object> bucket = redissonClient.getBucket(serializeKey(key));
             return bucket.expire(time, unit);
         } catch (Exception e) {
             log.error("Failed to set expire: key={}, time={}, unit={}", key, time, unit, e);
@@ -265,13 +268,13 @@ public class DefaultRedisService implements IRedisService {
     }
 
     @Override
-    public long getExpire(String key) {
+    public <K> long getExpire(K key) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
         }
 
         try {
-            RBucket<Object> bucket = redissonClient.getBucket(key);
+            RBucket<Object> bucket = redissonClient.getBucket(serializeKey(key));
             return bucket.remainTimeToLive();
         } catch (Exception e) {
             log.error("Failed to get expire: key={}", key, e);
@@ -280,13 +283,13 @@ public class DefaultRedisService implements IRedisService {
     }
 
     @Override
-    public boolean persist(String key) {
+    public <K> boolean persist(K key) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
         }
 
         try {
-            RBucket<Object> bucket = redissonClient.getBucket(key);
+            RBucket<Object> bucket = redissonClient.getBucket(serializeKey(key));
             return bucket.clearExpire();
         } catch (Exception e) {
             log.error("Failed to persist: key={}", key, e);
@@ -339,15 +342,15 @@ public class DefaultRedisService implements IRedisService {
     // ========== 高级数据结构 - List ==========
 
     @Override
-    public <T> RList<T> getList(String key) {
+    public <K, T> RList<T> getList(K key) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
         }
-        return redissonClient.getList(key);
+        return redissonClient.getList(serializeKey(key));
     }
 
     @Override
-    public int addToList(String key, Object... values) {
+    public <K> int addToList(K key, Object... values) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
         }
@@ -356,7 +359,7 @@ public class DefaultRedisService implements IRedisService {
         }
 
         try {
-            RList<Object> list = redissonClient.getList(key);
+            RList<Object> list = redissonClient.getList(serializeKey(key));
             int sizeBefore = list.size();
             boolean added = list.addAll(Arrays.asList(values));
             if (!added) {
@@ -372,13 +375,13 @@ public class DefaultRedisService implements IRedisService {
     }
 
     @Override
-    public <T> T getFromList(String key, int index) {
+    public <K, T> T getFromList(K key, int index) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
         }
 
         try {
-            RList<T> list = redissonClient.getList(key);
+            RList<T> list = redissonClient.getList(serializeKey(key));
             if (index < 0 || index >= list.size()) {
                 return null;
             }
@@ -390,13 +393,13 @@ public class DefaultRedisService implements IRedisService {
     }
 
     @Override
-    public int getListSize(String key) {
+    public <K> int getListSize(K key) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
         }
 
         try {
-            RList<Object> list = redissonClient.getList(key);
+            RList<Object> list = redissonClient.getList(serializeKey(key));
             return list.size();
         } catch (Exception e) {
             log.error("Failed to get list size: key={}", key, e);
@@ -407,15 +410,15 @@ public class DefaultRedisService implements IRedisService {
     // ========== 高级数据结构 - Set ==========
 
     @Override
-    public <T> RSet<T> getSet(String key) {
+    public <K, T> RSet<T> getSet(K key) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
         }
-        return redissonClient.getSet(key);
+        return redissonClient.getSet(serializeKey(key));
     }
 
     @Override
-    public int addToSet(String key, Object... values) {
+    public <K> int addToSet(K key, Object... values) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
         }
@@ -424,7 +427,7 @@ public class DefaultRedisService implements IRedisService {
         }
 
         try {
-            RSet<Object> set = redissonClient.getSet(key);
+            RSet<Object> set = redissonClient.getSet(serializeKey(key));
             int addedCount = 0;
             for (Object value : values) {
                 if (set.add(value)) {
@@ -439,7 +442,7 @@ public class DefaultRedisService implements IRedisService {
     }
 
     @Override
-    public boolean containsInSet(String key, Object value) {
+    public <K> boolean containsInSet(K key, Object value) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
         }
@@ -448,7 +451,7 @@ public class DefaultRedisService implements IRedisService {
         }
 
         try {
-            RSet<Object> set = redissonClient.getSet(key);
+            RSet<Object> set = redissonClient.getSet(serializeKey(key));
             return set.contains(value);
         } catch (Exception e) {
             log.error("Failed to check set contains: key={}, value={}", key, value, e);
@@ -457,13 +460,13 @@ public class DefaultRedisService implements IRedisService {
     }
 
     @Override
-    public int getSetSize(String key) {
+    public <K> int getSetSize(K key) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
         }
 
         try {
-            RSet<Object> set = redissonClient.getSet(key);
+            RSet<Object> set = redissonClient.getSet(serializeKey(key));
             return set.size();
         } catch (Exception e) {
             log.error("Failed to get set size: key={}", key, e);
@@ -474,15 +477,15 @@ public class DefaultRedisService implements IRedisService {
     // ========== 高级数据结构 - SortedSet ==========
 
     @Override
-    public <T> RScoredSortedSet<T> getSortedSet(String key) {
+    public <K, T> RScoredSortedSet<T> getSortedSet(K key) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
         }
-        return redissonClient.getScoredSortedSet(key);
+        return redissonClient.getScoredSortedSet(serializeKey(key));
     }
 
     @Override
-    public boolean addToSortedSet(String key, double score, Object value) {
+    public <K> boolean addToSortedSet(K key, double score, Object value) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
         }
@@ -491,7 +494,7 @@ public class DefaultRedisService implements IRedisService {
         }
 
         try {
-            RScoredSortedSet<Object> sortedSet = redissonClient.getScoredSortedSet(key);
+            RScoredSortedSet<Object> sortedSet = redissonClient.getScoredSortedSet(serializeKey(key));
             return sortedSet.add(score, value);
         } catch (Exception e) {
             log.error("Failed to add to sorted set: key={}, score={}, value={}", key, score, value, e);
@@ -500,13 +503,13 @@ public class DefaultRedisService implements IRedisService {
     }
 
     @Override
-    public <T> Collection<T> getSortedSetRange(String key, int startRank, int endRank) {
+    public <K, T> Collection<T> getSortedSetRange(K key, int startRank, int endRank) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
         }
 
         try {
-            RScoredSortedSet<T> sortedSet = redissonClient.getScoredSortedSet(key);
+            RScoredSortedSet<T> sortedSet = redissonClient.getScoredSortedSet(serializeKey(key));
             return sortedSet.valueRange(startRank, endRank);
         } catch (Exception e) {
             log.error("Failed to get sorted set range: key={}, startRank={}, endRank={}", key, startRank, endRank, e);
@@ -517,15 +520,15 @@ public class DefaultRedisService implements IRedisService {
     // ========== 高级数据结构 - Hash ==========
 
     @Override
-    public <K, V> RMap<K, V> getHash(String key) {
+    public <N, K, V> RMap<K, V> getHash(N key) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
         }
-        return redissonClient.getMap(key);
+        return redissonClient.getMap(serializeKey(key));
     }
 
     @Override
-    public void setHashField(String key, Object field, Object value) {
+    public <K> void setHashField(K key, Object field, Object value) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
         }
@@ -537,7 +540,7 @@ public class DefaultRedisService implements IRedisService {
         }
 
         try {
-            RMap<Object, Object> map = redissonClient.getMap(key);
+            RMap<Object, Object> map = redissonClient.getMap(serializeKey(key));
             map.put(field, value);
         } catch (Exception e) {
             log.error("Failed to set hash field: key={}, field={}, value={}", key, field, value, e);
@@ -546,7 +549,7 @@ public class DefaultRedisService implements IRedisService {
     }
 
     @Override
-    public <T> T getHashField(String key, Object field) {
+    public <K, T> T getHashField(K key, Object field) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
         }
@@ -555,7 +558,7 @@ public class DefaultRedisService implements IRedisService {
         }
 
         try {
-            RMap<Object, T> map = redissonClient.getMap(key);
+            RMap<Object, T> map = redissonClient.getMap(serializeKey(key));
             return map.get(field);
         } catch (Exception e) {
             log.error("Failed to get hash field: key={}, field={}", key, field, e);
@@ -564,13 +567,13 @@ public class DefaultRedisService implements IRedisService {
     }
 
     @Override
-    public <K, V> Map<K, V> getHashAll(String key) {
+    public <N, K, V> Map<K, V> getHashAll(N key) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
         }
 
         try {
-            RMap<K, V> map = redissonClient.getMap(key);
+            RMap<K, V> map = redissonClient.getMap(serializeKey(key));
             return map.readAllMap();
         } catch (Exception e) {
             log.error("Failed to get hash all: key={}", key, e);
@@ -579,13 +582,13 @@ public class DefaultRedisService implements IRedisService {
     }
 
     @Override
-    public int getHashSize(String key) {
+    public <K> int getHashSize(K key) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
         }
 
         try {
-            RMap<Object, Object> map = redissonClient.getMap(key);
+            RMap<Object, Object> map = redissonClient.getMap(serializeKey(key));
             return map.size();
         } catch (Exception e) {
             log.error("Failed to get hash size: key={}", key, e);

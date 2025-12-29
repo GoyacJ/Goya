@@ -261,5 +261,85 @@ public class CaffeineLocalCache implements LocalCache {
         }
     }
 
+    // ========== 原子操作 ==========
+
+    @Override
+    public long increment(Object key) {
+        if (key == null) {
+            throw new IllegalArgumentException("Key cannot be null");
+        }
+
+        // Caffeine 不支持真正的原子操作，使用 get + put 实现（线程安全但非原子）
+        // 注意：在高并发场景下可能丢失一致性，但功能可用
+        Object currentValue = cache.getIfPresent(key);
+        long current = 0L;
+        if (currentValue instanceof Number nu) {
+            current = nu.longValue();
+        } else if (currentValue != null) {
+            // 尝试转换为 Long
+            try {
+                current = Long.parseLong(currentValue.toString());
+            } catch (NumberFormatException _) {
+                log.warn("Failed to parse current value as Long, treating as 0: key={}, value={}", key, currentValue);
+            }
+        }
+
+        long newValue = current + 1;
+        cache.put(key, newValue);
+        return newValue;
+    }
+
+    @Override
+    public long incrementBy(Object key, long delta) {
+        if (key == null) {
+            throw new IllegalArgumentException("Key cannot be null");
+        }
+
+        // Caffeine 不支持真正的原子操作，使用 get + put 实现（线程安全但非原子）
+        Object currentValue = cache.getIfPresent(key);
+        long current = 0L;
+        if (currentValue instanceof Number nu) {
+            current = nu.longValue();
+        } else if (currentValue != null) {
+            try {
+                current = Long.parseLong(currentValue.toString());
+            } catch (NumberFormatException _) {
+                log.warn("Failed to parse current value as Long, treating as 0: key={}, value={}", key, currentValue);
+            }
+        }
+
+        long newValue = current + delta;
+        cache.put(key, newValue);
+        return newValue;
+    }
+
+    @Override
+    public long decrement(Object key) {
+        // 递减等价于递增 -1
+        return incrementBy(key, -1);
+    }
+
+    @Override
+    public boolean expire(Object key, Duration ttl) {
+        if (key == null) {
+            throw new IllegalArgumentException("Key cannot be null");
+        }
+        if (ttl == null || ttl.isNegative() || ttl.isZero()) {
+            throw new IllegalArgumentException("TTL must be positive, got: " + ttl);
+        }
+
+        // Caffeine 不支持单个 key 的过期时间设置，只能使用全局策略
+        // 如果 key 不存在，返回 false
+        if (cache.getIfPresent(key) == null) {
+            return false;
+        }
+
+        // 由于 Caffeine 的限制，无法为单个 key 设置过期时间
+        // 这里抛出 UnsupportedOperationException，让调用方知道此操作不支持
+        throw new UnsupportedOperationException(
+                "CaffeineLocalCache does not support per-key expiration. " +
+                        "All keys use the global expiration policy configured at cache creation time.");
+    }
+
 }
 

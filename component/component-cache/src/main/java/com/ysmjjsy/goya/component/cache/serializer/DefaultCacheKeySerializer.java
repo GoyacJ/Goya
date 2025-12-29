@@ -1,5 +1,6 @@
 package com.ysmjjsy.goya.component.cache.serializer;
 
+import com.ysmjjsy.goya.component.common.definition.constants.ISymbolConstants;
 import com.ysmjjsy.goya.component.common.utils.JsonUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -25,7 +26,7 @@ import java.util.Base64;
 public class DefaultCacheKeySerializer implements CacheKeySerializer {
 
     @Override
-    public byte[] serialize(Object key) {
+    public <K> byte[] serialize(K key) {
         if (key == null) {
             throw new IllegalArgumentException("Cache key cannot be null");
         }
@@ -53,5 +54,17 @@ public class DefaultCacheKeySerializer implements CacheKeySerializer {
             // 降级到 toString()
             return JsonUtils.toJson(key).getBytes(StandardCharsets.UTF_8);
         }
+    }
+
+    @Override
+    public <K> String serializeToString(K key) {
+        byte[] keyBytes = serialize(key);
+        return Base64.getEncoder().encodeToString(keyBytes);
+    }
+
+    @Override
+    public <K> String buildKey(String keyPrefix, String cacheName, K key) {
+        String serializedKey = serializeToString(key);
+        return keyPrefix + cacheName + ISymbolConstants.COLON + serializedKey;
     }
 }

@@ -416,7 +416,6 @@ public class CacheOrchestrator {
         // 根据一致性等级执行批量写入策略
         switch (consistencyLevel) {
             case STRONG -> batchPutWithStrongConsistency(l2Entries, ttl);
-            case EVENTUAL -> batchPutWithEventualConsistency(l2Entries, ttl);
             default -> batchPutWithEventualConsistency(l2Entries, ttl);
         }
 
@@ -460,6 +459,310 @@ public class CacheOrchestrator {
                 log.error("Failed to evict from L2 cache for key: {}", key, e);
             }
         }
+    }
+
+    // ========== 原子操作 ==========
+
+    /**
+     * 原子递增
+     *
+     * <p>将指定 key 的值递增 1，如果 key 不存在则初始化为 0 后递增。
+     * 根据配置的一致性等级决定写入策略。
+     *
+     * <p><b>一致性保证：</b>
+     * <ul>
+     *   <li><b>STRONG</b>：L2 原子递增成功 + L1 同步成功，任一失败则回滚并抛出异常</li>
+     *   <li><b>EVENTUAL</b>：优先使用 L2 原子递增，失败则降级到 L1，L1 结果不强制同步回 L2</li>
+     * </ul>
+     *
+     * @param key 缓存键
+     * @return 递增后的值
+     * @throws IllegalArgumentException 如果 key 为 null
+     * @throws RuntimeException 如果一致性等级为 STRONG 且操作失败
+     */
+    public long increment(Object key) {
+        if (key == null) {
+            throw new IllegalArgumentException("Key cannot be null");
+        }
+
+        ConsistencyLevel consistencyLevel = spec.getConsistencyLevel();
+        if (consistencyLevel == ConsistencyLevel.STRONG) {
+            return incrementWithStrongConsistency(key);
+        } else {
+            return incrementWithEventualConsistency(key);
+        }
+    }
+
+    /**
+     * 原子递增（带增量）
+     *
+     * <p>将指定 key 的值递增 delta，如果 key 不存在则初始化为 0 后递增。
+     * 根据配置的一致性等级决定写入策略。
+     *
+     * @param key 缓存键
+     * @param delta 增量（可以为负数，相当于递减）
+     * @return 递增后的值
+     * @throws IllegalArgumentException 如果 key 为 null
+     * @throws RuntimeException 如果一致性等级为 STRONG 且操作失败
+     */
+    public long incrementBy(Object key, long delta) {
+        if (key == null) {
+            throw new IllegalArgumentException("Key cannot be null");
+        }
+
+        ConsistencyLevel consistencyLevel = spec.getConsistencyLevel();
+        if (consistencyLevel == ConsistencyLevel.STRONG) {
+            return incrementByWithStrongConsistency(key, delta);
+        } else {
+            return incrementByWithEventualConsistency(key, delta);
+        }
+    }
+
+    /**
+     * 原子递减
+     *
+     * <p>将指定 key 的值递减 1，如果 key 不存在则初始化为 0 后递减。
+     * 等价于 incrementBy(key, -1)。
+     *
+     * @param key 缓存键
+     * @return 递减后的值
+     * @throws IllegalArgumentException 如果 key 为 null
+     * @throws RuntimeException 如果一致性等级为 STRONG 且操作失败
+     */
+    public long decrement(Object key) {
+        return incrementBy(key, -1);
+    }
+
+    /**
+     * 设置过期时间
+     *
+     * <p>为指定 key 设置过期时间。如果 key 不存在，返回 false。
+     * 优先使用 L2 的过期时间设置（如果支持），否则降级到 L1。
+     *
+     * @param key 缓存键
+     * @param ttl 过期时间
+     * @return true 如果设置成功，false 如果 key 不存在
+     * @throws IllegalArgumentException 如果 key 为 null 或 ttl 无效
+     */
+    public boolean expire(Object key, Duration ttl) {
+        if (key == null) {
+            throw new IllegalArgumentException("Key cannot be null");
+        }
+        if (ttl == null || ttl.isNegative() || ttl.isZero()) {
+            throw new IllegalArgumentException("TTL must be positive, got: " + ttl);
+        }
+
+        // 1. 尝试使用 L2 的过期时间设置
+        if (l2 != null && !l2.isNoOp()) {
+            try {
+                return l2.expire(key, ttl);
+            } catch (UnsupportedOperationException e) {
+                log.debug("L2 does not support expire, fallback to L1: cacheName={}, key={}", cacheName, key);
+            } catch (Exception e) {
+                log.warn("Failed to expire using L2, fallback to L1: cacheName={}, key={}, ttl={}", cacheName, key, ttl, e);
+            }
+        }
+
+        // 2. 降级到 L1
+        try {
+            return l1.expire(key, ttl);
+        } catch (UnsupportedOperationException e) {
+            log.warn("L1 does not support expire operation: cacheName={}, key={}", cacheName, key);
+            return false;
+        } catch (Exception e) {
+            log.warn("Failed to expire using L1: cacheName={}, key={}, ttl={}", cacheName, key, ttl, e);
+            return false;
+        }
+    }
+
+    // ========== 私有方法：原子操作实现 ==========
+
+    /**
+     * 强一致性原子递增
+     */
+    private long incrementWithStrongConsistency(Object key) {
+        // 1. 优先使用 L2 的原子操作（如果可用且支持）
+        long newValue;
+        if (l2 != null && !l2.isNoOp()) {
+            try {
+                newValue = l2.increment(key);
+            } catch (UnsupportedOperationException e) {
+                log.debug("L2 does not support atomic increment, fallback to L1: cacheName={}, key={}", cacheName, key);
+                // L2 不支持，降级到 L1
+                newValue = l1.increment(key);
+            } catch (Exception e) {
+                log.error("Failed to increment using L2 with STRONG consistency: cacheName={}, key={}", cacheName, key, e);
+                throw new com.ysmjjsy.goya.component.cache.exception.CacheException(
+                        "L2 increment failed with STRONG consistency", e);
+            }
+        } else {
+            // L2 不可用，使用 L1
+            newValue = l1.increment(key);
+        }
+
+        // 2. 同步到 L1（如果 L2 操作成功）
+        if (l2 != null && !l2.isNoOp()) {
+            try {
+                l1.put(key, newValue, spec.getTtl());
+            } catch (Exception e) {
+                log.error("Failed to sync to L1 after L2 increment with STRONG consistency: cacheName={}, key={}", cacheName, key, e);
+                // 尝试回滚 L2（如果可能）
+                try {
+                    l2.evict(key);
+                } catch (Exception rollbackException) {
+                    log.warn("Failed to rollback L2 cache for key: {}", key, rollbackException);
+                }
+                throw new com.ysmjjsy.goya.component.cache.exception.CacheException(
+                        "L1 sync failed with STRONG consistency", e);
+            }
+        }
+
+        return newValue;
+    }
+
+    /**
+     * 最终一致性原子递增
+     */
+    private long incrementWithEventualConsistency(Object key) {
+        // 1. 优先使用 L2 的原子操作（如果可用且支持）
+        if (l2 != null && !l2.isNoOp()) {
+            try {
+                long newValue = l2.increment(key);
+                // 异步同步到 L1
+                refillManager.refillAsync(cacheName, key, new SimpleValueWrapper(newValue), l1);
+                return newValue;
+            } catch (UnsupportedOperationException e) {
+                log.debug("L2 does not support atomic increment, fallback to L1: cacheName={}, key={}", cacheName, key);
+            } catch (Exception e) {
+                log.warn("Failed to increment using L2, fallback to L1: cacheName={}, key={}", cacheName, key, e);
+            }
+        }
+
+        // 2. 降级到 L1
+        try {
+            return l1.increment(key);
+        } catch (UnsupportedOperationException e) {
+            log.debug("L1 does not support atomic increment, using get+put: cacheName={}, key={}", cacheName, key);
+            return incrementWithGetPut(key);
+        } catch (Exception e) {
+            log.warn("Failed to increment using L1, using get+put: cacheName={}, key={}", cacheName, key, e);
+            return incrementWithGetPut(key);
+        }
+    }
+
+    /**
+     * 强一致性原子递增（带增量）
+     */
+    private long incrementByWithStrongConsistency(Object key, long delta) {
+        // 1. 优先使用 L2 的原子操作（如果可用且支持）
+        long newValue;
+        if (l2 != null && !l2.isNoOp()) {
+            try {
+                newValue = l2.incrementBy(key, delta);
+            } catch (UnsupportedOperationException e) {
+                log.debug("L2 does not support atomic incrementBy, fallback to L1: cacheName={}, key={}", cacheName, key);
+                // L2 不支持，降级到 L1
+                newValue = l1.incrementBy(key, delta);
+            } catch (Exception e) {
+                log.error("Failed to incrementBy using L2 with STRONG consistency: cacheName={}, key={}, delta={}", cacheName, key, delta, e);
+                throw new com.ysmjjsy.goya.component.cache.exception.CacheException(
+                        "L2 incrementBy failed with STRONG consistency", e);
+            }
+        } else {
+            // L2 不可用，使用 L1
+            newValue = l1.incrementBy(key, delta);
+        }
+
+        // 2. 同步到 L1（如果 L2 操作成功）
+        if (l2 != null && !l2.isNoOp()) {
+            try {
+                l1.put(key, newValue, spec.getTtl());
+            } catch (Exception e) {
+                log.error("Failed to sync to L1 after L2 incrementBy with STRONG consistency: cacheName={}, key={}", cacheName, key, e);
+                // 尝试回滚 L2（如果可能）
+                try {
+                    l2.evict(key);
+                } catch (Exception rollbackException) {
+                    log.warn("Failed to rollback L2 cache for key: {}", key, rollbackException);
+                }
+                throw new com.ysmjjsy.goya.component.cache.exception.CacheException(
+                        "L1 sync failed with STRONG consistency", e);
+            }
+        }
+
+        return newValue;
+    }
+
+    /**
+     * 最终一致性原子递增（带增量）
+     */
+    private long incrementByWithEventualConsistency(Object key, long delta) {
+        // 1. 优先使用 L2 的原子操作（如果可用且支持）
+        if (l2 != null && !l2.isNoOp()) {
+            try {
+                long newValue = l2.incrementBy(key, delta);
+                // 异步同步到 L1
+                refillManager.refillAsync(cacheName, key, new SimpleValueWrapper(newValue), l1);
+                return newValue;
+            } catch (UnsupportedOperationException e) {
+                log.debug("L2 does not support atomic incrementBy, fallback to L1: cacheName={}, key={}", cacheName, key);
+            } catch (Exception e) {
+                log.warn("Failed to incrementBy using L2, fallback to L1: cacheName={}, key={}, delta={}", cacheName, key, delta, e);
+            }
+        }
+
+        // 2. 降级到 L1
+        try {
+            return l1.incrementBy(key, delta);
+        } catch (UnsupportedOperationException e) {
+            log.debug("L1 does not support atomic incrementBy, using get+put: cacheName={}, key={}", cacheName, key);
+            return incrementByWithGetPut(key, delta);
+        } catch (Exception e) {
+            log.warn("Failed to incrementBy using L1, using get+put: cacheName={}, key={}, delta={}", cacheName, key, delta, e);
+            return incrementByWithGetPut(key, delta);
+        }
+    }
+
+    /**
+     * 使用 get + put 实现递增（降级方案）
+     */
+    private long incrementWithGetPut(Object key) {
+        // 使用 get(key) 获取值，然后提取 Long 类型
+        Cache.ValueWrapper wrapper = get(key);
+        Long current = null;
+        if (wrapper != null) {
+            Object value = wrapper.get();
+            if (value instanceof Long va) {
+                current = va;
+            } else if (value instanceof Number nu) {
+                current = nu.longValue();
+            }
+        }
+        long newValue = (current != null ? current : 0L) + 1;
+        // 使用 put 方法写入（通过 CacheOrchestrator 的 put 方法，确保 L1/L2 同步）
+        put(key, newValue, spec.getTtl());
+        return newValue;
+    }
+
+    /**
+     * 使用 get + put 实现递增（带增量，降级方案）
+     */
+    private long incrementByWithGetPut(Object key, long delta) {
+        // 使用 get(key) 获取值，然后提取 Long 类型
+        Cache.ValueWrapper wrapper = get(key);
+        Long current = null;
+        if (wrapper != null) {
+            Object value = wrapper.get();
+            if (value instanceof Long va) {
+                current = va;
+            } else if (value instanceof Number nu) {
+                current = nu.longValue();
+            }
+        }
+        long newValue = (current != null ? current : 0L) + delta;
+        // 使用 put 方法写入（通过 CacheOrchestrator 的 put 方法，确保 L1/L2 同步）
+        put(key, newValue, spec.getTtl());
+        return newValue;
     }
 
     // ========== 私有方法：一致性写入策略 ==========

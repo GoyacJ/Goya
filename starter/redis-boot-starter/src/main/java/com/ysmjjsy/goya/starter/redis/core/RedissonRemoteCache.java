@@ -4,6 +4,7 @@ import com.ysmjjsy.goya.component.cache.core.GoyaCache;
 import com.ysmjjsy.goya.component.cache.core.RemoteCache;
 import com.ysmjjsy.goya.component.cache.resolver.CacheSpecification;
 import com.ysmjjsy.goya.component.cache.serializer.CacheKeySerializer;
+import com.ysmjjsy.goya.starter.redis.service.IRedisService;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
@@ -12,7 +13,6 @@ import org.redisson.client.codec.Codec;
 import org.springframework.cache.support.SimpleValueWrapper;
 
 import java.time.Duration;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -107,22 +107,30 @@ public class RedissonRemoteCache implements RemoteCache {
     private final CacheSpecification spec;
 
     /**
-     * 构造函数
+     * Redis 服务（可选，用于高级功能）
+     */
+    private final IRedisService redisService;
+
+    /**
+     * 构造函数（支持 Redis 服务注入）
      *
-     * @param name 缓存名称
-     * @param redisson Redisson 客户端
-     * @param codec 编解码器（可选）
-     * @param spec 缓存配置规范
+     * @param name          缓存名称
+     * @param redisson      Redisson 客户端
+     * @param codec         编解码器（可选）
+     * @param spec          缓存配置规范
      * @param keySerializer 缓存键序列化器（可选）
+     * @param redisService  Redis 服务（可选，用于高级功能）
      */
     public RedissonRemoteCache(String name, RedissonClient redisson, Codec codec,
-                               CacheSpecification spec, CacheKeySerializer keySerializer) {
+                               CacheSpecification spec, CacheKeySerializer keySerializer,
+                               IRedisService redisService) {
         this.name = name;
         this.redisson = redisson;
         this.codec = codec;
         this.spec = spec;
         this.keySerializer = keySerializer;
         this.keyPrefix = spec.getKeyPrefix();
+        this.redisService = redisService;
     }
 
     @Override
@@ -389,30 +397,29 @@ public class RedissonRemoteCache implements RemoteCache {
      * @return Redis key（包含 cacheName 前缀）
      */
     private String buildKey(Object key) {
-        if (key == null) {
-            throw new IllegalArgumentException("Cache key cannot be null");
-        }
-
-        // 优化：常见类型直接使用字符串拼接
-        if (key instanceof String) {
-            return keyPrefix + name + ":" + key;
-        }
-
-        if (key instanceof Long || key instanceof Integer) {
-            return keyPrefix + name + ":" + key.toString();
-        }
-
-        // 其他类型：使用序列化器序列化后转换为 Base64 字符串
-        if (keySerializer != null) {
-            byte[] keyBytes = keySerializer.serialize(key);
-            String serializedKey = Base64.getEncoder().encodeToString(keyBytes);
-            return keyPrefix + name + ":" + serializedKey;
-        } else {
-            // 如果没有序列化器，使用 toString()
-            return keyPrefix + name + ":" + key.toString();
-        }
+        return keySerializer.buildKey(keyPrefix, name, key);
     }
 
-    // ValueRetrievalException 使用 Spring Cache 的标准异常
+    // ========== 原子操作 ==========
+
+    @Override
+    public long increment(Object key) {
+        return redisService.increment(buildKey(key));
+    }
+
+    @Override
+    public long incrementBy(Object key, long delta) {
+        return redisService.incrementBy(key, delta);
+    }
+
+    @Override
+    public long decrement(Object key) {
+        return redisService.decrement(key);
+    }
+
+    @Override
+    public boolean expire(Object key, Duration ttl) {
+        return redisService.expire(key, ttl.toMillis(), TimeUnit.MILLISECONDS);
+    }
 }
 
