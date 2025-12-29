@@ -1,5 +1,6 @@
 package com.ysmjjsy.goya.starter.redis.codec;
 
+import com.ysmjjsy.goya.component.cache.exception.CacheException;
 import com.ysmjjsy.goya.component.cache.local.NullValueWrapper;
 import com.ysmjjsy.goya.component.cache.serializer.TypeAliasRegistry;
 import io.netty.buffer.ByteBuf;
@@ -50,11 +51,6 @@ public class TypedJsonMapperCodec extends BaseCodec {
     private static final String TYPE_FIELD = "@type";
 
     /**
-     * 键类型信息字段名（可选）
-     */
-    private static final String KEY_TYPE_FIELD = "@keyType";
-
-    /**
      * 数据字段名
      */
     private static final String DATA_FIELD = "data";
@@ -68,11 +64,6 @@ public class TypedJsonMapperCodec extends BaseCodec {
      * 版本号字段名（可选，用于版本兼容性控制）
      */
     private static final String VERSION_FIELD = "@version";
-
-    /**
-     * Schema 字段名（可选，用于类型别名和版本映射）
-     */
-    private static final String SCHEMA_FIELD = "@schema";
 
     /**
      * 默认版本号（用于向后兼容，旧数据没有版本号时使用）
@@ -175,7 +166,7 @@ public class TypedJsonMapperCodec extends BaseCodec {
                 return Unpooled.wrappedBuffer(bytes);
             } catch (JacksonException e) {
                 log.error("Failed to encode object: type={}", in.getClass().getName(), e);
-                throw new RuntimeException("Failed to encode object", e);
+                throw new CacheException("Failed to encode object", e);
             }
         }
     }
@@ -216,11 +207,11 @@ public class TypedJsonMapperCodec extends BaseCodec {
                     return jsonMapper.treeToValue(rootNode, Object.class);
                 }
 
-                String typeName = rootNode.get(TYPE_FIELD).asText();
+                String typeName = rootNode.get(TYPE_FIELD).asString();
                 // 获取版本号（如果存在）
                 String version = DEFAULT_VERSION;
                 if (rootNode.has(VERSION_FIELD)) {
-                    version = rootNode.get(VERSION_FIELD).asText();
+                    version = rootNode.get(VERSION_FIELD).asString();
                 }
 
                 Class<?> targetType;
@@ -257,7 +248,7 @@ public class TypedJsonMapperCodec extends BaseCodec {
                 return jsonMapper.treeToValue(dataNode, targetType);
             } catch (JacksonException e) {
                 log.error("Failed to decode object", e);
-                throw new RuntimeException("Failed to decode object", e);
+                throw new CacheException("Failed to decode object", e);
             }
         }
     }

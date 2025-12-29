@@ -128,7 +128,7 @@ public class GoyaCacheManager implements CacheManager {
     private GoyaCache<?, ?> createCache(String name) {
         try {
             // CacheFactory 返回的是 GoyaCache（类型擦除），实际是 GoyaCache<?, ?>
-            return cacheFactory.createCacheFromName(name);
+            return cacheFactory.createCache(name);
         } catch (IllegalStateException e) {
             log.error("Failed to create GoyaCache due to configuration error: {}", name, e);
             throw e;
