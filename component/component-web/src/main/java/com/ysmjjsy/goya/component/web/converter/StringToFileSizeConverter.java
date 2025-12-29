@@ -68,29 +68,13 @@ public class StringToFileSizeConverter implements Converter<String, Long> {
         double value = Double.parseDouble(matcher.group(1));
         String unit = matcher.group(2).toUpperCase();
 
-        long bytes;
-        switch (unit) {
-            case "B":
-            case "BYTES":
-            case "BYTE":
-                bytes = (long) value;
-                break;
-            case "KB":
-                bytes = (long) (value * 1024);
-                break;
-            case "MB":
-                bytes = (long) (value * 1024 * 1024);
-                break;
-            case "GB":
-                bytes = (long) (value * 1024 * 1024 * 1024);
-                break;
-            case "TB":
-                bytes = (long) (value * 1024L * 1024 * 1024 * 1024);
-                break;
-            default:
-                throw new IllegalArgumentException("不支持的单位: " + unit);
-        }
-
-        return bytes;
+        return switch (unit) {
+            case "B", "BYTES", "BYTE" -> (long) value;
+            case "KB" -> (long) (value * 1024);
+            case "MB" -> (long) (value * 1024 * 1024);
+            case "GB" -> (long) (value * 1024 * 1024 * 1024);
+            case "TB" -> (long) (value * 1024L * 1024 * 1024 * 1024);
+            default -> throw new IllegalArgumentException("不支持的单位: " + unit);
+        };
     }
 }

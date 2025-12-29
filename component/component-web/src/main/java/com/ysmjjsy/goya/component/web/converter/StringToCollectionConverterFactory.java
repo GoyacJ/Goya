@@ -1,12 +1,12 @@
 package com.ysmjjsy.goya.component.web.converter;
 
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NullMarked;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.core.convert.converter.ConverterFactory;
 import org.springframework.util.StringUtils;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * 字符串到集合转换器工厂
@@ -35,6 +35,7 @@ public class StringToCollectionConverterFactory implements ConverterFactory<Stri
 
     @Override
     @SuppressWarnings({"unchecked", "rawtypes"})
+    @NullMarked
     public <T extends Collection<?>> Converter<String, T> getConverter(Class<T> targetType) {
         return new StringToCollectionConverter(targetType);
     }
@@ -42,21 +43,12 @@ public class StringToCollectionConverterFactory implements ConverterFactory<Stri
     /**
      * 字符串到集合转换器
      */
-    private static class StringToCollectionConverter<T extends Collection<Object>>
+    private record StringToCollectionConverter<T extends Collection<Object>>(Class<T> collectionType)
             implements Converter<String, T> {
 
-        private final Class<T> collectionType;
-        private final Class<?> elementType;
-
-        @SuppressWarnings("unchecked")
-        public StringToCollectionConverter(Class<T> collectionType) {
-            this.collectionType = collectionType;
-            // 简化处理：假设元素类型为 String，实际使用时可以通过泛型获取
-            this.elementType = String.class;
-        }
+        // 简化处理：假设元素类型为 String，实际使用时可以通过泛型获取
 
         @Override
-        @SuppressWarnings("unchecked")
         public T convert(String source) {
             if (!StringUtils.hasText(source)) {
                 return createEmptyCollection();
@@ -69,11 +61,11 @@ public class StringToCollectionConverterFactory implements ConverterFactory<Stri
             List<String> elements = Arrays.stream(parts)
                     .filter(StringUtils::hasText)
                     .map(String::trim)
-                    .collect(Collectors.toList());
+                    .toList();
 
             // 创建集合并添加元素
             T collection = createEmptyCollection();
-            collection.addAll((Collection<?>) elements);
+            collection.addAll(elements);
 
             return collection;
         }
