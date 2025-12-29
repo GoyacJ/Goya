@@ -212,6 +212,10 @@ public class CacheSpecification {
         return new HashMap<>(extendedProperties);
     }
 
+    public Builder toBuilder() {
+        return new Builder(this);
+    }
+
     // ========== Builder ==========
 
     /**

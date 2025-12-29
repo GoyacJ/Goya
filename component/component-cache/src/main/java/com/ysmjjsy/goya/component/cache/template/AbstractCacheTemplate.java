@@ -156,16 +156,8 @@ public abstract class AbstractCacheTemplate<K, V> implements InitializingBean, D
      */
     protected CacheSpecification getCacheSpecification() {
         String cacheName = getCacheName();
-
-        // 如果子类没有注入 specificationResolver，使用默认配置
-        if (specificationResolver == null) {
-            log.warn("CacheSpecificationResolver not injected, using default configuration: cacheName={}", cacheName);
-            return buildDefaultSpecification();
-        }
-
         // 从系统配置获取默认配置
         CacheSpecification defaultSpec = specificationResolver.resolve(cacheName);
-
         // 调用钩子方法，允许子类基于默认配置修改
         return buildCacheSpecification(defaultSpec);
     }
