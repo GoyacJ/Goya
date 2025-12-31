@@ -11,6 +11,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  */
 @Schema(description = "平台信息")
 public record PlatformInfo(
+
         @Schema(description = "平台名称")
         String projectName,
 

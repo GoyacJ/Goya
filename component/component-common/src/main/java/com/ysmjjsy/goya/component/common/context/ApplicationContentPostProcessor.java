@@ -25,7 +25,7 @@ public class ApplicationContentPostProcessor implements ApplicationListener<Appl
     public void onApplicationEvent(ApplicationReadyEvent event) {
         synchronized (ApplicationContentPostProcessor.class) {
             if (executeOnlyOnce) {
-                applicationContext.publishEvent(new ApplicationInitializingEvent(this));
+                applicationContext.publishEvent(new ApplicationInitializingEvent(this, event.getApplicationContext()));
                 executeOnlyOnce = false;
             }
         }

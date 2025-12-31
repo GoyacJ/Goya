@@ -1,3 +1,5 @@
 com.ysmjjsy.goya.component.web.configuration.CommonWebAutoConfiguration
-com.ysmjjsy.goya.component.web.configuration.WebAutoConfiguration
+com.ysmjjsy.goya.component.web.configuration.CryptoAutoConfiguration
+com.ysmjjsy.goya.component.web.configuration.DecryptAutoConfiguration
 com.ysmjjsy.goya.component.web.configuration.SpringdocAutoConfiguration
+com.ysmjjsy.goya.component.web.configuration.WebAutoConfiguration

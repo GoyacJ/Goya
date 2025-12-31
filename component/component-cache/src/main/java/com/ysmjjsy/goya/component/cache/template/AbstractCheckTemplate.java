@@ -3,6 +3,7 @@ package com.ysmjjsy.goya.component.cache.template;
 import com.ysmjjsy.goya.component.common.definition.exception.CommonException;
 import org.apache.commons.lang3.ObjectUtils;
 
+import java.time.Duration;
 import java.util.Objects;
 
 /**
@@ -33,8 +34,24 @@ public abstract class AbstractCheckTemplate<K, V> extends AbstractCacheTemplate<
         return Objects.equals(v, value);
     }
 
-    public void put(K key) {
-        this.put(key, nextValue(key));
+    public V put(K key) {
+        V v = nextValue(key);
+        this.put(key, v);
+        return v;
+    }
+
+    public V put(K key, Duration expire) {
+        V v = nextValue(key);
+        this.put(key, v, expire);
+        return v;
+    }
+
+    public Duration getExpire() {
+        Duration ttl = getCacheSpecification().getTtl();
+        if (Objects.isNull(ttl)) {
+            return getCacheSpecification().getLocalTtl();
+        }
+        return ttl;
     }
 
     protected abstract V nextValue(K key);

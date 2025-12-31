@@ -1,20 +1,32 @@
 package com.ysmjjsy.goya.component.web.configuration;
 
 import com.ysmjjsy.goya.component.common.definition.constants.IBaseConstants;
+import com.ysmjjsy.goya.component.common.service.IPlatformService;
+import com.ysmjjsy.goya.component.web.configuration.properties.WebProperties;
+import com.ysmjjsy.goya.component.web.constants.IWebConstants;
 import com.ysmjjsy.goya.component.web.converter.*;
 import com.ysmjjsy.goya.component.web.exception.GlobalExceptionHandler;
 import com.ysmjjsy.goya.component.web.jackson.XssJacksonComponent;
+import com.ysmjjsy.goya.component.web.scan.IRestMappingHandler;
+import com.ysmjjsy.goya.component.web.scan.WebRestMappingScanner;
+import com.ysmjjsy.goya.component.web.secure.AccessLimitedInterceptor;
+import com.ysmjjsy.goya.component.web.secure.IdempotentInterceptor;
 import com.ysmjjsy.goya.component.web.template.ThymeleafTemplateHandler;
 import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.format.FormatterRegistry;
 import org.springframework.format.datetime.standard.DateTimeFormatterRegistrar;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.resource.LiteWebJarsResourceResolver;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 
 import java.time.format.DateTimeFormatter;
@@ -28,7 +40,12 @@ import java.time.format.DateTimeFormatter;
 @Slf4j
 @AutoConfiguration
 @Import({GlobalExceptionHandler.class, XssJacksonComponent.class})
+@RequiredArgsConstructor
 public class WebAutoConfiguration implements WebMvcConfigurer {
+
+    private final ObjectProvider<IdempotentInterceptor> idempotentInterceptor;
+    private final ObjectProvider<AccessLimitedInterceptor> accessLimitedInterceptor;
+
 
     @PostConstruct
     public void init() {
@@ -78,4 +95,30 @@ public class WebAutoConfiguration implements WebMvcConfigurer {
         log.trace("[GOYA] |- component [web] WebAutoConfiguration |- bean [thymeleafTemplateHandler] register.");
         return handler;
     }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public WebRestMappingScanner restMappingScanner(WebProperties properties,
+                                                    ObjectProvider<IRestMappingHandler> handlerObjectProvider,
+                                                    IPlatformService iPlatformService) {
+        WebRestMappingScanner scanner = new WebRestMappingScanner(properties, handlerObjectProvider, iPlatformService);
+        log.trace("[GOYA] |- component [web] WebAutoConfiguration |- bean [restMappingScanner] register.");
+        return scanner;
+    }
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        accessLimitedInterceptor.ifAvailable(registry::addInterceptor);
+        idempotentInterceptor.ifAvailable(registry::addInterceptor);
+    }
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler(IWebConstants.MATCHER_STATIC).addResourceLocations("classpath:/static/");
+        registry.addResourceHandler(IWebConstants.MATCHER_WEBJARS)
+                .addResourceLocations("classpath:/META-INF/resources/webjars/")
+                .resourceChain(false)
+                .addResolver(new LiteWebJarsResourceResolver());
+    }
+
 }

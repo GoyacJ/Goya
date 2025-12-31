@@ -136,3 +136,5 @@ platform:
   bus:
     destination:
       default-template: "bus.events"
+  web:
+    crypto: standard

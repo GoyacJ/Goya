@@ -7,6 +7,7 @@ import com.ysmjjsy.goya.component.cache.factory.CacheFactory;
 import com.ysmjjsy.goya.component.cache.resolver.CacheSpecification;
 import com.ysmjjsy.goya.component.cache.resolver.CacheSpecificationResolver;
 import com.ysmjjsy.goya.component.cache.ttl.FallbackStrategy;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -123,6 +124,7 @@ public abstract class AbstractCacheTemplate<K, V> implements InitializingBean, D
     /**
      * 当前配置规范（用于配置刷新比较）
      */
+    @Getter
     private volatile CacheSpecification currentSpec;
 
     /**

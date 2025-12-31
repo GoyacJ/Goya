@@ -1,7 +1,12 @@
 package com.ysmjjsy.goya.component.web.constants;
 
+import com.google.common.collect.Lists;
 import com.ysmjjsy.goya.component.common.definition.constants.IBaseConstants;
 import com.ysmjjsy.goya.component.common.definition.constants.ISymbolConstants;
+
+import java.util.List;
+
+import static com.ysmjjsy.goya.component.cache.constants.ICacheConstants.CACHE_PREFIX;
 
 /**
  * <p></p>
@@ -16,6 +21,17 @@ public interface IWebConstants {
      * 配置示例: platform.web
      */
     String PROPERTY_WEB = IBaseConstants.PROPERTY_PLATFORM + ".web";
+
+    String PROPERTY_WEB_CRYPTO = PROPERTY_WEB + ".crypto";
+
+    /**
+     * 缓存属性前缀
+     */
+    String CACHE_WEB_PREFIX = CACHE_PREFIX + "web:";
+    String CACHE_SECURE_KEY_PREFIX = CACHE_WEB_PREFIX + "secure_key:";
+    String CACHE_ACCESS_LIMITED_PREFIX = CACHE_WEB_PREFIX + "access_limited:";
+    String CACHE_IDEMPOTENT_PREFIX = CACHE_WEB_PREFIX + "idempotent:";
+
 
     // ====================== Header ======================
 
@@ -44,4 +60,26 @@ public interface IWebConstants {
      * 默认树形结构根节点
      */
     String TREE_ROOT_ID = ISymbolConstants.ZERO;
+
+    String MATCHER_WEBJARS = "/webjars/**";
+    String MATCHER_STATIC = "/static/**";
+
+    List<String> DEFAULT_IGNORED_STATIC_RESOURCES = Lists.newArrayList(MATCHER_WEBJARS, MATCHER_STATIC,
+            "/error/**",
+            "/goya/**",
+            "/swagger-ui.html",
+            "/swagger-ui/**",
+            "/swagger-resources/**",
+            "/v3/api-docs",
+            "/v3/api-docs/**",
+            "/openapi.json",
+            "/favicon.ico",
+            "/.well-known/**"
+    );
+    List<String> DEFAULT_PERMIT_ALL_RESOURCES = Lists.newArrayList(
+            "/open/**",
+            "/stomp/ws",
+            "/oauth2/sign-out",
+            "/login*"
+    );
 }
