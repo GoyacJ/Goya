@@ -454,8 +454,8 @@ public class JsonUtils implements ApplicationContextAware {
         if (jsonNode == null) {
             return null;
         }
-        JsonNode value = jsonNode.findValue(fieldName);
-        return (value != null && value.isTextual()) ? value.asText() : null;
+        JsonNode value = jsonNode.get(fieldName);
+        return (value != null && value.isString()) ? value.asString() : null;
     }
 
     /**
@@ -469,7 +469,7 @@ public class JsonUtils implements ApplicationContextAware {
         if (jsonNode == null) {
             return false;
         }
-        JsonNode value = jsonNode.findValue(fieldName);
+        JsonNode value = jsonNode.get(fieldName);
         return value != null && value.isBoolean() && value.asBoolean();
     }
 
@@ -484,7 +484,7 @@ public class JsonUtils implements ApplicationContextAware {
         if (jsonNode == null) {
             return null;
         }
-        JsonNode value = jsonNode.findValue(fieldName);
+        JsonNode value = jsonNode.get(fieldName);
         return (value != null && value.isLong()) ? value.asLong() : null;
     }
 
@@ -502,7 +502,7 @@ public class JsonUtils implements ApplicationContextAware {
         if (jsonNode == null) {
             return null;
         }
-        JsonNode value = jsonNode.findValue(fieldName);
+        JsonNode value = jsonNode.get(fieldName);
         return (value != null) ? mapper.convertValue(value, valueTypeReference) : null;
     }
 
@@ -517,7 +517,7 @@ public class JsonUtils implements ApplicationContextAware {
         if (jsonNode == null) {
             return null;
         }
-        JsonNode value = jsonNode.findValue(fieldName);
+        JsonNode value = jsonNode.get(fieldName);
         return (value != null && value.isObject()) ? value : null;
     }
 
@@ -573,8 +573,8 @@ public class JsonUtils implements ApplicationContextAware {
         if (value == null || value.isNull()) {
             return null;
         }
-        if (value.isTextual()) {
-            return LocalDateTime.parse(value.asText());
+        if (value.isString()) {
+            return LocalDateTime.parse(value.asString());
         }
         if (value.isNumber()) {
             Instant instant = Instant.ofEpochMilli(value.asLong());

@@ -117,4 +117,16 @@ public interface IPlatformService {
     default boolean hasContextPath() {
         return StringUtils.hasText(getContextPath());
     }
+
+    /**
+     * 获取认证中心地址
+     * @return 认证中心地址
+     */
+    String getAuthServiceUri();
+
+    /**
+     * 获取认证中心名称
+     * @return 认证中心名称
+     */
+    String getAuthServiceName();
 }
