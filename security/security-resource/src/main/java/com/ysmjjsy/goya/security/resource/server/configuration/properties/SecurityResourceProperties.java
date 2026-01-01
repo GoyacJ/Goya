@@ -12,8 +12,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @since 2025/12/11 21:16
  */
 @ConfigurationProperties(prefix = ISecurityConstants.PROPERTY_PLATFORM_SECURITY_RESOURCE)
-@Schema(description = "")
+@Schema(description = "资源中心配置")
 public record SecurityResourceProperties(
 
-) implements IProperties {
+)  {
 }

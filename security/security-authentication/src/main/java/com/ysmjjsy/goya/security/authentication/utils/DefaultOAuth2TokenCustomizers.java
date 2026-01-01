@@ -69,7 +69,7 @@ final class DefaultOAuth2TokenCustomizers {
 
                 X509Certificate[] clientCertificateChain = (X509Certificate[]) clientAuthentication.getCredentials();
                 try {
-                    String sha256Thumbprint = computeSHA256Thumbprint(clientCertificateChain[0]);
+                    String sha256Thumbprint = computeSHA256Thumbprint(Objects.requireNonNull(clientCertificateChain)[0]);
                     Map<String, Object> x5tClaim = new HashMap<>();
                     x5tClaim.put("x5t#S256", sha256Thumbprint);
                     claims.put("cnf", x5tClaim);

@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.security.authentication.exception;
 
-import com.ysmjjsy.goya.component.captcha.exception.code.CaptchaCodeEnum;
-import com.ysmjjsy.goya.component.common.code.ICodeEnums;
+import com.ysmjjsy.goya.component.common.code.IResponseCode;
+import com.ysmjjsy.goya.component.common.code.ResponseCodeEnum;
 
 import java.io.Serial;
 
@@ -11,7 +11,7 @@ import java.io.Serial;
  * @author goya
  * @since 2025/12/7 23:33
  */
-public class SecurityCaptchaHasExpiredException extends SecurityCaptchaException{
+public class SecurityCaptchaHasExpiredException extends SecurityCaptchaException {
     @Serial
     private static final long serialVersionUID = -812735116112529118L;
 
@@ -24,7 +24,7 @@ public class SecurityCaptchaHasExpiredException extends SecurityCaptchaException
     }
 
     @Override
-    public ICodeEnums getCode() {
-        return CaptchaCodeEnum.CAPTCHA_HAS_EXPIRED_ERROR;
+    public IResponseCode getCode() {
+        return ResponseCodeEnum.CAPTCHA_HAS_EXPIRED_ERROR;
     }
 }

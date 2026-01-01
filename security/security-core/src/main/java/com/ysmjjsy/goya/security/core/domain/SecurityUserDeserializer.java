@@ -1,16 +1,14 @@
 package com.ysmjjsy.goya.security.core.domain;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ysmjjsy.goya.component.common.utils.JsonUtils;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
-
-import java.io.IOException;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ValueDeserializer;
 import java.util.Set;
 
 /**
@@ -19,7 +17,7 @@ import java.util.Set;
  * @author goya
  * @since 2025/10/10 11:24
  */
-public class SecurityUserDeserializer extends JsonDeserializer<SecurityUser> {
+public class SecurityUserDeserializer extends ValueDeserializer<SecurityUser> {
 
     private static final TypeReference<Set<SecurityGrantedAuthority>> SECURITY_GRANTED_AUTHORITY_SET = new TypeReference<>() {
     };
@@ -35,44 +33,41 @@ public class SecurityUserDeserializer extends JsonDeserializer<SecurityUser> {
      * @param jp   the JsonParser
      * @param ctxt the DeserializationContext
      * @return the user
-     * @throws IOException             if a exception during IO occurs
-     * @throws JsonProcessingException if an error during JSON processing occurs
+     * @throws JacksonException if an error during JSON processing occurs
      */
     @Override
-    public SecurityUser deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
-        ObjectMapper mapper = (ObjectMapper) jp.getCodec();
-        JsonNode root = mapper.readTree(jp);
+    public SecurityUser deserialize(JsonParser jp, DeserializationContext ctxt) throws JacksonException {
+        JsonNode jsonNode = ctxt.readTree(jp);
+        String userId = JsonUtils.findStringValue(jsonNode, "userId");
+        String username = JsonUtils.findStringValue(jsonNode, "username");
+        String password = readPassword(jsonNode);
 
-        String userId = JsonUtils.findStringValue(root, "userId");
-        String username = JsonUtils.findStringValue(root, "username");
-        String password = readPassword(root);
+        Set<GrantedAuthority> authorities = ctxt.readTreeAsValue(JsonUtils.readJsonNode(jsonNode, "authorities"),
+                ctxt.getTypeFactory().constructType(SECURITY_GRANTED_AUTHORITY_SET));
 
-        Set<SecurityGrantedAuthority> authorities =
-                mapper.convertValue(root.get("authorities"), SECURITY_GRANTED_AUTHORITY_SET);
-
-        Set<String> roles =
-                mapper.convertValue(root.get("roles"), SECURITY_ROLE_SET);
+        Set<String> roles = ctxt.readTreeAsValue(JsonUtils.readJsonNode(jsonNode, "authorities"),
+                ctxt.getTypeFactory().constructType(SECURITY_ROLE_SET));
 
         SecurityUser.Builder b = SecurityUser.builder()
                 .userId(userId)
                 .username(username)
                 .password(password)
-                .openId(JsonUtils.findStringValue(root, "openId"))
-                .tenantId(JsonUtils.findStringValue(root, "tenantId"))
-                .nickname(JsonUtils.findStringValue(root, "nickname"))
-                .phoneNumber(JsonUtils.findStringValue(root, "phoneNumber"))
-                .email(JsonUtils.findStringValue(root, "email"))
-                .avatar(JsonUtils.findStringValue(root, "avatar"))
+                .openId(JsonUtils.findStringValue(jsonNode, "openId"))
+                .tenantId(JsonUtils.findStringValue(jsonNode, "tenantId"))
+                .nickname(JsonUtils.findStringValue(jsonNode, "nickname"))
+                .phoneNumber(JsonUtils.findStringValue(jsonNode, "phoneNumber"))
+                .email(JsonUtils.findStringValue(jsonNode, "email"))
+                .avatar(JsonUtils.findStringValue(jsonNode, "avatar"))
                 .authorities(authorities)
                 .roles(roles)
-                .enabled(JsonUtils.findBooleanValue(root, "enabled"))
-                .accountNonExpired(JsonUtils.findBooleanValue(root, "accountNonExpired"))
-                .accountNonLocked(JsonUtils.findBooleanValue(root, "accountNonLocked"))
-                .credentialsNonExpired(JsonUtils.findBooleanValue(root, "credentialsNonExpired"));
+                .enabled(JsonUtils.findBooleanValue(jsonNode, "enabled"))
+                .accountNonExpired(JsonUtils.findBooleanValue(jsonNode, "accountNonExpired"))
+                .accountNonLocked(JsonUtils.findBooleanValue(jsonNode, "accountNonLocked"))
+                .credentialsNonExpired(JsonUtils.findBooleanValue(jsonNode, "credentialsNonExpired"));
 
         SecurityUser user = b.build();
 
-        if (passwordNodeIsMissing(root)) {
+        if (passwordNodeIsMissing(jsonNode)) {
             user.eraseCredentials();
         }
 
@@ -88,7 +83,7 @@ public class SecurityUserDeserializer extends JsonDeserializer<SecurityUser> {
         }
 
         // 字段存在但 null → Jackson 会解析为 null → 返回 ""
-        String pwd = pwdNode.asText("");
+        String pwd = pwdNode.asString("");
         return (pwd == null ? "" : pwd);
     }
 

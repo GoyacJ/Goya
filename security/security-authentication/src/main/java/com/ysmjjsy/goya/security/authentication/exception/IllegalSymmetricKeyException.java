@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.security.authentication.exception;
 
-import com.ysmjjsy.goya.component.common.code.ICodeEnums;
-import com.ysmjjsy.goya.component.crypto.exception.code.CryptoCodeEnum;
+import com.ysmjjsy.goya.component.common.code.IResponseCode;
+import com.ysmjjsy.goya.component.common.code.ResponseCodeEnum;
 
 import java.io.Serial;
 
@@ -25,7 +25,7 @@ public class IllegalSymmetricKeyException extends SecurityAuthenticationExceptio
     }
 
     @Override
-    public ICodeEnums getCode() {
-        return CryptoCodeEnum.ILLEGAL_SYMMETRIC_KEY_ERROR;
+    public IResponseCode getCode() {
+        return ResponseCodeEnum.CRYPTO_ERROR;
     }
 }

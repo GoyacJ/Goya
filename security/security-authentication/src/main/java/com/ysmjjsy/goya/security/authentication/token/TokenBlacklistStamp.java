@@ -1,7 +1,8 @@
 package com.ysmjjsy.goya.security.authentication.token;
 
-import com.ysmjjsy.goya.component.cache.factory.JetCacheFactory;
-import com.ysmjjsy.goya.component.cache.wrapper.AbstractStampCache;
+import com.ysmjjsy.goya.component.cache.resolver.CacheSpecification;
+import com.ysmjjsy.goya.component.cache.template.AbstractCheckTemplate;
+import com.ysmjjsy.goya.component.cache.ttl.TtlStrategy;
 import com.ysmjjsy.goya.security.authentication.configuration.properties.SecurityAuthenticationProperties;
 import com.ysmjjsy.goya.security.authentication.constants.ISecurityAuthenticationConstants;
 import lombok.extern.slf4j.Slf4j;
@@ -13,17 +14,30 @@ import lombok.extern.slf4j.Slf4j;
  * @since 2025/12/17 22:41
  */
 @Slf4j
-public class TokenBlacklistStamp extends AbstractStampCache<String, String> {
+public class TokenBlacklistStamp extends AbstractCheckTemplate<String, String> {
 
     private final SecurityAuthenticationProperties.TokenBlackListConfig tokenBlackListConfig;
 
-    protected TokenBlacklistStamp(JetCacheFactory jetCacheFactory, SecurityAuthenticationProperties.TokenBlackListConfig tokenBlackListConfig) {
-        super(ISecurityAuthenticationConstants.CACHE_SECURITY_AUTHENTICATION_TOKEN_BLACK_LIST_PREFIX, tokenBlackListConfig.tokenBlackListExpire(), jetCacheFactory);
+    public TokenBlacklistStamp(SecurityAuthenticationProperties.TokenBlackListConfig tokenBlackListConfig) {
         this.tokenBlackListConfig = tokenBlackListConfig;
     }
 
     @Override
-    public String nextStamp(String key) {
+    protected String nextValue(String key) {
         return tokenBlackListConfig.defaultReason();
+    }
+
+    @Override
+    protected String getCacheName() {
+        return ISecurityAuthenticationConstants.CACHE_SECURITY_AUTHENTICATION_TOKEN_BLACK_LIST_PREFIX;
+    }
+
+    @Override
+    protected CacheSpecification buildCacheSpecification(CacheSpecification defaultSpec) {
+        CacheSpecification.Builder builder = defaultSpec.toBuilder();
+        builder.ttl(tokenBlackListConfig.tokenBlackListExpire());
+        TtlStrategy.FixedRatioStrategy fixedRatioStrategy = new TtlStrategy.FixedRatioStrategy(0.8);
+        builder.localTtlStrategy(fixedRatioStrategy);
+        return super.buildCacheSpecification(builder.build());
     }
 }

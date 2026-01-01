@@ -144,7 +144,7 @@ public class TokenService {
      * @param token Token值
      */
     public void addToBlacklist(String token) {
-        tokenBlacklistStamp.stamp(token);
+        tokenBlacklistStamp.put(token);
     }
 
     /**
@@ -154,7 +154,7 @@ public class TokenService {
      * @param expire 过期时间，如果为null则使用默认值
      */
     public void addToBlacklist(String token, Duration expire) {
-        tokenBlacklistStamp.stamp(token, expire);
+        tokenBlacklistStamp.put(token, expire);
     }
 
     /**
@@ -165,7 +165,7 @@ public class TokenService {
      * @param expire 过期时间，如果为null则使用默认值
      */
     public void addToBlacklist(String token, String reason, Duration expire) {
-        tokenBlacklistStamp.stamp(token, reason, expire);
+        tokenBlacklistStamp.put(token, reason, expire);
     }
 
     /**
@@ -175,7 +175,7 @@ public class TokenService {
      * @return true如果在黑名单中，false如果不在
      */
     public boolean isBlacklisted(String token) {
-        return tokenBlacklistStamp.containKey(token);
+        return tokenBlacklistStamp.exists(token);
     }
 
     /**
@@ -184,6 +184,6 @@ public class TokenService {
      * @param token Token值
      */
     public void removeFromBlacklist(String token) {
-        tokenBlacklistStamp.removeStamp(token);
+        tokenBlacklistStamp.evict(token);
     }
 }

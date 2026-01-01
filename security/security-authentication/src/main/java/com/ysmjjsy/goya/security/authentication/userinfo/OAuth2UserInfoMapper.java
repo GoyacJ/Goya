@@ -1,13 +1,13 @@
 package com.ysmjjsy.goya.security.authentication.userinfo;
 
-import com.ysmjjsy.goya.component.common.utils.CollectionUtils;
-import com.ysmjjsy.goya.component.common.utils.MapUtils;
-import com.ysmjjsy.goya.component.common.utils.StringUtils;
 import com.ysmjjsy.goya.security.core.constants.IStandardClaimNamesConstants;
 import com.ysmjjsy.goya.security.core.domain.SecurityUser;
 import com.ysmjjsy.goya.security.core.service.ISecurityUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
@@ -65,8 +65,8 @@ public class OAuth2UserInfoMapper
         // ===== profile =====
         if (scopes.contains(OidcScopes.PROFILE)) {
             claims.put(StandardClaimNames.PREFERRED_USERNAME, user.getUsername());
-            MapUtils.putIfNotBlank(claims, StandardClaimNames.NICKNAME, user.getNickname());
-            MapUtils.putIfNotBlank(claims, StandardClaimNames.PICTURE, user.getAvatar());
+            putIfNotBlank(claims, StandardClaimNames.NICKNAME, user.getNickname());
+            putIfNotBlank(claims, StandardClaimNames.PICTURE, user.getAvatar());
         }
 
         // ===== email =====
@@ -99,5 +99,9 @@ public class OAuth2UserInfoMapper
         return new OidcUserInfo(claims);
     }
 
-
+    public static <K, V> void putIfNotBlank(Map<K, V> map, K name, V value) {
+        if (ObjectUtils.isNotEmpty(value)) {
+            map.put(name, value);
+        }
+    }
 }

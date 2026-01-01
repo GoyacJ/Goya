@@ -1,8 +1,9 @@
 package com.ysmjjsy.goya.security.authentication.provider.oauth2;
 
-import com.ysmjjsy.goya.component.common.utils.ObjectUtils;
 import com.ysmjjsy.goya.security.core.domain.SecurityUser;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.ObjectUtils;
+import org.jspecify.annotations.NullMarked;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
@@ -30,6 +31,7 @@ public class OAuth2GrantAuthenticationToken implements Authentication {
     private boolean authenticated = true;
 
     @Override
+    @NullMarked
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return ObjectUtils.isNotEmpty(securityUser) ? securityUser.getAuthorities() : AuthorityUtils.NO_AUTHORITIES;
     }

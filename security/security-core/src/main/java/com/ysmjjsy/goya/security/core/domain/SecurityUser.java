@@ -1,14 +1,13 @@
 package com.ysmjjsy.goya.security.core.domain;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.ysmjjsy.goya.component.security.user.IUserPrincipal;
+import com.ysmjjsy.goya.component.auth.user.IUserPrincipal;
 import lombok.Getter;
 import lombok.ToString;
 import org.springframework.security.core.CredentialsContainer;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.SpringSecurityCoreVersion;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.util.Assert;
+import tools.jackson.databind.annotation.JsonDeserialize;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -91,7 +90,7 @@ public class SecurityUser implements IUserPrincipal, UserDetails, CredentialsCon
 
     private static class AuthorityComparator implements Comparator<GrantedAuthority>, Serializable {
         @Serial
-        private static final long serialVersionUID = SpringSecurityCoreVersion.SERIAL_VERSION_UID;
+        private static final long serialVersionUID = 1L;
 
         @Override
         public int compare(GrantedAuthority g1, GrantedAuthority g2) {

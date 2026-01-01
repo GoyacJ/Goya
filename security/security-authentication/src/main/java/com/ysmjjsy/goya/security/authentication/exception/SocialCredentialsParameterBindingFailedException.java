@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.security.authentication.exception;
 
-import com.ysmjjsy.goya.component.common.code.BasicCodeEnum;
-import com.ysmjjsy.goya.component.common.code.ICodeEnums;
-import com.ysmjjsy.goya.component.common.exceptions.IExceptions;
+import com.ysmjjsy.goya.component.common.code.IResponseCode;
+import com.ysmjjsy.goya.component.common.code.ResponseCodeEnum;
+import com.ysmjjsy.goya.component.common.definition.exception.IException;
 import org.springframework.security.core.AuthenticationException;
 
 import java.io.Serial;
@@ -13,7 +13,7 @@ import java.io.Serial;
  * @author goya
  * @since 2025/12/7 23:37
  */
-public class SocialCredentialsParameterBindingFailedException extends AuthenticationException implements IExceptions {
+public class SocialCredentialsParameterBindingFailedException extends AuthenticationException implements IException {
     @Serial
     private static final long serialVersionUID = 9005765762244774317L;
 
@@ -26,7 +26,7 @@ public class SocialCredentialsParameterBindingFailedException extends Authentica
     }
 
     @Override
-    public ICodeEnums getCode() {
-        return BasicCodeEnum.NOT_ACCEPTABLE;
+    public IResponseCode getCode() {
+        return ResponseCodeEnum.NOT_ACCEPTABLE;
     }
 }

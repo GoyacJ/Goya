@@ -1,7 +1,6 @@
 package com.ysmjjsy.goya.security.authentication.configuration.properties;
 
-import com.ysmjjsy.goya.component.common.annotation.PropertiesCache;
-import com.ysmjjsy.goya.component.common.properties.IProperties;
+import com.ysmjjsy.goya.component.cache.annotation.PropertiesCache;
 import com.ysmjjsy.goya.security.core.constants.ISecurityConstants;
 import com.ysmjjsy.goya.security.core.enums.CertificateEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -28,7 +27,7 @@ public record SecurityAuthenticationProperties(
         @Schema(description = "jwt配置")
         @DefaultValue
         Jwk jwk
-) implements IProperties {
+) {
 
     @Schema(description = "token黑名单配置")
     public record TokenBlackListConfig(

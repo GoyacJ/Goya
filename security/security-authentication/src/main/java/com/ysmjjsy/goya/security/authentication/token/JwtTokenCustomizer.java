@@ -1,11 +1,11 @@
 package com.ysmjjsy.goya.security.authentication.token;
 
-import com.ysmjjsy.goya.component.common.utils.StringUtils;
 import com.ysmjjsy.goya.security.core.constants.IStandardClaimNamesConstants;
 import com.ysmjjsy.goya.security.core.domain.SecurityUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;

@@ -8,7 +8,7 @@ import java.io.Serial;
  * @author goya
  * @since 2025/12/7 23:38
  */
-public class UsernameAlreadyExistsException extends SecurityAuthenticationException{
+public class UsernameAlreadyExistsException extends SecurityAuthenticationException {
     @Serial
     private static final long serialVersionUID = -1296629265981116010L;
 

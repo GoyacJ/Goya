@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.security.authentication.exception;
 
-import com.ysmjjsy.goya.component.common.code.BasicCodeEnum;
-import com.ysmjjsy.goya.component.common.code.ICodeEnums;
-import com.ysmjjsy.goya.component.common.exceptions.IExceptions;
+import com.ysmjjsy.goya.component.common.code.IResponseCode;
+import com.ysmjjsy.goya.component.common.code.ResponseCodeEnum;
+import com.ysmjjsy.goya.component.common.definition.exception.IException;
 import org.springframework.security.authentication.AccountStatusException;
 
 import java.io.Serial;
@@ -13,7 +13,7 @@ import java.io.Serial;
  * @author goya
  * @since 2025/12/7 23:36
  */
-public class SessionExpiredException extends AccountStatusException implements IExceptions {
+public class SessionExpiredException extends AccountStatusException implements IException {
 
     @Serial
     private static final long serialVersionUID = -366020721747280368L;
@@ -27,7 +27,7 @@ public class SessionExpiredException extends AccountStatusException implements I
     }
 
     @Override
-    public ICodeEnums getCode() {
-        return BasicCodeEnum.NOT_ACCEPTABLE;
+    public IResponseCode getCode() {
+        return ResponseCodeEnum.NOT_ACCEPTABLE;
     }
 }

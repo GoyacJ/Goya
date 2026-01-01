@@ -1,12 +1,13 @@
 package com.ysmjjsy.goya.component.common.utils;
 
-import com.ysmjjsy.goya.component.common.exceptions.CommonException;
-import com.ysmjjsy.goya.component.common.utils.HtmlUtils;
-import com.ysmjjsy.goya.component.common.utils.ResourceUtils;
-import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
+import org.lionsoul.ip2region.xdb.Header;
+import org.lionsoul.ip2region.xdb.LongByteArray;
 import org.lionsoul.ip2region.xdb.Searcher;
+import org.lionsoul.ip2region.xdb.Version;
+
+import java.io.InputStream;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * <p>根据ip地址定位工具类，离线方式</p>
@@ -15,103 +16,122 @@ import org.lionsoul.ip2region.xdb.Searcher;
  * @since 2025/10/14 17:35
  */
 @Slf4j
-@UtilityClass
-public class RegionUtils {
+public final class RegionUtils {
 
-    /**
-     * IP地址库文件名称
-     */
-    public static final String IP_XDB_FILENAME = "db/ip2region.xdb";
+    private static final String IPV4_DB = "db/ip2region.xdb";
+    private static final String IPV6_DB = "db/ipv6wry.db";
 
-    /**
-     * Searcher
-     */
-    private static final Searcher SEARCHER;
+    private static final Searcher IPV4_SEARCHER;
+    private static final Searcher IPV6_SEARCHER;
 
-    /**
-     * 未知IP
-     */
-    public static final String UNKNOWN_IP = "XX XX";
-
-    /**
-     * 内网地址
-     */
-    public static final String LOCAL_ADDRESS = "内网IP";
-
-    /**
-     * 未知地址
-     */
-    public static final String UNKNOWN_ADDRESS = "未知";
+    private static final ReentrantReadWriteLock IPV4_LOCK = new ReentrantReadWriteLock();
+    private static final ReentrantReadWriteLock IPV6_LOCK = new ReentrantReadWriteLock();
 
     static {
         try {
-            // 1、将 ip2region 数据库文件 xdb 从 ClassPath 加载到内存。
-            // 2、基于加载到内存的 xdb 数据创建一个 Searcher 查询对象。
-            SEARCHER = Searcher.newWithBuffer(ResourceUtils.readBytes(IP_XDB_FILENAME));
-            log.info("RegionUtils初始化成功，加载IP地址库数据成功！");
+            IPV4_SEARCHER = loadFromResource(IPV4_DB);
+            IPV6_SEARCHER = loadFromResource(IPV6_DB);
         } catch (Exception e) {
-            throw new CommonException("RegionUtils初始化失败，原因：" + e.getMessage());
+            // 基础设施初始化失败，直接中止进程
+            throw new ExceptionInInitializerError(e);
         }
     }
 
-    public static String getRealAddressByIp(String ip) {
-        if (StringUtils.isBlank(ip)){
-            ip = "";
-        }
-        // 处理空串并过滤HTML标签
-        ip = HtmlUtils.cleanHtmlTag(ip);
-        // 判断是否为IPv4
-        if (NetUtils.isIpv4(ip)) {
-            return resolverIpv4Region(ip);
-        }
-        // 判断是否为IPv6
-        if (NetUtils.isIpv6(ip)) {
-            return resolverIpv6Region(ip);
-        }
-        // 如果不是IPv4或IPv6，则返回未知IP
-        return UNKNOWN_IP;
+    private RegionUtils() {
     }
 
-    /**
-     * 根据IPv4地址查询IP归属行政区域
-     * @param ip ipv4地址
-     * @return 归属行政区域
-     */
-    private static String resolverIpv4Region(String ip){
-        // 内网不查询
-        if (NetUtils.isInnerIpv4(ip)) {
-            return LOCAL_ADDRESS;
+    /* =====================================================
+     * Public API
+     * ===================================================== */
+
+    public static Region resolve(String ip) {
+        if (ip == null || ip.isBlank()) {
+            return Region.EMPTY;
         }
-        return RegionUtils.getCityInfo(ip);
+
+        // very fast IPv6 detection
+        return ip.indexOf(':') >= 0
+                ? resolveIPv6(ip)
+                : resolveIPv4(ip);
     }
 
-    /**
-     * 根据IPv6地址查询IP归属行政区域
-     * @param ip ipv6地址
-     * @return 归属行政区域
-     */
-    private static String resolverIpv6Region(String ip){
-        // 内网不查询
-        if (NetUtils.isInnerIpv6(ip)) {
-            return LOCAL_ADDRESS;
-        }
-        log.warn("ip2region不支持IPV6地址解析：{}", ip);
-        // 不支持IPv6，不再进行没有必要的IP地址信息的解析，直接返回
-        // 如有需要，可自行实现IPv6地址信息解析逻辑，并在这里返回
-        return UNKNOWN_ADDRESS;
-    }
-
-    /**
-     * 根据IP地址离线获取城市
-     */
-    public static String getCityInfo(String ip) {
+    public static Region resolveIPv4(String ip) {
+        IPV4_LOCK.readLock().lock();
         try {
-            // 3、执行查询
-            String region = SEARCHER.search(StringUtils.trim(ip));
-            return region.replace("0|", "").replace("|0", "");
+            String raw = IPV4_SEARCHER.search(ip);
+            return parse(raw);
         } catch (Exception e) {
-            log.error("IP地址离线获取城市异常 {}", ip);
-            return "未知";
+            return Region.EMPTY;
+        } finally {
+            IPV4_LOCK.readLock().unlock();
         }
+    }
+
+    public static Region resolveIPv6(String ip) {
+        IPV6_LOCK.readLock().lock();
+        try {
+            String raw = IPV6_SEARCHER.search(ip);
+            return parse(raw);
+        } catch (Exception e) {
+            return Region.EMPTY;
+        } finally {
+            IPV6_LOCK.readLock().unlock();
+        }
+    }
+
+    /* =====================================================
+     * Internal
+     * ===================================================== */
+
+    private static Searcher loadFromResource(String resourcePath) throws Exception {
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        if (cl == null) {
+            cl = RegionUtils.class.getClassLoader();
+        }
+
+        try (InputStream is = cl.getResourceAsStream(resourcePath)) {
+            if (is == null) {
+                throw new IllegalStateException(
+                        "ip2region resource not found: " + resourcePath);
+            }
+
+            // 1. load whole file into memory
+            LongByteArray content = Searcher.loadContentFromInputStream(is);
+
+            // 2. parse header
+            Header header = Searcher.loadHeaderFromBuffer(content);
+
+            // 3. detect IP version
+            Version version = Version.fromHeader(header);
+
+            // 4. verify structure
+            Searcher.verify(header, content.length());
+
+            // 5. create pure in-memory searcher (fastest)
+            return Searcher.newWithBuffer(version, content);
+        }
+    }
+
+    private static Region parse(String raw) {
+        if (raw == null || raw.isEmpty()) {
+            return Region.EMPTY;
+        }
+
+        // ip2region format:
+        // country|area|province|city|isp
+        String[] parts = raw.split("\\|", -1);
+
+        return new Region(
+                part(parts, 0),
+                part(parts, 1),
+                part(parts, 2),
+                part(parts, 3),
+                part(parts, 4),
+                raw
+        );
+    }
+
+    private static String part(String[] parts, int index) {
+        return index < parts.length ? parts[index] : "";
     }
 }

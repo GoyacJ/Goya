@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.security.authentication.exception;
 
-import com.ysmjjsy.goya.component.captcha.exception.code.CaptchaCodeEnum;
-import com.ysmjjsy.goya.component.common.code.ICodeEnums;
+import com.ysmjjsy.goya.component.common.code.IResponseCode;
+import com.ysmjjsy.goya.component.common.code.ResponseCodeEnum;
 
 import java.io.Serial;
 
@@ -25,7 +25,7 @@ public class SecurityCaptchaArgumentIllegalException extends SecurityCaptchaExce
     }
 
     @Override
-    public ICodeEnums getCode() {
-        return CaptchaCodeEnum.CAPTCHA_PARAMETER_ILLEGAL_ERROR;
+    public IResponseCode getCode() {
+        return ResponseCodeEnum.CAPTCHA_PARAMETER_ILLEGAL_ERROR;
     }
 }

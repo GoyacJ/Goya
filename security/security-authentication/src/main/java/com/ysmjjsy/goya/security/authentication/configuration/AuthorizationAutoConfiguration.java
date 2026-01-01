@@ -1,6 +1,5 @@
 package com.ysmjjsy.goya.security.authentication.configuration;
 
-import com.ysmjjsy.goya.security.authentication.customizer.SecurityOAuth2AuthorizationServerConfigurerCustomizer;
 import com.ysmjjsy.goya.security.authentication.userinfo.OAuth2UserInfoMapper;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -9,7 +8,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
@@ -33,10 +31,6 @@ public class AuthorizationAutoConfiguration {
             HttpSecurity http,
             OAuth2UserInfoMapper oAuth2UserInfoMapper
     ) throws Exception {
-
-        OAuth2AuthorizationServerConfigurer authorizationServerConfigurer = OAuth2AuthorizationServerConfigurer.authorizationServer();
-
-        http.with(authorizationServerConfigurer,new SecurityOAuth2AuthorizationServerConfigurerCustomizer(oAuth2UserInfoMapper));
 
         return http.build();
     }
