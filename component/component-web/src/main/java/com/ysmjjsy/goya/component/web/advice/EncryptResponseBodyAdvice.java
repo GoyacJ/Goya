@@ -3,7 +3,7 @@ package com.ysmjjsy.goya.component.web.advice;
 import com.ysmjjsy.goya.component.common.definition.exception.CommonException;
 import com.ysmjjsy.goya.component.common.utils.JsonUtils;
 import com.ysmjjsy.goya.component.web.annotation.Crypto;
-import com.ysmjjsy.goya.component.web.processor.HttpCryptoProcessor;
+import com.ysmjjsy.goya.component.cache.crypto.CryptoProcessor;
 import com.ysmjjsy.goya.component.web.utils.WebUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +29,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 @RequiredArgsConstructor
 public class EncryptResponseBodyAdvice implements ResponseBodyAdvice<Object> {
 
-    private final HttpCryptoProcessor httpCryptoProcessor;
+    private final CryptoProcessor httpCryptoProcessor;
 
     @Override
     public boolean supports(MethodParameter methodParameter, @NonNull Class<? extends HttpMessageConverter<?>> converterType) {

@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.web.resolver;
 
 import com.ysmjjsy.goya.component.web.annotation.Crypto;
-import com.ysmjjsy.goya.component.web.processor.HttpCryptoProcessor;
+import com.ysmjjsy.goya.component.cache.crypto.CryptoProcessor;
 import com.ysmjjsy.goya.component.web.utils.WebUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.Part;
@@ -40,7 +40,7 @@ import java.util.Map;
 @Setter
 public class DecryptRequestParamMapResolver implements HandlerMethodArgumentResolver {
 
-    private HttpCryptoProcessor httpCryptoProcessor;
+    private CryptoProcessor httpCryptoProcessor;
     private RequestParamMapMethodArgumentResolver requestParamMapMethodArgumentResolver;
 
     @Override

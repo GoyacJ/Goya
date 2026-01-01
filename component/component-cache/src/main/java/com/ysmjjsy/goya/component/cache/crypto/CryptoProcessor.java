@@ -1,15 +1,15 @@
-package com.ysmjjsy.goya.component.web.processor;
+package com.ysmjjsy.goya.component.cache.crypto;
 
+import com.ysmjjsy.goya.component.cache.constants.ICacheConstants;
 import com.ysmjjsy.goya.component.cache.resolver.CacheSpecification;
 import com.ysmjjsy.goya.component.cache.template.AbstractCheckTemplate;
 import com.ysmjjsy.goya.component.cache.ttl.TtlStrategy;
+import com.ysmjjsy.goya.component.common.crypto.IAsymmetricCryptoProcessor;
+import com.ysmjjsy.goya.component.common.crypto.ISymmetricCryptoProcessor;
+import com.ysmjjsy.goya.component.common.crypto.SecretKey;
 import com.ysmjjsy.goya.component.common.definition.exception.CommonException;
+import com.ysmjjsy.goya.component.common.service.IPlatformService;
 import com.ysmjjsy.goya.component.common.utils.IdentityUtils;
-import com.ysmjjsy.goya.component.web.configuration.properties.WebProperties;
-import com.ysmjjsy.goya.component.web.constants.IWebConstants;
-import com.ysmjjsy.goya.component.web.crypto.IAsymmetricCryptoProcessor;
-import com.ysmjjsy.goya.component.web.crypto.ISymmetricCryptoProcessor;
-import com.ysmjjsy.goya.component.web.crypto.SecretKey;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
@@ -25,22 +25,21 @@ import java.time.Duration;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class HttpCryptoProcessor extends AbstractCheckTemplate<String, SecretKey> {
+public class CryptoProcessor extends AbstractCheckTemplate<String, SecretKey> {
 
     private final IAsymmetricCryptoProcessor asymmetricCryptoProcessor;
     private final ISymmetricCryptoProcessor symmetricCryptoProcessor;
-    private final WebProperties webProperties;
-
+    private final IPlatformService iPlatformService;
     public String encrypt(String identity, String content) {
         try {
             SecretKey secretKey = getSecretKey(identity);
             String result = symmetricCryptoProcessor.encrypt(content, secretKey.symmetricKey());
             log.debug("[GOYA] |- Encrypt content from [{}] to [{}].", content, result);
             return result;
-        } catch (CommonException e) {
+        } catch (CommonException _) {
             log.warn("[GOYA] |- Session has expired, need recreate, Skip encrypt content [{}].", content);
             return content;
-        } catch (Exception e) {
+        } catch (Exception _) {
             log.warn("[GOYA] |- Symmetric can not Encrypt content [{}], Skip!", content);
             return content;
         }
@@ -53,10 +52,10 @@ public class HttpCryptoProcessor extends AbstractCheckTemplate<String, SecretKey
             String result = symmetricCryptoProcessor.decrypt(content, secretKey.symmetricKey());
             log.debug("[GOYA] |- Decrypt content from [{}] to [{}].", content, result);
             return result;
-        } catch (CommonException e) {
+        } catch (CommonException _) {
             log.warn("[GOYA] |- Session has expired, need recreate, Skip decrypt content [{}].", content);
             return content;
-        } catch (Exception e) {
+        } catch (Exception _) {
             log.warn("[GOYA] |- Symmetric can not Decrypt content [{}], Skip!", content);
             return content;
         }
@@ -76,7 +75,7 @@ public class HttpCryptoProcessor extends AbstractCheckTemplate<String, SecretKey
         } else {
             try {
                 return getSecretKey(identity);
-            } catch (CommonException e) {
+            } catch (CommonException _) {
                 log.debug("[GOYA] |- SecretKey has expired, recreate it");
             }
         }
@@ -149,7 +148,7 @@ public class HttpCryptoProcessor extends AbstractCheckTemplate<String, SecretKey
             SecretKey secretKey = getSecretKey(identity);
             String frontendPublicKey = decryptFrontendPublicKey(confidential, secretKey.privateKey());
             return encryptBackendKey(secretKey.symmetricKey(), frontendPublicKey);
-        } catch (CommonException e) {
+        } catch (CommonException _) {
             throw new CommonException();
         }
 
@@ -167,13 +166,13 @@ public class HttpCryptoProcessor extends AbstractCheckTemplate<String, SecretKey
 
     @Override
     protected String getCacheName() {
-        return IWebConstants.CACHE_SECURE_KEY_PREFIX;
+        return ICacheConstants.CACHE_SECURE_KEY_PREFIX;
     }
 
     @Override
     protected CacheSpecification buildCacheSpecification(CacheSpecification defaultSpec) {
         CacheSpecification.Builder builder = defaultSpec.toBuilder();
-        builder.ttl(webProperties.cryptoExpire());
+        builder.ttl(iPlatformService.getPlatformProperties().cryptoExpire());
         TtlStrategy.FixedRatioStrategy fixedRatioStrategy = new TtlStrategy.FixedRatioStrategy(0.8);
         builder.localTtlStrategy(fixedRatioStrategy);
         return super.buildCacheSpecification(builder.build());

@@ -2,7 +2,6 @@ package com.ysmjjsy.goya.component.web.configuration.properties;
 
 import com.ysmjjsy.goya.component.cache.annotation.PropertiesCache;
 import com.ysmjjsy.goya.component.web.constants.IWebConstants;
-import com.ysmjjsy.goya.component.web.enums.CryptoStrategyEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
@@ -32,15 +31,7 @@ public record WebProperties(
 
         @Schema(description = "扫描配置")
         @DefaultValue
-        AccessLimited accessLimited,
-
-        @Schema(description = "加密策略")
-        @DefaultValue("STANDARD")
-        CryptoStrategyEnum crypto,
-
-        @Schema(description = "加密过期时间")
-        @DefaultValue("PT5H")
-        Duration cryptoExpire
+        AccessLimited accessLimited
 ) {
 
     public record Scan(

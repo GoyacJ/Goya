@@ -111,4 +111,28 @@ public class SecurityAuthenticationAutoConfiguration {
         return new DelegatingOAuth2TokenGenerator(
                 jwtGenerator, accessTokenGenerator, refreshTokenGenerator);
     }
+
+    /**
+     * 配置Token服务
+     * <p>封装OAuth2 Token生成的完整流程</p>
+     *
+     * @param tokenGenerator Token生成器
+     * @param authorizationService 授权服务
+     * @param authenticationProperties 认证配置属性
+     * @return TokenService
+     */
+    @Bean
+    public com.ysmjjsy.goya.security.authentication.token.TokenService tokenService(
+            OAuth2TokenGenerator<?> tokenGenerator,
+            org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService authorizationService,
+            SecurityAuthenticationProperties authenticationProperties) {
+        com.ysmjjsy.goya.security.authentication.token.TokenBlacklistStamp tokenBlacklistStamp =
+                new com.ysmjjsy.goya.security.authentication.token.TokenBlacklistStamp(
+                        authenticationProperties.tokenBlackListConfig());
+        com.ysmjjsy.goya.security.authentication.token.TokenService tokenService =
+                new com.ysmjjsy.goya.security.authentication.token.TokenService(
+                        tokenGenerator, authorizationService, tokenBlacklistStamp);
+        log.trace("[Goya] |- security [authentication] TokenService auto configure.");
+        return tokenService;
+    }
 }

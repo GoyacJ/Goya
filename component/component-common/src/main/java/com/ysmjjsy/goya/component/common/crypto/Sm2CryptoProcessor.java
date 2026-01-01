@@ -1,4 +1,4 @@
-package com.ysmjjsy.goya.component.web.crypto;
+package com.ysmjjsy.goya.component.common.crypto;
 
 import com.ysmjjsy.goya.component.common.utils.CryptUtils;
 import com.ysmjjsy.goya.component.common.utils.KeyDTO;

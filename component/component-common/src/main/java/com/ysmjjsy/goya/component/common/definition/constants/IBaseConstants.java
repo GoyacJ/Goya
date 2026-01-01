@@ -61,6 +61,8 @@ public interface IBaseConstants {
      */
     String PROPERTY_PLATFORM_REMOTE_DATA_TYPE = PROPERTY_PLATFORM + ".remoteDataType";
 
+    String PROPERTY_CRYPTO = PROPERTY_PLATFORM + ".crypto";
+
     // ====================== 通用日期格式 ======================
 
     /**

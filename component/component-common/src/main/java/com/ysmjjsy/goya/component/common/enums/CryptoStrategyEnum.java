@@ -1,7 +1,7 @@
-package com.ysmjjsy.goya.component.web.enums;
+package com.ysmjjsy.goya.component.common.enums;
 
+import com.ysmjjsy.goya.component.common.definition.constants.IBaseConstants;
 import com.ysmjjsy.goya.component.common.definition.enums.IPropertyEnum;
-import com.ysmjjsy.goya.component.web.constants.IWebConstants;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -39,6 +39,6 @@ public enum CryptoStrategyEnum implements IPropertyEnum {
 
     @Override
     public String getPrefix() {
-        return IWebConstants.PROPERTY_WEB_CRYPTO;
+        return IBaseConstants.PROPERTY_CRYPTO;
     }
 }

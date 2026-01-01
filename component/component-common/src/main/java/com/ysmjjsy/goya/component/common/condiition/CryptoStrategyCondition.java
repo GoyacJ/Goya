@@ -1,8 +1,7 @@
-package com.ysmjjsy.goya.component.web.condition;
+package com.ysmjjsy.goya.component.common.condiition;
 
-import com.ysmjjsy.goya.component.common.condiition.AbstractEnumSpringBootCondition;
-import com.ysmjjsy.goya.component.web.annotation.CryptoStrategy;
-import com.ysmjjsy.goya.component.web.enums.CryptoStrategyEnum;
+import com.ysmjjsy.goya.component.common.annotation.CryptoStrategy;
+import com.ysmjjsy.goya.component.common.enums.CryptoStrategyEnum;
 
 import java.lang.annotation.Annotation;
 

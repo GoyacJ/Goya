@@ -32,6 +32,9 @@ public interface ICacheConstants {
      */
     String CACHE_PROPERTIES_PREFIX = CACHE_PREFIX + "properties:";
 
+
+    String CACHE_SECURE_KEY_PREFIX = CACHE_PREFIX + "secure_key:";
+
     /**
      * 缓存分隔符
      * 用于组合缓存键，例如: cache:user:123

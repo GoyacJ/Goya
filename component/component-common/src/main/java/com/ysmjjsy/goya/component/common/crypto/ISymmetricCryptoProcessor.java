@@ -1,4 +1,4 @@
-package com.ysmjjsy.goya.component.web.crypto;
+package com.ysmjjsy.goya.component.common.crypto;
 
 /**
  * <p>对称加密算法</p>

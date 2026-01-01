@@ -2,11 +2,14 @@ package com.ysmjjsy.goya.component.common.configuration.properties;
 
 import com.ysmjjsy.goya.component.common.definition.constants.IBaseConstants;
 import com.ysmjjsy.goya.component.common.enums.ArchitectureEnum;
+import com.ysmjjsy.goya.component.common.enums.CryptoStrategyEnum;
 import com.ysmjjsy.goya.component.common.enums.LocaleEnum;
 import com.ysmjjsy.goya.component.common.enums.ProtocolEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
+
+import java.time.Duration;
 
 /**
  * <p></p>
@@ -29,7 +32,15 @@ public record PlatformProperties(
         ProtocolEnum protocol,
 
         @Schema(description = "系统语言")
-        LocaleEnum locale
+        LocaleEnum locale,
+
+        @Schema(description = "加密策略")
+        @DefaultValue("STANDARD")
+        CryptoStrategyEnum crypto,
+
+        @Schema(description = "加密过期时间")
+        @DefaultValue("PT5H")
+        Duration cryptoExpire
 ) {
 
 }

@@ -5,7 +5,7 @@ import com.ysmjjsy.goya.component.common.utils.ByteUtils;
 import com.ysmjjsy.goya.component.common.utils.IoUtils;
 import com.ysmjjsy.goya.component.common.utils.JsonUtils;
 import com.ysmjjsy.goya.component.web.annotation.Crypto;
-import com.ysmjjsy.goya.component.web.processor.HttpCryptoProcessor;
+import com.ysmjjsy.goya.component.cache.crypto.CryptoProcessor;
 import com.ysmjjsy.goya.component.web.utils.WebUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -41,9 +41,9 @@ public class DecryptRequestBodyAdvice implements RequestBodyAdvice {
 
     private static final Logger log = LoggerFactory.getLogger(DecryptRequestBodyAdvice.class);
 
-    private HttpCryptoProcessor httpCryptoProcessor;
+    private CryptoProcessor httpCryptoProcessor;
 
-    public void setInterfaceCryptoProcessor(HttpCryptoProcessor httpCryptoProcessor) {
+    public void setInterfaceCryptoProcessor(CryptoProcessor httpCryptoProcessor) {
         this.httpCryptoProcessor = httpCryptoProcessor;
     }
 

@@ -22,13 +22,10 @@ public interface IWebConstants {
      */
     String PROPERTY_WEB = IBaseConstants.PROPERTY_PLATFORM + ".web";
 
-    String PROPERTY_WEB_CRYPTO = PROPERTY_WEB + ".crypto";
-
     /**
      * 缓存属性前缀
      */
     String CACHE_WEB_PREFIX = CACHE_PREFIX + "web:";
-    String CACHE_SECURE_KEY_PREFIX = CACHE_WEB_PREFIX + "secure_key:";
     String CACHE_ACCESS_LIMITED_PREFIX = CACHE_WEB_PREFIX + "access_limited:";
     String CACHE_IDEMPOTENT_PREFIX = CACHE_WEB_PREFIX + "idempotent:";
 

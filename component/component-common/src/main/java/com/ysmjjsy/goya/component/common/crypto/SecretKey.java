@@ -1,4 +1,4 @@
-package com.ysmjjsy.goya.component.web.crypto;
+package com.ysmjjsy.goya.component.common.crypto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 

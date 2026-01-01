@@ -1,10 +1,15 @@
 package com.ysmjjsy.goya.component.common.configuration;
 
+import com.ysmjjsy.goya.component.common.annotation.CryptoStrategy;
 import com.ysmjjsy.goya.component.common.code.IResponseCode;
 import com.ysmjjsy.goya.component.common.code.ResponseCodeRegistry;
 import com.ysmjjsy.goya.component.common.configuration.properties.PlatformProperties;
 import com.ysmjjsy.goya.component.common.context.ApplicationContentPostProcessor;
 import com.ysmjjsy.goya.component.common.context.SpringContext;
+import com.ysmjjsy.goya.component.common.crypto.AesCryptoProcessor;
+import com.ysmjjsy.goya.component.common.crypto.IAsymmetricCryptoProcessor;
+import com.ysmjjsy.goya.component.common.crypto.ISymmetricCryptoProcessor;
+import com.ysmjjsy.goya.component.common.enums.CryptoStrategyEnum;
 import com.ysmjjsy.goya.component.common.i18n.I18nResolver;
 import com.ysmjjsy.goya.component.common.jackson.TimeJacksonComponent;
 import com.ysmjjsy.goya.component.common.strategy.StrategyChoose;
@@ -14,9 +19,11 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
@@ -130,5 +137,57 @@ public class CommonAutoConfiguration {
         JsonUtils jsonUtils = new JsonUtils();
         log.trace("[Goya] |- component [common] CommonAutoConfiguration |- bean [jsonUtils] register.");
         return jsonUtils;
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    @CryptoStrategy(CryptoStrategyEnum.SM)
+    static class SMCryptoConfiguration {
+
+        @PostConstruct
+        public void init() {
+            log.debug("[GOYA] |- component [web] SMCryptoConfiguration auto configure.");
+        }
+
+        @Bean
+        @ConditionalOnMissingBean
+        public IAsymmetricCryptoProcessor asymmetricCryptoProcessor() {
+            com.ysmjjsy.goya.component.common.crypto.Sm2CryptoProcessor sm2CryptoProcessor = new com.ysmjjsy.goya.component.common.crypto.Sm2CryptoProcessor();
+            log.trace("[GOYA] |- component [web] SMCryptoConfiguration |- bean [asymmetricCryptoProcessor] register.");
+            return sm2CryptoProcessor;
+        }
+
+        @Bean
+        @ConditionalOnMissingBean
+        public ISymmetricCryptoProcessor symmetricCryptoProcessor() {
+            com.ysmjjsy.goya.component.common.crypto.Sm4CryptoProcessor sm4CryptoProcessor = new com.ysmjjsy.goya.component.common.crypto.Sm4CryptoProcessor();
+            log.trace("[GOYA] |- component [web] SMCryptoConfiguration |- bean [symmetricCryptoProcessor] register.");
+            return sm4CryptoProcessor;
+        }
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    @CryptoStrategy(CryptoStrategyEnum.STANDARD)
+    static class StandardCryptoConfiguration {
+
+        @PostConstruct
+        public void init() {
+            log.debug("[GOYA] |- component [web] StandardCryptoConfiguration auto configure.");
+        }
+
+        @Bean
+        @ConditionalOnMissingBean
+        public IAsymmetricCryptoProcessor asymmetricCryptoProcessor() {
+            com.ysmjjsy.goya.component.common.crypto.RsaCryptoProcessor rsaCryptoProcessor = new com.ysmjjsy.goya.component.common.crypto.RsaCryptoProcessor();
+            log.trace("[GOYA] |- component [web] StandardCryptoConfiguration |- bean [asymmetricCryptoProcessor] register.");
+            return rsaCryptoProcessor;
+        }
+
+        @Bean
+        @ConditionalOnMissingBean
+        public ISymmetricCryptoProcessor symmetricCryptoProcessor() {
+            AesCryptoProcessor aesCryptoProcessor = new AesCryptoProcessor();
+            log.trace("[GOYA] |- component [web] StandardCryptoConfiguration |- bean [symmetricCryptoProcessor] register.");
+            return aesCryptoProcessor;
+        }
     }
 }
