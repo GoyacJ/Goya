@@ -111,6 +111,9 @@ public enum ResponseCodeEnum implements IResponseCode {
     CAPTCHA_MISMATCH_ERROR("0500124",  HttpStatus.NOT_ACCEPTABLE),
     CAPTCHA_CATEGORY_IS_INCORRECT_ERROR("0500125", HttpStatus.NOT_ACCEPTABLE),
     CAPTCHA_HANDLER_NOT_EXIST_ERROR("0500126",  HttpStatus.NOT_ACCEPTABLE),
+
+    SOCIAL_ERROR("0500130", HttpStatus.INTERNAL_SERVER_ERROR),
+    SOCIAL_ACCESS_ERROR("0500131", HttpStatus.PRECONDITION_FAILED),
     ;
     @Schema(description = "业务状态码")
     private final String code;

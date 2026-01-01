@@ -84,8 +84,9 @@
         <aliyun-java-sdk-core.version>4.7.8</aliyun-java-sdk-core.version>
         <aliyun-java-sdk-green.version>3.6.6</aliyun-java-sdk-green.version>
         <aliyun-sdk-oss.version>3.18.3</aliyun-sdk-oss.version>
-        <alipay-sdk-java.version>4.40.576.ALL</alipay-sdk-java.version>
+        <alipay-sdk-java.version>4.40.607.ALL</alipay-sdk-java.version>
         <sms4j-spring-boot-starter.version>3.3.5</sms4j-spring-boot-starter.version>
+        <justauth.version>1.18.2</justauth.version>
 
         <!-- ======================== 工具类 & 通用依赖 ======================== -->
         <guava.version>33.5.0-jre</guava.version>
@@ -286,6 +287,11 @@
                 <groupId>org.dromara.sms4j</groupId>
                 <artifactId>sms4j-spring-boot-starter</artifactId>
                 <version>${sms4j-spring-boot-starter.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.herodotus.opensteward</groupId>
+                <artifactId>JustAuth</artifactId>
+                <version>${justauth.version}</version>
             </dependency>
 
             <!-- ======================== 工具类 & 通用依赖 ======================== -->
