@@ -73,4 +73,8 @@ public class TenantContext {
         CURRENT_TENANT_CODE.remove();
         log.debug("清除租户上下文");
     }
+
+    public static boolean isCaptchaEnabled(String tenantId, String loginType) {
+        return false;
+    }
 }

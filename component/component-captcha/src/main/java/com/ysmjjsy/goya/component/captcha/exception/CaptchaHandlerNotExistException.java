@@ -5,7 +5,7 @@ import com.ysmjjsy.goya.component.common.code.ResponseCodeEnum;
 import java.io.Serial;
 
 /**
- * <p>验证码处理器不存在 </p>
+ * <p>验证码处理器不存在</p>
  *
  * @author goya
  * @since 2025/12/7 23:47

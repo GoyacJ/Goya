@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -17,6 +18,9 @@ import java.io.Serializable;
 @AllArgsConstructor
 public class Coordinate implements Serializable {
 
+    @Serial
+    private static final long serialVersionUID = 2251578238519558767L;
+    
     private int x;
     private int y;
 

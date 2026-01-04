@@ -18,7 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.time.Duration;
 
 /**
- * <p>接口加密解密处理器</p>
+ * <p>加密解密处理器</p>
  *
  * @author goya
  * @since 2025/10/9 16:29
@@ -30,6 +30,7 @@ public class CryptoProcessor extends AbstractCheckTemplate<String, SecretKey> {
     private final IAsymmetricCryptoProcessor asymmetricCryptoProcessor;
     private final ISymmetricCryptoProcessor symmetricCryptoProcessor;
     private final IPlatformService iPlatformService;
+
     public String encrypt(String identity, String content) {
         try {
             SecretKey secretKey = getSecretKey(identity);
@@ -37,7 +38,7 @@ public class CryptoProcessor extends AbstractCheckTemplate<String, SecretKey> {
             log.debug("[GOYA] |- Encrypt content from [{}] to [{}].", content, result);
             return result;
         } catch (CommonException _) {
-            log.warn("[GOYA] |- Session has expired, need recreate, Skip encrypt content [{}].", content);
+            log.warn("[GOYA] |- identity has expired, need recreate, Skip encrypt content [{}].", content);
             return content;
         } catch (Exception _) {
             log.warn("[GOYA] |- Symmetric can not Encrypt content [{}], Skip!", content);
@@ -53,7 +54,7 @@ public class CryptoProcessor extends AbstractCheckTemplate<String, SecretKey> {
             log.debug("[GOYA] |- Decrypt content from [{}] to [{}].", content, result);
             return result;
         } catch (CommonException _) {
-            log.warn("[GOYA] |- Session has expired, need recreate, Skip decrypt content [{}].", content);
+            log.warn("[GOYA] |- identity has expired, need recreate, Skip decrypt content [{}].", content);
             return content;
         } catch (Exception _) {
             log.warn("[GOYA] |- Symmetric can not Decrypt content [{}], Skip!", content);
@@ -62,13 +63,13 @@ public class CryptoProcessor extends AbstractCheckTemplate<String, SecretKey> {
     }
 
     /**
-     * 根据SessionId创建SecretKey {@link SecretKey}。如果前端有可以唯一确定的SessionId，并且使用该值，则用该值创建SecretKey。否则就由后端动态生成一个SessionId。
+     * 根据identity创建SecretKey {@link SecretKey}。如果前端有可以唯一确定的identity，并且使用该值，则用该值创建SecretKey。否则就由后端动态生成一个identity。
      *
-     * @param identity                   SessionId，可以为空。
-     * @param accessTokenValiditySeconds Session过期时间，单位秒
+     * @param identity identity，可以为空。
+     * @param expire   过期时间，单位秒
      * @return {@link SecretKey}
      */
-    public SecretKey createSecretKey(String identity, Duration accessTokenValiditySeconds) {
+    public SecretKey createSecretKey(String identity, Duration expire) {
         // 前端如果设置sessionId，则由后端生成
         if (StringUtils.isBlank(identity)) {
             identity = IdentityUtils.fastUUID();
@@ -80,33 +81,19 @@ public class CryptoProcessor extends AbstractCheckTemplate<String, SecretKey> {
             }
         }
 
-        // 根据Token的有效时间设置
-        Duration expire = getExpire(accessTokenValiditySeconds);
         return this.put(identity, expire);
     }
 
-    private boolean isSessionValid(String identity) {
-        return this.exists(identity);
-    }
-
-    private SecretKey getSecretKey(String identity) throws CommonException {
-        if (isSessionValid(identity)) {
-            SecretKey secretKey = this.get(identity);
+    private SecretKey getSecretKey(String requestId) throws CommonException {
+        if (exists(requestId)) {
+            SecretKey secretKey = this.get(requestId);
             if (ObjectUtils.isNotEmpty(secretKey)) {
-                log.trace("[GOYA] |- Decrypt Or Encrypt content use param identity [{}], cached identity is [{}].", identity, secretKey.identity());
+                log.trace("[GOYA] |- Decrypt Or Encrypt content use param identity [{}], cached requestId is [{}].", requestId, secretKey.identity());
                 return secretKey;
             }
         }
 
         throw new CommonException("SecretKey key is expired!");
-    }
-
-    private Duration getExpire(Duration accessTokenValiditySeconds) {
-        if (ObjectUtils.isEmpty(accessTokenValiditySeconds) || accessTokenValiditySeconds.isZero()) {
-            return Duration.ofHours(2L);
-        } else {
-            return accessTokenValiditySeconds;
-        }
     }
 
     /**
@@ -151,7 +138,6 @@ public class CryptoProcessor extends AbstractCheckTemplate<String, SecretKey> {
         } catch (CommonException _) {
             throw new CommonException();
         }
-
     }
 
     @Override

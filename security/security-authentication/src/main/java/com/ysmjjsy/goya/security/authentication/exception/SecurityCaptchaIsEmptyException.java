@@ -24,6 +24,10 @@ public class SecurityCaptchaIsEmptyException extends SecurityCaptchaException{
         super(msg, cause);
     }
 
+    public SecurityCaptchaIsEmptyException(Throwable cause) {
+        super("验证码为空", cause);
+    }
+
     @Override
     public IResponseCode getCode() {
         return ResponseCodeEnum.CAPTCHA_IS_EMPTY_ERROR;

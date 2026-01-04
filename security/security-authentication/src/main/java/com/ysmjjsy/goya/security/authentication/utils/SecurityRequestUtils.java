@@ -35,11 +35,16 @@ public class SecurityRequestUtils {
         return parameters;
     }
 
-    public static void throwError(String errorCode, String parameterName) {
-        throwError(errorCode, parameterName, ACCESS_TOKEN_REQUEST_ERROR_URI);
+    public static void throwError(String errorCode, String description) {
+        OAuth2Error error = new OAuth2Error(errorCode, description, ACCESS_TOKEN_REQUEST_ERROR_URI);
+        throw new OAuth2AuthenticationException(error);
     }
 
-    public static void throwError(String errorCode, String parameterName, String errorUri) {
+    public static void throwParameterError(String errorCode, String parameterName) {
+        throwParameterError(errorCode, parameterName, ACCESS_TOKEN_REQUEST_ERROR_URI);
+    }
+
+    public static void throwParameterError(String errorCode, String parameterName, String errorUri) {
         OAuth2Error error = new OAuth2Error(errorCode, "OAuth 2.0 Parameter: " + parameterName, errorUri);
         throw new OAuth2AuthenticationException(error);
     }
@@ -56,11 +61,11 @@ public class SecurityRequestUtils {
         String value = parameters.getFirst(parameterName);
         if (isRequired) {
             if (checkRequired(parameters, parameterName, value)) {
-                throwError(errorCode, parameterName, errorUri);
+                throwParameterError(errorCode, parameterName, errorUri);
             }
         } else {
             if (checkOptional(parameters, parameterName, value)) {
-                throwError(errorCode, parameterName, errorUri);
+                throwParameterError(errorCode, parameterName, errorUri);
             }
         }
 
@@ -97,7 +102,7 @@ public class SecurityRequestUtils {
         String dPoPProof = request.getHeader(dPoPProofHeaderName);
         if (StringUtils.hasText(dPoPProof)) {
             if (Collections.list(request.getHeaders(dPoPProofHeaderName)).size() != 1) {
-                throwError(OAuth2ErrorCodes.INVALID_REQUEST, dPoPProofHeaderName, ACCESS_TOKEN_REQUEST_ERROR_URI);
+                throwParameterError(OAuth2ErrorCodes.INVALID_REQUEST, dPoPProofHeaderName, ACCESS_TOKEN_REQUEST_ERROR_URI);
             } else {
                 additionalParameters.put("dpop_proof", dPoPProof);
                 additionalParameters.put("dpop_method", request.getMethod());

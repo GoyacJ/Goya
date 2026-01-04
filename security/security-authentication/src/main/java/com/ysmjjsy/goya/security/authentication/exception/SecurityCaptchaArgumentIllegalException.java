@@ -20,6 +20,10 @@ public class SecurityCaptchaArgumentIllegalException extends SecurityCaptchaExce
         super(msg);
     }
 
+    public SecurityCaptchaArgumentIllegalException(Throwable cause) {
+        super("使用的验证码参数错误", cause);
+    }
+
     public SecurityCaptchaArgumentIllegalException(String msg, Throwable cause) {
         super(msg, cause);
     }

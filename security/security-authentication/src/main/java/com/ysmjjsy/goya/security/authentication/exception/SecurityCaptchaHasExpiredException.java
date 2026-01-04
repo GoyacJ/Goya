@@ -19,6 +19,10 @@ public class SecurityCaptchaHasExpiredException extends SecurityCaptchaException
         super(msg);
     }
 
+    public SecurityCaptchaHasExpiredException(Throwable cause) {
+        super("验证码已过期", cause);
+    }
+
     public SecurityCaptchaHasExpiredException(String msg, Throwable cause) {
         super(msg, cause);
     }

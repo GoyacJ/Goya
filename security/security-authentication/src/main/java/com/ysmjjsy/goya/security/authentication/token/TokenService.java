@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.*;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
@@ -18,6 +19,7 @@ import org.springframework.security.oauth2.server.authorization.token.OAuth2Toke
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Set;
 
 /**
  * <p>Token服务实现</p>
@@ -38,37 +40,40 @@ public class TokenService {
     private final TokenBlacklistStamp tokenBlacklistStamp;
 
     /**
-     * 生成token
+     * 生成 token
      *
      * @param registeredClient 客户端信息
      * @param userDetails      用户信息
      * @param grantType        授权类型
      * @param authentication   认证对象
-     * @return
+     * @param dPoPProof        dPoPProof
+     * @return TokenResponse
      */
     public @NonNull TokenResponse generateToken(
             @NonNull RegisteredClient registeredClient,
             @NonNull SecurityUser userDetails,
             @NonNull AuthorizationGrantType grantType,
-            Authentication authentication) {
+            Set<String> authorizedScopes,
+            Authentication authentication,
+            Jwt dPoPProof) {
         if (authentication == null) {
-            authentication = new OAuth2GrantAuthenticationToken(userDetails, grantType);
+            authentication = new OAuth2GrantAuthenticationToken(userDetails, grantType, authorizedScopes);
         }
 
         // 创建principal Authentication对象（principal方法需要Authentication类型）
         Authentication principal = authentication;
 
         // 1. 生成access_token
-        OAuth2TokenContext accessTokenContext = DefaultOAuth2TokenContext.builder()
+        DefaultOAuth2TokenContext.Builder builder = DefaultOAuth2TokenContext.builder()
                 .registeredClient(registeredClient)
                 .principal(principal)
+                .authorizedScopes(authorizedScopes)
                 .authorizationServerContext(AuthorizationServerContextHolder.getContext())
-                .tokenType(OAuth2TokenType.ACCESS_TOKEN)
                 .authorizationGrantType(grantType)
                 .authorizationGrant(authentication)
-                .build();
+                .put(OAuth2TokenContext.DPOP_PROOF_KEY, dPoPProof);
 
-        OAuth2Token generatedAccessToken = this.tokenGenerator.generate(accessTokenContext);
+        OAuth2Token generatedAccessToken = this.tokenGenerator.generate(builder.tokenType(OAuth2TokenType.ACCESS_TOKEN).build());
         if (generatedAccessToken == null) {
             OAuth2Error error = new OAuth2Error(
                     OAuth2ErrorCodes.SERVER_ERROR,
@@ -82,33 +87,23 @@ public class TokenService {
                 generatedAccessToken.getTokenValue(),
                 generatedAccessToken.getIssuedAt(),
                 generatedAccessToken.getExpiresAt(),
-                null);
+                authorizedScopes);
 
         // 2. 生成refresh_token
-        OAuth2TokenContext refreshTokenContext = DefaultOAuth2TokenContext.builder()
-                .registeredClient(registeredClient)
-                .principal(principal)
-                .authorizationServerContext(AuthorizationServerContextHolder.getContext())
-                .tokenType(OAuth2TokenType.REFRESH_TOKEN)
-                .authorizationGrantType(grantType)
-                .authorizationGrant(authentication)
-                .build();
-
-        OAuth2Token generatedRefreshToken = this.tokenGenerator.generate(refreshTokenContext);
+        OAuth2Token generatedRefreshToken = this.tokenGenerator.generate(builder.tokenType(OAuth2TokenType.REFRESH_TOKEN).build());
 
         // 3. 创建OAuth2Authorization
         OAuth2Authorization.Builder authorizationBuilder = OAuth2Authorization.withRegisteredClient(registeredClient)
                 .principalName(userDetails.getUsername())
                 .authorizationGrantType(grantType)
+                .authorizedScopes(authorizedScopes)
                 .accessToken(accessToken);
 
         if (generatedRefreshToken != null) {
             OAuth2RefreshToken refreshToken = new OAuth2RefreshToken(generatedRefreshToken.getTokenValue(),
                     generatedRefreshToken.getIssuedAt(),
                     generatedRefreshToken.getExpiresAt());
-            authorizationBuilder.refreshToken(
-                    refreshToken
-            );
+            authorizationBuilder.refreshToken(refreshToken);
         }
 
         OAuth2Authorization authorization = authorizationBuilder.build();

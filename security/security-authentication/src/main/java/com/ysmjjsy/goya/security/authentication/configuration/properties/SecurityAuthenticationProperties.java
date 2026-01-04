@@ -20,13 +20,19 @@ import java.time.Duration;
 @ConfigurationProperties(prefix = ISecurityConstants.PROPERTY_PLATFORM_SECURITY_AUTHENTICATION)
 public record SecurityAuthenticationProperties(
 
+        @Schema(description = "登录失败配置")
+        LoginFailureConfig loginFailure,
+
         @Schema(description = "token黑名单配置")
         @DefaultValue
-        TokenBlackListConfig tokenBlackListConfig,
+        TokenBlackListConfig tokenBlackList,
 
         @Schema(description = "jwt配置")
         @DefaultValue
         Jwk jwk,
+
+        @Schema(description = "验证码配置")
+        CaptchaConfig captcha,
 
         @Schema(description = "密码Grant Type配置")
         @DefaultValue
@@ -44,6 +50,42 @@ public record SecurityAuthenticationProperties(
         @DefaultValue
         SsoConfig ssoConfig
 ) {
+
+    @Schema(description = "登录了失败配置")
+    public record LoginFailureConfig(
+
+            @Schema(description = "是否开启登录失败")
+            @DefaultValue("true")
+            boolean enabled,
+
+            @Schema(description = "允许允许最大失败次数")
+            @DefaultValue("5")
+            Integer maxTimes,
+
+            @Schema(description = "记录失败次数的缓存过期时间")
+            @DefaultValue("PT2H")
+            Duration expire
+    ) {
+
+    }
+
+    @Schema(description = "验证码配置")
+    public record CaptchaConfig(
+
+            @Schema(description = "密码")
+            @DefaultValue("true")
+            boolean password,
+
+            @Schema(description = "短信")
+            @DefaultValue("false")
+            boolean sms,
+
+            @Schema(description = "社交")
+            @DefaultValue("false")
+            boolean social
+    ) {
+
+    }
 
     @Schema(description = "token黑名单配置")
     public record TokenBlackListConfig(

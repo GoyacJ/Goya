@@ -1,6 +1,7 @@
 package com.ysmjjsy.goya.security.authentication.provider.oauth2;
 
 import com.ysmjjsy.goya.security.core.domain.SecurityUser;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.ObjectUtils;
 import org.jspecify.annotations.NullMarked;
@@ -11,6 +12,7 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType;
 
 import java.io.Serial;
 import java.util.Collection;
+import java.util.Set;
 
 /**
  * <p>OAuth2 Grant Type认证Token</p>
@@ -20,6 +22,7 @@ import java.util.Collection;
  * @author goya
  * @since 2025/12/18 09:21
  */
+@Getter
 @RequiredArgsConstructor
 public class OAuth2GrantAuthenticationToken implements Authentication {
 
@@ -28,6 +31,7 @@ public class OAuth2GrantAuthenticationToken implements Authentication {
 
     private final SecurityUser securityUser;
     private final AuthorizationGrantType authorizationGrantType;
+    private final Set<String> scopes;
     private boolean authenticated = true;
 
     @Override

@@ -24,6 +24,10 @@ public class SecurityCaptchaMisMatchException extends SecurityCaptchaException{
         super(msg, cause);
     }
 
+    public SecurityCaptchaMisMatchException(Throwable cause) {
+        super("使用的验证码不匹配错误", cause);
+    }
+
     @Override
     public IResponseCode getCode() {
         return ResponseCodeEnum.CAPTCHA_MISMATCH_ERROR;

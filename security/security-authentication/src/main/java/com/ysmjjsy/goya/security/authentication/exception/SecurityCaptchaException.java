@@ -25,6 +25,10 @@ public class SecurityCaptchaException extends AccountStatusException implements 
         super(msg);
     }
 
+    public SecurityCaptchaException(Throwable cause) {
+        super("验证码异常", cause);
+    }
+
     public SecurityCaptchaException(String msg, Throwable cause) {
         super(msg, cause);
     }
