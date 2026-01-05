@@ -35,10 +35,9 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Map;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -677,7 +676,7 @@ public class WebUtils {
         try {
             RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
             return (ServletRequestAttributes) attributes;
-        } catch (Exception e) {
+        } catch (Exception _) {
             return null;
         }
     }
@@ -742,13 +741,13 @@ public class WebUtils {
 
         // 判断 URI 后缀是否为 .json 或 .xml
         String uri = request.getRequestURI();
-        if (StringUtils.equalsAnyIgnoreCase(uri, ".json", ".xml")) {
+        if (Strings.CI.equalsAny(uri, ".json", ".xml")) {
             return true;
         }
 
         // 判断请求参数 __ajax 是否为 json 或 xml
         String ajax = request.getParameter("__ajax");
-        return StringUtils.equalsAnyIgnoreCase(ajax, "json", "xml");
+        return Strings.CI.equalsAny(ajax, "json", "xml");
     }
 
     /**
@@ -1029,5 +1028,99 @@ public class WebUtils {
 
     public static UserAgent getUserAgent(HttpServletRequest request) {
         return UserAgent.parse(request);
+    }
+
+    public static UserAgent getUserAgent() {
+        return UserAgent.parse(getRequest());
+    }
+
+    /**
+     * 生成设备指纹
+     * <p>基于User-Agent和IP地址生成唯一设备标识</p>
+     *
+     * @param request HTTP请求
+     * @return 设备指纹（SHA-256哈希值）
+     */
+    public static String generateDeviceId(HttpServletRequest request) {
+        String userAgent = request.getHeader("User-Agent");
+        String ipAddress = getClientIp(request);
+
+        // 组合User-Agent和IP地址
+        String deviceInfo = (userAgent != null ? userAgent : "") + "|" + (ipAddress != null ? ipAddress : "");
+
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(deviceInfo.getBytes(StandardCharsets.UTF_8));
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
+        } catch (NoSuchAlgorithmException e) {
+            log.error("[Goya] |- security [authentication] Failed to generate device ID", e);
+            // 降级方案：使用简单的Base64编码
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(deviceInfo.getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
+    /**
+     * 识别设备类型
+     *
+     * @param request HTTP请求
+     * @return 设备类型（MOBILE, TABLET, DESKTOP, UNKNOWN）
+     */
+    public static String identifyDeviceType(HttpServletRequest request) {
+        String userAgent = request.getHeader("User-Agent");
+        if (StringUtils.isBlank(userAgent)) {
+            return "UNKNOWN";
+        }
+
+        String ua = userAgent.toLowerCase();
+
+        // 移动设备
+        if (ua.contains("mobile") || ua.contains("android") || ua.contains("iphone") || ua.contains("ipod")) {
+            return "MOBILE";
+        }
+
+        // 平板设备
+        if (ua.contains("tablet") || ua.contains("ipad")) {
+            return "TABLET";
+        }
+
+        // 桌面设备
+        if (ua.contains("windows") || ua.contains("macintosh") || ua.contains("linux") || ua.contains("x11")) {
+            return "DESKTOP";
+        }
+
+        return "UNKNOWN";
+    }
+
+    /**
+     * 提取设备名称
+     *
+     * @param request HTTP请求
+     * @return 设备名称
+     */
+    public static String extractDeviceName(HttpServletRequest request) {
+        String userAgent = request.getHeader("User-Agent");
+        if (StringUtils.isBlank(userAgent)) {
+            return "Unknown Device";
+        }
+
+        // 尝试从User-Agent中提取设备名称
+        // 这里使用简化的逻辑，实际可以根据需要扩展
+        if (userAgent.contains("Chrome")) {
+            return "Chrome Browser";
+        } else if (userAgent.contains("Firefox")) {
+            return "Firefox Browser";
+        } else if (userAgent.contains("Safari")) {
+            return "Safari Browser";
+        } else if (userAgent.contains("Edge")) {
+            return "Edge Browser";
+        } else if (userAgent.contains("Android")) {
+            return "Android Device";
+        } else if (userAgent.contains("iPhone")) {
+            return "iPhone";
+        } else if (userAgent.contains("iPad")) {
+            return "iPad";
+        }
+
+        return "Unknown Device";
     }
 }

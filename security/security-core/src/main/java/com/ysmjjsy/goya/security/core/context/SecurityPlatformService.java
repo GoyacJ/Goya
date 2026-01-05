@@ -1,8 +1,7 @@
 package com.ysmjjsy.goya.security.core.context;
 
 import com.ysmjjsy.goya.component.web.service.AbstractPlatformService;
-import com.ysmjjsy.goya.security.core.configuration.SecurityCoreProperties;
-import org.springframework.boot.security.autoconfigure.SecurityProperties;
+import com.ysmjjsy.goya.security.core.configuration.properties.SecurityCoreProperties;
 import org.springframework.boot.web.server.autoconfigure.ServerProperties;
 
 /**

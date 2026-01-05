@@ -71,4 +71,14 @@ public abstract class AbstractPlatformService implements IPlatformService, Appli
             return StringUtils.EMPTY;
         }
     }
+
+    @Override
+    public String getAuthServiceUri() {
+        return "";
+    }
+
+    @Override
+    public String getAuthServiceName() {
+        return "";
+    }
 }

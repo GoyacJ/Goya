@@ -25,6 +25,15 @@
             <groupId>com.ysmjjsy.goya</groupId>
             <artifactId>kafka-boot-starter</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>com.ysmjjsy.goya</groupId>
+            <artifactId>security-authentication</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.ysmjjsy.goya</groupId>
+            <artifactId>security-resource</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

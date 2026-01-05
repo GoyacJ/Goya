@@ -2,14 +2,19 @@ package com.ysmjjsy.goya.security.authentication.userinfo;
 
 import com.ysmjjsy.goya.security.core.domain.SecurityUser;
 import com.ysmjjsy.goya.security.core.service.ISecurityUserService;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.oidc.OidcIdToken;
+import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 
 import java.util.HashSet;
@@ -61,8 +66,19 @@ public class SocialOAuth2UserService implements OAuth2UserService<OidcUserReques
 
         log.debug("[Goya] |- security [authentication] Loading OIDC user from provider: {}", registrationId);
 
-        // 3. 根据第三方用户信息查找或创建本地用户
-        SecurityUser localUser = findOrCreateUser(registrationId, attributes, oidcUser);
+        // 3. 查找或创建本地用户（复用SocialAuthenticationProvider的逻辑）
+        SecurityUser localUser;
+        try {
+            localUser = findOrCreateUser(registrationId, attributes);
+        } catch (org.springframework.security.core.AuthenticationException e) {
+            log.error("[Goya] |- security [authentication] Failed to authenticate user from social login: {}", registrationId, e);
+            throw new OAuth2AuthenticationException(
+                    new org.springframework.security.oauth2.core.OAuth2Error(
+                            "user_lookup_failed",
+                            "用户查找失败: " + e.getMessage(),
+                            null),
+                    e);
+        }
 
         // 4. 创建自定义的OidcUser，包含本地用户信息
         return createCustomOidcUser(oidcUser, localUser);
@@ -70,16 +86,13 @@ public class SocialOAuth2UserService implements OAuth2UserService<OidcUserReques
 
     /**
      * 查找或创建用户
+     * <p>复用SocialAuthenticationProvider的用户查找逻辑</p>
      *
      * @param registrationId 第三方登录提供商ID（wechat、gitee、github）
-     * @param attributes     第三方用户属性
-     * @param oidcUser       OIDC用户信息
+     * @param attributes      第三方用户属性
      * @return 本地用户信息
      */
-    private SecurityUser findOrCreateUser(
-            String registrationId,
-            Map<String, Object> attributes,
-            OidcUser oidcUser) {
+    private SecurityUser findOrCreateUser(String registrationId, Map<String, Object> attributes) {
         try {
             // 1. 尝试通过第三方唯一标识查找用户（如openid、id等）
             String thirdPartyId = extractThirdPartyId(registrationId, attributes);
@@ -125,10 +138,22 @@ public class SocialOAuth2UserService implements OAuth2UserService<OidcUserReques
                                 null));
             }
 
+            // 4. 检查账户状态
+            if (!user.isEnabled()) {
+                throw new BadCredentialsException("账户已被禁用");
+            }
+            if (!user.isAccountNonLocked()) {
+                throw new BadCredentialsException("账户已被锁定");
+            }
+            if (!user.isAccountNonExpired()) {
+                throw new BadCredentialsException("账户已过期");
+            }
+
+            log.debug("[Goya] |- security [authentication] Social login authentication successful for provider: {}", registrationId);
             return user;
-        } catch (OAuth2AuthenticationException e) {
+        } catch (AuthenticationException e) {
             throw e;
-        } catch (Exception e) {
+        }  catch (Exception e) {
             log.error("[Goya] |- security [authentication] Error finding or creating user from social login", e);
             throw new OAuth2AuthenticationException(
                     new org.springframework.security.oauth2.core.OAuth2Error(
@@ -143,7 +168,7 @@ public class SocialOAuth2UserService implements OAuth2UserService<OidcUserReques
      * 提取第三方唯一标识
      *
      * @param registrationId 第三方登录提供商ID
-     * @param attributes     用户属性
+     * @param attributes      用户属性
      * @return 第三方唯一标识
      */
     private String extractThirdPartyId(String registrationId, Map<String, Object> attributes) {
@@ -169,7 +194,7 @@ public class SocialOAuth2UserService implements OAuth2UserService<OidcUserReques
      * 提取用户名
      *
      * @param registrationId 第三方登录提供商ID
-     * @param attributes     用户属性
+     * @param attributes      用户属性
      * @return 用户名
      */
     private String extractUsername(String registrationId, Map<String, Object> attributes) {
@@ -191,17 +216,14 @@ public class SocialOAuth2UserService implements OAuth2UserService<OidcUserReques
     private OidcUser createCustomOidcUser(OidcUser oidcUser, SecurityUser localUser) {
         // 合并本地用户信息和第三方用户信息
         Set<GrantedAuthority> authorities = new HashSet<>(oidcUser.getAuthorities());
-        if (localUser.getAuthorities() != null) {
-            authorities.addAll(localUser.getAuthorities());
-        }
+        authorities.addAll(localUser.getAuthorities());
 
         // 创建自定义OidcUser实现
         return new CustomOidcUser(
                 oidcUser.getIdToken(),
-                oidcUser.getAccessToken(),
                 oidcUser.getUserInfo(),
                 oidcUser.getName(),
-                oidcUser.getAuthorities(),
+                authorities,
                 localUser);
     }
 
@@ -209,23 +231,21 @@ public class SocialOAuth2UserService implements OAuth2UserService<OidcUserReques
      * 自定义OidcUser实现
      * 包含本地用户信息和第三方用户信息
      */
+    @Getter
     private static class CustomOidcUser implements OidcUser {
-        private final org.springframework.security.oauth2.core.oidc.IdToken idToken;
-        private final org.springframework.security.oauth2.core.oidc.AccessToken accessToken;
-        private final org.springframework.security.oauth2.core.oidc.OidcUserInfo userInfo;
+        private final OidcIdToken idToken;
+        private final OidcUserInfo userInfo;
         private final String name;
         private final Set<GrantedAuthority> authorities;
         private final SecurityUser localUser;
 
         public CustomOidcUser(
-                org.springframework.security.oauth2.core.oidc.IdToken idToken,
-                org.springframework.security.oauth2.core.oidc.AccessToken accessToken,
-                org.springframework.security.oauth2.core.oidc.OidcUserInfo userInfo,
+                OidcIdToken idToken,
+                OidcUserInfo userInfo,
                 String name,
                 Set<GrantedAuthority> authorities,
                 SecurityUser localUser) {
             this.idToken = idToken;
-            this.accessToken = accessToken;
             this.userInfo = userInfo;
             this.name = name;
             this.authorities = authorities;
@@ -238,42 +258,8 @@ public class SocialOAuth2UserService implements OAuth2UserService<OidcUserReques
         }
 
         @Override
-        public org.springframework.security.oauth2.core.oidc.IdToken getIdToken() {
-            return idToken;
-        }
-
-        @Override
-        public org.springframework.security.oauth2.core.oidc.AccessToken getAccessToken() {
-            return accessToken;
-        }
-
-        @Override
-        public org.springframework.security.oauth2.core.oidc.OidcUserInfo getUserInfo() {
-            return userInfo;
-        }
-
-        @Override
         public Map<String, Object> getAttributes() {
             return userInfo != null ? userInfo.getClaims() : Map.of();
-        }
-
-        @Override
-        public Set<GrantedAuthority> getAuthorities() {
-            return authorities;
-        }
-
-        @Override
-        public String getName() {
-            return name;
-        }
-
-        /**
-         * 获取本地用户信息
-         *
-         * @return 本地用户信息
-         */
-        public SecurityUser getLocalUser() {
-            return localUser;
         }
     }
 }

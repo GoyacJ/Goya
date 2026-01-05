@@ -24,7 +24,7 @@ public record SecurityAuthenticationProperties(
         LoginFailureConfig loginFailure,
 
         @Schema(description = "token黑名单配置")
-        @DefaultValue
+        @DefaultValue 
         TokenBlackListConfig tokenBlackList,
 
         @Schema(description = "jwt配置")
@@ -34,21 +34,13 @@ public record SecurityAuthenticationProperties(
         @Schema(description = "验证码配置")
         CaptchaConfig captcha,
 
-        @Schema(description = "密码Grant Type配置")
+        @Schema(description = "Token配置")
         @DefaultValue
-        PasswordGrantConfig passwordGrantConfig,
+        TokenConfig token,
 
-        @Schema(description = "短信Grant Type配置")
+        @Schema(description = "CORS配置")
         @DefaultValue
-        SmsGrantConfig smsGrantConfig,
-
-        @Schema(description = "OAuth2客户端配置（第三方登录）")
-        @DefaultValue
-        OAuth2ClientConfig oauth2ClientConfig,
-
-        @Schema(description = "SSO配置")
-        @DefaultValue
-        SsoConfig ssoConfig
+        CorsConfig cors
 ) {
 
     @Schema(description = "登录了失败配置")
@@ -116,147 +108,40 @@ public record SecurityAuthenticationProperties(
 
     }
 
-    @Schema(description = "密码Grant Type配置")
-    public record PasswordGrantConfig(
-            @Schema(description = "是否启用验证码")
+    @Schema(description = "Token配置")
+    public record TokenConfig(
+            @Schema(description = "默认Token Type（BEARER或DPoP）")
+            @DefaultValue("BEARER")
+            String defaultTokenType,
+
+            @Schema(description = "是否强制要求DPoP Proof（当Token Type为DPoP时）")
             @DefaultValue("true")
-            Boolean enableCaptcha,
-
-            @Schema(description = "验证码类别")
-            @DefaultValue("SPEC")
-            String captchaCategory,
-
-            @Schema(description = "密码最小长度")
-            @DefaultValue("6")
-            Integer minPasswordLength,
-
-            @Schema(description = "密码最大长度")
-            @DefaultValue("20")
-            Integer maxPasswordLength
+            Boolean requireDpopProof
     ) {
 
     }
 
-    @Schema(description = "短信Grant Type配置")
-    public record SmsGrantConfig(
-            @Schema(description = "短信验证码有效期（秒）")
-            @DefaultValue("300")
-            Integer codeExpireSeconds,
+    @Schema(description = "CORS配置")
+    public record CorsConfig(
+            @Schema(description = "允许的来源（支持多个，生产环境必须配置具体域名，不允许使用*）")
+            @DefaultValue({"http://localhost:3000", "http://localhost:5173"})
+            java.util.List<String> allowedOrigins,
 
-            @Schema(description = "短信验证码长度")
-            @DefaultValue("6")
-            Integer codeLength,
+            @Schema(description = "允许的HTTP方法")
+            @DefaultValue({"GET", "POST", "PUT", "DELETE", "OPTIONS"})
+            java.util.List<String> allowedMethods,
 
-            @Schema(description = "短信验证码缓存名称")
-            @DefaultValue("sms:verification:code")
-            String cacheName,
+            @Schema(description = "允许的请求头")
+            @DefaultValue({"*"})
+            java.util.List<String> allowedHeaders,
 
-            @Schema(description = "是否允许自动创建用户")
-            @DefaultValue("false")
-            Boolean allowAutoCreateUser
-    ) {
-
-    }
-
-    @Schema(description = "OAuth2客户端配置（第三方登录）")
-    public record OAuth2ClientConfig(
-            @Schema(description = "微信登录配置")
-            @DefaultValue
-            WeChatConfig wechat,
-
-            @Schema(description = "Gitee登录配置")
-            @DefaultValue
-            GiteeConfig gitee,
-
-            @Schema(description = "GitHub登录配置")
-            @DefaultValue
-            GitHubConfig github,
-
-            @Schema(description = "是否启用第三方登录")
+            @Schema(description = "是否允许携带凭证（Cookie等）")
             @DefaultValue("true")
-            Boolean enabled
-    ) {
+            Boolean allowCredentials,
 
-        @Schema(description = "微信登录配置")
-        public record WeChatConfig(
-                @Schema(description = "是否启用")
-                @DefaultValue("false")
-                Boolean enabled,
-
-                @Schema(description = "客户端ID")
-                String clientId,
-
-                @Schema(description = "客户端密钥")
-                String clientSecret,
-
-                @Schema(description = "授权范围")
-                @DefaultValue("snsapi_login")
-                String scope,
-
-                @Schema(description = "回调地址")
-                String redirectUri
-        ) {
-
-        }
-
-        @Schema(description = "Gitee登录配置")
-        public record GiteeConfig(
-                @Schema(description = "是否启用")
-                @DefaultValue("false")
-                Boolean enabled,
-
-                @Schema(description = "客户端ID")
-                String clientId,
-
-                @Schema(description = "客户端密钥")
-                String clientSecret,
-
-                @Schema(description = "授权范围")
-                @DefaultValue("user_info")
-                String scope,
-
-                @Schema(description = "回调地址")
-                String redirectUri
-        ) {
-
-        }
-
-        @Schema(description = "GitHub登录配置")
-        public record GitHubConfig(
-                @Schema(description = "是否启用")
-                @DefaultValue("false")
-                Boolean enabled,
-
-                @Schema(description = "客户端ID")
-                String clientId,
-
-                @Schema(description = "客户端密钥")
-                String clientSecret,
-
-                @Schema(description = "授权范围")
-                @DefaultValue("read:user")
-                String scope,
-
-                @Schema(description = "回调地址")
-                String redirectUri
-        ) {
-
-        }
-    }
-
-    @Schema(description = "SSO配置")
-    public record SsoConfig(
-            @Schema(description = "是否强制要求PKCE（OAuth2.1要求）")
-            @DefaultValue("true")
-            Boolean requirePkce,
-
-            @Schema(description = "是否允许公开客户端（client_secret为none）")
-            @DefaultValue("true")
-            Boolean allowPublicClients,
-
-            @Schema(description = "授权码有效期（秒）")
-            @DefaultValue("300")
-            Integer authorizationCodeExpireSeconds
+            @Schema(description = "预检请求的缓存时间（秒）")
+            @DefaultValue("3600")
+            Long maxAge
     ) {
 
     }

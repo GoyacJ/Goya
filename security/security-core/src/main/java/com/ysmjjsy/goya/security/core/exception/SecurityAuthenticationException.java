@@ -1,4 +1,4 @@
-package com.ysmjjsy.goya.security.authentication.exception;
+package com.ysmjjsy.goya.security.core.exception;
 
 import com.ysmjjsy.goya.component.common.code.IResponseCode;
 import com.ysmjjsy.goya.component.common.code.ResponseCodeEnum;

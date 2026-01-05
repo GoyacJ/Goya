@@ -1,8 +1,9 @@
-package com.ysmjjsy.goya.security.authentication.captcha;
+package com.ysmjjsy.goya.security.authentication.filter;
 
 import com.ysmjjsy.goya.component.captcha.api.ICaptchaService;
 import com.ysmjjsy.goya.component.captcha.definition.Verification;
 import com.ysmjjsy.goya.component.captcha.exception.*;
+import com.ysmjjsy.goya.security.authentication.captcha.LoginCaptchaStrategy;
 import com.ysmjjsy.goya.security.authentication.enums.LoginGrantType;
 import com.ysmjjsy.goya.security.authentication.exception.*;
 import com.ysmjjsy.goya.security.authentication.utils.SecurityRequestUtils;

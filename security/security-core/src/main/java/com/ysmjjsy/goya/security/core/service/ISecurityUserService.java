@@ -32,4 +32,18 @@ public interface ISecurityUserService extends IAuthService, UserDetailsService {
     default UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         return findUser(username);
     }
+
+    /**
+     * 从社交登录创建用户
+     * <p>根据第三方用户属性创建新用户</p>
+     *
+     * @param registrationId 第三方登录提供商ID（wechat、gitee、github等）
+     * @param attributes 第三方用户属性
+     * @param defaultRole 默认角色（可选）
+     * @return 创建的用户
+     * @throws AuthenticationException 如果创建失败
+     */
+    default SecurityUser createUserFromSocialLogin(String registrationId, java.util.Map<String, Object> attributes, String defaultRole) throws AuthenticationException {
+        throw new UnsupportedOperationException("createUserFromSocialLogin not implemented");
+    }
 }

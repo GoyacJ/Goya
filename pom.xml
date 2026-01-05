@@ -41,6 +41,7 @@
         <module>cloud</module>
         <module>oss</module>
         <module>starter</module>
+        <module>upms</module>
     </modules>
 
     <!-- 环境 -->

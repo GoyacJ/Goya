@@ -121,6 +121,18 @@
                 <version>${revision}</version>
             </dependency>
 
+            <!-- ======================== ai ======================== -->
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>upms-oauth2</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>upms-user</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
             <!-- ======================== starter ======================== -->
             <dependency>
                 <groupId>com.ysmjjsy.goya</groupId>

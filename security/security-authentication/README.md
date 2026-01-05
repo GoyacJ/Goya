@@ -4,29 +4,25 @@
 
 ## 功能特性
 
-### 1. 多种登录方式支持
+### 1. 多种登录方式支持（Authorization Code 流程）
 
 #### 用户名密码登录（带验证码）
-- **Grant Type**: `password`（企业内部分机扩展）
-- **端点**: `POST /oauth2/token`
+- **流程**: Authorization Code + PKCE（OAuth2.1标准）
+- **端点**: `POST /login`（登录页面）→ `GET /oauth2/authorize`（授权端点）
 - **参数**:
   - `grant_type=password`
   - `username`: 用户名
   - `password`: 密码
-  - `captcha`: 验证码值（可选但建议必填）
-  - `captcha_key`: 验证码标识（可选但建议必填）
-  - `client_id`: 客户端ID
-  - `scope`: 授权范围（可选）
+  - `captcha`: 验证码值（可选）
+  - `captcha_key`: 验证码标识（可选）
 
 #### 短信验证码登录
-- **Grant Type**: `sms`（企业内部分机扩展）
-- **端点**: `POST /oauth2/token`
+- **流程**: Authorization Code + PKCE（OAuth2.1标准）
+- **端点**: `POST /login`（登录页面）→ `GET /oauth2/authorize`（授权端点）
 - **参数**:
   - `grant_type=sms`
   - `phone`: 手机号
   - `sms_code`: 短信验证码
-  - `client_id`: 客户端ID
-  - `scope`: 授权范围（可选）
 
 #### 第三方登录（微信、Gitee、GitHub）
 - **流程**: OAuth2 Client Flow
@@ -58,21 +54,31 @@
 - ✅ **Token Introspection**: 支持Token内省端点
 - ✅ **Token Revocation**: 支持Token撤销端点
 - ✅ **OIDC支持**: 支持OpenID Connect 1.0
-- ⚠️ **自定义Grant Type**: Password和SMS Grant是内部分机扩展，不符合OAuth2.1标准
+- ✅ **DPoP支持**: 支持DPoP-bound Access Tokens（RFC 9449）
+- ✅ **标准流程**: 完全符合OAuth2.1规范，使用Authorization Code流程
 
 ## 核心组件
 
-### 自定义Grant Type
+### 多模式登录认证（Multi-Mode Authentication）
 
-#### Password Grant Type
-- `PasswordGrantAuthenticationConverter`: 从请求中提取认证参数
-- `PasswordGrantAuthenticationToken`: 封装认证凭证
-- `PasswordGrantAuthenticationProvider`: 验证验证码和用户凭证，生成Token
+#### 密码登录
+- `PasswordAuthenticationConverter`: 从请求中提取密码登录参数
+- `PasswordAuthenticationToken`: 封装密码认证凭证
+- `PasswordAuthenticationProvider`: 验证用户凭证，返回UsernamePasswordAuthenticationToken
 
-#### SMS Grant Type
-- `SmsGrantAuthenticationConverter`: 从请求中提取手机号和验证码
-- `SmsGrantAuthenticationToken`: 封装短信认证凭证
-- `SmsGrantAuthenticationProvider`: 验证短信验证码，查找用户，生成Token
+#### 短信登录
+- `SmsAuthenticationConverter`: 从请求中提取短信登录参数
+- `SmsAuthenticationToken`: 封装短信认证凭证
+- `SmsAuthenticationProvider`: 验证短信验证码，查找用户，返回UsernamePasswordAuthenticationToken
+
+#### 社交登录
+- `SocialAuthenticationConverter`: 从请求中提取社交登录参数
+- `SocialAuthenticationToken`: 封装社交认证凭证
+- `SocialAuthenticationProvider`: 查找或创建用户，返回UsernamePasswordAuthenticationToken
+
+#### 统一登录过滤器
+- `UnifiedLoginAuthenticationFilter`: 统一处理多种登录方式的过滤器
+- `CompositeAuthenticationConverter`: 组合多个Converter，按顺序尝试
 
 ### OAuth2 Client配置
 
@@ -112,20 +118,6 @@ platform:
         jksStorePassword: ysmjjsy
         jksKeyAlias: ysmjjsy
       
-      # 密码Grant Type配置
-      passwordGrantConfig:
-        enableCaptcha: true
-        captchaCategory: SPEC
-        minPasswordLength: 6
-        maxPasswordLength: 20
-      
-      # 短信Grant Type配置
-      smsGrantConfig:
-        codeExpireSeconds: 300
-        codeLength: 6
-        cacheName: sms:verification:code
-        allowAutoCreateUser: false
-      
       # OAuth2客户端配置（第三方登录）
       oauth2ClientConfig:
         enabled: true
@@ -157,30 +149,65 @@ platform:
 
 ## API使用示例
 
-### 用户名密码登录
+### Authorization Code 流程（标准OAuth2.1）
+
+#### 第一步：获取授权码
 
 ```bash
-curl -X POST http://localhost:8080/oauth2/token \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -H "Authorization: Basic base64(client_id:client_secret)" \
-  -d "grant_type=password" \
-  -d "username=user@example.com" \
-  -d "password=password123" \
-  -d "captcha=1234" \
-  -d "captcha_key=uuid-key" \
-  -d "scope=read write"
+# 1. 用户访问受保护资源，重定向到授权端点
+GET http://localhost:8080/oauth2/authorize?client_id=client-id&response_type=code&redirect_uri=http://client.example.com/callback&scope=read write&code_challenge=xxx&code_challenge_method=S256
+
+# 2. 如果未登录，重定向到登录页面
+GET http://localhost:8080/login
+
+# 3. 用户提交登录（密码登录）
+POST http://localhost:8080/login
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password
+&username=user@example.com
+&password=password123
+&captcha=1234
+&captcha_key=uuid-key
+
+# 4. 登录成功后，自动重定向回授权端点，生成授权码
+GET http://localhost:8080/oauth2/authorize?client_id=client-id&response_type=code&redirect_uri=http://client.example.com/callback&scope=read write&code_challenge=xxx&code_challenge_method=S256
+# 返回: redirect_uri?code=authorization_code&state=xxx
 ```
 
-### 短信验证码登录
+#### 第二步：交换Token
 
 ```bash
-curl -X POST http://localhost:8080/oauth2/token \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -H "Authorization: Basic base64(client_id:client_secret)" \
-  -d "grant_type=sms" \
-  -d "phone=13800138000" \
-  -d "sms_code=123456" \
-  -d "scope=read write"
+# 使用授权码换取Token
+POST http://localhost:8080/oauth2/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=authorization_code
+&code=authorization_code
+&redirect_uri=http://client.example.com/callback
+&client_id=client-id
+&code_verifier=code_verifier
+
+# 响应
+{
+  "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",  // 或 "DPoP"（如果使用DPoP）
+  "expires_in": 3600,
+  "refresh_token": "opaque_refresh_token",
+  "scope": "read write"
+}
+```
+
+### 短信登录示例
+
+```bash
+# 在登录页面提交短信登录
+POST http://localhost:8080/login
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=sms
+&phone=13800138000
+&sms_code=123456
 ```
 
 ### Token内省
@@ -204,24 +231,27 @@ curl -X POST http://localhost:8080/oauth2/token/revoke \
 
 ## 安全注意事项
 
-1. **自定义Grant Type**: Password和SMS Grant是OAuth2.1的非标准扩展，仅用于企业内部系统，不应对外暴露
+1. **OAuth2.1标准流程**: 完全符合OAuth2.1规范，使用Authorization Code + PKCE流程
 2. **PKCE强制要求**: 所有Authorization Code流程必须使用PKCE，符合OAuth2.1规范
 3. **Token安全**: 
-   - Access Token建议设置15分钟过期时间
-   - Refresh Token存储在Redis，支持撤销
+   - Access Token建议设置15分钟过期时间（JWT格式）
+   - Refresh Token存储在Redis，支持撤销和轮转（Opaque格式）
+   - 支持DPoP-bound Access Tokens，防止Token泄露
 4. **验证码**: 建议所有登录方式都启用验证码，防止暴力破解
 5. **HTTPS**: 生产环境必须使用HTTPS
+6. **无状态设计**: 完全无状态，支持水平扩展
 
 ## 扩展点
 
-### 自定义Grant Type
+### 添加新的登录方式
 
-如需添加新的Grant Type，参考以下步骤：
+如需添加新的登录方式（如人脸识别、指纹等），参考以下步骤：
 
-1. 创建`XxxGrantAuthenticationConverter`实现`AuthenticationConverter`
-2. 创建`XxxGrantAuthenticationToken`继承`OAuth2AuthorizationGrantAuthenticationToken`
-3. 创建`XxxGrantAuthenticationProvider`实现`AuthenticationProvider`
+1. 创建`XxxAuthenticationConverter`继承`AbstractAuthenticationConverter`
+2. 创建`XxxAuthenticationToken`实现`Authentication`接口
+3. 创建`XxxAuthenticationProvider`实现`AuthenticationProvider`接口
 4. 在`AuthorizationAutoConfiguration`中注册Converter和Provider
+5. 将新的Converter添加到`CompositeAuthenticationConverter`中
 
 ### 自定义用户服务
 

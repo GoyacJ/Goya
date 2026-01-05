@@ -4,23 +4,33 @@ import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import com.ysmjjsy.goya.component.cache.service.ICacheService;
 import com.ysmjjsy.goya.component.common.utils.ResourceResolverUtils;
 import com.ysmjjsy.goya.security.authentication.configuration.properties.SecurityAuthenticationProperties;
+import com.ysmjjsy.goya.security.authentication.service.impl.CacheOAuth2AuthorizationService;
 import com.ysmjjsy.goya.security.authentication.token.JwtTokenCustomizer;
+import com.ysmjjsy.goya.security.authentication.token.TokenBlacklistStamp;
+import com.ysmjjsy.goya.security.authentication.token.TokenManager;
 import com.ysmjjsy.goya.security.authentication.userinfo.OAuth2UserInfoMapper;
+import com.ysmjjsy.goya.security.authentication.userinfo.SocialOAuth2UserService;
+import com.ysmjjsy.goya.security.core.dpop.DPoPKeyFingerprintService;
 import com.ysmjjsy.goya.security.core.enums.CertificateEnum;
 import com.ysmjjsy.goya.security.core.service.ISecurityUserService;
+import com.ysmjjsy.goya.security.core.service.SecurityAuditService;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.Resource;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.encrypt.KeyStoreKeyFactory;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.token.*;
 
 import java.io.IOException;
@@ -56,6 +66,14 @@ public class SecurityAuthenticationAutoConfiguration {
     }
 
     @Bean
+    public SocialOAuth2UserService socialOAuth2UserService(OidcUserService oidcUserService,
+                                                           ISecurityUserService iSecurityUserService){
+        SocialOAuth2UserService socialOAuth2UserService = new SocialOAuth2UserService(oidcUserService,iSecurityUserService);
+        log.trace("[Goya] |- security [authentication] socialOAuth2UserService auto configure.");
+        return socialOAuth2UserService;
+    }
+
+    @Bean
     public JWKSource<SecurityContext> jwkSource(SecurityAuthenticationProperties authenticationProperties) throws NoSuchAlgorithmException {
         SecurityAuthenticationProperties.Jwk jwk = authenticationProperties.jwk();
         KeyPair keyPair = null;
@@ -83,7 +101,7 @@ public class SecurityAuthenticationAutoConfiguration {
                 .keyID(UUID.randomUUID().toString())
                 .build();
         JWKSet jwkSet = new JWKSet(rsaKey);
-        return (jwkSelector, securityContext) -> jwkSelector.select(jwkSet);
+        return (jwkSelector, _) -> jwkSelector.select(jwkSet);
     }
 
     /**
@@ -95,15 +113,26 @@ public class SecurityAuthenticationAutoConfiguration {
     }
 
     /**
+     * 配置JWT Token自定义器（支持DPoP）
+     *
+     * @param dPoPKeyFingerprintService DPoP公钥指纹服务
+     * @return JwtTokenCustomizer
+     */
+    @Bean
+    public JwtTokenCustomizer jwtTokenCustomizer(DPoPKeyFingerprintService dPoPKeyFingerprintService) {
+        return new JwtTokenCustomizer(dPoPKeyFingerprintService);
+    }
+
+    /**
      * 配置OAuth2 Token生成器
      * <p>
      * 组合JWT Generator（access_token）和Opaque Refresh Token Generator
      * </p>
      */
     @Bean
-    public OAuth2TokenGenerator<?> tokenGenerator(JwtEncoder jwtEncoder) {
+    public OAuth2TokenGenerator<?> tokenGenerator(JwtEncoder jwtEncoder, JwtTokenCustomizer jwtTokenCustomizer) {
         JwtGenerator jwtGenerator = new JwtGenerator(jwtEncoder);
-        jwtGenerator.setJwtCustomizer(new JwtTokenCustomizer());
+        jwtGenerator.setJwtCustomizer(jwtTokenCustomizer);
 
         OAuth2AccessTokenGenerator accessTokenGenerator = new OAuth2AccessTokenGenerator();
         OAuth2RefreshTokenGenerator refreshTokenGenerator = new OAuth2RefreshTokenGenerator();
@@ -113,25 +142,49 @@ public class SecurityAuthenticationAutoConfiguration {
     }
 
     /**
+     * 配置缓存 OAuth2授权服务（优先使用）
+     * <p>实现全无状态设计，支持水平扩展</p>
+     *
+     * @param cacheService 缓存服务
+     * @return RedisOAuth2AuthorizationService
+     */
+    @Bean
+    @ConditionalOnBean(ICacheService.class)
+    public OAuth2AuthorizationService cacheOAuth2AuthorizationService(ICacheService cacheService) {
+        CacheOAuth2AuthorizationService service = new CacheOAuth2AuthorizationService(cacheService);
+        log.trace("[Goya] |- security [authentication] cacheOAuth2AuthorizationService auto configure.");
+        return service;
+    }
+
+    @Bean
+    public TokenBlacklistStamp tokenBlacklistStamp(SecurityAuthenticationProperties properties){
+        TokenBlacklistStamp stamp = new TokenBlacklistStamp(properties.tokenBlackList());
+        log.trace("[Goya] |- security [authentication] RedisOAuth2AuthorizationService auto configure.");
+        return stamp;
+    }
+
+    /**
      * 配置Token服务
      * <p>封装OAuth2 Token生成的完整流程</p>
+     * <p>支持混合Token模式（JWT Access Token + Opaque Refresh Token）和Refresh Token Rotation</p>
      *
-     * @param tokenGenerator Token生成器
+     * @param tokenGenerator       Token生成器
      * @param authorizationService 授权服务
-     * @param authenticationProperties 认证配置属性
+     * @param securityUserService  用户服务
+     * @param securityAuditService 审计服务
+     * @param tokenBlacklistStamp  token黑名单管理
      * @return TokenService
      */
     @Bean
-    public com.ysmjjsy.goya.security.authentication.token.TokenService tokenService(
+    public TokenManager tokenService(
             OAuth2TokenGenerator<?> tokenGenerator,
-            org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService authorizationService,
-            SecurityAuthenticationProperties authenticationProperties) {
-        com.ysmjjsy.goya.security.authentication.token.TokenBlacklistStamp tokenBlacklistStamp =
-                new com.ysmjjsy.goya.security.authentication.token.TokenBlacklistStamp(
-                        authenticationProperties.tokenBlackListConfig());
-        com.ysmjjsy.goya.security.authentication.token.TokenService tokenService =
-                new com.ysmjjsy.goya.security.authentication.token.TokenService(
-                        tokenGenerator, authorizationService, tokenBlacklistStamp);
+            OAuth2AuthorizationService authorizationService,
+            ISecurityUserService securityUserService,
+            SecurityAuditService securityAuditService,
+            TokenBlacklistStamp tokenBlacklistStamp) {
+        TokenManager tokenService = new TokenManager(
+                tokenGenerator, authorizationService, securityUserService, securityAuditService, tokenBlacklistStamp
+        );
         log.trace("[Goya] |- security [authentication] TokenService auto configure.");
         return tokenService;
     }

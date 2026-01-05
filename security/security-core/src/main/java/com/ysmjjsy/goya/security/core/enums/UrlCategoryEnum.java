@@ -25,7 +25,7 @@ public enum UrlCategoryEnum {
 
     public static UrlCategoryEnum getCategory(String url) {
 
-        if (Strings.CS.containsAny(url, new String[]{"*", "?"})) {
+        if (Strings.CS.containsAny(url, "*", "?")) {
             return UrlCategoryEnum.WILDCARD;
         }
 

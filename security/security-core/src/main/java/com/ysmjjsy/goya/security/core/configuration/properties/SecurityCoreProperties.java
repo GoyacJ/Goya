@@ -1,4 +1,4 @@
-package com.ysmjjsy.goya.security.core.configuration;
+package com.ysmjjsy.goya.security.core.configuration.properties;
 
 import com.ysmjjsy.goya.security.core.constants.ISecurityConstants;
 import io.swagger.v3.oas.annotations.media.Schema;

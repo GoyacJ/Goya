@@ -1,5 +1,6 @@
 package com.ysmjjsy.goya.security.authentication.token;
 
+import com.ysmjjsy.goya.security.core.dpop.DPoPKeyFingerprintService;
 import com.ysmjjsy.goya.security.core.constants.IStandardClaimNamesConstants;
 import com.ysmjjsy.goya.security.core.domain.SecurityUser;
 import lombok.RequiredArgsConstructor;
@@ -11,12 +12,16 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
 import org.springframework.security.oauth2.core.oidc.StandardClaimNames;
 import org.springframework.security.oauth2.core.oidc.endpoint.OidcParameterNames;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.context.AuthorizationServerContextHolder;
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenContext;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -29,6 +34,8 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 public class JwtTokenCustomizer implements OAuth2TokenCustomizer<JwtEncodingContext> {
+
+    private final DPoPKeyFingerprintService dPoPKeyFingerprintService;
 
     @Override
     public void customize(JwtEncodingContext context) {
@@ -64,6 +71,21 @@ public class JwtTokenCustomizer implements OAuth2TokenCustomizer<JwtEncodingCont
                         .map(GrantedAuthority::getAuthority)
                         .collect(Collectors.toSet());
                 claims.claim(IStandardClaimNamesConstants.AUTHORITIES, authorities);
+            }
+
+            // ===== DPoP支持：注入公钥指纹到JWT的cnf字段（RFC 9449）=====
+            if (dPoPKeyFingerprintService != null) {
+                Jwt dPoPProof = (Jwt) context.get(OAuth2TokenContext.DPOP_PROOF_KEY);
+                if (dPoPProof != null) {
+                    String dPoPKeyFingerprint = dPoPKeyFingerprintService.extractFingerprint(dPoPProof);
+                    if (StringUtils.isNotBlank(dPoPKeyFingerprint)) {
+                        // 注入DPoP公钥指纹到JWT的cnf字段（RFC 9449）
+                        Map<String, Object> cnf = new HashMap<>();
+                        cnf.put("jkt", dPoPKeyFingerprint);
+                        claims.claim("cnf", cnf);
+                        log.debug("[Goya] |- security [authentication] DPoP key fingerprint injected into JWT: {}", dPoPKeyFingerprint);
+                    }
+                }
             }
 
             return;

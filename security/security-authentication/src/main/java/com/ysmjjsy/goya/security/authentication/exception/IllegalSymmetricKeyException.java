@@ -11,7 +11,7 @@ import java.io.Serial;
  * @author goya
  * @since 2025/12/7 23:20
  */
-public class IllegalSymmetricKeyException extends SecurityAuthenticationException {
+public class IllegalSymmetricKeyException extends com.ysmjjsy.goya.security.core.exception.SecurityAuthenticationException {
 
     @Serial
     private static final long serialVersionUID = 4319230368723902966L;

@@ -29,9 +29,9 @@ public record TokenResponse(
         String refreshToken,
 
         /*
-         * Token类型，通常是"Bearer"
+         * Token类型，通常是"Bearer"或"DPoP"（当使用DPoP绑定时）
          */
-        @Schema(description = "Token类型，通常是\"Bearer\"")
+        @Schema(description = "Token类型，通常是\"Bearer\"或\"DPoP\"（当使用DPoP绑定时）")
         String tokenType,
 
         /*
@@ -59,7 +59,7 @@ public record TokenResponse(
         String scope
 ) {
     /*
-     * 创建Token响应
+     * 创建Token响应（默认Bearer类型）
      *
      * @param accessToken  访问令牌
      * @param refreshToken 刷新令牌（可为null）
@@ -74,38 +74,38 @@ public record TokenResponse(
             Long expiresIn,
             Instant issuedAt,
             Instant expiresAt) {
+        return of(accessToken, refreshToken, "Bearer", expiresIn, issuedAt, expiresAt);
+    }
+
+    /*
+     * 创建Token响应（支持自定义token_type）
+     * <p>根据Spring Security官方规范，当有DPoP proof时，token_type应为"DPoP"</p>
+     * <p>参考：https://docs.spring.io/spring-security/reference/servlet/oauth2/resource-server/dpop-tokens.html</p>
+     *
+     * @param accessToken  访问令牌
+     * @param refreshToken 刷新令牌（可为null）
+     * @param tokenType    Token类型（"Bearer"或"DPoP"）
+     * @param expiresIn    过期时间（秒）
+     * @param issuedAt     签发时间
+     * @param expiresAt    过期时间
+     * @return Token响应对象
+     */
+    public static TokenResponse of(
+            String accessToken,
+            String refreshToken,
+            String tokenType,
+            Long expiresIn,
+            Instant issuedAt,
+            Instant expiresAt) {
         return new TokenResponse(
                 accessToken,
                 refreshToken,
-                "Bearer",
+                tokenType,
                 expiresIn,
                 issuedAt,
                 expiresAt,
                 null
         );
-    }
-
-    /*
-     * 转换为Map格式（用于HTTP响应）
-     *
-     * @return Map格式的Token响应
-     */
-    public java.util.Map<String, Object> toMap() {
-        java.util.Map<String, Object> map = new java.util.HashMap<>();
-        map.put("access_token", accessToken);
-        map.put("token_type", tokenType);
-        map.put("expires_in", expiresIn);
-        map.put("issued_at", issuedAt != null ? issuedAt.getEpochSecond() : null);
-
-        if (refreshToken != null) {
-            map.put("refresh_token", refreshToken);
-        }
-
-        if (scope != null) {
-            map.put("scope", scope);
-        }
-
-        return map;
     }
 }
 
