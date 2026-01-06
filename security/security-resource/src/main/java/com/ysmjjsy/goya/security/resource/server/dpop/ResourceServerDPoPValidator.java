@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.security.resource.server.dpop;
 
-import com.ysmjjsy.goya.security.core.dpop.DPoPKeyFingerprintService;
+import com.ysmjjsy.goya.security.core.utils.DPoPKeyUtils;
 import com.ysmjjsy.goya.security.resource.server.configuration.properties.SecurityResourceProperties;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -47,7 +47,7 @@ public class ResourceServerDPoPValidator {
 
     private final JwtDecoder dPoPProofDecoder;
     private final SecurityResourceProperties.DPoPConfig dpopConfig;
-    private final DPoPKeyFingerprintService dPoPKeyFingerprintService;
+    private final DPoPKeyUtils dPoPKeyFingerprintService;
 
     /**
      * 验证DPoP Proof（如果Token是DPoP-bound）

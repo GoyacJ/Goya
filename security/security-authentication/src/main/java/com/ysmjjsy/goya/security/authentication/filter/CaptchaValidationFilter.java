@@ -4,7 +4,6 @@ import com.ysmjjsy.goya.component.captcha.api.ICaptchaService;
 import com.ysmjjsy.goya.component.captcha.definition.Verification;
 import com.ysmjjsy.goya.component.captcha.exception.*;
 import com.ysmjjsy.goya.security.authentication.captcha.LoginCaptchaStrategy;
-import com.ysmjjsy.goya.security.authentication.enums.LoginGrantType;
 import com.ysmjjsy.goya.security.authentication.exception.*;
 import com.ysmjjsy.goya.security.authentication.utils.SecurityRequestUtils;
 import com.ysmjjsy.goya.security.authentication.utils.VerificationAssembler;
@@ -38,7 +37,7 @@ public class CaptchaValidationFilter extends OncePerRequestFilter {
     @NullMarked
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         try {
-            LoginGrantType grantType = LoginGrantType.resolve(request);
+            com.ysmjjsy.goya.security.core.enums.LoginTypeEnum grantType = com.ysmjjsy.goya.security.core.enums.LoginTypeEnum.resolve(request);
             if (grantType == null) {
                 SecurityRequestUtils.throwError(
                         OAuth2ErrorCodes.INVALID_REQUEST,

@@ -3,7 +3,6 @@ package com.ysmjjsy.goya.component.social.service;
 import cn.hutool.core.util.EnumUtil;
 import com.ysmjjsy.goya.component.common.strategy.IStrategyExecute;
 import com.ysmjjsy.goya.component.social.cache.ThirdPartCheckCacheManager;
-import com.ysmjjsy.goya.component.social.enums.SocialTypeEnum;
 import com.ysmjjsy.goya.component.social.exception.SocialException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +31,7 @@ public class ThirdPartService implements IStrategyExecute<String, String> {
 
     @Override
     public String mark() {
-        return SocialTypeEnum.THIRD_PARTY.getCode();
+        return "THIRDPART";
     }
 
     @Override

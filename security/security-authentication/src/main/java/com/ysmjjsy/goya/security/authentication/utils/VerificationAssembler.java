@@ -4,7 +4,6 @@ import com.ysmjjsy.goya.component.captcha.definition.Coordinate;
 import com.ysmjjsy.goya.component.captcha.definition.Verification;
 import com.ysmjjsy.goya.component.captcha.enums.CaptchaCategoryEnum;
 import com.ysmjjsy.goya.component.common.definition.constants.ISymbolConstants;
-import com.ysmjjsy.goya.security.authentication.enums.LoginGrantType;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.util.StringUtils;
@@ -23,7 +22,7 @@ public class VerificationAssembler {
     private VerificationAssembler() {
     }
 
-    public static Verification from(HttpServletRequest request, LoginGrantType grantType) {
+    public static Verification from(HttpServletRequest request, com.ysmjjsy.goya.security.core.enums.LoginTypeEnum grantType) {
 
         CaptchaCategoryEnum category = resolveCategory(request);
         Verification verification = new Verification();
@@ -46,7 +45,7 @@ public class VerificationAssembler {
         return categoryEnum;
     }
 
-    private static String resolveIdentity(HttpServletRequest request, LoginGrantType grantType) {
+    private static String resolveIdentity(HttpServletRequest request, com.ysmjjsy.goya.security.core.enums.LoginTypeEnum grantType) {
         String identity = request.getParameter("identity");
         if (!StringUtils.hasText(identity)) {
             throw new IllegalArgumentException("identity 不能为空");

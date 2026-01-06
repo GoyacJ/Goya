@@ -1,4 +1,4 @@
-package com.ysmjjsy.goya.security.authentication.provider.authentication;
+package com.ysmjjsy.goya.security.authentication.provider.login;
 
 import org.springframework.security.core.Authentication;
 
@@ -6,35 +6,35 @@ import java.util.Collections;
 import java.util.Map;
 
 /**
- * <p>短信登录认证Token</p>
- * <p>用于短信验证码登录方式的认证</p>
+ * <p>社交登录认证Token</p>
+ * <p>用于第三方社交登录方式的认证</p>
  * <p>符合Spring Security标准模式</p>
  *
  * @author goya
  * @since 2025/12/21
  */
-public class SmsAuthenticationToken implements Authentication {
+public class SocialAuthenticationToken implements Authentication {
 
-    private final String phone;
-    private final String smsCode;
+    private final String socialProviderId;
+    private final Map<String, Object> socialUserAttributes;
     private final Map<String, Object> additionalParams;
     private boolean authenticated = false;
 
-    public SmsAuthenticationToken(
-            String phone,
-            String smsCode,
+    public SocialAuthenticationToken(
+            String socialProviderId,
+            Map<String, Object> socialUserAttributes,
             Map<String, Object> additionalParams) {
-        this.phone = phone;
-        this.smsCode = smsCode;
+        this.socialProviderId = socialProviderId;
+        this.socialUserAttributes = socialUserAttributes != null ? socialUserAttributes : Collections.emptyMap();
         this.additionalParams = additionalParams != null ? additionalParams : Collections.emptyMap();
     }
 
-    public String getPhone() {
-        return phone;
+    public String getSocialProviderId() {
+        return socialProviderId;
     }
 
-    public String getSmsCode() {
-        return smsCode;
+    public Map<String, Object> getSocialUserAttributes() {
+        return socialUserAttributes;
     }
 
     public Map<String, Object> getAdditionalParams() {
@@ -48,7 +48,7 @@ public class SmsAuthenticationToken implements Authentication {
 
     @Override
     public Object getCredentials() {
-        return smsCode;
+        return null; // 社交登录不需要凭证
     }
 
     @Override
@@ -58,7 +58,7 @@ public class SmsAuthenticationToken implements Authentication {
 
     @Override
     public Object getPrincipal() {
-        return phone;
+        return socialProviderId;
     }
 
     @Override
@@ -73,7 +73,7 @@ public class SmsAuthenticationToken implements Authentication {
 
     @Override
     public String getName() {
-        return phone;
+        return socialProviderId;
     }
 }
 

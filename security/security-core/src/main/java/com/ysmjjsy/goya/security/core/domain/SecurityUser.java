@@ -1,6 +1,5 @@
 package com.ysmjjsy.goya.security.core.domain;
 
-import com.ysmjjsy.goya.component.auth.user.IUserPrincipal;
 import lombok.Getter;
 import lombok.ToString;
 import org.springframework.security.core.CredentialsContainer;
@@ -22,7 +21,7 @@ import java.util.*;
 @Getter
 @ToString
 @JsonDeserialize(using = SecurityUserDeserializer.class)
-public class SecurityUser implements IUserPrincipal, UserDetails, CredentialsContainer {
+public class SecurityUser implements UserDetails, CredentialsContainer {
 
     @Serial
     private static final long serialVersionUID = 4719371763229244364L;

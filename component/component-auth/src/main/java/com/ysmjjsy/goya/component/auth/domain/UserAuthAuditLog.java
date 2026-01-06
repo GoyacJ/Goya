@@ -1,4 +1,4 @@
-package com.ysmjjsy.goya.security.core.domain;
+package com.ysmjjsy.goya.component.auth.domain;
 
 import com.ysmjjsy.goya.component.web.utils.UserAgent;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -20,8 +20,8 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "安全审计日志")
-public class SecurityAuditLog {
+@Schema(description = "用户安全审计日志")
+public class UserAuthAuditLog {
 
     @Schema(description = "主键ID")
     private String id;

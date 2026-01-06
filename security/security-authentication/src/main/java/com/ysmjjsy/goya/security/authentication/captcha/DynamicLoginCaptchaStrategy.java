@@ -2,7 +2,6 @@ package com.ysmjjsy.goya.security.authentication.captcha;
 
 import com.ysmjjsy.goya.component.common.tenant.TenantContext;
 import com.ysmjjsy.goya.security.authentication.configuration.properties.SecurityAuthenticationProperties;
-import com.ysmjjsy.goya.security.authentication.enums.LoginGrantType;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +21,7 @@ public class DynamicLoginCaptchaStrategy implements LoginCaptchaStrategy {
     private final SecurityAuthenticationProperties.CaptchaConfig captchaConfig;
 
     @Override
-    public boolean shouldValidate(HttpServletRequest request, LoginGrantType loginType, @Nullable String tenantId) {
+    public boolean shouldValidate(HttpServletRequest request, com.ysmjjsy.goya.security.core.enums.LoginTypeEnum loginType, @Nullable String tenantId) {
         // 1. 全局开关
         // 2. 根据登录方式判断是否默认启用
         boolean enabledByLoginType = switch (loginType) {

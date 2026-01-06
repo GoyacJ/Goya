@@ -1,6 +1,5 @@
 package com.ysmjjsy.goya.security.authentication.captcha;
 
-import com.ysmjjsy.goya.security.authentication.enums.LoginGrantType;
 import jakarta.servlet.http.HttpServletRequest;
 import org.jspecify.annotations.Nullable;
 
@@ -20,5 +19,5 @@ public interface LoginCaptchaStrategy {
      * @param tenantId 租户 ID，可为空
      * @return true 表示需要校验验证码
      */
-    boolean shouldValidate(HttpServletRequest request, LoginGrantType loginType, @Nullable String tenantId);
+    boolean shouldValidate(HttpServletRequest request, com.ysmjjsy.goya.security.core.enums.LoginTypeEnum loginType, @Nullable String tenantId);
 }

@@ -1,4 +1,4 @@
-package com.ysmjjsy.goya.security.authentication.provider.authentication;
+package com.ysmjjsy.goya.security.authentication.provider.login;
 
 import com.ysmjjsy.goya.component.cache.crypto.CryptoProcessor;
 import com.ysmjjsy.goya.security.authentication.provider.AbstractAuthenticationConverter;

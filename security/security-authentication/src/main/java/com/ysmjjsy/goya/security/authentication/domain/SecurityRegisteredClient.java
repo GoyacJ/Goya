@@ -1,4 +1,4 @@
-package com.ysmjjsy.goya.security.core.domain;
+package com.ysmjjsy.goya.security.authentication.domain;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;

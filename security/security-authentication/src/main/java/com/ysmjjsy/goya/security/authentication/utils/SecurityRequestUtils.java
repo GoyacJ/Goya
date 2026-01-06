@@ -2,6 +2,7 @@ package com.ysmjjsy.goya.security.authentication.utils;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.experimental.UtilityClass;
+import org.jspecify.annotations.NonNull;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
@@ -108,6 +109,12 @@ public class SecurityRequestUtils {
                 additionalParameters.put("dpop_method", request.getMethod());
                 additionalParameters.put("dpop_target_uri", request.getRequestURL().toString());
             }
+        }
+    }
+
+    public static void checkPostRequest(@NonNull HttpServletRequest request) {
+        if (!"POST".equalsIgnoreCase(request.getMethod())) {
+            throwError(OAuth2ErrorCodes.INVALID_REQUEST,"unSupport other request method");
         }
     }
 }

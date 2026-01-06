@@ -1,10 +1,13 @@
 package com.ysmjjsy.goya.security.authentication.password;
 
 import com.ysmjjsy.goya.security.authentication.configuration.properties.PasswordPolicyProperties;
+import com.ysmjjsy.goya.security.authentication.exception.PasswordPolicyException;
+import com.ysmjjsy.goya.security.core.manager.SecurityUserManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.regex.Pattern;
 
@@ -19,7 +22,19 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class PasswordPolicyValidator {
 
+    private final SecurityUserManager securityUserService;
+    private final PasswordEncoder passwordEncoder;
     private final PasswordPolicyProperties passwordPolicy;
+
+    /**
+     * 校验密码是否相等
+     *
+     * @param password      密码
+     * @param storePassword 存储的密码
+     */
+    public boolean matched(String password, String storePassword) {
+        return passwordEncoder.matches(password, storePassword);
+    }
 
     /**
      * 验证密码是否符合策略

@@ -8,6 +8,7 @@ import com.ysmjjsy.goya.component.bus.publish.IRemoteEventPublisher;
 import com.ysmjjsy.goya.component.bus.publish.MetadataAccessor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
@@ -50,7 +51,7 @@ public class KafkaStreamEventPublisher implements IRemoteEventPublisher {
 
     @Override
     public void publish(String destination, Message<?> message) {
-        if (destination == null || destination.isBlank()) {
+        if (StringUtils.isBlank(destination)) {
             throw new IllegalArgumentException("Destination cannot be null or blank");
         }
         if (message == null) {

@@ -15,12 +15,11 @@
     <dependencies>
         <dependency>
             <groupId>com.ysmjjsy.goya</groupId>
-            <artifactId>component-common</artifactId>
+            <artifactId>component-social</artifactId>
         </dependency>
         <dependency>
-            <groupId>jakarta.servlet</groupId>
-            <artifactId>jakarta.servlet-api</artifactId>
-            <scope>provided</scope>
+            <groupId>com.ysmjjsy.goya</groupId>
+            <artifactId>component-web</artifactId>
         </dependency>
     </dependencies>
 </project>

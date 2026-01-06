@@ -3,8 +3,7 @@ package com.ysmjjsy.goya.security.authentication.token;
 import com.ysmjjsy.goya.component.web.utils.WebUtils;
 import com.ysmjjsy.goya.security.authentication.provider.oauth2.OAuth2GrantAuthenticationToken;
 import com.ysmjjsy.goya.security.core.domain.SecurityUser;
-import com.ysmjjsy.goya.security.core.service.ISecurityUserService;
-import com.ysmjjsy.goya.security.core.service.SecurityAuditService;
+import com.ysmjjsy.goya.security.core.manager.SecurityUserManager;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,7 +40,7 @@ public class TokenManager {
 
     private final OAuth2TokenGenerator<? extends OAuth2Token> tokenGenerator;
     private final OAuth2AuthorizationService authorizationService;
-    private final ISecurityUserService securityUserService;
+    private final SecurityUserManager securityUserService;
     private final SecurityAuditService securityAuditService;
     private final TokenBlacklistStamp tokenBlacklistStamp;
 
@@ -252,7 +251,7 @@ public class TokenManager {
         }
 
         try {
-            SecurityUser user = securityUserService.findUser(principalName);
+            SecurityUser user = securityUserService.findUserByUsername(principalName);
             if (user == null) {
                 throw new OAuth2AuthenticationException(
                         new OAuth2Error(OAuth2ErrorCodes.SERVER_ERROR, "用户不存在: " + principalName, null));

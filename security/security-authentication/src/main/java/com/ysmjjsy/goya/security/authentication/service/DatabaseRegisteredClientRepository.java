@@ -2,7 +2,7 @@ package com.ysmjjsy.goya.security.authentication.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.ysmjjsy.goya.component.common.utils.JsonUtils;
-import com.ysmjjsy.goya.security.core.domain.SecurityRegisteredClient;
+import com.ysmjjsy.goya.security.authentication.domain.SecurityRegisteredClient;
 import com.ysmjjsy.goya.security.core.repository.IRegisteredClientMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

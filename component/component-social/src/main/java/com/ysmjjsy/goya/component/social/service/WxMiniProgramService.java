@@ -11,7 +11,7 @@ import com.google.common.collect.Maps;
 import com.ysmjjsy.goya.component.common.strategy.IStrategyExecute;
 import com.ysmjjsy.goya.component.social.configuration.properties.SocialProperties;
 import com.ysmjjsy.goya.component.social.enums.SocialTypeEnum;
-import com.ysmjjsy.goya.component.social.exception.SocialAccessException;
+import com.ysmjjsy.goya.component.social.exception.SocialException;
 import com.ysmjjsy.goya.component.social.service.dto.WxAppLoginRequest;
 import com.ysmjjsy.goya.component.social.service.dto.WxAppLoginResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -77,20 +77,14 @@ public class WxMiniProgramService implements IStrategyExecute<WxAppLoginRequest,
         return router;
     }
 
-
     @Override
     public String mark() {
-        return SocialTypeEnum.WE_CHAT_MINI_PROGRAM.getCode();
+        return SocialTypeEnum.WECHAT_MINI_PROGRAM.getMark();
     }
 
     @Override
     public WxAppLoginResponse executeResp(WxAppLoginRequest request) {
-        WxMaJscode2SessionResult login = login(request.code(), request.appId());
-        log.error("[Goya] |- Weixin Mini App login response [{}]!", login);
-        if (Objects.nonNull(login)) {
-            return new WxAppLoginResponse(login.getSessionKey(), login.getOpenid(), login.getUnionid());
-        }
-        throw new SocialAccessException("wx mini program failed");
+        return login(request.code(), request.appId());
     }
 
     /**
@@ -156,13 +150,17 @@ public class WxMiniProgramService implements IStrategyExecute<WxAppLoginRequest,
      * @param appId 小程序 AppId
      * @return {@link WxMaJscode2SessionResult} 对象
      */
-    public WxMaJscode2SessionResult login(String code, String appId) {
+    public WxAppLoginResponse login(String code, String appId) {
         WxMaService wxMaService = getWxMaService(appId);
         if (StringUtils.isNotBlank(code) && ObjectUtils.isNotEmpty(wxMaService)) {
-            return this.getSessionInfo(code, wxMaService);
+            WxMaJscode2SessionResult info = this.getSessionInfo(code, wxMaService);
+            if (Objects.isNull(info)) {
+                throw new SocialException("login failed");
+            }
+            return new WxAppLoginResponse(info.getSessionKey(), info.getOpenid(), info.getUnionid());
         } else {
             log.error("[Goya] |- Weixin Mini App login failed, please check code param!");
-            return null;
+            throw new SocialException("login failed");
         }
     }
 

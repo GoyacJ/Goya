@@ -7,10 +7,9 @@ import com.ysmjjsy.goya.security.authentication.entrypoint.OAuth2AuthenticationE
 import com.ysmjjsy.goya.security.authentication.filter.UnifiedLoginAuthenticationFilter;
 import com.ysmjjsy.goya.security.authentication.handler.OAuth2AuthenticationSuccessHandler;
 import com.ysmjjsy.goya.security.authentication.password.PasswordPolicyValidator;
-import com.ysmjjsy.goya.security.authentication.provider.authentication.*;
+import com.ysmjjsy.goya.security.authentication.provider.login.*;
 import com.ysmjjsy.goya.security.authentication.request.CustomizerRequestCache;
-import com.ysmjjsy.goya.security.authentication.userinfo.OAuth2UserInfoMapper;
-import com.ysmjjsy.goya.security.core.service.ISecurityUserService;
+import com.ysmjjsy.goya.security.core.manager.SecurityUserManager;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +25,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.web.cors.CorsConfiguration;
@@ -264,8 +262,8 @@ public class AuthorizationAutoConfiguration {
      * @return PasswordAuthenticationProvider
      */
     @Bean
-    public PasswordAuthenticationProvider passwordAuthenticationProvider(ISecurityUserService iSecurityUserService,PasswordPolicyValidator passwordPolicyValidator) {
-        PasswordAuthenticationProvider provider = new PasswordAuthenticationProvider(securityUserService, passwordEncoder, passwordPolicyValidator);
+    public PasswordAuthenticationProvider passwordAuthenticationProvider(SecurityUserManager iSecurityUserService, PasswordPolicyValidator passwordPolicyValidator) {
+        PasswordAuthenticationProvider provider = new PasswordAuthenticationProvider(iSecurityUserService, passwordPolicyValidator);
         log.trace("[Goya] |- security [authentication] PasswordAuthenticationProvider auto configure.");
         return provider;
     }
@@ -280,7 +278,7 @@ public class AuthorizationAutoConfiguration {
     @Bean
     @ConditionalOnBean(ICacheService.class)
     public SmsAuthenticationProvider smsAuthenticationProvider(
-            ISecurityUserService iSecurityUserService,
+            SecurityUserManager iSecurityUserService,
             ICacheService cacheService) {
         SmsAuthenticationProvider provider = new SmsAuthenticationProvider(iSecurityUserService, cacheService);
         log.trace("[Goya] |- security [authentication] SmsAuthenticationProvider auto configure.");
@@ -294,7 +292,7 @@ public class AuthorizationAutoConfiguration {
      * @return SocialAuthenticationProvider
      */
     @Bean
-    public SocialAuthenticationProvider socialAuthenticationProvider(ISecurityUserService iSecurityUserService, SecurityAuthenticationProperties securityAuthenticationProperties) {
+    public SocialAuthenticationProvider socialAuthenticationProvider(SecurityUserManager iSecurityUserService, SecurityAuthenticationProperties securityAuthenticationProperties) {
         SocialAuthenticationProvider provider = new SocialAuthenticationProvider(iSecurityUserService, securityAuthenticationProperties);
         log.trace("[Goya] |- security [authentication] SocialAuthenticationProvider auto configure.");
         return provider;

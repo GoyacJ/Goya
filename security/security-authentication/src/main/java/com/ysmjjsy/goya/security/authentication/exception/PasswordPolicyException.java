@@ -1,4 +1,4 @@
-package com.ysmjjsy.goya.security.authentication.password;
+package com.ysmjjsy.goya.security.authentication.exception;
 
 import org.springframework.security.core.AuthenticationException;
 

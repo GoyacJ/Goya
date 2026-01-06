@@ -16,6 +16,9 @@ import lombok.extern.slf4j.Slf4j;
 public class SocialService {
 
     private final StrategyChoose strategyChoose;
+    private final SmsService smsService;
+    private final ThirdPartService thirdPartService;
+    private final WxMiniProgramService wxMiniProgramService;
 
     /**
      * 策略执行
@@ -26,6 +29,17 @@ public class SocialService {
      * @param <O> 响应结果类型
      */
     public <I, O> O execute(I request, SocialTypeEnum socialType) {
-        return strategyChoose.chooseAndExecuteResp(socialType.getCode(), request);
+        return strategyChoose.chooseAndExecuteResp(socialType.getMark(), request);
+    }
+
+    /**
+     * 校验验证码是否正确
+     *
+     * @param phoneNumber 手机号
+     * @param code        验证码
+     * @return 是否正确
+     */
+    public boolean verify(String phoneNumber, String code) {
+        return smsService.verify(phoneNumber,code);
     }
 }

@@ -28,6 +28,8 @@ public interface ISecurityAuthenticationConstants {
     String CACHE_SECURITY_AUTHENTICATION_LOGIN_PREFIX = CACHE_SECURITY_AUTHENTICATION_PREFIX + "login:";
     String CACHE_SECURITY_AUTHENTICATION_LOGIN_FAILURE_PREFIX = CACHE_SECURITY_AUTHENTICATION_LOGIN_PREFIX + "failure:";
 
-    String USERNAME = "username";
-    String PASSWORD = "password";
+    String PARAM_USERNAME = "username";
+    String PARAM_PASSWORD = "password";
+    String PARAM_PHONE_NUMBER = "phone_number";
+    String PARAM_SMS_CODE = "sms_code";
 }

@@ -4,8 +4,10 @@ import com.ysmjjsy.goya.component.common.definition.constants.IBaseConstants;
 import com.ysmjjsy.goya.component.common.strategy.IStrategyExecute;
 import com.ysmjjsy.goya.component.social.cache.SmsCheckCacheManager;
 import com.ysmjjsy.goya.component.social.enums.SocialTypeEnum;
+import com.ysmjjsy.goya.component.social.exception.SocialException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.dromara.sms4j.api.SmsBlend;
 import org.dromara.sms4j.api.entity.SmsResponse;
 import org.dromara.sms4j.core.factory.SmsFactory;
@@ -26,7 +28,7 @@ public class SmsService implements IStrategyExecute<String, Boolean> {
 
     @Override
     public String mark() {
-        return SocialTypeEnum.SMS.getCode();
+        return SocialTypeEnum.SMS.getMark();
     }
 
     @Override
@@ -35,8 +37,18 @@ public class SmsService implements IStrategyExecute<String, Boolean> {
     }
 
     @Override
-    public Boolean executeResp(String phone) {
-        String code = smsCheckCacheManager.put(phone);
+    public Boolean executeResp(String phoneNumber) {
+        return sendSms(phoneNumber);
+    }
+
+    /**
+     * 发送验证码
+     *
+     * @param phoneNumber 手机号
+     * @return 结果
+     */
+    public boolean sendSms(String phoneNumber) {
+        String code = smsCheckCacheManager.put(phoneNumber);
         boolean result;
         if (Boolean.TRUE.equals(smsCheckCacheManager.getSms().sandbox())) {
             result = true;
@@ -44,11 +56,25 @@ public class SmsService implements IStrategyExecute<String, Boolean> {
             SmsBlend smsBlend = SmsFactory.getSmsBlend();
             LinkedHashMap<String, String> message = new LinkedHashMap<>();
             message.put(IBaseConstants.STR_CODE, code);
-            SmsResponse smsResponse = smsBlend.sendMessage(phone, smsCheckCacheManager.getSms().templateId(), message);
+            SmsResponse smsResponse = smsBlend.sendMessage(phoneNumber, smsCheckCacheManager.getSms().templateId(), message);
             log.debug("[Goya] |- component [social] SmsService |- handle sms send response [{}]", smsResponse);
             result = smsResponse.isSuccess();
         }
 
         return result;
+    }
+
+    /**
+     * 校验验证码是否正确
+     *
+     * @param phoneNumber 手机号
+     * @param code        验证码
+     * @return 是否正确
+     */
+    public boolean verify(String phoneNumber, String code) {
+        if (StringUtils.isAnyBlank(phoneNumber, code)) {
+            throw new SocialException("params is null");
+        }
+        return smsCheckCacheManager.check(phoneNumber, code);
     }
 }

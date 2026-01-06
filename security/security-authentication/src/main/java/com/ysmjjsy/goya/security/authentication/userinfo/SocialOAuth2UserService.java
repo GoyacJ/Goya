@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.security.authentication.userinfo;
 
 import com.ysmjjsy.goya.security.core.domain.SecurityUser;
-import com.ysmjjsy.goya.security.core.service.ISecurityUserService;
+import com.ysmjjsy.goya.security.core.manager.SecurityUserManager;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,14 +46,14 @@ import java.util.Set;
  * @author goya
  * @since 2025/12/21
  * @see OAuth2UserInfoMapper
- * @see ISecurityUserService
+ * @see SecurityUserManager
  */
 @Slf4j
 @RequiredArgsConstructor
 public class SocialOAuth2UserService implements OAuth2UserService<OidcUserRequest, OidcUser> {
 
     private final OidcUserService delegate;
-    private final ISecurityUserService securityUserService;
+    private final SecurityUserManager securityUserService;
 
     @Override
     public OidcUser loadUser(OidcUserRequest userRequest) throws OAuth2AuthenticationException {
@@ -110,7 +110,7 @@ public class SocialOAuth2UserService implements OAuth2UserService<OidcUserReques
             if (StringUtils.isNotBlank(email)) {
                 try {
                     // 尝试通过邮箱查找（假设邮箱可以作为用户名）
-                    user = securityUserService.findUser(email);
+                    user = securityUserService.findUserByUsername(email);
                     log.debug("[Goya] |- security [authentication] User found by email: {}", email);
                 } catch (Exception e) {
                     log.debug("[Goya] |- security [authentication] User not found by email: {}", email);
@@ -119,7 +119,7 @@ public class SocialOAuth2UserService implements OAuth2UserService<OidcUserReques
 
             if (user == null && StringUtils.isNotBlank(username)) {
                 try {
-                    user = securityUserService.findUser(username);
+                    user = securityUserService.findUserByUsername(username);
                     log.debug("[Goya] |- security [authentication] User found by username: {}", username);
                 } catch (Exception e) {
                     log.debug("[Goya] |- security [authentication] User not found by username: {}", username);

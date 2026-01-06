@@ -1,4 +1,4 @@
-package com.ysmjjsy.goya.security.authentication.provider.authentication;
+package com.ysmjjsy.goya.security.authentication.provider.login;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;

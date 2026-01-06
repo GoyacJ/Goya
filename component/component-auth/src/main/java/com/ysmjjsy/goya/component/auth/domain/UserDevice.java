@@ -1,5 +1,6 @@
-package com.ysmjjsy.goya.security.core.domain;
+package com.ysmjjsy.goya.component.auth.domain;
 
+import com.ysmjjsy.goya.component.web.utils.UserAgent;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,7 +21,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "用户设备实体")
-public class SecurityUserDevice {
+public class UserDevice {
 
     @Schema(description = "主键ID")
     private String id;
@@ -50,6 +51,6 @@ public class SecurityUserDevice {
     private String ipAddress;
 
     @Schema(description = "User-Agent")
-    private String userAgent;
+    private UserAgent userAgent;
 }
 

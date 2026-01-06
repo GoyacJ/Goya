@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.security.resource.server.configuration;
 
 import com.ysmjjsy.goya.component.cache.service.ICacheService;
-import com.ysmjjsy.goya.security.core.dpop.DPoPKeyFingerprintService;
+import com.ysmjjsy.goya.security.core.utils.DPoPKeyUtils;
 import com.ysmjjsy.goya.security.resource.server.configuration.properties.SecurityResourceProperties;
 import com.ysmjjsy.goya.security.resource.server.dpop.ResourceServerDPoPValidator;
 import com.ysmjjsy.goya.security.resource.server.jwt.JwtAuthenticationFilter;
@@ -11,9 +11,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
@@ -176,8 +174,8 @@ public class SecurityResourceAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    public DPoPKeyFingerprintService dPoPKeyFingerprintService() {
-        DPoPKeyFingerprintService service = new DPoPKeyFingerprintService();
+    public DPoPKeyUtils dPoPKeyFingerprintService() {
+        DPoPKeyUtils service = new DPoPKeyUtils();
         log.trace("[Goya] |- security [resource] DPoPKeyFingerprintService auto configure.");
         return service;
     }
@@ -223,7 +221,7 @@ public class SecurityResourceAutoConfiguration {
     @Bean
     public ResourceServerDPoPValidator resourceServerDPoPValidator(
             JwtDecoder dPoPProofDecoder,
-            DPoPKeyFingerprintService dPoPKeyFingerprintService) {
+            DPoPKeyUtils dPoPKeyFingerprintService) {
         ResourceServerDPoPValidator validator = new ResourceServerDPoPValidator(
                 dPoPProofDecoder,
                 resourceProperties.dpop(),

@@ -25,7 +25,7 @@ public class SmsCheckCacheManager extends AbstractCheckTemplate<String, String> 
 
     @Override
     protected String nextValue(String key) {
-        if (sms.sandbox()) {
+        if (Boolean.TRUE.equals(sms.sandbox())) {
             return sms.testCode();
         } else {
             return RandomUtils.randomNumberString(sms.length());

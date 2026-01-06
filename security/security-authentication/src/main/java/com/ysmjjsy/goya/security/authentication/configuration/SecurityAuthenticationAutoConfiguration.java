@@ -6,6 +6,7 @@ import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.ysmjjsy.goya.component.cache.service.ICacheService;
 import com.ysmjjsy.goya.component.common.utils.ResourceResolverUtils;
+import com.ysmjjsy.goya.security.authentication.captcha.DynamicLoginCaptchaStrategy;
 import com.ysmjjsy.goya.security.authentication.configuration.properties.SecurityAuthenticationProperties;
 import com.ysmjjsy.goya.security.authentication.service.impl.CacheOAuth2AuthorizationService;
 import com.ysmjjsy.goya.security.authentication.token.JwtTokenCustomizer;
@@ -13,10 +14,9 @@ import com.ysmjjsy.goya.security.authentication.token.TokenBlacklistStamp;
 import com.ysmjjsy.goya.security.authentication.token.TokenManager;
 import com.ysmjjsy.goya.security.authentication.userinfo.OAuth2UserInfoMapper;
 import com.ysmjjsy.goya.security.authentication.userinfo.SocialOAuth2UserService;
-import com.ysmjjsy.goya.security.core.dpop.DPoPKeyFingerprintService;
+import com.ysmjjsy.goya.security.core.utils.DPoPKeyUtils;
 import com.ysmjjsy.goya.security.core.enums.CertificateEnum;
-import com.ysmjjsy.goya.security.core.service.ISecurityUserService;
-import com.ysmjjsy.goya.security.core.service.SecurityAuditService;
+import com.ysmjjsy.goya.security.core.manager.SecurityUserManager;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
@@ -59,7 +59,7 @@ public class SecurityAuthenticationAutoConfiguration {
     }
 
     @Bean
-    public OAuth2UserInfoMapper oAuth2UserInfoMapper(ISecurityUserService securityUserService) {
+    public OAuth2UserInfoMapper oAuth2UserInfoMapper(SecurityUserManager securityUserService) {
         OAuth2UserInfoMapper mapper = new OAuth2UserInfoMapper(securityUserService);
         log.trace("[Goya] |- security [authentication] oAuth2UserInfoMapper auto configure.");
         return mapper;
@@ -67,10 +67,17 @@ public class SecurityAuthenticationAutoConfiguration {
 
     @Bean
     public SocialOAuth2UserService socialOAuth2UserService(OidcUserService oidcUserService,
-                                                           ISecurityUserService iSecurityUserService){
+                                                           SecurityUserManager iSecurityUserService){
         SocialOAuth2UserService socialOAuth2UserService = new SocialOAuth2UserService(oidcUserService,iSecurityUserService);
         log.trace("[Goya] |- security [authentication] socialOAuth2UserService auto configure.");
         return socialOAuth2UserService;
+    }
+
+    @Bean
+    public DynamicLoginCaptchaStrategy dynamicLoginCaptchaStrategy(SecurityAuthenticationProperties securityAuthenticationProperties){
+        DynamicLoginCaptchaStrategy strategy = new DynamicLoginCaptchaStrategy(securityAuthenticationProperties.captcha());
+        log.trace("[Goya] |- security [authentication] SecurityAuthenticationAutoConfiguration |- bean [dynamicLoginCaptchaStrategy] register.");
+        return strategy;
     }
 
     @Bean
@@ -119,7 +126,7 @@ public class SecurityAuthenticationAutoConfiguration {
      * @return JwtTokenCustomizer
      */
     @Bean
-    public JwtTokenCustomizer jwtTokenCustomizer(DPoPKeyFingerprintService dPoPKeyFingerprintService) {
+    public JwtTokenCustomizer jwtTokenCustomizer(DPoPKeyUtils dPoPKeyFingerprintService) {
         return new JwtTokenCustomizer(dPoPKeyFingerprintService);
     }
 
@@ -159,7 +166,7 @@ public class SecurityAuthenticationAutoConfiguration {
     @Bean
     public TokenBlacklistStamp tokenBlacklistStamp(SecurityAuthenticationProperties properties){
         TokenBlacklistStamp stamp = new TokenBlacklistStamp(properties.tokenBlackList());
-        log.trace("[Goya] |- security [authentication] RedisOAuth2AuthorizationService auto configure.");
+        log.trace("[Goya] |- security [authentication] tokenBlacklistStamp auto configure.");
         return stamp;
     }
 
@@ -179,7 +186,7 @@ public class SecurityAuthenticationAutoConfiguration {
     public TokenManager tokenService(
             OAuth2TokenGenerator<?> tokenGenerator,
             OAuth2AuthorizationService authorizationService,
-            ISecurityUserService securityUserService,
+            SecurityUserManager securityUserService,
             SecurityAuditService securityAuditService,
             TokenBlacklistStamp tokenBlacklistStamp) {
         TokenManager tokenService = new TokenManager(

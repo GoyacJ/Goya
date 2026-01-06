@@ -25,7 +25,6 @@ public class LoginFailureCacheManger extends AbstractCounterTemplate<String> {
         return ISecurityAuthenticationConstants.CACHE_SECURITY_AUTHENTICATION_LOGIN_PREFIX;
     }
 
-
     @Override
     protected CacheSpecification buildCacheSpecification(CacheSpecification defaultSpec) {
         CacheSpecification.Builder builder = defaultSpec.toBuilder();

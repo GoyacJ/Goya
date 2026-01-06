@@ -2,7 +2,7 @@ package com.ysmjjsy.goya.security.authentication.userinfo;
 
 import com.ysmjjsy.goya.security.core.constants.IStandardClaimNamesConstants;
 import com.ysmjjsy.goya.security.core.domain.SecurityUser;
-import com.ysmjjsy.goya.security.core.service.ISecurityUserService;
+import com.ysmjjsy.goya.security.core.manager.SecurityUserManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 public class OAuth2UserInfoMapper
         implements Function<OidcUserInfoAuthenticationContext, OidcUserInfo> {
 
-    private final ISecurityUserService securityUserService;
+    private final SecurityUserManager securityUserService;
 
     @Override
     public OidcUserInfo apply(OidcUserInfoAuthenticationContext context) {
@@ -55,7 +55,7 @@ public class OAuth2UserInfoMapper
             claims.put(IStandardClaimNamesConstants.TENANT_ID, tenantId);
         }
 
-        SecurityUser user = securityUserService.findUser(subject);
+        SecurityUser user = securityUserService.findUserByUsername(subject);
         if (user == null) {
             return new OidcUserInfo(claims);
         }

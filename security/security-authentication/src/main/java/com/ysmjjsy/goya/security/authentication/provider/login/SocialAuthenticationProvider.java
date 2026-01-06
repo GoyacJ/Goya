@@ -1,12 +1,12 @@
-package com.ysmjjsy.goya.security.authentication.provider.authentication;
+package com.ysmjjsy.goya.security.authentication.provider.login;
 
 import com.ysmjjsy.goya.security.authentication.configuration.properties.SecurityAuthenticationProperties;
+import com.ysmjjsy.goya.security.authentication.provider.AbstractAuthenticationProvider;
 import com.ysmjjsy.goya.security.core.domain.SecurityUser;
-import com.ysmjjsy.goya.security.core.service.ISecurityUserService;
+import com.ysmjjsy.goya.security.core.manager.SecurityUserManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -33,9 +33,9 @@ import java.util.Map;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class SocialAuthenticationProvider implements AuthenticationProvider {
+public class SocialAuthenticationProvider extends AbstractAuthenticationProvider {
 
-    private final ISecurityUserService securityUserService;
+    private final SecurityUserManager securityUserService;
     private final SecurityAuthenticationProperties authenticationProperties;
 
     @Override
@@ -96,7 +96,7 @@ public class SocialAuthenticationProvider implements AuthenticationProvider {
             if (StringUtils.isNotBlank(email)) {
                 try {
                     // 尝试通过邮箱查找（假设邮箱可以作为用户名）
-                    user = securityUserService.findUser(email);
+                    user = securityUserService.findUserByUsername(email);
                     log.debug("[Goya] |- security [authentication] User found by email: {}", email);
                 } catch (Exception e) {
                     log.debug("[Goya] |- security [authentication] User not found by email: {}", email);
@@ -105,7 +105,7 @@ public class SocialAuthenticationProvider implements AuthenticationProvider {
 
             if (user == null && StringUtils.isNotBlank(username)) {
                 try {
-                    user = securityUserService.findUser(username);
+                    user = securityUserService.findUserByUsername(username);
                     log.debug("[Goya] |- security [authentication] User found by username: {}", username);
                 } catch (Exception e) {
                     log.debug("[Goya] |- security [authentication] User not found by username: {}", username);

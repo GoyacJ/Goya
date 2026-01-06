@@ -3,8 +3,6 @@ package com.ysmjjsy.goya.security.authentication.filter;
 import com.ysmjjsy.goya.component.web.utils.UserAgent;
 import com.ysmjjsy.goya.component.web.utils.WebUtils;
 import com.ysmjjsy.goya.security.core.domain.SecurityUser;
-import com.ysmjjsy.goya.security.core.domain.SecurityUserDevice;
-import com.ysmjjsy.goya.security.core.service.UserDeviceService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -64,7 +62,7 @@ public class DeviceManagementFilter extends OncePerRequestFilter {
                         UserAgent userAgent = WebUtils.getUserAgent(request);
 
                         // 注册或更新设备
-                        SecurityUserDevice device = userDeviceService.findByDeviceId(deviceId);
+                        com.ysmjjsy.goya.component.auth.domain.UserDevice device = userDeviceService.findByDeviceId(deviceId);
                         if (device == null) {
                             // 新设备，注册
                             userDeviceService.registerDevice(userId, deviceId, deviceName, deviceType, ipAddress, userAgent);

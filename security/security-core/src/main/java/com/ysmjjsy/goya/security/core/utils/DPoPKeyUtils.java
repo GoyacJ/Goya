@@ -1,4 +1,4 @@
-package com.ysmjjsy.goya.security.core.dpop;
+package com.ysmjjsy.goya.security.core.utils;
 
 import com.ysmjjsy.goya.component.common.utils.JsonUtils;
 import com.ysmjjsy.goya.security.core.exception.SecurityAuthenticationException;
@@ -25,7 +25,7 @@ import java.util.*;
  * @since 2025/12/21
  */
 @Slf4j
-public class DPoPKeyFingerprintService {
+public class DPoPKeyUtils {
 
     /**
      * 从DPoP Proof JWT中提取公钥指纹
@@ -34,7 +34,7 @@ public class DPoPKeyFingerprintService {
      * @param dPoPProofJwt DPoP Proof JWT
      * @return 公钥指纹（Base64URL编码）
      */
-    public String extractFingerprint(Jwt dPoPProofJwt) {
+    public static String extractFingerprint(Jwt dPoPProofJwt) {
         if (dPoPProofJwt == null) {
             return null;
         }
@@ -85,7 +85,7 @@ public class DPoPKeyFingerprintService {
      * @return 规范化的JSON字符串
      */
     @SuppressWarnings("all")
-    private String normalizeJwk(Object jwkObject) {
+    private static String normalizeJwk(Object jwkObject) {
         try {
             // 1. 将JWK对象转换为Map
             Map<String, Object> jwkMap;
@@ -155,7 +155,7 @@ public class DPoPKeyFingerprintService {
      * @param source 源Map
      * @param key    字段名
      */
-    private void putIfPresent(Map<String, Object> target, Map<String, Object> source, String key) {
+    private static void putIfPresent(Map<String, Object> target, Map<String, Object> source, String key) {
         Object value = source.get(key);
         if (value != null) {
             target.put(key, value);
