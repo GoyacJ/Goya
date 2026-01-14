@@ -8,7 +8,6 @@ import com.ysmjjsy.goya.component.cache.filter.BloomFilterManager;
 import com.ysmjjsy.goya.component.cache.local.CaffeineLocalCache;
 import com.ysmjjsy.goya.component.cache.metrics.CacheMetrics;
 import com.ysmjjsy.goya.component.cache.metrics.DefaultCacheMetrics;
-import com.ysmjjsy.goya.component.cache.crypto.CryptoProcessor;
 import com.ysmjjsy.goya.component.cache.properties.PropertiesCacheService;
 import com.ysmjjsy.goya.component.cache.resolver.CacheSpecification;
 import com.ysmjjsy.goya.component.cache.resolver.CacheSpecificationResolver;
@@ -20,9 +19,6 @@ import com.ysmjjsy.goya.component.cache.service.ICacheService;
 import com.ysmjjsy.goya.component.cache.support.CacheRefillManager;
 import com.ysmjjsy.goya.component.cache.support.SingleFlightLoader;
 import com.ysmjjsy.goya.component.cache.ttl.DefaultFallbackStrategy;
-import com.ysmjjsy.goya.component.common.crypto.IAsymmetricCryptoProcessor;
-import com.ysmjjsy.goya.component.common.crypto.ISymmetricCryptoProcessor;
-import com.ysmjjsy.goya.component.common.service.IPlatformService;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -251,15 +247,5 @@ public class CacheAutoConfiguration {
         PropertiesCacheService template = new PropertiesCacheService();
         log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [propertiesCacheTemplate] register.");
         return template;
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public CryptoProcessor cryptoProcessor(IAsymmetricCryptoProcessor asymmetricCryptoProcessor,
-                                               ISymmetricCryptoProcessor symmetricCryptoProcessor,
-                                               IPlatformService iPlatformService) {
-        CryptoProcessor cryptoProcessor = new CryptoProcessor(asymmetricCryptoProcessor, symmetricCryptoProcessor, iPlatformService);
-        log.trace("[GOYA] |- component [security] SecurityAutoConfiguration |- bean [cryptoProcessor] register.");
-        return cryptoProcessor;
     }
 }

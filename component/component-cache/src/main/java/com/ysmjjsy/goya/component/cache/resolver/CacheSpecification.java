@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.cache.resolver;
 
 import com.ysmjjsy.goya.component.cache.configuration.properties.CacheProperties;
-import com.ysmjjsy.goya.component.cache.constants.ICacheConstants;
+import com.ysmjjsy.goya.component.cache.constants.CacheConst;
 import com.ysmjjsy.goya.component.cache.enums.CacheLevel;
 import com.ysmjjsy.goya.component.cache.enums.ConsistencyLevel;
 import com.ysmjjsy.goya.component.cache.ttl.TtlStrategy;
@@ -141,7 +141,7 @@ public class CacheSpecification {
         this.cacheLevel = builder.cacheLevel;
         this.keyPrefix = builder.keyPrefix != null && !builder.keyPrefix.isEmpty() 
                 ? builder.keyPrefix 
-                : ICacheConstants.CACHE_PREFIX;
+                : CacheConst.CACHE_PREFIX;
         this.enableBloomFilter = builder.enableBloomFilter;
         this.bloomFilterExpectedInsertions = builder.bloomFilterExpectedInsertions;
         this.bloomFilterFalsePositiveRate = builder.bloomFilterFalsePositiveRate;

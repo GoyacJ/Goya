@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.cache.crypto;
 
-import com.ysmjjsy.goya.component.cache.constants.ICacheConstants;
+import com.ysmjjsy.goya.component.cache.constants.CacheConst;
 import com.ysmjjsy.goya.component.cache.resolver.CacheSpecification;
 import com.ysmjjsy.goya.component.cache.template.AbstractCheckTemplate;
 import com.ysmjjsy.goya.component.cache.ttl.TtlStrategy;
@@ -152,7 +152,7 @@ public class CryptoProcessor extends AbstractCheckTemplate<String, SecretKey> {
 
     @Override
     protected String getCacheName() {
-        return ICacheConstants.CACHE_SECURE_KEY_PREFIX;
+        return CacheConst.CACHE_SECURE_KEY_PREFIX;
     }
 
     @Override

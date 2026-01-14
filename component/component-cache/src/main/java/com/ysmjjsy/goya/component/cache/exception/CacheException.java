@@ -1,8 +1,7 @@
 package com.ysmjjsy.goya.component.cache.exception;
 
-import com.ysmjjsy.goya.component.common.code.IResponseCode;
-import com.ysmjjsy.goya.component.common.code.ResponseCodeEnum;
-import com.ysmjjsy.goya.component.common.definition.exception.AbstractRuntimeException;
+import com.ysmjjsy.goya.component.core.exception.CommonException;
+import com.ysmjjsy.goya.component.framework.exception.code.HttpErrorCodeEnum;
 
 import java.io.Serial;
 
@@ -12,16 +11,16 @@ import java.io.Serial;
  * @author goya
  * @since 2025/12/21 22:52
  */
-public class CacheException extends AbstractRuntimeException {
+public class CacheException extends CommonException {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
     public CacheException() {
-        super(ResponseCodeEnum.CACHE_ERROR);
+        super(HttpErrorCodeEnum.CACHE_ERROR);
     }
 
-    public CacheException(IResponseCode code) {
+    public CacheException(HttpErrorCodeEnum code) {
         super(code);
     }
 
@@ -33,11 +32,11 @@ public class CacheException extends AbstractRuntimeException {
         super(cause);
     }
 
-    public CacheException(IResponseCode code, String message) {
+    public CacheException(HttpErrorCodeEnum code, String message) {
         super(code, message);
     }
 
-    public CacheException(IResponseCode code, Throwable cause) {
+    public CacheException(HttpErrorCodeEnum code, Throwable cause) {
         super(code, cause);
     }
 
@@ -45,11 +44,7 @@ public class CacheException extends AbstractRuntimeException {
         super(message, cause);
     }
 
-    public CacheException(IResponseCode code, String message, Throwable cause) {
+    public CacheException(HttpErrorCodeEnum code, String message, Throwable cause) {
         super(code, message, cause);
-    }
-
-    public CacheException(IResponseCode code, String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(code, message, cause, enableSuppression, writableStackTrace);
     }
 }

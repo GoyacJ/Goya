@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.cache.properties;
 
 import com.ysmjjsy.goya.component.cache.annotation.PropertiesCache;
-import com.ysmjjsy.goya.component.cache.constants.ICacheConstants;
+import com.ysmjjsy.goya.component.cache.constants.CacheConst;
 import com.ysmjjsy.goya.component.cache.template.AbstractCacheTemplate;
 import com.ysmjjsy.goya.component.common.context.ApplicationInitializingEvent;
 import com.ysmjjsy.goya.component.common.context.SpringContext;
@@ -28,7 +28,7 @@ public class PropertiesCacheService extends AbstractCacheTemplate<String, Object
 
     @Override
     protected String getCacheName() {
-        return ICacheConstants.CACHE_PROPERTIES_PREFIX;
+        return CacheConst.CACHE_PROPERTIES_PREFIX;
     }
 
     @Override

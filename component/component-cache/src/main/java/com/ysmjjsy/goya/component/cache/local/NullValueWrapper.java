@@ -95,6 +95,7 @@ public final class NullValueWrapper implements Serializable {
      *
      * @return 单例实例
      */
+    @Serial
     private Object readResolve() {
         return INSTANCE;
     }

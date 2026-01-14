@@ -128,12 +128,12 @@ logging:
 
 ---
 platform:
-  locale: zh_cn
-  architecture: monolith
-  platform-info:
-    project-name: goya
-    website: ysmjjsy.com
+  crypto:
+    strategy: standard
+  cache:
+    cache:
+      maximum-size: 100000
+      default-ttl: PT5M
   bus:
     destination:
       default-template: "bus.events"
-  crypto: sm

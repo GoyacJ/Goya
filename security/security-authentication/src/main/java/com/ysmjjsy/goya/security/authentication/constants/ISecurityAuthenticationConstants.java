@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.security.authentication.constants;
 
-import static com.ysmjjsy.goya.component.cache.constants.ICacheConstants.CACHE_PREFIX;
+import static com.ysmjjsy.goya.component.cache.constants.CacheConst.CACHE_PREFIX;
 
 /**
  * <p></p>

@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.cache.configuration.properties;
 
-import com.ysmjjsy.goya.component.cache.constants.ICacheConstants;
+import com.ysmjjsy.goya.component.cache.constants.CacheConst;
 import com.ysmjjsy.goya.component.cache.enums.CacheLevel;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.extern.slf4j.Slf4j;
@@ -15,12 +15,12 @@ import java.util.Map;
  * <p>支持配置键前缀、默认过期时间、本地缓存参数等</p>
  *
  * @author goya
- * @see ICacheConstants
+ * @see CacheConst
  * @since 2025/12/22
  */
 @Slf4j
 @Schema(description = "缓存配置属性")
-@ConfigurationProperties(prefix = ICacheConstants.PROPERTY_CACHE)
+@ConfigurationProperties(prefix = CacheConst.PROPERTY_CACHE)
 public record CacheProperties(
         /*
           缓存键前缀（全局配置）

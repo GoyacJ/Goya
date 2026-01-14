@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.starter.redis.constants;
 
-import com.ysmjjsy.goya.component.cache.constants.ICacheConstants;
+import com.ysmjjsy.goya.component.cache.constants.CacheConst;
 
 /**
  * <p>Redis 常量定义接口</p>
@@ -17,7 +17,7 @@ public interface IRedisConstants {
      * Redis 配置前缀
      * 配置示例: platform.redis.lock-timeout=30s
      */
-    String PROPERTY_REDIS = ICacheConstants.PROPERTY_CACHE + ".redis";
+    String PROPERTY_REDIS = CacheConst.PROPERTY_CACHE + ".redis";
 
     /* ---------- Redis 键前缀 ---------- */
 

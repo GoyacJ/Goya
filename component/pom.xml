@@ -13,7 +13,6 @@
     <packaging>pom</packaging>
     <description>公共组件</description>
     <modules>
-        <module>component-common</module>
         <module>component-cache</module>
         <module>component-bus</module>
         <module>component-captcha</module>
@@ -24,6 +23,8 @@
         <module>component-social</module>
         <module>component-ddd</module>
         <module>component-log</module>
+        <module>component-framework</module>
+        <module>component-core</module>
     </modules>
 
 

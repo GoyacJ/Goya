@@ -16,7 +16,7 @@
         <!-- 基础依赖 -->
         <dependency>
             <groupId>com.ysmjjsy.goya</groupId>
-            <artifactId>component-common</artifactId>
+            <artifactId>component-framework</artifactId>
         </dependency>
     </dependencies>
 
