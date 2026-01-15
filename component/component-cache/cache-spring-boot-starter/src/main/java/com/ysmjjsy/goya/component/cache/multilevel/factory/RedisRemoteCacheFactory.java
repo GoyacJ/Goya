@@ -1,12 +1,16 @@
 package com.ysmjjsy.goya.component.cache.multilevel.factory;
 
 import com.ysmjjsy.goya.component.cache.core.definition.CacheService;
+import com.ysmjjsy.goya.component.cache.core.support.CacheKeySerializer;
 import com.ysmjjsy.goya.component.cache.multilevel.core.MultiLevelCacheSpec;
 import com.ysmjjsy.goya.component.cache.multilevel.definition.RemoteCache;
 import com.ysmjjsy.goya.component.cache.multilevel.definition.RemoteCacheFactory;
+import com.ysmjjsy.goya.component.cache.redis.configuration.properties.GoyaRedisProperties;
 import com.ysmjjsy.goya.component.cache.redis.service.RedisCacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RKeys;
+import org.redisson.api.RedissonClient;
 
 import java.time.Duration;
 
@@ -32,6 +36,21 @@ public class RedisRemoteCacheFactory implements RemoteCacheFactory {
      */
     private final CacheService cacheService;
 
+    /**
+     * Redisson 客户端（用于清空操作）
+     */
+    private final RedissonClient redissonClient;
+
+    /**
+     * 缓存键序列化器（用于构建 key 模式）
+     */
+    private final CacheKeySerializer cacheKeySerializer;
+
+    /**
+     * Redis 配置属性（用于获取 key 前缀）
+     */
+    private final GoyaRedisProperties goyaRedisProperties;
+
     @Override
     public RemoteCache<?, ?> create(String cacheName, MultiLevelCacheSpec spec) {
         if (cacheName == null || cacheName.isBlank()) {
@@ -42,7 +61,7 @@ public class RedisRemoteCacheFactory implements RemoteCacheFactory {
         }
 
         // 创建适配器，将 RedisCacheService 适配为 RemoteCache
-        return new RedisRemoteCacheAdapter(cacheName, redisCacheService, spec);
+        return new RedisRemoteCacheAdapter(cacheName, redisCacheService, spec, redissonClient, cacheKeySerializer, goyaRedisProperties);
     }
 
     @Override
@@ -69,7 +88,9 @@ public class RedisRemoteCacheFactory implements RemoteCacheFactory {
          * Redis RemoteCache 适配器
          */
         private record RedisRemoteCacheAdapter(String cacheName, RedisCacheService redisCacheService,
-                                               MultiLevelCacheSpec spec) implements RemoteCache<Object, Object> {
+                                               MultiLevelCacheSpec spec, RedissonClient redissonClient,
+                                               CacheKeySerializer cacheKeySerializer,
+                                               GoyaRedisProperties goyaRedisProperties) implements RemoteCache<Object, Object> {
             @Override
             public Object get(Object key) {
                 return redisCacheService.get(cacheName, key);
@@ -98,11 +119,25 @@ public class RedisRemoteCacheFactory implements RemoteCacheFactory {
 
             @Override
             public void clear() {
-                // Redis 清空操作：由于 RedisCacheService 没有提供按 cacheName 清空的方法，
-                // 这里记录警告。实际应用中可以通过 RedisService 删除匹配的 key 来实现
-                // 或者扩展 RedisCacheService 提供 clear(String cacheName) 方法
-                log.warn("Clear operation for remote cache is not fully supported. " +
-                        "Please use delete() for specific keys or implement clear logic in RedisCacheService. cacheName={}", cacheName);
+                try {
+                    // 构建 key 模式：{prefix}:{cacheName}:*
+                    String keyPattern = cacheKeySerializer.buildKey(
+                            goyaRedisProperties.keyPrefix(),
+                            cacheName,
+                            "*"
+                    );
+
+                    // 使用 Redisson 的 RKeys 删除匹配的 key
+                    RKeys rKeys = redissonClient.getKeys();
+                    long deletedCount = rKeys.deleteByPattern(keyPattern);
+
+                    // 使用外部类的日志
+                    RedisRemoteCacheFactory.log.debug("Cleared remote cache: cacheName={}, pattern={}, deletedCount={}",
+                            cacheName, keyPattern, deletedCount);
+                } catch (Exception e) {
+                    RedisRemoteCacheFactory.log.error("Failed to clear remote cache: cacheName={}", cacheName, e);
+                    // 不抛出异常，避免影响主流程
+                }
             }
         }
 }

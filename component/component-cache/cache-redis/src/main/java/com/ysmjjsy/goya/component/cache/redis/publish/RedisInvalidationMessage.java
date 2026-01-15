@@ -14,7 +14,7 @@ import java.io.Serializable;
  * @author goya
  * @since 2026/1/15
  */
-public record CacheInvalidationMessage(
+public record RedisInvalidationMessage(
         /*
           缓存名称
          */

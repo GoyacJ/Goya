@@ -2,6 +2,7 @@ package com.ysmjjsy.goya.component.cache.multilevel.core;
 
 import com.ysmjjsy.goya.component.cache.core.support.CacheBloomFilter;
 import com.ysmjjsy.goya.component.cache.multilevel.definition.LocalCache;
+import com.ysmjjsy.goya.component.cache.multilevel.lock.CacheLock;
 import com.ysmjjsy.goya.component.cache.multilevel.publish.CacheInvalidationMessage;
 import com.ysmjjsy.goya.component.cache.multilevel.publish.CacheInvalidationMessageListener;
 import com.ysmjjsy.goya.component.cache.multilevel.publish.CacheInvalidationPublisher;
@@ -10,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * <p>多级缓存编排器</p>
@@ -37,6 +39,11 @@ public class MultiLevelCacheOrchestrator {
     private final CacheInvalidationSubscriber cacheInvalidationSubscriber;
 
     /**
+     * 缓存分布式锁（可选，用于缓存击穿防护）
+     */
+    private final CacheLock cacheLock;
+
+    /**
      * 本地缓存映射（用于处理失效通知时删除 L1）
      * Key: cacheName
      * Value: LocalCache 实例
@@ -54,14 +61,17 @@ public class MultiLevelCacheOrchestrator {
      * @param cacheInvalidationPublisher 缓存失效消息发布器（可选）
      * @param cacheBloomFilter           布隆过滤器（可选）
      * @param cacheInvalidationSubscriber 缓存失效消息订阅器（可选）
+     * @param cacheLock                   缓存分布式锁（可选）
      */
     public MultiLevelCacheOrchestrator(
             CacheInvalidationPublisher cacheInvalidationPublisher,
             CacheBloomFilter cacheBloomFilter,
-            CacheInvalidationSubscriber cacheInvalidationSubscriber) {
+            CacheInvalidationSubscriber cacheInvalidationSubscriber,
+            CacheLock cacheLock) {
         this.cacheInvalidationPublisher = cacheInvalidationPublisher;
         this.cacheBloomFilter = cacheBloomFilter;
         this.cacheInvalidationSubscriber = cacheInvalidationSubscriber;
+        this.cacheLock = cacheLock;
     }
 
     /**
@@ -122,6 +132,41 @@ public class MultiLevelCacheOrchestrator {
             return; // 如果没有失效通知发布器，直接返回
         }
         cacheInvalidationPublisher.publish(cacheName, key);
+    }
+
+    /**
+     * 尝试获取分布式锁（用于缓存击穿防护）
+     *
+     * @param cacheName 缓存名称
+     * @param key       缓存键
+     * @param waitTime  等待时间（秒）
+     * @param leaseTime 锁的持有时间（秒，-1 表示不自动释放）
+     * @return true 如果获取成功，false 如果获取失败或没有锁服务
+     */
+    public boolean tryLock(String cacheName, Object key, long waitTime, long leaseTime) {
+        if (cacheLock == null) {
+            return false; // 如果没有锁服务，返回 false
+        }
+        try {
+            return cacheLock.tryLock(cacheName, key, waitTime, leaseTime, TimeUnit.SECONDS);
+        } catch (InterruptedException _) {
+            Thread.currentThread().interrupt();
+            log.warn("Interrupted while trying to acquire lock: cacheName={}, key={}", cacheName, key);
+            return false;
+        }
+    }
+
+    /**
+     * 释放分布式锁
+     *
+     * @param cacheName 缓存名称
+     * @param key       缓存键
+     */
+    public void unlock(String cacheName, Object key) {
+        if (cacheLock == null) {
+            return; // 如果没有锁服务，直接返回
+        }
+        cacheLock.unlock(cacheName, key);
     }
 
     /**

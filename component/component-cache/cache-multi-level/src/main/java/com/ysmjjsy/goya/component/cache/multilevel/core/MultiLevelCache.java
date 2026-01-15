@@ -4,8 +4,9 @@ import com.ysmjjsy.goya.component.cache.core.definition.ICache;
 import com.ysmjjsy.goya.component.cache.core.exception.CacheException;
 import com.ysmjjsy.goya.component.cache.multilevel.definition.LocalCache;
 import com.ysmjjsy.goya.component.cache.multilevel.definition.RemoteCache;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import org.springframework.cache.support.AbstractValueAdaptingCache;
 
@@ -52,11 +53,11 @@ public class MultiLevelCache extends AbstractValueAdaptingCache implements ICach
     /**
      * Create an {@code AbstractValueAdaptingCache} with the given setting.
      *
-     * @param cacheName      缓存名称
-     * @param localCache    L1 本地缓存
-     * @param remoteCache   L2 远程缓存
-     * @param orchestrator  多级缓存编排器
-     * @param spec          缓存配置规范
+     * @param cacheName    缓存名称
+     * @param localCache   L1 本地缓存
+     * @param remoteCache  L2 远程缓存
+     * @param orchestrator 多级缓存编排器
+     * @param spec         缓存配置规范
      */
     public MultiLevelCache(
             String cacheName,
@@ -73,21 +74,20 @@ public class MultiLevelCache extends AbstractValueAdaptingCache implements ICach
     }
 
     @Override
+    @NullMarked
     public String getName() {
         return cacheName;
     }
 
     @Override
+    @NullMarked
     public Object getNativeCache() {
         return this;
     }
 
     @Override
+    @NullMarked
     protected @Nullable Object lookup(Object key) {
-        if (key == null) {
-            return null;
-        }
-
         try {
             // 1. 检查布隆过滤器，防止缓存穿透
             if (Boolean.TRUE.equals(spec.enableBloomFilter()) && !orchestrator.mightContain(cacheName, key)) {
@@ -120,16 +120,16 @@ public class MultiLevelCache extends AbstractValueAdaptingCache implements ICach
             return null;
         } catch (Exception e) {
             log.error("Failed to lookup cache: cacheName={}, key={}", cacheName, key, e);
+            // 对于可恢复的异常（如网络超时），返回 null 允许降级
+            // 对于不可恢复的异常，应该抛出异常，但这里为了兼容性返回 null
             return null;
         }
     }
 
     @Override
     @SuppressWarnings("unchecked")
+    @NullMarked
     public <T> T get(Object key, Callable<T> valueLoader) {
-        if (key == null) {
-            throw new IllegalArgumentException("Cache key cannot be null");
-        }
 
         try {
             // 1. 先查 L1（本地缓存）
@@ -152,7 +152,71 @@ public class MultiLevelCache extends AbstractValueAdaptingCache implements ICach
                 return (T) value;
             }
 
-            // 3. L2 未命中，调用 valueLoader 加载数据
+            // 3. L2 未命中，尝试获取分布式锁（防止缓存击穿）
+            boolean lockAcquired = false;
+            try {
+                // 尝试获取锁，等待 100ms，持有 10 秒（防止死锁）
+                lockAcquired = orchestrator.tryLock(cacheName, key, 100, 10);
+                if (lockAcquired) {
+                    // 获取锁后，再次检查缓存（双重检查）
+                    value = localCache.get(key);
+                    if (value != null) {
+                        if (log.isTraceEnabled()) {
+                            log.trace("Cache hit in L1 after lock (double-check): cacheName={}, key={}", cacheName, key);
+                        }
+                        return (T) value;
+                    }
+
+                    value = remoteCache.get(key);
+                    if (value != null) {
+                        localCache.put(key, value);
+                        if (log.isTraceEnabled()) {
+                            log.trace("Cache hit in L2 after lock (double-check): cacheName={}, key={}", cacheName, key);
+                        }
+                        return (T) value;
+                    }
+                    // 获取到锁且缓存仍未命中，继续执行加载逻辑
+                } else {
+                    // 未获取到锁，说明其他线程正在加载，等待一段时间后再次查询缓存
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        log.warn("Interrupted while waiting for lock: cacheName={}, key={}", cacheName, key);
+                    }
+                    value = localCache.get(key);
+                    if (value != null) {
+                        if (log.isTraceEnabled()) {
+                            log.trace("Cache hit in L1 after lock wait: cacheName={}, key={}", cacheName, key);
+                        }
+                        return (T) value;
+                    }
+                    value = remoteCache.get(key);
+                    if (value != null) {
+                        localCache.put(key, value);
+                        if (log.isTraceEnabled()) {
+                            log.trace("Cache hit in L2 after lock wait: cacheName={}, key={}", cacheName, key);
+                        }
+                        return (T) value;
+                    }
+                    // 如果仍然没有，返回 null（避免重复加载，让调用者重试或使用 valueLoader）
+                    if (log.isTraceEnabled()) {
+                        log.trace("Lock contention, other thread is loading, returning null: cacheName={}, key={}", cacheName, key);
+                    }
+                    return null;
+                }
+            } catch (Exception _) {
+                Thread.currentThread().interrupt();
+                log.warn("Interrupted while trying to acquire lock: cacheName={}, key={}", cacheName, key);
+                // 中断时返回 null，避免继续执行
+                return null;
+            } finally {
+                if (lockAcquired) {
+                    orchestrator.unlock(cacheName, key);
+                }
+            }
+
+            // 4. L2 未命中且获取到锁，调用 valueLoader 加载数据
             if (log.isTraceEnabled()) {
                 log.trace("Cache miss, loading from source: cacheName={}, key={}", cacheName, key);
             }
@@ -169,13 +233,11 @@ public class MultiLevelCache extends AbstractValueAdaptingCache implements ICach
 
             T loadedValue = valueLoader.call();
 
-            // 4. 加载后同时写入 L1 和 L2
-            if (loadedValue != null || Boolean.TRUE.equals(spec.allowNullValues())) {
-                put(key, loadedValue);
-                // 更新布隆过滤器
-                if (Boolean.TRUE.equals(spec.enableBloomFilter())) {
-                    orchestrator.put(cacheName, key);
-                }
+            // 5. 加载后同时写入 L1 和 L2
+            put(key, loadedValue);
+            // 更新布隆过滤器
+            if (Boolean.TRUE.equals(spec.enableBloomFilter())) {
+                orchestrator.put(cacheName, key);
             }
 
             return loadedValue;
@@ -186,15 +248,7 @@ public class MultiLevelCache extends AbstractValueAdaptingCache implements ICach
     }
 
     @Override
-    public Object get(Object key) {
-        return get(key, () -> null);
-    }
-
-    @Override
-    public void put(Object key, @Nullable Object value) {
-        if (key == null) {
-            throw new IllegalArgumentException("Cache key cannot be null");
-        }
+    public void put(@NonNull Object key, @Nullable Object value) {
 
         try {
             // 同时写入 L1 和 L2
@@ -226,10 +280,8 @@ public class MultiLevelCache extends AbstractValueAdaptingCache implements ICach
     }
 
     @Override
+    @NullMarked
     public void evict(Object key) {
-        if (key == null) {
-            throw new IllegalArgumentException("Cache key cannot be null");
-        }
 
         try {
             // 同时删除 L1 和 L2

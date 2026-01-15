@@ -1,15 +1,12 @@
-package com.ysmjjsy.goya.component.cache.multilevel.subscribe;
+package com.ysmjjsy.goya.component.cache.redis.publish;
 
 import com.ysmjjsy.goya.component.cache.core.exception.CacheException;
-import com.ysmjjsy.goya.component.cache.multilevel.publish.CacheInvalidationMessage;
-import com.ysmjjsy.goya.component.cache.multilevel.publish.CacheInvalidationMessageListener;
-import com.ysmjjsy.goya.component.cache.multilevel.publish.CacheInvalidationSubscriber;
 import com.ysmjjsy.goya.component.cache.redis.constants.RedisConst;
 import com.ysmjjsy.goya.component.cache.redis.service.RedisService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.Serial;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * <p>Redis 缓存失效消息订阅器</p>
@@ -21,7 +18,7 @@ import java.io.Serial;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class RedisCacheInvalidationSubscriber implements CacheInvalidationSubscriber {
+public class RedisInvalidationSubscriber {
 
     /**
      * Redis 服务
@@ -31,24 +28,24 @@ public class RedisCacheInvalidationSubscriber implements CacheInvalidationSubscr
     /**
      * 订阅 ID
      */
-    private Integer subscriptionId;
+    private volatile Integer subscriptionId;
 
     /**
      * 消息监听器
      */
-    private CacheInvalidationMessageListener listener;
+    private volatile RedisInvalidationMessageListener listener;
 
     /**
-     * 是否已订阅
+     * 是否已订阅（使用 AtomicBoolean 保证线程安全）
      */
-    private boolean subscribed = false;
+    private final AtomicBoolean subscribed = new AtomicBoolean(false);
 
-    @Override
-    public void subscribe(CacheInvalidationMessageListener listener) {
-        if (subscribed) {
+    public void subscribe(RedisInvalidationMessageListener listener) {
+        if (!subscribed.compareAndSet(false, true)) {
             throw new IllegalStateException("Already subscribed to cache invalidation messages");
         }
         if (listener == null) {
+            subscribed.set(false); // 恢复状态
             throw new IllegalArgumentException("Message listener cannot be null");
         }
 
@@ -57,42 +54,50 @@ public class RedisCacheInvalidationSubscriber implements CacheInvalidationSubscr
         try {
             // 使用 RedisService 订阅失效消息
             // 注意：使用完全限定名避免与 cache-multi-level 的 CacheInvalidationMessage 冲突
-            subscriptionId = redisService.subscribe(
+            Integer id = redisService.subscribe(
                     RedisConst.CACHE_INVALIDATION_CHANNEL,
-                    com.ysmjjsy.goya.component.cache.redis.publish.CacheInvalidationMessage.class,
+                    RedisInvalidationMessage.class,
                     (_, message) -> {
                         if (message != null && message.isValid()) {
                             // 将 cache-redis 的消息适配为 cache-multi-level 的消息格式
-                            CacheInvalidationMessage adaptedMessage = adaptMessage(message);
+                            RedisInvalidationMessage adaptedMessage = adaptMessage(message);
                             listener.onMessage(adaptedMessage);
                         }
                     }
             );
 
-            subscribed = true;
+            subscriptionId = id;
             log.debug("Subscribed to cache invalidation channel: channel={}, subscriptionId={}",
-                    RedisConst.CACHE_INVALIDATION_CHANNEL, subscriptionId);
+                    RedisConst.CACHE_INVALIDATION_CHANNEL, id);
         } catch (Exception e) {
+            subscribed.set(false); // 订阅失败，恢复状态
+            subscriptionId = null;
+            this.listener = null;
             log.error("Failed to subscribe to cache invalidation channel: channel={}",
                     RedisConst.CACHE_INVALIDATION_CHANNEL, e);
             throw new CacheException("Failed to subscribe to cache invalidation channel", e);
         }
     }
 
-    @Override
     public void unsubscribe() {
-        if (!subscribed || subscriptionId == null) {
+        if (!subscribed.get()) {
+            return;
+        }
+
+        Integer id = subscriptionId; // 保存引用，避免在设置为 null 后无法使用
+        if (id == null) {
+            subscribed.set(false);
             return;
         }
 
         try {
-            redisService.unsubscribe(RedisConst.CACHE_INVALIDATION_CHANNEL, subscriptionId);
-            subscribed = false;
+            redisService.unsubscribe(RedisConst.CACHE_INVALIDATION_CHANNEL, id);
+            subscribed.set(false);
             subscriptionId = null;
             listener = null;
-            log.debug("Unsubscribed from cache invalidation channel: subscriptionId={}", subscriptionId);
+            log.debug("Unsubscribed from cache invalidation channel: subscriptionId={}", id);
         } catch (Exception e) {
-            log.error("Failed to unsubscribe from cache invalidation channel: subscriptionId={}", subscriptionId, e);
+            log.error("Failed to unsubscribe from cache invalidation channel: subscriptionId={}", id, e);
             throw new CacheException("Failed to unsubscribe from cache invalidation channel", e);
         }
     }
@@ -103,20 +108,7 @@ public class RedisCacheInvalidationSubscriber implements CacheInvalidationSubscr
      * @param redisMessage cache-redis 的消息
      * @return cache-multi-level 的消息格式
      */
-    private CacheInvalidationMessage adaptMessage(com.ysmjjsy.goya.component.cache.redis.publish.CacheInvalidationMessage redisMessage) {
-        return new CacheInvalidationMessage() {
-            @Serial
-            private static final long serialVersionUID = -5141991944358215288L;
-
-            @Override
-            public String cacheName() {
-                return redisMessage.cacheName();
-            }
-
-            @Override
-            public String key() {
-                return redisMessage.key();
-            }
-        };
+    private RedisInvalidationMessage adaptMessage(RedisInvalidationMessage redisMessage) {
+        return new RedisInvalidationMessage(redisMessage.cacheName(), redisMessage.key());
     }
 }

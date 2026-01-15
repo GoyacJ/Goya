@@ -17,7 +17,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class RedisCacheInvalidationPublisher {
+public class RedisInvalidationPublisher {
 
     /**
      * Redis 服务
@@ -39,7 +39,7 @@ public class RedisCacheInvalidationPublisher {
 
         try {
             String serializedKey = serializeKey(key);
-            CacheInvalidationMessage message = new CacheInvalidationMessage(cacheName, serializedKey);
+            RedisInvalidationMessage message = new RedisInvalidationMessage(cacheName, serializedKey);
 
             redisService.publish(RedisConst.CACHE_INVALIDATION_CHANNEL, message);
 

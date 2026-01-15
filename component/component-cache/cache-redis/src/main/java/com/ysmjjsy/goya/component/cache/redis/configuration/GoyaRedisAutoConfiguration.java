@@ -2,7 +2,8 @@ package com.ysmjjsy.goya.component.cache.redis.configuration;
 
 import com.ysmjjsy.goya.component.cache.core.support.CacheKeySerializer;
 import com.ysmjjsy.goya.component.cache.redis.configuration.properties.GoyaRedisProperties;
-import com.ysmjjsy.goya.component.cache.redis.publish.RedisCacheInvalidationPublisher;
+import com.ysmjjsy.goya.component.cache.redis.publish.RedisInvalidationPublisher;
+import com.ysmjjsy.goya.component.cache.redis.publish.RedisInvalidationSubscriber;
 import com.ysmjjsy.goya.component.cache.redis.service.DefaultRedisService;
 import com.ysmjjsy.goya.component.cache.redis.service.RedisCacheService;
 import com.ysmjjsy.goya.component.cache.redis.service.RedisService;
@@ -68,12 +69,20 @@ public class GoyaRedisAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean(RedisCacheInvalidationPublisher.class)
-    public RedisCacheInvalidationPublisher redisCacheInvalidationPublisher(
+    @ConditionalOnMissingBean(RedisInvalidationPublisher.class)
+    public RedisInvalidationPublisher redisCacheInvalidationPublisher(
             RedisService redisService,
             CacheKeySerializer cacheKeySerializer) {
-        RedisCacheInvalidationPublisher publisher = new RedisCacheInvalidationPublisher(redisService, cacheKeySerializer);
+        RedisInvalidationPublisher publisher = new RedisInvalidationPublisher(redisService, cacheKeySerializer);
         log.trace("[Goya] |- component [redis] GoyaRedisAutoConfiguration |- bean [redisCacheInvalidationPublisher] register.");
         return publisher;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(RedisInvalidationSubscriber.class)
+    public RedisInvalidationSubscriber redisCacheInvalidationSubscriber(RedisService redisService) {
+        RedisInvalidationSubscriber subscriber = new RedisInvalidationSubscriber(redisService);
+        log.trace("[Goya] |- component [redis] GoyaRedisAutoConfiguration |- bean [redisCacheInvalidationSubscriber] register.");
+        return subscriber;
     }
 }

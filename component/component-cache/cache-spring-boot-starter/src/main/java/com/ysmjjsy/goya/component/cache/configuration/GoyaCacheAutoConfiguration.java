@@ -1,23 +1,33 @@
 package com.ysmjjsy.goya.component.cache.configuration;
 
+import com.ysmjjsy.goya.component.cache.caffeine.CaffeineCacheService;
+import com.ysmjjsy.goya.component.cache.core.constants.CacheConst;
 import com.ysmjjsy.goya.component.cache.core.definition.CacheService;
 import com.ysmjjsy.goya.component.cache.core.support.CacheBloomFilter;
-import com.ysmjjsy.goya.component.cache.caffeine.CaffeineCacheService;
+import com.ysmjjsy.goya.component.cache.core.support.CacheKeySerializer;
 import com.ysmjjsy.goya.component.cache.multilevel.configuration.properties.MultiLevelProperties;
 import com.ysmjjsy.goya.component.cache.multilevel.core.MultiLevelCacheManager;
 import com.ysmjjsy.goya.component.cache.multilevel.core.MultiLevelCacheOrchestrator;
+import com.ysmjjsy.goya.component.cache.multilevel.definition.LocalCacheFactory;
+import com.ysmjjsy.goya.component.cache.multilevel.definition.RemoteCacheFactory;
 import com.ysmjjsy.goya.component.cache.multilevel.factory.CaffeineLocalCacheFactory;
 import com.ysmjjsy.goya.component.cache.multilevel.factory.MultiLevelCacheFactory;
 import com.ysmjjsy.goya.component.cache.multilevel.factory.RedisRemoteCacheFactory;
-import com.ysmjjsy.goya.component.cache.multilevel.definition.LocalCacheFactory;
-import com.ysmjjsy.goya.component.cache.multilevel.definition.RemoteCacheFactory;
+import com.ysmjjsy.goya.component.cache.multilevel.lock.CacheLock;
+import com.ysmjjsy.goya.component.cache.multilevel.lock.RedisCacheLock;
 import com.ysmjjsy.goya.component.cache.multilevel.publish.CacheInvalidationPublisher;
 import com.ysmjjsy.goya.component.cache.multilevel.publish.CacheInvalidationSubscriber;
-import com.ysmjjsy.goya.component.cache.multilevel.subscribe.RedisCacheInvalidationSubscriber;
+import com.ysmjjsy.goya.component.cache.multilevel.publish.RedisCacheInvalidationPublisher;
+import com.ysmjjsy.goya.component.cache.multilevel.publish.RedisCacheInvalidationSubscriber;
+import com.ysmjjsy.goya.component.cache.redis.configuration.properties.GoyaRedisProperties;
+import com.ysmjjsy.goya.component.cache.redis.publish.RedisInvalidationPublisher;
+import com.ysmjjsy.goya.component.cache.redis.publish.RedisInvalidationSubscriber;
 import com.ysmjjsy.goya.component.cache.redis.service.RedisCacheService;
 import com.ysmjjsy.goya.component.cache.redis.service.RedisService;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RedissonClient;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -68,26 +78,61 @@ public class GoyaCacheAutoConfiguration {
      * 注册 RedisRemoteCacheFactory（如果 RedisCacheService 可用）
      */
     @Bean
-    @ConditionalOnBean(RedisCacheService.class)
+    @ConditionalOnBean({RedisCacheService.class, RedissonClient.class})
     @ConditionalOnMissingBean(RemoteCacheFactory.class)
     public RemoteCacheFactory redisRemoteCacheFactory(
             RedisCacheService redisCacheService,
-            CacheService cacheService) {
-        RemoteCacheFactory factory = new RedisRemoteCacheFactory(redisCacheService, cacheService);
+            CacheService cacheService,
+            RedissonClient redissonClient,
+            CacheKeySerializer cacheKeySerializer,
+            GoyaRedisProperties goyaRedisProperties) {
+        RemoteCacheFactory factory = new RedisRemoteCacheFactory(
+                redisCacheService,
+                cacheService,
+                redissonClient,
+                cacheKeySerializer,
+                goyaRedisProperties
+        );
         log.trace("[Goya] |- component [cache] GoyaCacheAutoConfiguration |- bean [redisRemoteCacheFactory] register.");
         return factory;
     }
 
     /**
-     * 注册 RedisCacheInvalidationSubscriber（如果 RedisService 可用）
+     * 注册 RedisCacheInvalidationPublisher（如果 cache-redis 的 RedisCacheInvalidationPublisher 可用）
      */
     @Bean
-    @ConditionalOnBean(RedisService.class)
+    @ConditionalOnBean(RedisInvalidationPublisher.class)
+    @ConditionalOnMissingBean(CacheInvalidationPublisher.class)
+    public CacheInvalidationPublisher redisCacheInvalidationPublisher(
+            RedisInvalidationPublisher redisPublisher) {
+        CacheInvalidationPublisher publisher = new RedisCacheInvalidationPublisher(redisPublisher);
+        log.trace("[Goya] |- component [cache] GoyaCacheAutoConfiguration |- bean [redisCacheInvalidationPublisher] register.");
+        return publisher;
+    }
+
+    /**
+     * 注册 RedisCacheInvalidationSubscriber（如果 cache-redis 的 RedisInvalidationSubscriber 可用）
+     */
+    @Bean
+    @ConditionalOnBean(RedisInvalidationSubscriber.class)
     @ConditionalOnMissingBean(CacheInvalidationSubscriber.class)
-    public CacheInvalidationSubscriber redisCacheInvalidationSubscriber(RedisService redisService) {
-        CacheInvalidationSubscriber subscriber = new RedisCacheInvalidationSubscriber(redisService);
+    public CacheInvalidationSubscriber redisCacheInvalidationSubscriber(
+            RedisInvalidationSubscriber redisSubscriber) {
+        CacheInvalidationSubscriber subscriber = new RedisCacheInvalidationSubscriber(redisSubscriber);
         log.trace("[Goya] |- component [cache] GoyaCacheAutoConfiguration |- bean [redisCacheInvalidationSubscriber] register.");
         return subscriber;
+    }
+
+    /**
+     * 注册 RedisCacheLock（如果 RedisService 可用）
+     */
+    @Bean
+    @ConditionalOnBean({RedisService.class, CacheKeySerializer.class})
+    @ConditionalOnMissingBean(CacheLock.class)
+    public CacheLock redisCacheLock(RedisService redisService, CacheKeySerializer cacheKeySerializer) {
+        CacheLock cacheLock = new RedisCacheLock(redisService, cacheKeySerializer);
+        log.trace("[Goya] |- component [cache] GoyaCacheAutoConfiguration |- bean [redisCacheLock] register.");
+        return cacheLock;
     }
 
     /**
@@ -95,7 +140,7 @@ public class GoyaCacheAutoConfiguration {
      */
     @Bean
     @ConditionalOnProperty(
-            prefix = "goya.cache.multi-level",
+            prefix = CacheConst.PROPERTY_MULTI_LEVEL,
             name = "enabled",
             havingValue = "true",
             matchIfMissing = true
@@ -103,17 +148,20 @@ public class GoyaCacheAutoConfiguration {
     @ConditionalOnBean({LocalCacheFactory.class, RemoteCacheFactory.class})
     @ConditionalOnMissingBean(MultiLevelCacheOrchestrator.class)
     public MultiLevelCacheOrchestrator multiLevelCacheOrchestrator(
-            org.springframework.beans.factory.ObjectProvider<CacheInvalidationPublisher> cacheInvalidationPublisherProvider,
-            org.springframework.beans.factory.ObjectProvider<CacheBloomFilter> cacheBloomFilterProvider,
-            org.springframework.beans.factory.ObjectProvider<CacheInvalidationSubscriber> cacheInvalidationSubscriberProvider) {
+            ObjectProvider<CacheInvalidationPublisher> cacheInvalidationPublisherProvider,
+            ObjectProvider<CacheBloomFilter> cacheBloomFilterProvider,
+            ObjectProvider<CacheInvalidationSubscriber> cacheInvalidationSubscriberProvider,
+            ObjectProvider<CacheLock> cacheLockProvider) {
         CacheInvalidationPublisher cacheInvalidationPublisher = cacheInvalidationPublisherProvider.getIfAvailable();
         CacheBloomFilter cacheBloomFilter = cacheBloomFilterProvider.getIfAvailable();
         CacheInvalidationSubscriber cacheInvalidationSubscriber = cacheInvalidationSubscriberProvider.getIfAvailable();
+        CacheLock cacheLock = cacheLockProvider.getIfAvailable();
         
         MultiLevelCacheOrchestrator orchestrator = new MultiLevelCacheOrchestrator(
                 cacheInvalidationPublisher,
                 cacheBloomFilter,
-                cacheInvalidationSubscriber
+                cacheInvalidationSubscriber,
+                cacheLock
         );
         orchestrator.init();
         log.trace("[Goya] |- component [cache] GoyaCacheAutoConfiguration |- bean [multiLevelCacheOrchestrator] register.");
@@ -125,7 +173,7 @@ public class GoyaCacheAutoConfiguration {
      */
     @Bean
     @ConditionalOnProperty(
-            prefix = "goya.cache.multi-level",
+            prefix = CacheConst.PROPERTY_MULTI_LEVEL,
             name = "enabled",
             havingValue = "true",
             matchIfMissing = true
@@ -150,7 +198,7 @@ public class GoyaCacheAutoConfiguration {
      */
     @Bean
     @ConditionalOnProperty(
-            prefix = "goya.cache.multi-level",
+            prefix = CacheConst.PROPERTY_MULTI_LEVEL,
             name = "enabled",
             havingValue = "true",
             matchIfMissing = true
