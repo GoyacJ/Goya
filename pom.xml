@@ -59,7 +59,6 @@
 
     <modules>
         <module>bom</module>
-        <module>security</module>
         <module>ai</module>
         <module>platform</module>
         <module>component</module>
@@ -68,7 +67,6 @@
         <module>starter</module>
         <module>upms</module>
     </modules>
-
 
     <dependencyManagement>
         <dependencies>
@@ -93,12 +91,27 @@
             </dependency>
             <dependency>
                 <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>component-cache</artifactId>
+                <artifactId>cache-core</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>component-bus</artifactId>
+                <artifactId>cache-caffeine</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>cache-redis</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>cache-multi-level</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>cache-spring-boot-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
@@ -108,17 +121,7 @@
             </dependency>
             <dependency>
                 <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>component-database</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
                 <artifactId>component-log</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>component-oss</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
@@ -133,12 +136,6 @@
             </dependency>
             <dependency>
                 <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>component-auth</artifactId>
-                <version>${revision}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
                 <artifactId>security-core</artifactId>
                 <version>${revision}</version>
             </dependency>
@@ -149,7 +146,7 @@
             </dependency>
             <dependency>
                 <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>security-resource</artifactId>
+                <artifactId>security-authorization</artifactId>
                 <version>${revision}</version>
             </dependency>
 
@@ -166,11 +163,6 @@
             <dependency>
                 <groupId>com.ysmjjsy.goya</groupId>
                 <artifactId>oss-boot-starter</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>redis-boot-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>

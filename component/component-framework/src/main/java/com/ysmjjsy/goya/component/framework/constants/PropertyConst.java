@@ -30,11 +30,10 @@ public interface PropertyConst {
 
     String PROPERTY_SERVER_CONTEXT_PATH = PROPERTY_SERVER_SERVLET + ".context-path";
 
+    String PROPERTY_GOYA = "goya";
+
     /**
      * PROPERTY_PREFIX_PLATFORM
      */
-    String PROPERTY_PLATFORM = "platform";
-    String PROPERTY_CRYPTO = PROPERTY_PLATFORM + ".crypto";
-    String PROPERTY_CACHE = PROPERTY_PLATFORM + ".cache";
-    String PROPERTY_CAFFEINE = PROPERTY_CACHE + ".cache";
+    String PROPERTY_CRYPTO = PROPERTY_GOYA + ".crypto";
 }

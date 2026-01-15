@@ -10,13 +10,15 @@
     </parent>
 
     <artifactId>component-cache</artifactId>
+    <packaging>pom</packaging>
     <description>cache component</description>
 
-    <dependencies>
-        <dependency>
-            <groupId>com.ysmjjsy.goya</groupId>
-            <artifactId>component-framework</artifactId>
-        </dependency>
-    </dependencies>
+    <modules>
+        <module>cache-core</module>
+        <module>cache-redis</module>
+        <module>cache-caffeine</module>
+        <module>cache-multi-level</module>
+        <module>cache-spring-boot-starter</module>
+    </modules>
 
 </project>

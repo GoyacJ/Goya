@@ -12,7 +12,6 @@
     <artifactId>starter</artifactId>
     <packaging>pom</packaging>
     <modules>
-        <module>redis-boot-starter</module>
         <module>kafka-boot-starter</module>
         <module>mybatis-plus-boot-starter</module>
         <module>oss-boot-starter</module>
