@@ -1,4 +1,4 @@
-package com.ysmjjsy.goya.component.cache.redis.publish;
+package com.ysmjjsy.goya.component.cache.multilevel.publish;
 
 /**
  * <p>缓存失效消息发布器接口</p>

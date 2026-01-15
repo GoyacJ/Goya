@@ -12,13 +12,12 @@ import lombok.extern.slf4j.Slf4j;
  * <p>基于 RedisService 的发布订阅功能实现缓存失效消息发布</p>
  *
  * @author goya
- * @since 2026/1/15
- * @see CacheInvalidationPublisher
  * @see RedisService
+ * @since 2026/1/15
  */
 @Slf4j
 @RequiredArgsConstructor
-public class DefaultCacheInvalidationPublisher implements CacheInvalidationPublisher {
+public class RedisCacheInvalidationPublisher {
 
     /**
      * Redis 服务
@@ -30,7 +29,6 @@ public class DefaultCacheInvalidationPublisher implements CacheInvalidationPubli
      */
     private final CacheKeySerializer cacheKeySerializer;
 
-    @Override
     public <K> void publish(String cacheName, K key) {
         if (cacheName == null) {
             throw new IllegalArgumentException("Cache name cannot be null");
@@ -54,7 +52,6 @@ public class DefaultCacheInvalidationPublisher implements CacheInvalidationPubli
         }
     }
 
-    @Override
     public <K> void publish(String cacheName, Iterable<K> keys) {
         if (cacheName == null) {
             throw new IllegalArgumentException("Cache name cannot be null");

@@ -38,4 +38,9 @@ public interface ICache<K, V> {
      * @return value
      */
     boolean exists(K key);
+
+    /**
+     * 清空所有缓存
+     */
+    void clear();
 }
