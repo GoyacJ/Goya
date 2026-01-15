@@ -63,9 +63,6 @@
         <module>platform</module>
         <module>component</module>
         <module>cloud</module>
-        <module>oss</module>
-        <module>starter</module>
-        <module>upms</module>
     </modules>
 
     <dependencyManagement>
@@ -111,7 +108,7 @@
             </dependency>
             <dependency>
                 <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>cache-spring-boot-starter</artifactId>
+                <artifactId>cache-boot-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
@@ -126,7 +123,22 @@
             </dependency>
             <dependency>
                 <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>bus-kafka-spring-boot-starter</artifactId>
+                <artifactId>bus-kafka-boot-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>database-core</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>database-mybatisplus-boot-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>database-jpa-boot-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
@@ -162,27 +174,6 @@
             <dependency>
                 <groupId>com.ysmjjsy.goya</groupId>
                 <artifactId>security-authorization</artifactId>
-                <version>${revision}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>kafka-boot-starter</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>mybatis-plus-boot-starter</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>oss-boot-starter</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>servlet-boot-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
         </dependencies>

@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.captcha.renderer.behavior;
 
-import com.ysmjjsy.goya.component.captcha.constants.ICaptchaConstants;
+import com.ysmjjsy.goya.component.captcha.constants.CaptchaConst;
 import com.ysmjjsy.goya.component.captcha.definition.AbstractCaptcha;
 import com.ysmjjsy.goya.component.captcha.definition.Coordinate;
 import com.ysmjjsy.goya.component.captcha.definition.Metadata;
@@ -8,8 +8,8 @@ import com.ysmjjsy.goya.component.captcha.definition.Verification;
 import com.ysmjjsy.goya.component.captcha.enums.CaptchaCategoryEnum;
 import com.ysmjjsy.goya.component.captcha.enums.FontStyleEnum;
 import com.ysmjjsy.goya.component.captcha.provider.RandomProvider;
-import com.ysmjjsy.goya.component.common.definition.exception.CommonException;
-import com.ysmjjsy.goya.component.common.utils.IdentityUtils;
+import com.ysmjjsy.goya.component.core.exception.CommonException;
+import com.ysmjjsy.goya.component.core.utils.GoyaIdUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -63,7 +63,7 @@ public class WordClickCaptchaRenderer extends AbstractBehaviorRenderer<String, L
     public AbstractCaptcha getCaptcha(String key) {
         String identity = key;
         if (StringUtils.isBlank(identity)) {
-            identity = IdentityUtils.fastUUID();
+            identity = GoyaIdUtils.fastUUID();
         }
 
         this.put(identity);
@@ -88,7 +88,7 @@ public class WordClickCaptchaRenderer extends AbstractBehaviorRenderer<String, L
 
         for (int i = 0; i < store.size(); i++) {
             if (isDeflected(real.get(i).getX(), store.get(i).getX(), this.getFontSize()) || isDeflected(real.get(i).getX(), store.get(i).getX(), this.getFontSize())) {
-                throw new CommonException();
+                throw new CommonException("Stamp is invalid!");
             }
         }
 
@@ -209,6 +209,6 @@ public class WordClickCaptchaRenderer extends AbstractBehaviorRenderer<String, L
 
     @Override
     protected String getCacheName() {
-        return ICaptchaConstants.CACHE_NAME_CAPTCHA_WORD_CLICK;
+        return CaptchaConst.CACHE_NAME_CAPTCHA_WORD_CLICK;
     }
 }

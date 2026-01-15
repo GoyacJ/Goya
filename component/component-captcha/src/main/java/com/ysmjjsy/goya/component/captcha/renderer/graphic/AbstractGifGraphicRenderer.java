@@ -2,8 +2,8 @@ package com.ysmjjsy.goya.component.captcha.renderer.graphic;
 
 import com.madgag.gif.fmsware.AnimatedGifEncoder;
 import com.ysmjjsy.goya.component.captcha.definition.Metadata;
-import com.ysmjjsy.goya.component.common.definition.constants.ISymbolConstants;
-import com.ysmjjsy.goya.component.common.utils.Base64Utils;
+import com.ysmjjsy.goya.component.core.constants.SymbolConst;
+import com.ysmjjsy.goya.component.core.utils.GoyaBase64Utils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.awt.image.BufferedImage;
@@ -51,10 +51,10 @@ public abstract class AbstractGifGraphicRenderer extends AbstractBaseGraphicRend
 
         gifEncoder.finish();
 
-        String characters = StringUtils.join(drawCharacters, ISymbolConstants.BLANK);
+        String characters = StringUtils.join(drawCharacters, SymbolConst.BLANK);
 
         Metadata metadata = new Metadata();
-        metadata.setGraphicImageBase64(getBase64ImagePrefix() + Base64Utils.encode(out.toByteArray()));
+        metadata.setGraphicImageBase64(getBase64ImagePrefix() + GoyaBase64Utils.encode(out.toByteArray()));
         metadata.setCharacters(characters);
         return metadata;
     }

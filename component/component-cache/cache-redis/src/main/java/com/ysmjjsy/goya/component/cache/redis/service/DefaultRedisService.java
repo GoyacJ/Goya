@@ -20,7 +20,7 @@ import java.util.function.Function;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class DefaultRedisService implements RedisService {
+public class DefaultRedisService implements IRedisService {
 
     /**
      * Redisson 客户端

@@ -16,6 +16,8 @@
     <modules>
         <module>component-cache</module>
         <module>component-bus</module>
+        <module>component-database</module>
+        <module>component-oss</module>
         <module>component-captcha</module>
         <module>component-web</module>
         <module>component-security</module>

@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.captcha.exception;
 
-import com.ysmjjsy.goya.component.common.code.ResponseCodeEnum;
+import com.ysmjjsy.goya.component.framework.exception.code.HttpErrorCodeEnum;
 
 import java.io.Serial;
 
@@ -16,18 +16,18 @@ public class CaptchaHandlerNotExistException extends CaptchaException {
     private static final long serialVersionUID = -1674108136062398202L;
 
     public CaptchaHandlerNotExistException() {
-        super(ResponseCodeEnum.CAPTCHA_HANDLER_NOT_EXIST_ERROR);
+        super(HttpErrorCodeEnum.CAPTCHA_HANDLER_NOT_EXIST_ERROR);
     }
 
     public CaptchaHandlerNotExistException(String message) {
-        super(ResponseCodeEnum.CAPTCHA_HANDLER_NOT_EXIST_ERROR);
+        super(HttpErrorCodeEnum.CAPTCHA_HANDLER_NOT_EXIST_ERROR, message);
     }
 
     public CaptchaHandlerNotExistException(Throwable cause) {
-        super(ResponseCodeEnum.CAPTCHA_HANDLER_NOT_EXIST_ERROR);
+        super(HttpErrorCodeEnum.CAPTCHA_HANDLER_NOT_EXIST_ERROR, cause);
     }
 
     public CaptchaHandlerNotExistException(String message, Throwable cause) {
-        super(ResponseCodeEnum.CAPTCHA_HANDLER_NOT_EXIST_ERROR);
+        super(HttpErrorCodeEnum.CAPTCHA_HANDLER_NOT_EXIST_ERROR, message, cause);
     }
 }

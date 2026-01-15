@@ -1,5 +1,7 @@
 package com.ysmjjsy.goya.component.cache.core.support;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * <p>缓存布隆过滤器接口</p>
  * <p>用于缓存穿透防护，预判 key 是否可能存在</p>
@@ -36,5 +38,5 @@ public interface CacheBloomFilter {
      * @param key       缓存键
      * @param <K>       键类型
      */
-    <K> void put(String cacheName, K key);
+    <K> CompletableFuture<Void> putAsync(String cacheName, K key);
 }

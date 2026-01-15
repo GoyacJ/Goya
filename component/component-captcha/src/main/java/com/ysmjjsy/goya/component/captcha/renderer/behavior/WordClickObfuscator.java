@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.captcha.renderer.behavior;
 
 import com.ysmjjsy.goya.component.captcha.definition.Coordinate;
-import com.ysmjjsy.goya.component.common.definition.constants.ISymbolConstants;
-import com.ysmjjsy.goya.component.common.utils.RandomUtils;
+import com.ysmjjsy.goya.component.core.constants.SymbolConst;
+import com.ysmjjsy.goya.component.core.utils.GoyaRandomUtils;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
@@ -37,14 +37,14 @@ public class WordClickObfuscator {
 
     private void execute(List<String> originalWords, List<Coordinate> originalCoordinates) {
 
-        int[] indexes = RandomUtils.randomInts(originalWords.size());
+        int[] indexes = GoyaRandomUtils.randomInts(originalWords.size());
 
         Arrays.stream(indexes).forEach(value -> {
             this.words.add(this.words.size(), originalWords.get(value));
             this.coordinates.add(this.coordinates.size(), originalCoordinates.get(value));
         });
 
-        this.wordString = StringUtils.join(getWords(), ISymbolConstants.COMMA);
+        this.wordString = StringUtils.join(getWords(), SymbolConst.COMMA);
     }
 
 }

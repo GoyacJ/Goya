@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.captcha.provider;
 
 import com.ysmjjsy.goya.component.captcha.enums.CaptchaCharacterEnum;
-import com.ysmjjsy.goya.component.common.utils.RandomUtils;
+import com.ysmjjsy.goya.component.core.utils.GoyaRandomUtils;
 
 import java.awt.*;
 import java.util.Arrays;
@@ -70,7 +70,7 @@ public class RandomProvider {
      * @return 随机数
      */
     public static int randomInt(final int startInclusive, final int endExclusive) {
-        return RandomUtils.randomInt(startInclusive, endExclusive);
+        return GoyaRandomUtils.randomInt(startInclusive, endExclusive);
     }
 
     /**
@@ -82,7 +82,7 @@ public class RandomProvider {
      * @return 随机数
      */
     public static int randomInt(int bound) {
-        return RandomUtils.randomInt(bound);
+        return GoyaRandomUtils.randomInt(bound);
     }
 
     /**
@@ -92,7 +92,7 @@ public class RandomProvider {
      * @return 随机获取指定数量的汉字
      */
     public static List<String> randomWords(int wordCount) {
-        return RandomUtils.randomEles(WORDS, wordCount);
+        return GoyaRandomUtils.randomEles(WORDS, wordCount);
     }
 
     public static Color[] randomColors(int number) {

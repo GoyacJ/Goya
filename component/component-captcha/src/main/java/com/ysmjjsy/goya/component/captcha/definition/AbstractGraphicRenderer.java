@@ -1,11 +1,11 @@
 package com.ysmjjsy.goya.component.captcha.definition;
 
-import com.ysmjjsy.goya.component.captcha.constants.ICaptchaConstants;
+import com.ysmjjsy.goya.component.captcha.constants.CaptchaConst;
 import com.ysmjjsy.goya.component.captcha.exception.CaptchaHasExpiredException;
 import com.ysmjjsy.goya.component.captcha.exception.CaptchaIsEmptyException;
 import com.ysmjjsy.goya.component.captcha.exception.CaptchaMismatchException;
 import com.ysmjjsy.goya.component.captcha.exception.CaptchaParameterIllegalException;
-import com.ysmjjsy.goya.component.common.utils.IdentityUtils;
+import com.ysmjjsy.goya.component.core.utils.GoyaIdUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
@@ -40,14 +40,14 @@ public abstract class AbstractGraphicRenderer extends AbstractRenderer<String, S
 
     @Override
     protected String getCacheName() {
-        return ICaptchaConstants.CACHE_NAME_CAPTCHA_GRAPHIC;
+        return CaptchaConst.CACHE_NAME_CAPTCHA_GRAPHIC;
     }
 
     @Override
     public AbstractCaptcha getCaptcha(String key) {
         String identity = key;
         if (StringUtils.isBlank(identity)) {
-            identity = IdentityUtils.fastSimpleUUID();
+            identity = GoyaIdUtils.fastSimpleUUID();
         }
 
         this.put(identity);

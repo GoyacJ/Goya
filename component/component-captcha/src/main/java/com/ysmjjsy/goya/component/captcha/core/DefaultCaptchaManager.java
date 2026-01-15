@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.captcha.core;
 
-import com.ysmjjsy.goya.component.captcha.api.ICaptchaService;
+import com.ysmjjsy.goya.component.captcha.api.CaptchaService;
 import com.ysmjjsy.goya.component.captcha.definition.AbstractCaptcha;
 import com.ysmjjsy.goya.component.captcha.definition.Verification;
 import com.ysmjjsy.goya.component.captcha.enums.CaptchaCategoryEnum;
@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class DefaultCaptchaManager implements ICaptchaService {
+public class DefaultCaptchaManager implements CaptchaService {
 
     private final CaptchaRendererFactory captchaRendererFactory;
 

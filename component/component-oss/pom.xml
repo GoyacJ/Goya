@@ -12,6 +12,12 @@
     <artifactId>component-oss</artifactId>
     <description>oss component</description>
 
+    <modules>
+        <module>oss-minio</module>
+        <module>oss-aliyun</module>
+        <module>oss-s3</module>
+    </modules>
+
     <dependencies>
         <dependency>
             <groupId>com.ysmjjsy.goya</groupId>

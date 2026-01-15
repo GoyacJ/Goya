@@ -1,12 +1,11 @@
 package com.ysmjjsy.goya.component.captcha.definition;
 
-import com.ysmjjsy.goya.component.cache.resolver.CacheSpecification;
-import com.ysmjjsy.goya.component.cache.template.AbstractCheckTemplate;
-import com.ysmjjsy.goya.component.cache.ttl.TtlStrategy;
+import com.ysmjjsy.goya.component.cache.multilevel.resolver.CacheSpecification;
+import com.ysmjjsy.goya.component.cache.multilevel.template.AbstractCheckTemplate;
+import com.ysmjjsy.goya.component.cache.multilevel.ttl.TtlStrategy;
 import com.ysmjjsy.goya.component.captcha.configuration.properties.CaptchaProperties;
 import com.ysmjjsy.goya.component.captcha.provider.ResourceProvider;
-import com.ysmjjsy.goya.component.common.service.IPropertiesCacheService;
-import com.ysmjjsy.goya.component.common.utils.ImgUtils;
+import com.ysmjjsy.goya.component.core.utils.GoyaImgUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.awt.image.BufferedImage;
@@ -26,7 +25,7 @@ public abstract class AbstractRenderer<K, V> extends AbstractCheckTemplate<K, V>
     private ResourceProvider resourceProvider;
 
     @Autowired
-    private IPropertiesCacheService iPropertiesCacheService;
+    private CaptchaProperties captchaProperties;
 
     protected ResourceProvider getResourceProvider() {
         return resourceProvider;
@@ -41,19 +40,18 @@ public abstract class AbstractRenderer<K, V> extends AbstractCheckTemplate<K, V>
     }
 
     protected String toBase64(BufferedImage bufferedImage) {
-        String image = ImgUtils.toBase64(bufferedImage, ImgUtils.IMAGE_TYPE_PNG);
+        String image = GoyaImgUtils.toBase64(bufferedImage, GoyaImgUtils.IMAGE_TYPE_PNG);
         return getBase64ImagePrefix() + image;
     }
 
     @Override
     protected CacheSpecification buildCacheSpecification(CacheSpecification defaultSpec) {
         // 此处从缓存中获取配置
-        CaptchaProperties properties = iPropertiesCacheService.getProperties(CaptchaProperties.class);
         return defaultSpec.toBuilder()
-                .cacheLevel(properties.graphics().level())
-                .ttl(properties.graphics().expire())
-                .localTtlStrategy(new TtlStrategy.FixedDurationStrategy(properties.graphics().localExpire()))
-                .localMaxSize(properties.graphics().localLimit())
+                .cacheLevel(captchaProperties.graphics().level())
+                .ttl(captchaProperties.graphics().expire())
+                .localTtlStrategy(new TtlStrategy.FixedDurationStrategy(captchaProperties.graphics().localExpire()))
+                .localMaxSize(captchaProperties.graphics().localLimit())
                 .build();
     }
 }

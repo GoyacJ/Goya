@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.captcha.exception;
 
-import com.ysmjjsy.goya.component.common.code.ResponseCodeEnum;
+import com.ysmjjsy.goya.component.framework.exception.code.HttpErrorCodeEnum;
 
 import java.io.Serial;
 
@@ -16,19 +16,19 @@ public class CaptchaIsEmptyException extends CaptchaException {
     private static final long serialVersionUID = 328882824252590817L;
 
     public CaptchaIsEmptyException() {
-        super(ResponseCodeEnum.CAPTCHA_IS_EMPTY_ERROR);
+        super(HttpErrorCodeEnum.CAPTCHA_IS_EMPTY_ERROR);
     }
 
     public CaptchaIsEmptyException(String message) {
-        super(ResponseCodeEnum.CAPTCHA_IS_EMPTY_ERROR);
+        super(HttpErrorCodeEnum.CAPTCHA_IS_EMPTY_ERROR, message);
     }
 
     public CaptchaIsEmptyException(Throwable cause) {
-        super(ResponseCodeEnum.CAPTCHA_IS_EMPTY_ERROR);
+        super(HttpErrorCodeEnum.CAPTCHA_IS_EMPTY_ERROR, cause);
     }
 
     public CaptchaIsEmptyException(String message, Throwable cause) {
-        super(ResponseCodeEnum.CAPTCHA_IS_EMPTY_ERROR);
+        super(HttpErrorCodeEnum.CAPTCHA_IS_EMPTY_ERROR, message, cause);
     }
 
 }

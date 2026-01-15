@@ -3,8 +3,10 @@ package com.ysmjjsy.goya.component.cache.caffeine.configuration;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.ysmjjsy.goya.component.cache.caffeine.CaffeineCacheService;
 import com.ysmjjsy.goya.component.cache.caffeine.CaffeineFactory;
+import com.ysmjjsy.goya.component.cache.caffeine.CaffeineLocalCache;
 import com.ysmjjsy.goya.component.cache.caffeine.GoyaCaffeineCacheManager;
 import com.ysmjjsy.goya.component.cache.caffeine.configuration.properties.CaffeineCacheProperties;
+import com.ysmjjsy.goya.component.cache.multilevel.core.GoyaCacheManager;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -30,6 +32,18 @@ public class CaffeineCacheAutoConfiguration {
     @PostConstruct
     public void init() {
         log.debug("[Goya] |- framework [framework] CaffeineCacheAutoConfiguration auto configure.");
+    }
+
+    /**
+     * 本地缓存工厂 Bean
+     *
+     * <p>注意：RemoteCache 工厂需要由 redis 模块提供
+     */
+    @Bean
+    @ConditionalOnMissingBean(name = "localCacheFactory")
+    public GoyaCacheManager.LocalCacheFactory localCacheFactory() {
+        log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [localCacheFactory] register.");
+        return CaffeineLocalCache::new;
     }
 
     @Bean

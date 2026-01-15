@@ -15,6 +15,6 @@
     <modules>
         <module>bus-core</module>
         <module>bus-stream</module>
-        <module>bus-kafka-spring-boot-starter</module>
+        <module>bus-kafka-boot-starter</module>
     </modules>
 </project>

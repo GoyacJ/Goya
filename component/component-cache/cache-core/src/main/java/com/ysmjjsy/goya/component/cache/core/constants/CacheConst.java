@@ -1,5 +1,6 @@
 package com.ysmjjsy.goya.component.cache.core.constants;
 
+import com.ysmjjsy.goya.component.core.constants.SymbolConst;
 import com.ysmjjsy.goya.component.framework.constants.PropertyConst;
 
 /**
@@ -10,14 +11,7 @@ import com.ysmjjsy.goya.component.framework.constants.PropertyConst;
  */
 public interface CacheConst {
 
-    String CACHE_NAME = "cache";
-
-    String CACHE_PREFIX = "cache:";
-
-    String CACHE_KEY_SEPARATOR = ":";
-
-    String CACHE_KEY_DELIMITER = "@";
-
+    /* ---------- 配置属性前缀 ---------- */
     String PROPERTY_CACHE = PropertyConst.PROPERTY_GOYA + ".cache";
 
     String PROPERTY_MULTI_LEVEL = PROPERTY_CACHE + ".multi-level";
@@ -25,4 +19,25 @@ public interface CacheConst {
     String PROPERTY_CAFFEINE = PROPERTY_CACHE + ".caffeine";
 
     String PROPERTY_REDIS = PROPERTY_CACHE + ".redis";
+
+    /* ---------- 通用缓存常量 ---------- */
+
+    /**
+     * 缓存键前缀
+     */
+    String CACHE_PREFIX = "cache:";
+
+    /**
+     * 缓存属性前缀
+     */
+    String CACHE_PROPERTIES_PREFIX = CACHE_PREFIX + "properties:";
+
+
+    String CACHE_SECURE_KEY_PREFIX = CACHE_PREFIX + "secure_key:";
+
+    /**
+     * 缓存分隔符
+     * 用于组合缓存键，例如: cache:user:123
+     */
+    String CACHE_SEPARATOR = SymbolConst.COLON;
 }

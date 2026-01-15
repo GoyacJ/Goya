@@ -18,10 +18,6 @@
         </dependency>
         <dependency>
             <groupId>com.ysmjjsy.goya</groupId>
-            <artifactId>component-captcha</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.ysmjjsy.goya</groupId>
             <artifactId>component-social</artifactId>
         </dependency>
 

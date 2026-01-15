@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.captcha.exception;
 
-import com.ysmjjsy.goya.component.common.code.ResponseCodeEnum;
+import com.ysmjjsy.goya.component.framework.exception.code.HttpErrorCodeEnum;
 
 import java.io.Serial;
 
@@ -16,18 +16,18 @@ public class CaptchaParameterIllegalException extends CaptchaException {
     private static final long serialVersionUID = 811813327628213053L;
 
     public CaptchaParameterIllegalException() {
-        super(ResponseCodeEnum.CAPTCHA_PARAMETER_ILLEGAL_ERROR);
+        super(HttpErrorCodeEnum.CAPTCHA_PARAMETER_ILLEGAL_ERROR);
     }
 
     public CaptchaParameterIllegalException(String message) {
-        super(ResponseCodeEnum.CAPTCHA_PARAMETER_ILLEGAL_ERROR);
+        super(HttpErrorCodeEnum.CAPTCHA_PARAMETER_ILLEGAL_ERROR, message);
     }
 
     public CaptchaParameterIllegalException(Throwable cause) {
-        super(ResponseCodeEnum.CAPTCHA_PARAMETER_ILLEGAL_ERROR);
+        super(HttpErrorCodeEnum.CAPTCHA_PARAMETER_ILLEGAL_ERROR, cause);
     }
 
     public CaptchaParameterIllegalException(String message, Throwable cause) {
-        super(ResponseCodeEnum.CAPTCHA_PARAMETER_ILLEGAL_ERROR);
+        super(HttpErrorCodeEnum.CAPTCHA_PARAMETER_ILLEGAL_ERROR, message, cause);
     }
 }

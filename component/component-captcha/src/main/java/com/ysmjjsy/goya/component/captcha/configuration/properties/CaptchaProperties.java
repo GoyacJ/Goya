@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.captcha.configuration.properties;
 
-import com.ysmjjsy.goya.component.cache.enums.CacheLevel;
-import com.ysmjjsy.goya.component.captcha.constants.ICaptchaConstants;
+import com.ysmjjsy.goya.component.cache.multilevel.enums.CacheLevelEnum;
+import com.ysmjjsy.goya.component.captcha.constants.CaptchaConst;
 import com.ysmjjsy.goya.component.captcha.enums.CaptchaCharacterEnum;
 import com.ysmjjsy.goya.component.captcha.enums.CaptchaFontEnum;
 import com.ysmjjsy.goya.component.captcha.enums.FontStyleEnum;
@@ -17,7 +17,7 @@ import java.time.Duration;
  * @author goya
  * @since 2021/12/11 12:25
  */
-@ConfigurationProperties(prefix = ICaptchaConstants.PROPERTY_CAPTCHA)
+@ConfigurationProperties(prefix = CaptchaConst.PROPERTY_CAPTCHA)
 public record CaptchaProperties(
         /*
          *  验证码配置参数
@@ -84,7 +84,7 @@ public record CaptchaProperties(
 
             @DefaultValue("L1_L2")
             @Schema(description = "缓存类型")
-            CacheLevel level,
+            CacheLevelEnum level,
 
             @DefaultValue("PT2H")
             @Schema(description = "缓存过期时间")

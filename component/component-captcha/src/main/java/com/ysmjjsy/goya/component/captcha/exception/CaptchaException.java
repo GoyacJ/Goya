@@ -1,8 +1,7 @@
 package com.ysmjjsy.goya.component.captcha.exception;
 
-import com.ysmjjsy.goya.component.common.code.IResponseCode;
-import com.ysmjjsy.goya.component.common.code.ResponseCodeEnum;
-import com.ysmjjsy.goya.component.common.definition.exception.AbstractRuntimeException;
+import com.ysmjjsy.goya.component.core.exception.CommonException;
+import com.ysmjjsy.goya.component.framework.exception.code.HttpErrorCodeEnum;
 
 import java.io.Serial;
 
@@ -12,16 +11,16 @@ import java.io.Serial;
  * @author goya
  * @since 2025/12/9 10:22
  */
-public class CaptchaException extends AbstractRuntimeException {
+public class CaptchaException extends CommonException {
 
     @Serial
     private static final long serialVersionUID = -6924793489392216408L;
 
     public CaptchaException() {
-        super(ResponseCodeEnum.CAPTCHA_ERROR);
+        super(HttpErrorCodeEnum.CAPTCHA_ERROR);
     }
 
-    public CaptchaException(IResponseCode code) {
+    public CaptchaException(HttpErrorCodeEnum code) {
         super(code);
     }
 
@@ -33,11 +32,11 @@ public class CaptchaException extends AbstractRuntimeException {
         super(cause);
     }
 
-    public CaptchaException(IResponseCode code, String message) {
+    public CaptchaException(HttpErrorCodeEnum code, String message) {
         super(code, message);
     }
 
-    public CaptchaException(IResponseCode code, Throwable cause) {
+    public CaptchaException(HttpErrorCodeEnum code, Throwable cause) {
         super(code, cause);
     }
 
@@ -45,12 +44,8 @@ public class CaptchaException extends AbstractRuntimeException {
         super(message, cause);
     }
 
-    public CaptchaException(IResponseCode code, String message, Throwable cause) {
+    public CaptchaException(HttpErrorCodeEnum code, String message, Throwable cause) {
         super(code, message, cause);
-    }
-
-    public CaptchaException(IResponseCode code, String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(code, message, cause, enableSuppression, writableStackTrace);
     }
 
 }

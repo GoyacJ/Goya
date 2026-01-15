@@ -10,12 +10,12 @@
     </parent>
 
     <artifactId>component-database</artifactId>
+    <packaging>pom</packaging>
     <description>database component</description>
+    <modules>
+        <module>database-core</module>
+        <module>database-mybatisplus-boot-starter</module>
+        <module>database-jpa-boot-starter</module>
+    </modules>
 
-    <dependencies>
-        <dependency>
-            <groupId>com.ysmjjsy.goya</groupId>
-            <artifactId>component-framework</artifactId>
-        </dependency>
-    </dependencies>
 </project>

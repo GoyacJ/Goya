@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.web.jackson;
 
-import com.ysmjjsy.goya.component.common.definition.exception.CommonException;
+import com.ysmjjsy.goya.component.core.exception.CommonException;
 import com.ysmjjsy.goya.component.web.utils.XssUtils;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -29,7 +29,6 @@ public class XssJacksonComponent {
      * Xss 反序列化器
      */
     public static class XssDeserializer extends ValueDeserializer<String> {
-
         @Override
         public String deserialize(JsonParser p, DeserializationContext ctx) throws JacksonException {
             String value = p.getString();

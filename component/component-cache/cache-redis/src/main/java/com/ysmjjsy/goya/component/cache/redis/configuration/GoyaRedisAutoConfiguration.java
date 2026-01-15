@@ -1,12 +1,13 @@
 package com.ysmjjsy.goya.component.cache.redis.configuration;
 
 import com.ysmjjsy.goya.component.cache.core.support.CacheKeySerializer;
+import com.ysmjjsy.goya.component.cache.multilevel.core.GoyaCacheManager;
+import com.ysmjjsy.goya.component.cache.redis.codec.TypedJsonMapperCodec;
 import com.ysmjjsy.goya.component.cache.redis.configuration.properties.GoyaRedisProperties;
-import com.ysmjjsy.goya.component.cache.redis.publish.RedisInvalidationPublisher;
-import com.ysmjjsy.goya.component.cache.redis.publish.RedisInvalidationSubscriber;
+import com.ysmjjsy.goya.component.cache.redis.factory.MultiClusterRemoteCacheFactory;
 import com.ysmjjsy.goya.component.cache.redis.service.DefaultRedisService;
-import com.ysmjjsy.goya.component.cache.redis.service.RedisCacheService;
-import com.ysmjjsy.goya.component.cache.redis.service.RedisService;
+import com.ysmjjsy.goya.component.cache.redis.service.IRedisService;
+import com.ysmjjsy.goya.component.cache.redis.subscriber.RedisCacheEvictionSubscriber;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RedissonClient;
@@ -15,7 +16,10 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cache.CacheManager;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * <p>Redis 自动配置类</p>
@@ -43,46 +47,83 @@ public class GoyaRedisAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean(CacheManager.class)
     public RedissonSpringCacheManager redisCacheManager(RedissonClient redissonClient) {
         RedissonSpringCacheManager cacheManager = new RedissonSpringCacheManager(redissonClient);
         log.trace("[Goya] |- component [redis] GoyaRedisAutoConfiguration |- bean [redisCacheManager] register.");
         return cacheManager;
     }
 
+    /**
+     * TypedJsonMapperCodec Bean
+     *
+     * <p>基于 JsonMapper 的统一序列化 Codec，支持类型信息保存和恢复。
+     */
     @Bean
-    @ConditionalOnMissingBean(RedisService.class)
-    public RedisService redisService(RedissonClient redissonClient, CacheKeySerializer cacheKeySerializer) {
-        RedisService redisService = new DefaultRedisService(redissonClient, cacheKeySerializer);
-        log.trace("[Goya] |- component [redis] GoyaRedisAutoConfiguration |- bean [redisService] register.");
-        return redisService;
+    @ConditionalOnMissingBean
+    public TypedJsonMapperCodec typedJsonMapperCodec(JsonMapper jsonMapper) {
+        log.info("Creating TypedJsonMapperCodec with JsonMapper");
+        return new TypedJsonMapperCodec(jsonMapper);
     }
 
-    @Bean
-    @ConditionalOnMissingBean(RedisCacheService.class)
-    public RedisCacheService redisCacheService(
+    /**
+     * 远程缓存工厂 Bean（多集群支持，默认）
+     *
+     * <p>使用 MultiClusterRemoteCacheFactory 作为默认实现，支持多集群场景。
+     * 向后兼容：如果 CacheSpecification 中未指定 clusterName，使用默认集群。
+     *
+     * <p><b>使用方式：</b>
+     * <ul>
+     *   <li>单集群场景：无需配置，自动使用默认 RedissonClient</li>
+     *   <li>多集群场景：通过 MultiClusterRemoteCacheFactory.registerCluster() 注册额外集群</li>
+     *   <li>在 CacheSpecification 中指定 clusterName 选择对应集群</li>
+     * </ul>
+     */
+    @Bean(name = "remoteCacheFactory")
+    @ConditionalOnMissingBean(name = "remoteCacheFactory")
+    public MultiClusterRemoteCacheFactory remoteCacheFactory(
             RedissonClient redissonClient,
+            JsonMapper jsonMapper,
             CacheKeySerializer cacheKeySerializer,
-            GoyaRedisProperties redisProperties) {
-        RedisCacheService cacheService = new RedisCacheService(redissonClient, cacheKeySerializer, redisProperties);
-        log.trace("[Goya] |- component [redis] GoyaRedisAutoConfiguration |- bean [redisCacheService] register.");
-        return cacheService;
+            IRedisService redisService) {
+        log.info("Creating MultiClusterRemoteCacheFactory with default RedissonClient");
+        MultiClusterRemoteCacheFactory factory = new MultiClusterRemoteCacheFactory(
+                redissonClient, jsonMapper, cacheKeySerializer);
+        // 注入 IRedisService（如果可用）
+        if (redisService != null) {
+            factory.setRedisService(redisService);
+            log.debug("IRedisService injected into MultiClusterRemoteCacheFactory");
+        }
+        log.info("MultiClusterRemoteCacheFactory created. Use registerCluster() to add more clusters.");
+        return factory;
     }
 
+    /**
+     * Redis 缓存失效订阅器 Bean
+     *
+     * <p>订阅 Spring 事件并转发到 Redis Pub/Sub。
+     * 需要 GoyaCacheManager 用于 L2 失效检查。
+     */
     @Bean
-    @ConditionalOnMissingBean(RedisInvalidationPublisher.class)
-    public RedisInvalidationPublisher redisCacheInvalidationPublisher(
-            RedisService redisService,
-            CacheKeySerializer cacheKeySerializer) {
-        RedisInvalidationPublisher publisher = new RedisInvalidationPublisher(redisService, cacheKeySerializer);
-        log.trace("[Goya] |- component [redis] GoyaRedisAutoConfiguration |- bean [redisCacheInvalidationPublisher] register.");
-        return publisher;
+    @ConditionalOnMissingBean
+    @ConditionalOnBean(GoyaCacheManager.class)
+    public RedisCacheEvictionSubscriber redisCacheEvictionSubscriber(
+            RedissonClient redissonClient,
+            ApplicationEventPublisher eventPublisher,
+            GoyaCacheManager cacheManager) {
+        log.info("Creating RedisCacheEvictionSubscriber");
+        return new RedisCacheEvictionSubscriber(redissonClient, eventPublisher, cacheManager);
     }
 
+    /**
+     * Redis 服务 Bean
+     *
+     * <p>提供 Redis 特有和高级功能。
+     */
     @Bean
-    @ConditionalOnMissingBean(RedisInvalidationSubscriber.class)
-    public RedisInvalidationSubscriber redisCacheInvalidationSubscriber(RedisService redisService) {
-        RedisInvalidationSubscriber subscriber = new RedisInvalidationSubscriber(redisService);
-        log.trace("[Goya] |- component [redis] GoyaRedisAutoConfiguration |- bean [redisCacheInvalidationSubscriber] register.");
-        return subscriber;
+    @ConditionalOnMissingBean
+    public IRedisService redisService(RedissonClient redissonClient, CacheKeySerializer cacheKeySerializer) {
+        log.info("Creating IRedisService");
+        return new DefaultRedisService(redissonClient, cacheKeySerializer);
     }
 }

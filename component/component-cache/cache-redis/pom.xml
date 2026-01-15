@@ -14,7 +14,7 @@
     <dependencies>
         <dependency>
             <groupId>com.ysmjjsy.goya</groupId>
-            <artifactId>cache-core</artifactId>
+            <artifactId>cache-multi-level</artifactId>
         </dependency>
 
         <dependency>

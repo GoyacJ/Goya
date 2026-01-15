@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.captcha.renderer.graphic;
 
 import com.ysmjjsy.goya.component.captcha.definition.Metadata;
-import com.ysmjjsy.goya.component.common.definition.constants.ISymbolConstants;
+import com.ysmjjsy.goya.component.core.constants.SymbolConst;
 import org.apache.commons.lang3.StringUtils;
 
 import java.awt.image.BufferedImage;
@@ -20,7 +20,7 @@ public abstract class AbstractPngGraphicRenderer extends AbstractBaseGraphicRend
 
         BufferedImage bufferedImage = createPngBufferedImage(drawCharacters);
 
-        String characters = StringUtils.join(drawCharacters, ISymbolConstants.BLANK);
+        String characters = StringUtils.join(drawCharacters, SymbolConst.BLANK);
 
         Metadata metadata = new Metadata();
         metadata.setGraphicImageBase64(toBase64(bufferedImage));

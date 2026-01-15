@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.captcha.configuration;
 
-import com.ysmjjsy.goya.component.captcha.api.ICaptchaService;
+import com.ysmjjsy.goya.component.captcha.api.CaptchaService;
 import com.ysmjjsy.goya.component.captcha.configuration.properties.CaptchaProperties;
 import com.ysmjjsy.goya.component.captcha.core.DefaultCaptchaManager;
 import com.ysmjjsy.goya.component.captcha.enums.CaptchaCategoryEnum;
@@ -41,9 +41,9 @@ public class CaptchaAutoConfiguration {
     }
 
     @Bean
-    public ICaptchaService iCaptchaService(CaptchaRendererFactory captchaRendererFactory) {
+    public CaptchaService defaultCaptchaManager(CaptchaRendererFactory captchaRendererFactory) {
         DefaultCaptchaManager manager = new DefaultCaptchaManager(captchaRendererFactory);
-        log.trace("[GOYA] |- common [captcha] CaptchaAutoConfiguration |- bean [iCaptchaService] register.");
+        log.trace("[GOYA] |- common [captcha] CaptchaAutoConfiguration |- bean [defaultCaptchaManager] register.");
         return manager;
     }
 

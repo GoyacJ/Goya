@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.captcha.exception;
 
-import com.ysmjjsy.goya.component.common.code.ResponseCodeEnum;
+import com.ysmjjsy.goya.component.framework.exception.code.HttpErrorCodeEnum;
 
 import java.io.Serial;
 
@@ -16,18 +16,18 @@ public class CaptchaHasExpiredException extends CaptchaException {
     private static final long serialVersionUID = 3687806079740752182L;
 
     public CaptchaHasExpiredException() {
-        super(ResponseCodeEnum.CAPTCHA_HAS_EXPIRED_ERROR);
+        super(HttpErrorCodeEnum.CAPTCHA_HAS_EXPIRED_ERROR);
     }
 
     public CaptchaHasExpiredException(String message) {
-        super(ResponseCodeEnum.CAPTCHA_HAS_EXPIRED_ERROR);
+        super(HttpErrorCodeEnum.CAPTCHA_HAS_EXPIRED_ERROR, message);
     }
 
     public CaptchaHasExpiredException(Throwable cause) {
-        super(ResponseCodeEnum.CAPTCHA_HAS_EXPIRED_ERROR);
+        super(HttpErrorCodeEnum.CAPTCHA_HAS_EXPIRED_ERROR, cause);
     }
 
     public CaptchaHasExpiredException(String message, Throwable cause) {
-        super(ResponseCodeEnum.CAPTCHA_HAS_EXPIRED_ERROR);
+        super(HttpErrorCodeEnum.CAPTCHA_HAS_EXPIRED_ERROR, message, cause);
     }
 }

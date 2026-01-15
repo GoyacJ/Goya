@@ -4,8 +4,9 @@ import com.google.common.collect.Maps;
 import com.ysmjjsy.goya.component.captcha.configuration.properties.CaptchaProperties;
 import com.ysmjjsy.goya.component.captcha.enums.CaptchaResourceEnum;
 import com.ysmjjsy.goya.component.captcha.enums.FontStyleEnum;
-import com.ysmjjsy.goya.component.common.definition.exception.CommonException;
-import com.ysmjjsy.goya.component.common.utils.*;
+import com.ysmjjsy.goya.component.core.exception.CommonException;
+import com.ysmjjsy.goya.component.core.utils.*;
+import com.ysmjjsy.goya.component.framework.context.SpringContext;
 import lombok.Getter;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -52,20 +53,20 @@ public class ResourceProvider implements InitializingBean {
     }
 
     private static Map<String, String> getImages(String location) {
-        if (ResourceResolverUtils.isClasspathAllUrl(location)) {
+        if (SpringContext.isClasspathAllUrl(location)) {
             try {
-                Resource[] resources = ResourceResolverUtils.getResources(location);
+                Resource[] resources = SpringContext.getResources(location);
                 Map<String, String> images = Maps.newConcurrentMap();
                 if (ArrayUtils.isNotEmpty(resources)) {
                     Arrays.stream(resources).forEach(resource -> {
-                        String data = ResourceResolverUtils.toBase64(resource);
+                        String data = SpringContext.toBase64(resource);
                         if (StringUtils.isNotBlank(data)) {
-                            images.put(IdentityUtils.fastSimpleUUID(), data);
+                            images.put(GoyaIdUtils.fastSimpleUUID(), data);
                         }
                     });
                 }
                 return images;
-            } catch (IOException e) {
+            } catch (Exception e) {
                 log.error("[GOYA] |- Analysis the  location [{}] catch io error!", location, e);
             }
         }
@@ -76,11 +77,9 @@ public class ResourceProvider implements InitializingBean {
     private static Font getFont(Resource resource) {
 
         try {
-            return FontUtils.loadFont(resource.getInputStream());
-        } catch (CommonException e) {
-            // 虽然 java.awt.Font 抛出的是 IOException, 因为使用 Hutool FontUtil 将错误又包装了一次。所以出错时必须要拦截 IORuntimeException，否则会导致错误不被拦截直接抛出，应用启动失败。
+            return GoyaFontUtils.loadFont(resource.getInputStream());
+        } catch (CommonException _) {
             log.warn("[GOYA] |- Can not read font in the resources folder, maybe in docker.");
-            // TODO: 2022-10-21 尝试在 docker alpine 下解决字体问题的多种方式之一。目前改用 debian，下面代码已经不再需要。暂留，确保确实没有问题后再做处理
             Font fontInfileSystem = getFontUnderDocker(resource.getFilename());
             if (ObjectUtils.isNotEmpty(fontInfileSystem)) {
                 return fontInfileSystem;
@@ -93,13 +92,13 @@ public class ResourceProvider implements InitializingBean {
     }
 
     private static Font getFontUnderDocker(String filename) {
-        if (ManagementUtils.isLinux()) {
+        if (GoyaManagementUtils.isLinux()) {
             String path = FONT_FOLDER + filename;
 
             File file = new File(path);
-            if (ObjectUtils.isNotEmpty(file) && FileUtils.exists(file)) {
+            if (ObjectUtils.isNotEmpty(file) && GoyaFileUtils.exists(file)) {
                 try {
-                    Font font = FontUtils.loadFont(file);
+                    Font font = GoyaFontUtils.loadFont(file);
                     log.debug("[GOYA] |- Read font [{}] under the DOCKER.", font.getFontName());
                     return font;
                 } catch (CommonException e) {
@@ -114,9 +113,9 @@ public class ResourceProvider implements InitializingBean {
 
     private static Map<String, Font> getFonts(String location) {
 
-        if (ResourceResolverUtils.isClasspathAllUrl(location)) {
+        if (SpringContext.isClasspathAllUrl(location)) {
             try {
-                Resource[] resources = ResourceResolverUtils.getResources(location);
+                Resource[] resources = SpringContext.getResources(location);
                 Map<String, Font> fonts = new ConcurrentHashMap<>();
                 if (ArrayUtils.isNotEmpty(resources)) {
                     Arrays.stream(resources).forEach(resource -> {
@@ -127,7 +126,7 @@ public class ResourceProvider implements InitializingBean {
                     });
                 }
                 return fonts;
-            } catch (IOException e) {
+            } catch (Exception e) {
                 log.error("[GOYA] |- Analysis the  location [{}] catch io error!", location, e);
             }
         }
@@ -138,7 +137,7 @@ public class ResourceProvider implements InitializingBean {
     @Override
     public void afterPropertiesSet() throws Exception {
 
-        String systemName = ManagementUtils.getOsName();
+        String systemName = GoyaManagementUtils.getOsName();
         log.debug("[GOYA] |- Before captcha resource loading, check system. Current system is [{}]", systemName);
 
         log.debug("[GOYA] |- Captcha resource loading is BEGIN！");
@@ -218,7 +217,7 @@ public class ResourceProvider implements InitializingBean {
     protected BufferedImage getRandomImage(Map<String, String> container, CaptchaResourceEnum captchaResource) {
         String data = getRandomBase64Image(container, captchaResource);
         if (StringUtils.isNotBlank(data)) {
-            return ImgUtils.toImage(data);
+            return GoyaImgUtils.toImage(data);
         }
 
         return null;

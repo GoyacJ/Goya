@@ -1,13 +1,11 @@
 package com.ysmjjsy.goya.component.cache.core.configuration;
 
-import com.ysmjjsy.goya.component.cache.core.support.CacheBloomFilter;
+import com.ysmjjsy.goya.component.cache.core.metrics.DefaultCacheMetrics;
 import com.ysmjjsy.goya.component.cache.core.support.CacheKeySerializer;
 import com.ysmjjsy.goya.component.cache.core.support.DefaultCacheKeySerializer;
-import com.ysmjjsy.goya.component.cache.core.support.GuavaCacheBloomFilter;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 
@@ -29,18 +27,16 @@ public class GoyaCacheAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(CacheKeySerializer.class)
-    public CacheKeySerializer cacheKeySerializer() {
+    public CacheKeySerializer defaultCacheKeySerializer() {
         DefaultCacheKeySerializer serializer = new DefaultCacheKeySerializer();
-        log.trace("[Goya] |- component [cache-core] GoyaCacheAutoConfiguration |- bean [cacheKeySerializer] register.");
+        log.trace("[Goya] |- component [cache-core] GoyaCacheAutoConfiguration |- bean [defaultCacheKeySerializer] register.");
         return serializer;
     }
 
     @Bean
-    @ConditionalOnClass(name = "com.google.common.hash.BloomFilter")
-    @ConditionalOnMissingBean(CacheBloomFilter.class)
-    public CacheBloomFilter cacheBloomFilter(CacheKeySerializer cacheKeySerializer) {
-        CacheBloomFilter bloomFilter = new GuavaCacheBloomFilter(cacheKeySerializer);
-        log.trace("[Goya] |- component [cache-core] GoyaCacheAutoConfiguration |- bean [cacheBloomFilter] register.");
-        return bloomFilter;
+    public DefaultCacheMetrics defaultCacheMetrics(){
+        DefaultCacheMetrics metrics = new DefaultCacheMetrics();
+        log.trace("[Goya] |- component [cache-core] GoyaCacheAutoConfiguration |- bean [defaultCacheMetrics] register.");
+        return metrics;
     }
 }

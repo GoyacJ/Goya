@@ -4,6 +4,9 @@ import com.ysmjjsy.goya.component.framework.constants.PropertyConst;
 import com.ysmjjsy.goya.component.framework.enums.CryptoStrategyEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.bind.DefaultValue;
+
+import java.time.Duration;
 
 /**
  * <p></p>
@@ -14,6 +17,17 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @Schema(description = "加密策略")
 @ConfigurationProperties(PropertyConst.PROPERTY_CRYPTO)
 public record CryptoProperties(
-        CryptoStrategyEnum strategy
+
+        /*
+          加密策略
+         */
+        @DefaultValue("STANDARD")
+        CryptoStrategyEnum strategy,
+
+        /*
+          加密过期时间
+         */
+        @DefaultValue
+        Duration expire
 ) {
 }
