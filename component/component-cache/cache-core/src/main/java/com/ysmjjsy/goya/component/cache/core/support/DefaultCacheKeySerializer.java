@@ -24,22 +24,21 @@ public class DefaultCacheKeySerializer implements CacheKeySerializer{
 
         try {
             // 优化：常见类型直接序列化
-            if (key instanceof String k) {
-                return k.getBytes(StandardCharsets.UTF_8);
+            switch (key) {
+                case String k -> {
+                    return k.getBytes(StandardCharsets.UTF_8);
+                }
+                case Long k -> {
+                    return String.valueOf(k).getBytes(StandardCharsets.UTF_8);
+                }
+                case Integer k -> {
+                    return String.valueOf(k).getBytes(StandardCharsets.UTF_8);
+                }
+                default -> {
+                    String keyString = GoyaJson.toJson(key);
+                    return Base64.getEncoder().encode(keyString.getBytes(StandardCharsets.UTF_8));
+                }
             }
-
-            if (key instanceof Long k) {
-                return String.valueOf(k).getBytes(StandardCharsets.UTF_8);
-            }
-
-            if (key instanceof Integer k) {
-                return String.valueOf(k).getBytes(StandardCharsets.UTF_8);
-            }
-
-            // 其他类型：使用 toString() + Base64 编码（避免引入 Jackson 依赖）
-            // 未来可以扩展为支持自定义序列化器
-            String keyString = GoyaJson.toJson(key);
-            return Base64.getEncoder().encode(keyString.getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
             log.error("Failed to serialize cache key: key={}, type={}", key, key.getClass().getName(), e);
             // 降级到 toString()

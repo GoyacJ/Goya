@@ -9,5 +9,9 @@ package com.ysmjjsy.goya.component.cache.redis.constants;
  */
 public interface RedisConst {
 
+    /**
+     * 缓存失效消息频道
+     */
+    String CACHE_INVALIDATION_CHANNEL = "goya:cache:invalidation";
 }
 
