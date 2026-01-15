@@ -21,14 +21,14 @@ public class JsonException extends CommonException {
     }
 
     public JsonException(String message) {
-        super(HttpErrorCodeEnum.JSON_ERROR);
+        super(HttpErrorCodeEnum.JSON_ERROR, message);
     }
 
     public JsonException(Throwable cause) {
-        super(HttpErrorCodeEnum.JSON_ERROR);
+        super(HttpErrorCodeEnum.JSON_ERROR, cause);
     }
 
     public JsonException(String message, Throwable cause) {
-        super(HttpErrorCodeEnum.JSON_ERROR);
+        super(HttpErrorCodeEnum.JSON_ERROR, message, cause);
     }
 }

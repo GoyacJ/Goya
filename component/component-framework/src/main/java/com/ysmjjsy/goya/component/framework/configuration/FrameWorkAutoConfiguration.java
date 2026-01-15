@@ -1,8 +1,6 @@
 package com.ysmjjsy.goya.component.framework.configuration;
 
-import com.ysmjjsy.goya.component.core.event.EventPublisher;
 import com.ysmjjsy.goya.component.framework.context.SpringContext;
-import com.ysmjjsy.goya.component.framework.event.LocalEventPublisher;
 import com.ysmjjsy.goya.component.framework.i18n.DefaultResolver;
 import com.ysmjjsy.goya.component.framework.i18n.I18nResolver;
 import com.ysmjjsy.goya.component.framework.processor.ApplicationContentPostProcessor;
@@ -13,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Lazy;
@@ -101,14 +98,5 @@ public class FrameWorkAutoConfiguration {
         };
         log.trace("[Goya] |- framework [framework] FrameWorkAutoConfiguration |- bean [scheduledExecutorService] register.");
         return scheduledThreadPoolExecutor;
-    }
-
-    @Bean
-    @Lazy(false)
-    @ConditionalOnMissingBean(EventPublisher.class)
-    public EventPublisher localEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
-        LocalEventPublisher localEventPublisher = new LocalEventPublisher(applicationEventPublisher);
-        log.trace("[Goya] |- framework [framework] FrameWorkAutoConfiguration |- bean [localEventPublisher] register.");
-        return localEventPublisher;
     }
 }

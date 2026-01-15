@@ -21,14 +21,14 @@ public class CacheException extends CommonException {
     }
 
     public CacheException(String message) {
-        super(HttpErrorCodeEnum.CACHE_ERROR);
+        super(HttpErrorCodeEnum.CACHE_ERROR, message);
     }
 
     public CacheException(Throwable cause) {
-        super(HttpErrorCodeEnum.CACHE_ERROR);
+        super(HttpErrorCodeEnum.CACHE_ERROR, cause);
     }
 
     public CacheException(String message, Throwable cause) {
-        super(HttpErrorCodeEnum.CACHE_ERROR);
+        super(HttpErrorCodeEnum.CACHE_ERROR, message, cause);
     }
 }

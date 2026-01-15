@@ -16,6 +16,7 @@ import com.ysmjjsy.goya.component.bus.stream.publish.LocalBusEventPublisher;
 import com.ysmjjsy.goya.component.bus.stream.publish.StreamBusEventPublisher;
 import com.ysmjjsy.goya.component.bus.stream.service.DefaultBusService;
 import com.ysmjjsy.goya.component.bus.stream.service.IBusService;
+import com.ysmjjsy.goya.component.cache.redis.service.RedisCacheService;
 import com.ysmjjsy.goya.component.framework.strategy.StrategyChoose;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -165,14 +166,14 @@ public class BusStreamAutoConfiguration {
     /**
      * 注册幂等性处理器
      *
-     * @param cacheService  缓存服务
+     * @param redisCacheService  缓存服务
      * @param busProperties 总线配置属性
      * @return IIdempotencyHandler 实例
      */
     @Bean
     @ConditionalOnMissingBean
-    public IIdempotencyHandler idempotencyHandler(ICacheService cacheService, BusProperties busProperties) {
-        CacheIdempotencyHandler cacheIdempotencyHandler = new CacheIdempotencyHandler(cacheService, busProperties);
+    public IIdempotencyHandler idempotencyHandler(RedisCacheService redisCacheService, BusProperties busProperties) {
+        CacheIdempotencyHandler cacheIdempotencyHandler = new CacheIdempotencyHandler(redisCacheService, busProperties);
         log.trace("[Goya] |- component [bus] BusAutoConfiguration |- bean [idempotencyHandler] register.");
         return cacheIdempotencyHandler;
     }

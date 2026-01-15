@@ -15,6 +15,7 @@
 
     <modules>
         <module>component-cache</module>
+        <module>component-bus</module>
         <module>component-captcha</module>
         <module>component-web</module>
         <module>component-security</module>

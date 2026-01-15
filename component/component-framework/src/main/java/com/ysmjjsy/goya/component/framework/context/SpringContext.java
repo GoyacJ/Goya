@@ -1,11 +1,15 @@
 package com.ysmjjsy.goya.component.framework.context;
 
+import com.ysmjjsy.goya.component.core.constants.SymbolConst;
+import com.ysmjjsy.goya.component.core.enums.RegexPoolEnum;
 import com.ysmjjsy.goya.component.core.utils.GoyaStringUtils;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Strings;
 import org.springframework.beans.factory.BeanFactory;
+import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
 import org.springframework.boot.thread.Threading;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ConditionContext;
@@ -28,6 +32,7 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * <p></p>
@@ -47,6 +52,24 @@ public class SpringContext implements ApplicationContextInitializer<Configurable
 
     public static BeanFactory getBeanFactory() {
         return context;
+    }
+
+    public static Set<String> getPackageNames() {
+        Set<String> packageNames = new LinkedHashSet<>();
+
+        String rootPackage = Arrays.stream(
+                        SpringContext.class.getPackageName().split(RegexPoolEnum.PACKAGE_SEPARATOR_REGEX.regex()))
+                .limit(3)
+                .collect(Collectors.joining(SymbolConst.PERIOD));
+        packageNames.add(rootPackage);
+
+        ApplicationContext context = getContext();
+
+        if (Objects.nonNull(context) && AutoConfigurationPackages.has(context)) {
+                packageNames.addAll(AutoConfigurationPackages.get(context));
+            }
+
+        return packageNames;
     }
 
     @Override

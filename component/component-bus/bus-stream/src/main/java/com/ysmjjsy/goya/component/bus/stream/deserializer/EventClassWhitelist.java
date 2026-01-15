@@ -1,5 +1,6 @@
 package com.ysmjjsy.goya.component.bus.stream.deserializer;
 
+import com.ysmjjsy.goya.component.framework.context.SpringContext;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
@@ -39,7 +40,7 @@ public class EventClassWhitelist {
      * <p>初始化时添加默认允许的包名</p>
      */
     public EventClassWhitelist() {
-        this.allowedPackages.addAll(IPlatformService.getPackageNames());
+        this.allowedPackages.addAll(SpringContext.getPackageNames());
         log.debug("[Goya] |- component [bus] EventClassWhitelist |- initialized with default package: [{}]",
                 allowedPackages);
     }
@@ -53,10 +54,10 @@ public class EventClassWhitelist {
     public EventClassWhitelist(List<String> allowedPackages) {
         if (allowedPackages != null && !allowedPackages.isEmpty()) {
             this.allowedPackages.addAll(allowedPackages);
-            this.allowedPackages.addAll(IPlatformService.getPackageNames());
+            this.allowedPackages.addAll(SpringContext.getPackageNames());
         } else {
             // 如果没有指定，使用默认包名
-            this.allowedPackages.addAll(IPlatformService.getPackageNames());
+            this.allowedPackages.addAll(SpringContext.getPackageNames());
         }
         log.debug("[Goya] |- component [bus] EventClassWhitelist |- initialized with packages: [{}]",
                 this.allowedPackages);

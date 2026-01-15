@@ -13,14 +13,7 @@
     <description>认证中心</description>
 
     <dependencies>
-        <dependency>
-            <groupId>com.ysmjjsy.goya</groupId>
-            <artifactId>servlet-boot-starter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.ysmjjsy.goya</groupId>
-            <artifactId>kafka-boot-starter</artifactId>
-        </dependency>
+
     </dependencies>
 
     <build>
