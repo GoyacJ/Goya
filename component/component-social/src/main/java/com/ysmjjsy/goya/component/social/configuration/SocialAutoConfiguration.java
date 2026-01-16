@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.social.configuration;
 
-import com.ysmjjsy.goya.component.common.strategy.StrategyChoose;
+import com.ysmjjsy.goya.component.framework.strategy.StrategyChoose;
 import com.ysmjjsy.goya.component.social.cache.SmsCheckCacheManager;
 import com.ysmjjsy.goya.component.social.cache.ThirdPartCheckCacheManager;
 import com.ysmjjsy.goya.component.social.configuration.properties.SocialProperties;
@@ -31,43 +31,43 @@ public class SocialAutoConfiguration {
     }
 
     @Bean
-    public SmsCheckCacheManager smsCheckCacheManager(SocialProperties socialProperties){
+    public SmsCheckCacheManager smsCheckCacheManager(SocialProperties socialProperties) {
         SmsCheckCacheManager manager = new SmsCheckCacheManager(socialProperties.sms());
         log.trace("[Goya] |- component [social] SocialAutoConfiguration |- bean [smsCheckCacheManager] register.");
         return manager;
     }
 
     @Bean
-    public ThirdPartCheckCacheManager thirdPartCheckCacheManager(SocialProperties socialProperties){
+    public ThirdPartCheckCacheManager thirdPartCheckCacheManager(SocialProperties socialProperties) {
         ThirdPartCheckCacheManager manager = new ThirdPartCheckCacheManager(socialProperties.thirdPart());
         log.trace("[Goya] |- component [social] SocialAutoConfiguration |- bean [thirdPartCheckCacheManager] register.");
         return manager;
     }
 
     @Bean
-    public SmsService smsService(SmsCheckCacheManager smsCheckCacheManager){
+    public SmsService smsService(SmsCheckCacheManager smsCheckCacheManager) {
         SmsService smsService = new SmsService(smsCheckCacheManager);
         log.trace("[Goya] |- component [social] SocialAutoConfiguration |- bean [smsService] register.");
         return smsService;
     }
 
     @Bean
-    public ThirdPartService thirdPartService(ThirdPartCheckCacheManager thirdPartCheckCacheManager){
+    public ThirdPartService thirdPartService(ThirdPartCheckCacheManager thirdPartCheckCacheManager) {
         ThirdPartService thirdService = new ThirdPartService(thirdPartCheckCacheManager);
         log.trace("[Goya] |- component [social] SocialAutoConfiguration |- bean [thirdPartService] register.");
         return thirdService;
     }
 
     @Bean
-    public WxMiniProgramService wxMiniProgramService(SocialProperties socialProperties){
+    public WxMiniProgramService wxMiniProgramService(SocialProperties socialProperties) {
         WxMiniProgramService wxMiniProgramService = new WxMiniProgramService(socialProperties.wxMiniProgram());
         log.trace("[Goya] |- component [social] SocialAutoConfiguration |- bean [wxMiniProgramService] register.");
         return wxMiniProgramService;
     }
 
     @Bean
-    public SocialService socialService(StrategyChoose strategyChoose){
-        SocialService socialService = new SocialService(strategyChoose);
+    public SocialService socialService(StrategyChoose strategyChoose, SmsService smsService, ThirdPartService thirdPartService, WxMiniProgramService wxMiniProgramService) {
+        SocialService socialService = new SocialService(strategyChoose, smsService, thirdPartService, wxMiniProgramService);
         log.trace("[Goya] |- component [social] SocialAutoConfiguration |- bean [socialService] register.");
         return socialService;
     }

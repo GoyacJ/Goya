@@ -1,11 +1,10 @@
 package com.ysmjjsy.goya.component.web.enums;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.collect.Sets;
-import com.ysmjjsy.goya.component.common.definition.constants.IBaseConstants;
-import com.ysmjjsy.goya.component.common.definition.constants.ISymbolConstants;
-import com.ysmjjsy.goya.component.common.definition.enums.IEnum;
+import com.ysmjjsy.goya.component.core.constants.SymbolConst;
+import com.ysmjjsy.goya.component.core.enums.IEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -24,7 +23,6 @@ import java.util.stream.Collectors;
 @Getter
 @AllArgsConstructor
 @Schema(description = "Http Request Method")
-@JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum RequestMethodEnum implements IEnum<String> {
 
     GET("GET", "GET"),
@@ -40,6 +38,7 @@ public enum RequestMethodEnum implements IEnum<String> {
 
     ;
 
+    @JsonValue
     private final String code;
     private final String description;
     private static final Map<String, RequestMethodEnum> INDEX_MAP = new HashMap<>();
@@ -58,6 +57,7 @@ public enum RequestMethodEnum implements IEnum<String> {
         }
     }
 
+    @JsonCreator
     public static RequestMethodEnum getByCode(String code) {
         return INDEX_MAP.get(code);
     }
@@ -73,7 +73,7 @@ public enum RequestMethodEnum implements IEnum<String> {
         if (methods.isEmpty()) {
             return ALL.getCode();
         }
-        return methods.stream().map(method -> resolve(method.name()).getCode()).collect(Collectors.joining(ISymbolConstants.COMMA));
+        return methods.stream().map(method -> resolve(method.name()).getCode()).collect(Collectors.joining(SymbolConst.COMMA));
     }
 
     public static Set<RequestMethodEnum> parseRequestMethods(Set<RequestMethod> methods) {
@@ -87,7 +87,7 @@ public enum RequestMethodEnum implements IEnum<String> {
         if (StringUtils.isBlank(methods)) {
             return Sets.newHashSet(ALL);
         }
-        return Arrays.stream(methods.split(ISymbolConstants.COMMA))
+        return Arrays.stream(methods.split(SymbolConst.COMMA))
                 .map(String::trim)
                 .filter(StringUtils::isNotBlank)
                 .map(s -> {
@@ -99,22 +99,6 @@ public enum RequestMethodEnum implements IEnum<String> {
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
-    }
-
-    @JsonCreator
-    public static RequestMethodEnum fromJson(Object value) {
-        // 如果是字符串，直接根据 code 查找
-        if (value instanceof String va) {
-            return INDEX_MAP.get(va);
-        }
-        // 如果是 Map 类型，根据 STR_CODE 查找
-        if (value instanceof Map<?, ?> map) {
-            Object code = map.get(IBaseConstants.STR_CODE);
-            return code == null ? null : INDEX_MAP.get(code.toString());
-        }
-
-        // 不支持的类型返回 null 或抛异常
-        throw new IllegalArgumentException("Unsupported JSON value: " + value);
     }
 
     public static List<Map<String, Object>> getJsonStruct() {

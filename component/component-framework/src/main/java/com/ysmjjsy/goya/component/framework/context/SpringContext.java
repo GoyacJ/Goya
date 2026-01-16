@@ -54,6 +54,11 @@ public class SpringContext implements ApplicationContextInitializer<Configurable
         return context;
     }
 
+    /**
+     * 获取包名
+     *
+     * @return 包名集合
+     */
     public static Set<String> getPackageNames() {
         Set<String> packageNames = new LinkedHashSet<>();
 
@@ -66,8 +71,8 @@ public class SpringContext implements ApplicationContextInitializer<Configurable
         ApplicationContext context = getContext();
 
         if (Objects.nonNull(context) && AutoConfigurationPackages.has(context)) {
-                packageNames.addAll(AutoConfigurationPackages.get(context));
-            }
+            packageNames.addAll(AutoConfigurationPackages.get(context));
+        }
 
         return packageNames;
     }
@@ -1009,7 +1014,7 @@ public class SpringContext implements ApplicationContextInitializer<Configurable
             InputStream inputStream = resource.getInputStream();
             return FileCopyUtils.copyToByteArray(inputStream);
         } catch (IOException e) {
-            log.error("[GOYA] |- Converter resource to byte[] error!", e);
+            log.error("[Goya] |- Converter resource to byte[] error!", e);
             return null;
         }
     }

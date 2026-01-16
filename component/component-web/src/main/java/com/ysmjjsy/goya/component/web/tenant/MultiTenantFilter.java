@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.web.tenant;
 
-import com.ysmjjsy.goya.component.common.definition.constants.IBaseConstants;
-import com.ysmjjsy.goya.component.common.tenant.TenantContext;
+import com.ysmjjsy.goya.component.core.constants.DefaultConst;
+import com.ysmjjsy.goya.component.framework.tenant.TenantContext;
 import com.ysmjjsy.goya.component.web.utils.WebUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -26,7 +26,7 @@ public class MultiTenantFilter extends GenericFilterBean {
         HttpServletRequest request = (HttpServletRequest) servletRequest;
 
         String tenantId = WebUtils.getTenantId(request);
-        TenantContext.setTenantId(StringUtils.isBlank(tenantId) ? IBaseConstants.DEFAULT_TENANT_ID : tenantId);
+        TenantContext.setTenantId(StringUtils.isBlank(tenantId) ? DefaultConst.DEFAULT_TENANT_ID : tenantId);
 
         filterChain.doFilter(servletRequest, servletResponse);
         TenantContext.clear();

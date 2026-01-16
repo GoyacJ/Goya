@@ -1,5 +1,6 @@
 package com.ysmjjsy.goya.component.framework.configuration;
 
+import com.ysmjjsy.goya.component.framework.configuration.properties.GoyaProperties;
 import com.ysmjjsy.goya.component.framework.context.SpringContext;
 import com.ysmjjsy.goya.component.framework.i18n.DefaultResolver;
 import com.ysmjjsy.goya.component.framework.i18n.I18nResolver;
@@ -11,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Lazy;
@@ -29,6 +31,7 @@ import java.util.concurrent.ThreadPoolExecutor;
  */
 @Slf4j
 @AutoConfiguration
+@EnableConfigurationProperties(GoyaProperties.class)
 public class FrameWorkAutoConfiguration {
 
     @PostConstruct
@@ -52,8 +55,8 @@ public class FrameWorkAutoConfiguration {
     @Bean
     @Lazy(false)
     @ConditionalOnMissingBean(I18nResolver.class)
-    public I18nResolver defaultI18nResolver(MessageSource messageSource) {
-        DefaultResolver defaultResolver = new DefaultResolver(messageSource);
+    public I18nResolver defaultI18nResolver() {
+        DefaultResolver defaultResolver = new DefaultResolver();
         log.trace("[Goya] |- framework [framework] FrameWorkAutoConfiguration |- bean [defaultI18nResolver] register.");
         return defaultResolver;
     }

@@ -15,8 +15,8 @@ import com.ysmjjsy.goya.component.cache.multilevel.properties.PropertiesCacheSer
 import com.ysmjjsy.goya.component.cache.multilevel.resolver.CacheSpecification;
 import com.ysmjjsy.goya.component.cache.multilevel.resolver.CacheSpecificationResolver;
 import com.ysmjjsy.goya.component.cache.multilevel.resolver.DefaultCacheSpecificationResolver;
-import com.ysmjjsy.goya.component.cache.multilevel.service.DefaultCacheService;
-import com.ysmjjsy.goya.component.cache.multilevel.service.ICacheService;
+import com.ysmjjsy.goya.component.cache.multilevel.service.DefaultMultiLevelCacheService;
+import com.ysmjjsy.goya.component.cache.multilevel.service.MultiLevelCacheService;
 import com.ysmjjsy.goya.component.cache.multilevel.support.CacheRefillManager;
 import com.ysmjjsy.goya.component.cache.multilevel.support.SingleFlightLoader;
 import com.ysmjjsy.goya.component.cache.multilevel.ttl.DefaultFallbackStrategy;
@@ -147,8 +147,8 @@ public class MultiLevelAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    public ICacheService cacheService(CacheManager cacheManager, CacheMetrics metrics) {
-        DefaultCacheService service = new DefaultCacheService(cacheManager, metrics);
+    public MultiLevelCacheService defaultMultiLevelCacheService(CacheManager cacheManager, CacheMetrics metrics) {
+        DefaultMultiLevelCacheService service = new DefaultMultiLevelCacheService(cacheManager, metrics);
         log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [cacheService] register.");
         return service;
     }
@@ -223,8 +223,7 @@ public class MultiLevelAutoConfiguration {
                                            SymmetricCryptoProcessor symmetricCryptoProcessor,
                                            CryptoProperties cryptoProperties) {
         CryptoProcessor cryptoProcessor = new CryptoProcessor(asymmetricCryptoProcessor, symmetricCryptoProcessor, cryptoProperties);
-        log.trace("[GOYA] |- component [security] SecurityAutoConfiguration |- bean [cryptoProcessor] register.");
+        log.trace("[Goya] |- component [security] SecurityAutoConfiguration |- bean [cryptoProcessor] register.");
         return cryptoProcessor;
     }
-
 }

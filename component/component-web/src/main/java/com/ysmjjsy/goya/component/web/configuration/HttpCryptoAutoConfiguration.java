@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.web.configuration;
 
-import com.ysmjjsy.goya.component.cache.crypto.CryptoProcessor;
+import com.ysmjjsy.goya.component.cache.multilevel.crypto.CryptoProcessor;
 import com.ysmjjsy.goya.component.web.advice.DecryptRequestBodyAdvice;
 import com.ysmjjsy.goya.component.web.advice.EncryptResponseBodyAdvice;
 import com.ysmjjsy.goya.component.web.cache.AccessLimitedCacheManager;
@@ -33,14 +33,14 @@ public class HttpCryptoAutoConfiguration {
 
     @PostConstruct
     public void postConstruct() {
-        log.debug("[GOYA] |- component [web] CryptoAutoConfiguration auto configure.");
+        log.debug("[Goya] |- component [web] CryptoAutoConfiguration auto configure.");
     }
 
     @Bean
     @ConditionalOnMissingBean
     public IdempotentCacheManager idempotentCacheManager(WebProperties webProperties) {
         IdempotentCacheManager idempotentStampManager = new IdempotentCacheManager(webProperties.idempotent());
-        log.trace("[GOYA] |- component [security] SecurityAutoConfiguration |- bean [idempotentStampManager] register.");
+        log.trace("[Goya] |- component [security] SecurityAutoConfiguration |- bean [idempotentStampManager] register.");
         return idempotentStampManager;
     }
 
@@ -48,7 +48,7 @@ public class HttpCryptoAutoConfiguration {
     @ConditionalOnMissingBean
     public AccessLimitedCacheManager accessLimitedCacheManager(WebProperties webProperties) {
         AccessLimitedCacheManager accessLimitedStampManager = new AccessLimitedCacheManager(webProperties.accessLimited());
-        log.trace("[GOYA] |- component [security] SecurityAutoConfiguration |- bean [accessLimitedStampManager] register.");
+        log.trace("[Goya] |- component [security] SecurityAutoConfiguration |- bean [accessLimitedStampManager] register.");
         return accessLimitedStampManager;
     }
 
@@ -57,7 +57,7 @@ public class HttpCryptoAutoConfiguration {
     @ConditionalOnBean(IdempotentCacheManager.class)
     public IdempotentInterceptor idempotentInterceptor(IdempotentCacheManager idempotentCacheManager) {
         IdempotentInterceptor interceptor = new IdempotentInterceptor(idempotentCacheManager);
-        log.trace("[GOYA] |- component [security] SecurityAutoConfiguration |- bean [idempotentInterceptor] register.");
+        log.trace("[Goya] |- component [security] SecurityAutoConfiguration |- bean [idempotentInterceptor] register.");
         return interceptor;
     }
 
@@ -66,7 +66,7 @@ public class HttpCryptoAutoConfiguration {
     @ConditionalOnBean(AccessLimitedCacheManager.class)
     public AccessLimitedInterceptor accessLimitedInterceptor(AccessLimitedCacheManager accessLimitedCacheManager) {
         AccessLimitedInterceptor interceptor = new AccessLimitedInterceptor(accessLimitedCacheManager);
-        log.trace("[GOYA] |- component [security] SecurityAutoConfiguration |- bean [accessLimitedInterceptor] register.");
+        log.trace("[Goya] |- component [security] SecurityAutoConfiguration |- bean [accessLimitedInterceptor] register.");
         return interceptor;
     }
 
@@ -74,7 +74,7 @@ public class HttpCryptoAutoConfiguration {
     @ConditionalOnMissingBean
     public XssHttpServletFilter xssHttpServletFilter() {
         XssHttpServletFilter filter = new XssHttpServletFilter();
-        log.trace("[GOYA] |- component [security] SecurityAutoConfiguration |- bean [xssHttpServletFilter] register.");
+        log.trace("[Goya] |- component [security] SecurityAutoConfiguration |- bean [xssHttpServletFilter] register.");
         return filter;
     }
 
@@ -84,7 +84,7 @@ public class HttpCryptoAutoConfiguration {
     public DecryptRequestBodyAdvice decryptRequestBodyAdvice(CryptoProcessor httpCryptoProcessor) {
         DecryptRequestBodyAdvice decryptRequestBodyAdvice = new DecryptRequestBodyAdvice();
         decryptRequestBodyAdvice.setInterfaceCryptoProcessor(httpCryptoProcessor);
-        log.trace("[GOYA] |- component [security] SecurityAutoConfiguration |- bean [decryptRequestBodyAdvice] register.");
+        log.trace("[Goya] |- component [security] SecurityAutoConfiguration |- bean [decryptRequestBodyAdvice] register.");
         return decryptRequestBodyAdvice;
     }
 
@@ -93,7 +93,7 @@ public class HttpCryptoAutoConfiguration {
     @ConditionalOnMissingBean
     public EncryptResponseBodyAdvice encryptResponseBodyAdvice(CryptoProcessor httpCryptoProcessor) {
         EncryptResponseBodyAdvice encryptResponseBodyAdvice = new EncryptResponseBodyAdvice(httpCryptoProcessor);
-        log.trace("[GOYA] |- component [security] SecurityAutoConfiguration |- bean [encryptResponseBodyAdvice] register.");
+        log.trace("[Goya] |- component [security] SecurityAutoConfiguration |- bean [encryptResponseBodyAdvice] register.");
         return encryptResponseBodyAdvice;
     }
 
@@ -102,8 +102,8 @@ public class HttpCryptoAutoConfiguration {
     @ConditionalOnMissingBean
     public DecryptRequestParamMapResolver decryptRequestParamStringResolver(CryptoProcessor httpCryptoProcessor) {
         DecryptRequestParamMapResolver decryptRequestParamMapResolver = new DecryptRequestParamMapResolver();
-        decryptRequestParamMapResolver.setHttpCryptoProcessor(httpCryptoProcessor);
-        log.trace("[GOYA] |- component [security] SecurityAutoConfiguration |- bean [decryptRequestParamStringResolver] register.");
+        decryptRequestParamMapResolver.setCryptoProcessor(httpCryptoProcessor);
+        log.trace("[Goya] |- component [security] SecurityAutoConfiguration |- bean [decryptRequestParamStringResolver] register.");
         return decryptRequestParamMapResolver;
     }
 
@@ -112,8 +112,8 @@ public class HttpCryptoAutoConfiguration {
     @ConditionalOnMissingBean
     public DecryptRequestParamResolver decryptRequestParamResolver(CryptoProcessor httpCryptoProcessor) {
         DecryptRequestParamResolver decryptRequestParamResolver = new DecryptRequestParamResolver();
-        decryptRequestParamResolver.setHttpCryptoProcessor(httpCryptoProcessor);
-        log.trace("[GOYA] |- component [security] SecurityAutoConfiguration |- bean [decryptRequestParamResolver] register.");
+        decryptRequestParamResolver.setCryptoProcessor(httpCryptoProcessor);
+        log.trace("[Goya] |- component [security] SecurityAutoConfiguration |- bean [decryptRequestParamResolver] register.");
         return decryptRequestParamResolver;
     }
 }

@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.core.enums;
 
-import com.ysmjjsy.goya.core.utils.GoyaNetUtils;
+import com.ysmjjsy.goya.component.core.utils.GoyaNetUtils;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

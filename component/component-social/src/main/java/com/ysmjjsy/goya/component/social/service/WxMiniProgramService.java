@@ -8,7 +8,7 @@ import cn.binarywang.wx.miniapp.message.WxMaMessageHandler;
 import cn.binarywang.wx.miniapp.message.WxMaMessageRouter;
 import cn.binarywang.wx.miniapp.message.WxMaOutMessage;
 import com.google.common.collect.Maps;
-import com.ysmjjsy.goya.component.common.strategy.IStrategyExecute;
+import com.ysmjjsy.goya.component.core.stragegy.StrategyExecute;
 import com.ysmjjsy.goya.component.social.configuration.properties.SocialProperties;
 import com.ysmjjsy.goya.component.social.enums.SocialTypeEnum;
 import com.ysmjjsy.goya.component.social.exception.SocialException;
@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
  * @since 2026/1/1 23:03
  */
 @Slf4j
-public class WxMiniProgramService implements IStrategyExecute<WxAppLoginRequest, WxAppLoginResponse> {
+public class WxMiniProgramService implements StrategyExecute<WxAppLoginRequest, WxAppLoginResponse> {
 
     private final SocialProperties.WxMiniProgram wxMiniProgram;
     private final WxMiniProgramLogHandler wxMiniProgramLogHandler;

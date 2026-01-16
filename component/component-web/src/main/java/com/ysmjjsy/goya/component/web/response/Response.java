@@ -3,11 +3,12 @@ package com.ysmjjsy.goya.component.web.response;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.ysmjjsy.goya.component.common.code.IResponseCode;
-import com.ysmjjsy.goya.component.common.code.ResponseCodeEnum;
-import com.ysmjjsy.goya.component.common.definition.constants.IBaseConstants;
-import com.ysmjjsy.goya.component.common.definition.pojo.IResponse;
-import com.ysmjjsy.goya.component.common.i18n.I18nResolver;
+import com.ysmjjsy.goya.component.core.constants.DefaultConst;
+import com.ysmjjsy.goya.component.core.exception.error.ErrorCode;
+import com.ysmjjsy.goya.component.core.pojo.IResponse;
+import com.ysmjjsy.goya.component.framework.exception.code.HttpErrorCode;
+import com.ysmjjsy.goya.component.framework.exception.code.HttpErrorCodeEnum;
+import com.ysmjjsy.goya.component.framework.i18n.DefaultResolver;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -51,9 +52,9 @@ import java.util.Optional;
  * }</pre>
  *
  * @author goya
- * @since 2025/12/20 22:08
  * @see IResponse
- * @see IResponseCode
+ * @see HttpErrorCode
+ * @since 2025/12/20 22:08
  */
 @Schema(name = "统一响应返回实体", description = "接口统一返回的实体定义")
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -68,7 +69,7 @@ public record Response<D>(
         @JsonProperty("isSuccess")
         boolean isSuccess,
 
-        @JsonFormat(pattern = IBaseConstants.DATE_FORMAT_YYYY_MM_DD_HH_MM_SS)
+        @JsonFormat(pattern = DefaultConst.DATE_FORMAT_YYYY_MM_DD_HH_MM_SS)
         LocalDateTime timestamp,
 
         @JsonInclude(JsonInclude.Include.ALWAYS)
@@ -203,7 +204,7 @@ public record Response<D>(
      * 使用流式 API 构建 Response 对象
      */
     public static class Builder<D> {
-        private IResponseCode code;
+        private HttpErrorCode code;
         private String message;
         private D data;
         private String traceId;
@@ -219,7 +220,7 @@ public record Response<D>(
          * @param code 响应码
          * @return Builder
          */
-        public Builder<D> code(IResponseCode code) {
+        public Builder<D> code(HttpErrorCode code) {
             this.code = code;
             // 使用国际化消息
             this.message = getI18nMessage(code);
@@ -304,9 +305,9 @@ public record Response<D>(
          * @return Builder
          */
         public Builder<D> success(D data) {
-            this.code = ResponseCodeEnum.OK;
+            this.code = HttpErrorCodeEnum.OK;
             // 使用国际化消息
-            this.message = getI18nMessage(ResponseCodeEnum.OK);
+            this.message = getI18nMessage(HttpErrorCodeEnum.OK);
             this.data = data;
             this.httpStatus = HttpStatus.OK;
             return this;
@@ -320,7 +321,7 @@ public record Response<D>(
          * @return Builder
          */
         public Builder<D> success(String msg, D data) {
-            this.code = ResponseCodeEnum.OK;
+            this.code = HttpErrorCodeEnum.OK;
             this.message = msg;
             this.data = data;
             this.httpStatus = HttpStatus.OK;
@@ -333,11 +334,11 @@ public record Response<D>(
          * @return Builder
          */
         public Builder<D> error() {
-            this.code = ResponseCodeEnum.INTERNAL_SERVER_ERROR;
+            this.code = HttpErrorCodeEnum.INTERNAL_SERVER_ERROR;
             // 使用国际化消息
-            this.message = getI18nMessage(ResponseCodeEnum.INTERNAL_SERVER_ERROR);
+            this.message = getI18nMessage(HttpErrorCodeEnum.INTERNAL_SERVER_ERROR);
             // 修复：HTTP 状态码应该与 code 的 status 一致
-            this.httpStatus = ResponseCodeEnum.INTERNAL_SERVER_ERROR.getStatus();
+            this.httpStatus = HttpErrorCodeEnum.INTERNAL_SERVER_ERROR.getStatus();
             return this;
         }
 
@@ -348,10 +349,10 @@ public record Response<D>(
          * @return Builder
          */
         public Builder<D> error(String msg) {
-            this.code = ResponseCodeEnum.INTERNAL_SERVER_ERROR;
+            this.code = HttpErrorCodeEnum.INTERNAL_SERVER_ERROR;
             this.message = msg;
             // 修复：HTTP 状态码应该与 code 的 status 一致
-            this.httpStatus = ResponseCodeEnum.INTERNAL_SERVER_ERROR.getStatus();
+            this.httpStatus = HttpErrorCodeEnum.INTERNAL_SERVER_ERROR.getStatus();
             return this;
         }
 
@@ -366,7 +367,7 @@ public record Response<D>(
             String trace = ObjectUtils.getIfNull(traceId, getCurrentTraceId());
             String reqPath = ObjectUtils.getIfNull(path, getCurrentRequestPath());
 
-            boolean ok = code != null && code == ResponseCodeEnum.OK;
+            boolean ok = code != null && code == HttpErrorCodeEnum.OK;
 
             return new Response<>(
                     code != null ? code.getCode() : null,
@@ -389,13 +390,13 @@ public record Response<D>(
          * @param code 响应码
          * @return 国际化消息
          */
-        private String getI18nMessage(IResponseCode code) {
+        private String getI18nMessage(ErrorCode code) {
             if (code == null) {
                 return null;
             }
             try {
-                return I18nResolver.resolveEnum(code);
-            } catch (Exception e) {
+                return DefaultResolver.resolveEnum(code);
+            } catch (Exception _) {
                 // 如果国际化失败，使用默认描述
                 return code.getDescription();
             }

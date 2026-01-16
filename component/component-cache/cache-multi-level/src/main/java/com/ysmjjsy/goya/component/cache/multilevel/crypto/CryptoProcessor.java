@@ -35,13 +35,13 @@ public class CryptoProcessor extends AbstractCheckTemplate<String, SecretKey> {
         try {
             SecretKey secretKey = getSecretKey(identity);
             String result = symmetricCryptoProcessor.encrypt(content, secretKey.symmetricKey());
-            log.debug("[GOYA] |- Encrypt content from [{}] to [{}].", content, result);
+            log.debug("[Goya] |- Encrypt content from [{}] to [{}].", content, result);
             return result;
         } catch (CommonException _) {
-            log.warn("[GOYA] |- identity has expired, need recreate, Skip encrypt content [{}].", content);
+            log.warn("[Goya] |- identity has expired, need recreate, Skip encrypt content [{}].", content);
             return content;
         } catch (Exception _) {
-            log.warn("[GOYA] |- Symmetric can not Encrypt content [{}], Skip!", content);
+            log.warn("[Goya] |- Symmetric can not Encrypt content [{}], Skip!", content);
             return content;
         }
     }
@@ -51,13 +51,13 @@ public class CryptoProcessor extends AbstractCheckTemplate<String, SecretKey> {
             SecretKey secretKey = getSecretKey(identity);
 
             String result = symmetricCryptoProcessor.decrypt(content, secretKey.symmetricKey());
-            log.debug("[GOYA] |- Decrypt content from [{}] to [{}].", content, result);
+            log.debug("[Goya] |- Decrypt content from [{}] to [{}].", content, result);
             return result;
         } catch (CommonException _) {
-            log.warn("[GOYA] |- identity has expired, need recreate, Skip decrypt content [{}].", content);
+            log.warn("[Goya] |- identity has expired, need recreate, Skip decrypt content [{}].", content);
             return content;
         } catch (Exception _) {
-            log.warn("[GOYA] |- Symmetric can not Decrypt content [{}], Skip!", content);
+            log.warn("[Goya] |- Symmetric can not Decrypt content [{}], Skip!", content);
             return content;
         }
     }
@@ -77,7 +77,7 @@ public class CryptoProcessor extends AbstractCheckTemplate<String, SecretKey> {
             try {
                 return getSecretKey(identity);
             } catch (CommonException _) {
-                log.debug("[GOYA] |- SecretKey has expired, recreate it");
+                log.debug("[Goya] |- SecretKey has expired, recreate it");
             }
         }
 
@@ -88,7 +88,7 @@ public class CryptoProcessor extends AbstractCheckTemplate<String, SecretKey> {
         if (exists(requestId)) {
             SecretKey secretKey = this.get(requestId);
             if (ObjectUtils.isNotEmpty(secretKey)) {
-                log.trace("[GOYA] |- Decrypt Or Encrypt content use param identity [{}], cached requestId is [{}].", requestId, secretKey.identity());
+                log.trace("[Goya] |- Decrypt Or Encrypt content use param identity [{}], cached requestId is [{}].", requestId, secretKey.identity());
                 return secretKey;
             }
         }
@@ -105,7 +105,7 @@ public class CryptoProcessor extends AbstractCheckTemplate<String, SecretKey> {
      */
     private String decryptFrontendPublicKey(String content, String privateKey) {
         String frontendPublicKey = asymmetricCryptoProcessor.decrypt(content, privateKey);
-        log.debug("[GOYA] |- Decrypt frontend public key, value is : [{}]", frontendPublicKey);
+        log.debug("[Goya] |- Decrypt frontend public key, value is : [{}]", frontendPublicKey);
         return frontendPublicKey;
     }
 
@@ -118,7 +118,7 @@ public class CryptoProcessor extends AbstractCheckTemplate<String, SecretKey> {
      */
     private String encryptBackendKey(String symmetricKey, String publicKey) {
         String encryptedAesKey = asymmetricCryptoProcessor.encrypt(symmetricKey, publicKey);
-        log.debug("[GOYA] |- Encrypt symmetric key use frontend public key, value is : [{}]", encryptedAesKey);
+        log.debug("[Goya] |- Encrypt symmetric key use frontend public key, value is : [{}]", encryptedAesKey);
         return encryptedAesKey;
     }
 
@@ -142,7 +142,7 @@ public class CryptoProcessor extends AbstractCheckTemplate<String, SecretKey> {
         String symmetricKey = symmetricCryptoProcessor.createKey();
         SecretKey generateKey = secretKey.generateKey(key, GoyaIdUtils.fastUUID(), symmetricKey);
 
-        log.debug("[GOYA] |- Generate secret key, value is : [{}]", generateKey);
+        log.debug("[Goya] |- Generate secret key, value is : [{}]", generateKey);
         return generateKey;
     }
 

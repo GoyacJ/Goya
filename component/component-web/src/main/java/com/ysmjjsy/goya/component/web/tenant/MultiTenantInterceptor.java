@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.web.tenant;
 
-import com.ysmjjsy.goya.component.common.definition.constants.IBaseConstants;
-import com.ysmjjsy.goya.component.common.tenant.TenantContext;
+import com.ysmjjsy.goya.component.core.constants.DefaultConst;
+import com.ysmjjsy.goya.component.framework.tenant.TenantContext;
 import com.ysmjjsy.goya.component.web.utils.WebUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,17 +24,17 @@ public class MultiTenantInterceptor implements HandlerInterceptor {
 
         String tenantId = WebUtils.getTenantId(request);
         if (StringUtils.isBlank(tenantId)) {
-            tenantId = IBaseConstants.DEFAULT_TENANT_ID;
+            tenantId = DefaultConst.DEFAULT_TENANT_ID;
         }
         TenantContext.setTenantId(tenantId);
-        log.debug("[GOYA] |- TENANT ID is : [{}].", tenantId);
+        log.debug("[Goya] |- TENANT ID is : [{}].", tenantId);
 
         String path = request.getRequestURI();
         String sessionId = WebUtils.getSessionId(request);
         String requestId = WebUtils.getRequestId(request);
 
-        log.debug("[GOYA] |- SESSION ID for [{}] is : [{}].", path, sessionId);
-        log.debug("[GOYA] |- SESSION ID of Goya for [{}] is : [{}].", path, requestId);
+        log.debug("[Goya] |- SESSION ID for [{}] is : [{}].", path, sessionId);
+        log.debug("[Goya] |- SESSION ID of Goya for [{}] is : [{}].", path, requestId);
 
         return true;
     }
@@ -43,6 +43,6 @@ public class MultiTenantInterceptor implements HandlerInterceptor {
     public void afterCompletion(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Object handler, Exception ex) throws Exception {
         String path = request.getRequestURI();
         TenantContext.clear();
-        log.debug("[GOYA] |- Tenant Interceptor CLEAR tenantId for request [{}].", path);
+        log.debug("[Goya] |- Tenant Interceptor CLEAR tenantId for request [{}].", path);
     }
 }

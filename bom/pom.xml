@@ -36,6 +36,7 @@
         <spring-boot-dependencies.version>4.0.1</spring-boot-dependencies.version>
         <spring-cloud-dependencies.version>2025.1.0</spring-cloud-dependencies.version>
         <springdoc.version>3.0.0</springdoc.version>
+        <spring-boot-starter-aop.version>4.0.0-M2</spring-boot-starter-aop.version>
 
         <!-- ======================== ORM ======================== -->
         <mybatis-plus.version>3.5.15</mybatis-plus.version>
@@ -156,6 +157,11 @@
                 <groupId>org.mybatis</groupId>
                 <artifactId>mybatis</artifactId>
                 <version>${mybatis.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-aop</artifactId>
+                <version>${spring-boot-starter-aop.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.baomidou</groupId>

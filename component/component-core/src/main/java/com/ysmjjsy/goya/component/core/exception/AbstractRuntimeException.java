@@ -19,6 +19,11 @@ public abstract class AbstractRuntimeException extends RuntimeException implemen
     @Getter
     private final ErrorCode errorCode;
 
+    protected AbstractRuntimeException() {
+        super();
+        this.errorCode = null;
+    }
+
     protected AbstractRuntimeException(ErrorCode errorCode) {
         this(errorCode, null, null);
     }

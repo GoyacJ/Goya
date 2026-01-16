@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.web.resolver;
 
-import com.ysmjjsy.goya.component.common.definition.exception.CommonException;
+import com.ysmjjsy.goya.component.cache.multilevel.crypto.CryptoProcessor;
+import com.ysmjjsy.goya.component.core.exception.CommonException;
 import com.ysmjjsy.goya.component.web.annotation.Crypto;
-import com.ysmjjsy.goya.component.cache.crypto.CryptoProcessor;
 import com.ysmjjsy.goya.component.web.utils.WebUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
@@ -36,7 +36,7 @@ import java.util.List;
 @Setter
 public class DecryptRequestParamResolver implements HandlerMethodArgumentResolver {
 
-    private CryptoProcessor httpCryptoProcessor;
+    private CryptoProcessor cryptoProcessor;
     private RequestParamMethodArgumentResolver requestParamMethodArgumentResolver;
 
     @Override
@@ -44,7 +44,7 @@ public class DecryptRequestParamResolver implements HandlerMethodArgumentResolve
         String methodName = methodParameter.getMethod().getName();
         boolean isSupports = isConfigCrypto(methodParameter) && requestParamMethodArgumentResolver.supportsParameter(methodParameter);
 
-        log.trace("[GOYA] |- Is DecryptRequestParamResolver supports method [{}] ? Status is [{}].", methodName, isSupports);
+        log.trace("[Goya] |- Is DecryptRequestParamResolver supports method [{}] ? Status is [{}].", methodName, isSupports);
         return isSupports;
     }
 
@@ -73,7 +73,7 @@ public class DecryptRequestParamResolver implements HandlerMethodArgumentResolve
     private String[] decrypt(String sessionId, String[] paramValues) throws CommonException {
         List<String> values = new ArrayList<>();
         for (String paramValue : paramValues) {
-            String value = httpCryptoProcessor.decrypt(sessionId, paramValue);
+            String value = cryptoProcessor.decrypt(sessionId, paramValue);
             if (StringUtils.isNotBlank(value)) {
                 values.add(value);
             }
@@ -98,11 +98,11 @@ public class DecryptRequestParamResolver implements HandlerMethodArgumentResolve
                     return (values.length == 1 ? values[0] : values);
                 }
             } else {
-                log.warn("[GOYA] |- Cannot find Goya Cloud custom session header. Use interface crypto founction need add X-Goya-Request-ids to request header.");
+                log.warn("[Goya] |- Cannot find Goya Cloud custom session header. Use interface crypto founction need add X-Goya-Request-ids to request header.");
             }
         }
 
-        log.debug("[GOYA] |- The decryption conditions are not met DecryptRequestParamResolver, skip! to next!");
+        log.debug("[Goya] |- The decryption conditions are not met DecryptRequestParamResolver, skip! to next!");
         return requestParamMethodArgumentResolver.resolveArgument(methodParameter, mavContainer, webRequest, binderFactory);
     }
 }

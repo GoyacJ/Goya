@@ -14,6 +14,10 @@ public class CommonException extends AbstractRuntimeException{
     @Serial
     private static final long serialVersionUID = -1658369210895863964L;
 
+    public CommonException() {
+        super();
+    }
+
     public CommonException(ErrorCode errorCode) {
         super(errorCode);
     }

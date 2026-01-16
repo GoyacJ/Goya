@@ -1,7 +1,6 @@
 package com.ysmjjsy.goya.component.framework.enums;
 
-import com.ysmjjsy.goya.component.common.definition.constants.IBaseConstants;
-import com.ysmjjsy.goya.component.common.definition.enums.IPropertyEnum;
+import com.ysmjjsy.goya.component.framework.constants.PropertyConst;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -47,7 +46,7 @@ public enum ProtocolEnum implements IPropertyEnum {
 
     @Override
     public String getPrefix() {
-        return IBaseConstants.PROPERTY_PLATFORM_PROTOCOL;
+        return PropertyConst.PROPERTY_PROTOCOL;
     }
 
     /**

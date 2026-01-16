@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.web.configuration;
 
 import com.google.common.collect.ImmutableList;
-import com.ysmjjsy.goya.component.common.service.IPlatformService;
+import com.ysmjjsy.goya.component.framework.context.GoyaContext;
 import com.ysmjjsy.goya.component.web.doc.IOpenApiServerResolver;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.security.*;
@@ -35,31 +35,31 @@ public class SpringdocAutoConfiguration {
 
     @PostConstruct
     public void postConstruct() {
-        log.debug("[GOYA] |- component [web] SpringdocAutoConfiguration auto configure.");
+        log.debug("[Goya] |- component [web] SpringdocAutoConfiguration auto configure.");
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public IOpenApiServerResolver openApiServerResolver(IPlatformService iPlatformService) {
+    public IOpenApiServerResolver openApiServerResolver(GoyaContext goyaContext) {
         IOpenApiServerResolver resolver = () -> {
             Server server = new Server();
-            server.setUrl(iPlatformService.getUrl());
+            server.setUrl(goyaContext.getUrl());
             return ImmutableList.of(server);
         };
-        log.trace("[GOYA] |- component [web] SpringdocAutoConfiguration |- bean [openApiServerResolver] register.");
+        log.trace("[Goya] |- component [web] SpringdocAutoConfiguration |- bean [openApiServerResolver] register.");
         return resolver;
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public OpenAPI createOpenApi(IOpenApiServerResolver openApiServerResolver, IPlatformService iPlatformService) {
+    public OpenAPI createOpenApi(IOpenApiServerResolver openApiServerResolver, GoyaContext goyaContext) {
         OpenAPI openApi = new OpenAPI()
                 .servers(openApiServerResolver.getServers())
-                .info(new Info().title(iPlatformService.getPlatformInfo().projectName())
+                .info(new Info().title(goyaContext.getPlatformInfo().projectName())
                         .description("Goya Cloud Microservices Architecture")
                         .version("Swagger V3")
-                        .license(new License().url(iPlatformService.getPlatformInfo().website()).name(iPlatformService.getPlatformInfo().projectName())));
-        log.trace("[GOYA] |- component [web] SpringdocAutoConfiguration |- bean [createOpenApi] register.");
+                        .license(new License().url(goyaContext.getPlatformInfo().website()).name(goyaContext.getPlatformInfo().projectName())));
+        log.trace("[Goya] |- component [web] SpringdocAutoConfiguration |- bean [createOpenApi] register.");
         return openApi;
     }
 }

@@ -56,7 +56,7 @@ public class ArithmeticCaptchaRenderer extends AbstractBaseGraphicRenderer {
         try {
             computedResult = String.valueOf(engine.eval(builder.toString().replaceAll("x", "*")));
         } catch (ScriptException e) {
-            log.error("[GOYA] |- Arithmetic png captcha eval expression error！", e);
+            log.error("[Goya] |- Arithmetic png captcha eval expression error！", e);
         }
 
         builder.append("=?");

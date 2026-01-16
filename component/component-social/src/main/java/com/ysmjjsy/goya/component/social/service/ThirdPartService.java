@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.social.service;
 
 import cn.hutool.core.util.EnumUtil;
-import com.ysmjjsy.goya.component.common.strategy.IStrategyExecute;
+import com.ysmjjsy.goya.component.core.stragegy.StrategyExecute;
 import com.ysmjjsy.goya.component.social.cache.ThirdPartCheckCacheManager;
 import com.ysmjjsy.goya.component.social.exception.SocialException;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class ThirdPartService implements IStrategyExecute<String, String> {
+public class ThirdPartService implements StrategyExecute<String, String> {
 
     private final ThirdPartCheckCacheManager thirdPartCheckCacheManager;
 

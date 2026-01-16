@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.web.scan;
 
-import com.ysmjjsy.goya.component.common.enums.NetworkAccessTypeEnum;
+import com.ysmjjsy.goya.component.web.enums.NetworkAccessTypeEnum;
 import com.ysmjjsy.goya.component.web.enums.RequestMethodEnum;
 import lombok.Data;
 

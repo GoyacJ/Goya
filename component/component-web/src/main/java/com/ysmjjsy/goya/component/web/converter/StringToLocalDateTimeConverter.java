@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.web.converter;
 
-import com.ysmjjsy.goya.component.common.definition.constants.IBaseConstants;
+import com.ysmjjsy.goya.component.core.constants.DefaultConst;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.convert.converter.Converter;
 
@@ -17,7 +17,7 @@ import java.time.format.DateTimeParseException;
 @Slf4j
 public class StringToLocalDateTimeConverter implements Converter<String, LocalDateTime> {
     private static final DateTimeFormatter FORMATTER =
-            DateTimeFormatter.ofPattern(IBaseConstants.DATE_FORMAT_YYYY_MM_DD_HH_MM_SS);
+            DateTimeFormatter.ofPattern(DefaultConst.DATE_FORMAT_YYYY_MM_DD_HH_MM_SS);
 
     @Override
     public LocalDateTime convert(String source) {
@@ -27,8 +27,8 @@ public class StringToLocalDateTimeConverter implements Converter<String, LocalDa
         try {
             return LocalDateTime.parse(source.trim(), FORMATTER);
         } catch (DateTimeParseException e) {
-            log.warn("[Goya] |- LocalDateTime 解析失败: {}, 格式应为: {}", source, IBaseConstants.DATE_FORMAT_YYYY_MM_DD_HH_MM_SS);
-            throw new IllegalArgumentException("日期时间格式错误，应为: " + IBaseConstants.DATE_FORMAT_YYYY_MM_DD_HH_MM_SS, e);
+            log.warn("[Goya] |- LocalDateTime 解析失败: {}, 格式应为: {}", source, DefaultConst.DATE_FORMAT_YYYY_MM_DD_HH_MM_SS);
+            throw new IllegalArgumentException("日期时间格式错误，应为: " + DefaultConst.DATE_FORMAT_YYYY_MM_DD_HH_MM_SS, e);
         }
     }
 }

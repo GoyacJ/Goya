@@ -1,9 +1,9 @@
 package com.ysmjjsy.goya.component.social.cache;
 
-import com.ysmjjsy.goya.component.cache.resolver.CacheSpecification;
-import com.ysmjjsy.goya.component.cache.template.AbstractCheckTemplate;
-import com.ysmjjsy.goya.component.cache.ttl.TtlStrategy;
-import com.ysmjjsy.goya.component.common.utils.IdentityUtils;
+import com.ysmjjsy.goya.component.cache.multilevel.resolver.CacheSpecification;
+import com.ysmjjsy.goya.component.cache.multilevel.template.AbstractCheckTemplate;
+import com.ysmjjsy.goya.component.cache.multilevel.ttl.TtlStrategy;
+import com.ysmjjsy.goya.component.core.utils.GoyaIdUtils;
 import com.ysmjjsy.goya.component.social.configuration.properties.SocialProperties;
 import com.ysmjjsy.goya.component.social.constants.ISocialConstants;
 import lombok.Getter;
@@ -28,7 +28,7 @@ public class ThirdPartCheckCacheManager extends AbstractCheckTemplate<String, St
 
     @Override
     protected String nextValue(String key) {
-        return IdentityUtils.fastSimpleUUID();
+        return GoyaIdUtils.fastSimpleUUID();
     }
 
     @Override

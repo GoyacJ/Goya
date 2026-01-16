@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.web.scan;
 
-import com.ysmjjsy.goya.component.common.definition.constants.ISymbolConstants;
-import com.ysmjjsy.goya.component.common.service.IPlatformService;
-import com.ysmjjsy.goya.component.common.utils.MD5Utils;
+import com.ysmjjsy.goya.component.core.constants.SymbolConst;
+import com.ysmjjsy.goya.component.core.utils.GoyaMD5Utils;
+import com.ysmjjsy.goya.component.framework.context.GoyaContext;
 import com.ysmjjsy.goya.component.web.annotation.Scan;
 import com.ysmjjsy.goya.component.web.configuration.properties.WebProperties;
 import com.ysmjjsy.goya.component.web.enums.RequestMethodEnum;
@@ -14,7 +14,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationContext;
-import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.mvc.condition.PathPatternsRequestCondition;
@@ -33,13 +32,13 @@ import java.util.stream.Collectors;
 @Slf4j
 public class WebRestMappingScanner extends AbstractRestMappingScanner {
 
-    private final IPlatformService iPlatformService;
+    private final GoyaContext goyaContext;
 
     public WebRestMappingScanner(WebProperties properties,
                                  ObjectProvider<IRestMappingHandler> iRestMappingHandlerObjectProvider,
-                                 IPlatformService iPlatformService) {
+                                 GoyaContext goyaContext) {
         super(properties, iRestMappingHandlerObjectProvider.getIfAvailable());
-        this.iPlatformService = iPlatformService;
+        this.goyaContext = goyaContext;
     }
 
 
@@ -48,7 +47,7 @@ public class WebRestMappingScanner extends AbstractRestMappingScanner {
 
         // 1. 获取服务ID:该服务ID对于微服务是必需的。
         String serviceId = WebUtils.getApplicationName(applicationContext);
-        log.debug("[GOYA] |- [R1] Application is READY, service[{}] start to scan request mapping!", serviceId);
+        log.debug("[Goya] |- [R1] Application is READY, service[{}] start to scan request mapping!", serviceId);
 
         // 2. 封装并转换为RestMapping
         List<RestMapping> resources = applicationContext.getBeansOfType(RequestMappingHandlerMapping.class)
@@ -92,13 +91,13 @@ public class WebRestMappingScanner extends AbstractRestMappingScanner {
             return null;
         }
 
-        String originUrl = CollectionUtils.isNotEmpty(patternValues) ? String.join(ISymbolConstants.COMMA, patternValues) : "";
+        String originUrl = CollectionUtils.isNotEmpty(patternValues) ? String.join(SymbolConst.COMMA, patternValues) : "";
 
         String urls = getUrls(patternValues);
 
         // 根据serviceId, requestMethods, urls生成的MD5值，作为自定义主键
-        String flag = serviceId + ISymbolConstants.DASH + requestMethods + ISymbolConstants.DASH + urls;
-        String id = MD5Utils.md5(flag);
+        String flag = serviceId + SymbolConst.DASH + requestMethods + SymbolConst.DASH + urls;
+        String id = GoyaMD5Utils.md5(flag);
 
         // 组装对象
         RestMapping restMapping = new RestMapping();
@@ -166,10 +165,10 @@ public class WebRestMappingScanner extends AbstractRestMappingScanner {
 
         String urls;
 
-        if (iPlatformService.hasContextPath()) {
-            urls = patternValues.stream().map(va -> iPlatformService.getContextPath() + va).collect(Collectors.joining(ISymbolConstants.COMMA));
+        if (goyaContext.hasContextPath()) {
+            urls = patternValues.stream().map(va -> goyaContext.getContextPath() + va).collect(Collectors.joining(SymbolConst.COMMA));
         } else {
-            urls = String.join(ISymbolConstants.COMMA, patternValues);
+            urls = String.join(SymbolConst.COMMA, patternValues);
         }
         return urls;
     }
@@ -180,7 +179,6 @@ public class WebRestMappingScanner extends AbstractRestMappingScanner {
      * @param info
      * @return
      */
-    @Nullable
     private Set<String> getPatternValues(RequestMappingInfo info) {
         PathPatternsRequestCondition condition = info.getPathPatternsCondition();
         return (condition != null ? condition.getPatternValues() : null);

@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.bus.stream.handler;
 
 import com.ysmjjsy.goya.component.bus.stream.configuration.properties.BusProperties;
-import com.ysmjjsy.goya.component.cache.redis.service.RedisCacheService;
+import com.ysmjjsy.goya.component.cache.multilevel.service.MultiLevelCacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -51,7 +51,7 @@ import java.util.concurrent.locks.ReentrantLock;
 @RequiredArgsConstructor
 public class CacheIdempotencyHandler implements IIdempotencyHandler {
 
-    private final RedisCacheService redisCacheService;
+    private final MultiLevelCacheService cacheService;
     private final BusProperties busProperties;
 
     /**
@@ -103,14 +103,14 @@ public class CacheIdempotencyHandler implements IIdempotencyHandler {
         Duration ttl = busProperties.idempotency().ttl();
 
         // 检查是否已存在
-        String cached = redisCacheService.get(cacheName, idempotencyKey);
+        String cached = cacheService.get(cacheName, idempotencyKey);
         if (cached != null) {
             log.debug("[Goya] |- component [bus] CacheIdempotencyHandler |- event already processed: [{}]", idempotencyKey);
             return false;
         }
 
         // 设置幂等键
-        redisCacheService.put(cacheName, idempotencyKey, "processed", ttl);
+        cacheService.put(cacheName, idempotencyKey, "processed", ttl);
         log.trace("[Goya] |- component [bus] CacheIdempotencyHandler |- set idempotency key: [{}]", idempotencyKey);
         return true;
     }
@@ -157,7 +157,7 @@ public class CacheIdempotencyHandler implements IIdempotencyHandler {
 
             try {
                 // 在锁保护下检查并设置
-                String cached = redisCacheService.get(cacheName, idempotencyKey);
+                String cached = cacheService.get(cacheName, idempotencyKey);
                 if (cached != null) {
                     log.debug("[Goya] |- component [bus] CacheIdempotencyHandler |- event already processed (atomic): [{}]",
                             idempotencyKey);
@@ -165,7 +165,7 @@ public class CacheIdempotencyHandler implements IIdempotencyHandler {
                 }
 
                 // 设置幂等键
-                redisCacheService.put(cacheName, idempotencyKey, "processed", ttl);
+                cacheService.put(cacheName, idempotencyKey, "processed", ttl);
                 log.trace("[Goya] |- component [bus] CacheIdempotencyHandler |- set idempotency key (atomic): [{}]",
                         idempotencyKey);
                 return true;

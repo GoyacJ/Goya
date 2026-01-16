@@ -20,10 +20,6 @@
             <groupId>com.ysmjjsy.goya</groupId>
             <artifactId>cache-redis</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.ysmjjsy.goya</groupId>
-            <artifactId>cache-multi-level</artifactId>
-        </dependency>
     </dependencies>
 
 </project>

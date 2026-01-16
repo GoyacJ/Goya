@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.web.secure;
 
-import com.ysmjjsy.goya.component.common.definition.exception.CommonException;
+import com.ysmjjsy.goya.component.core.exception.CommonException;
 import com.ysmjjsy.goya.component.web.annotation.Idempotent;
 import com.ysmjjsy.goya.component.web.cache.IdempotentCacheManager;
 import com.ysmjjsy.goya.component.web.interceptor.AbstractHandlerInterceptor;
@@ -60,7 +60,7 @@ public class IdempotentInterceptor extends AbstractHandlerInterceptor {
                     try {
                         configuredDuration = Duration.parse(annotationExpire);
                     } catch (DateTimeParseException e) {
-                        log.warn("[GOYA] |- Idempotent duration value is incorrect, on api [{}].", url);
+                        log.warn("[Goya] |- Idempotent duration value is incorrect, on api [{}].", url);
                     }
                 }
 

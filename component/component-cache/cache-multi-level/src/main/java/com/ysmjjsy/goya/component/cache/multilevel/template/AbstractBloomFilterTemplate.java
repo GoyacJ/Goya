@@ -1,5 +1,6 @@
 package com.ysmjjsy.goya.component.cache.multilevel.template;
 
+import com.ysmjjsy.goya.component.cache.core.support.CacheBloomFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -77,7 +78,7 @@ public abstract class AbstractBloomFilterTemplate<K> extends AbstractCacheTempla
      * 布隆过滤器管理器（可选，用于布隆过滤器功能）
      */
     @Autowired(required = false)
-    protected BloomFilterManager bloomFilterManager;
+    protected CacheBloomFilter cacheBloomFilter;
 
     /**
      * 检查Key是否可能存在
@@ -93,14 +94,14 @@ public abstract class AbstractBloomFilterTemplate<K> extends AbstractCacheTempla
             // null key 允许查询
             return true;
         }
-        if (bloomFilterManager == null) {
+        if (cacheBloomFilter == null) {
             log.debug("BloomFilterManager not injected, returning true for key: {}", key);
             // 未注入布隆过滤器管理器，允许查询
             return true;
         }
 
         String cacheName = getCacheName();
-        return bloomFilterManager.mightContain(cacheName, key);
+        return cacheBloomFilter.mightContain(cacheName, key);
     }
 
     /**
@@ -116,13 +117,13 @@ public abstract class AbstractBloomFilterTemplate<K> extends AbstractCacheTempla
         if (key == null) {
             return CompletableFuture.completedFuture(null);
         }
-        if (bloomFilterManager == null) {
+        if (cacheBloomFilter == null) {
             log.debug("BloomFilterManager not injected, skipping putAsync for key: {}", key);
             return CompletableFuture.completedFuture(null);
         }
 
         String cacheName = getCacheName();
-        return bloomFilterManager.putAsync(cacheName, key);
+        return cacheBloomFilter.putAsync(cacheName, key);
     }
 
     /**
@@ -176,7 +177,7 @@ public abstract class AbstractBloomFilterTemplate<K> extends AbstractCacheTempla
      * @return true 如果可用，false 否则
      */
     public boolean isAvailable() {
-        return bloomFilterManager != null;
+        return cacheBloomFilter != null;
     }
 
     /**

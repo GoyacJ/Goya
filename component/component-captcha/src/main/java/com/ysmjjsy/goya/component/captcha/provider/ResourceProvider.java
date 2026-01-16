@@ -67,7 +67,7 @@ public class ResourceProvider implements InitializingBean {
                 }
                 return images;
             } catch (Exception e) {
-                log.error("[GOYA] |- Analysis the  location [{}] catch io error!", location, e);
+                log.error("[Goya] |- Analysis the  location [{}] catch io error!", location, e);
             }
         }
 
@@ -79,13 +79,13 @@ public class ResourceProvider implements InitializingBean {
         try {
             return GoyaFontUtils.loadFont(resource.getInputStream());
         } catch (CommonException _) {
-            log.warn("[GOYA] |- Can not read font in the resources folder, maybe in docker.");
+            log.warn("[Goya] |- Can not read font in the resources folder, maybe in docker.");
             Font fontInfileSystem = getFontUnderDocker(resource.getFilename());
             if (ObjectUtils.isNotEmpty(fontInfileSystem)) {
                 return fontInfileSystem;
             }
         } catch (IOException e) {
-            log.error("[GOYA] |- Resource object in resources folder catch io error!", e);
+            log.error("[Goya] |- Resource object in resources folder catch io error!", e);
         }
 
         return null;
@@ -99,12 +99,12 @@ public class ResourceProvider implements InitializingBean {
             if (ObjectUtils.isNotEmpty(file) && GoyaFileUtils.exists(file)) {
                 try {
                     Font font = GoyaFontUtils.loadFont(file);
-                    log.debug("[GOYA] |- Read font [{}] under the DOCKER.", font.getFontName());
+                    log.debug("[Goya] |- Read font [{}] under the DOCKER.", font.getFontName());
                     return font;
                 } catch (CommonException e) {
-                    log.error("[GOYA] |- Read font under the DOCKER catch error.");
+                    log.error("[Goya] |- Read font under the DOCKER catch error.");
                 } catch (NullPointerException e) {
-                    log.error("[GOYA] |- Read font under the DOCKER catch null error.");
+                    log.error("[Goya] |- Read font under the DOCKER catch null error.");
                 }
             }
         }
@@ -127,7 +127,7 @@ public class ResourceProvider implements InitializingBean {
                 }
                 return fonts;
             } catch (Exception e) {
-                log.error("[GOYA] |- Analysis the  location [{}] catch io error!", location, e);
+                log.error("[Goya] |- Analysis the  location [{}] catch io error!", location, e);
             }
         }
 
@@ -138,9 +138,9 @@ public class ResourceProvider implements InitializingBean {
     public void afterPropertiesSet() throws Exception {
 
         String systemName = GoyaManagementUtils.getOsName();
-        log.debug("[GOYA] |- Before captcha resource loading, check system. Current system is [{}]", systemName);
+        log.debug("[Goya] |- Before captcha resource loading, check system. Current system is [{}]", systemName);
 
-        log.debug("[GOYA] |- Captcha resource loading is BEGIN！");
+        log.debug("[Goya] |- Captcha resource loading is BEGIN！");
 
         loadImages(jigsawOriginalImages, getCaptchaProperties().jigsaw().originalResource(), CaptchaResourceEnum.JIGSAW_ORIGINAL);
 
@@ -150,7 +150,7 @@ public class ResourceProvider implements InitializingBean {
 
         loadFonts();
 
-        log.debug("[GOYA] |- Jigsaw captcha resource loading is END！");
+        log.debug("[Goya] |- Jigsaw captcha resource loading is END！");
     }
 
     private void loadImages(Map<String, String> container, String location, CaptchaResourceEnum captchaResource) {
@@ -158,7 +158,7 @@ public class ResourceProvider implements InitializingBean {
 
         if (MapUtils.isNotEmpty(resource)) {
             container.putAll(resource);
-            log.debug("[GOYA] |- {} load complete, total number is [{}]", captchaResource.getCode(), resource.size());
+            log.debug("[Goya] |- {} load complete, total number is [{}]", captchaResource.getCode(), resource.size());
             imageIndexes.put(captchaResource.name(), resource.keySet().toArray(new String[0]));
         }
     }
@@ -166,7 +166,7 @@ public class ResourceProvider implements InitializingBean {
     private void loadFonts() {
         if (MapUtils.isEmpty(fonts)) {
             this.fonts = getFonts(FONT_RESOURCE);
-            log.debug("[GOYA] |- Font load complete, total number is [{}]", fonts.size());
+            log.debug("[Goya] |- Font load complete, total number is [{}]", fonts.size());
         }
     }
 

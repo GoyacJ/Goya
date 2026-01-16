@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.web.cache;
 
-import com.ysmjjsy.goya.component.cache.resolver.CacheSpecification;
-import com.ysmjjsy.goya.component.cache.template.AbstractCheckTemplate;
-import com.ysmjjsy.goya.component.cache.ttl.TtlStrategy;
+import com.ysmjjsy.goya.component.cache.multilevel.resolver.CacheSpecification;
+import com.ysmjjsy.goya.component.cache.multilevel.template.AbstractCheckTemplate;
+import com.ysmjjsy.goya.component.cache.multilevel.ttl.TtlStrategy;
 import com.ysmjjsy.goya.component.web.configuration.properties.WebProperties;
 import com.ysmjjsy.goya.component.web.constants.IWebConstants;
 import lombok.Getter;
@@ -40,7 +40,7 @@ public class AccessLimitedCacheManager extends AbstractCheckTemplate<String, Lon
         Long current = System.currentTimeMillis();
         long interval = current - begin;
 
-        log.debug("[GOYA] |- AccessLimited operation interval [{}] millis.", interval);
+        log.debug("[Goya] |- AccessLimited operation interval [{}] millis.", interval);
 
         Duration duration;
         if (!configuredDuration.isZero()) {

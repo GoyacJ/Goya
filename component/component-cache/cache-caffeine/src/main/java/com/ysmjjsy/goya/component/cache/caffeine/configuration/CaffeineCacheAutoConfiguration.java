@@ -70,8 +70,8 @@ public class CaffeineCacheAutoConfiguration {
 
     @Bean
     public CaffeineCacheService caffeineCacheService(CaffeineCacheManager caffeineCacheManager) {
-        CaffeineCacheService localEventPublisher = new CaffeineCacheService(caffeineCacheManager);
+        CaffeineCacheService cacheService = new CaffeineCacheService(caffeineCacheManager);
         log.trace("[Goya] |- framework [framework] CaffeineCacheAutoConfiguration |- bean [caffeineCacheService] register.");
-        return localEventPublisher;
+        return cacheService;
     }
 }

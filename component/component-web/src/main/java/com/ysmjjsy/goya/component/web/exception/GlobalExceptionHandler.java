@@ -1,10 +1,11 @@
 package com.ysmjjsy.goya.component.web.exception;
 
-import com.ysmjjsy.goya.component.common.code.IResponseCode;
-import com.ysmjjsy.goya.component.common.code.ResponseCodeEnum;
-import com.ysmjjsy.goya.component.common.definition.exception.AbstractRuntimeException;
-import com.ysmjjsy.goya.component.common.definition.exception.IException;
-import com.ysmjjsy.goya.component.common.definition.exception.SystemException;
+import com.ysmjjsy.goya.component.core.exception.AbstractRuntimeException;
+import com.ysmjjsy.goya.component.core.exception.AbstractSystemException;
+import com.ysmjjsy.goya.component.core.exception.IException;
+import com.ysmjjsy.goya.component.core.exception.error.ErrorCode;
+import com.ysmjjsy.goya.component.framework.exception.code.HttpErrorCode;
+import com.ysmjjsy.goya.component.framework.exception.code.HttpErrorCodeEnum;
 import com.ysmjjsy.goya.component.web.response.ErrorDetail;
 import com.ysmjjsy.goya.component.web.response.Response;
 import jakarta.servlet.http.HttpServletRequest;
@@ -42,10 +43,10 @@ import java.util.stream.Collectors;
  * </ol>
  *
  * @author goya
- * @since 2025/12/20 22:05
  * @see IException
  * @see Response
  * @see ErrorDetail
+ * @since 2025/12/20 22:05
  */
 @Slf4j
 @RestControllerAdvice
@@ -62,7 +63,7 @@ public class GlobalExceptionHandler {
             Exception ex,
             HttpServletRequest request) {
         log.warn("[HTTP Exception] [{}] -> {}", request.getRequestURI(), ex.getMessage());
-        return buildErrorResponse(ex, request, ResponseCodeEnum.BAD_REQUEST);
+        return buildErrorResponse(ex, request, HttpErrorCodeEnum.BAD_REQUEST);
     }
 
     /**
@@ -118,12 +119,12 @@ public class GlobalExceptionHandler {
         log.warn("[参数校验失败] [{}] -> {}", request.getRequestURI(), errorMessage);
 
         Response.Builder<Void> builder = Response.<Void>builder()
-                .code(ResponseCodeEnum.PARAMS_VALIDATION_ERROR)
+                .code(HttpErrorCodeEnum.PARAMS_VALIDATION_ERROR)
                 .path(request.getRequestURI());
 
         // 如果有字段错误，添加第一个字段的错误详情
         if (!fieldErrors.isEmpty()) {
-            FieldError firstError = fieldErrors.get(0);
+            FieldError firstError = fieldErrors.getFirst();
             builder.error(ErrorDetail.ofField(firstError.getField(),
                     new IllegalArgumentException(errorMessage)));
         }
@@ -152,7 +153,7 @@ public class GlobalExceptionHandler {
         }
 
         return Response.<Void>builder()
-                .code(ResponseCodeEnum.RESOURCE_NOT_FOUNT_ERROR)
+                .code(HttpErrorCodeEnum.RESOURCE_NOT_FOUNT_ERROR)
                 .path(requestPath)
                 .build();
     }
@@ -165,18 +166,18 @@ public class GlobalExceptionHandler {
             AbstractRuntimeException ex,
             HttpServletRequest request) {
         log.warn("[业务异常] [{}] -> {}", request.getRequestURI(), ex.getMessage());
-        return buildErrorResponse(ex, request, ex.getCode());
+        return buildErrorResponse(ex, request, ex.getErrorCode());
     }
 
     /**
      * 处理系统异常
      */
-    @ExceptionHandler(SystemException.class)
+    @ExceptionHandler(AbstractSystemException.class)
     public Response<Void> handleSystemException(
-            SystemException ex,
+            AbstractSystemException ex,
             HttpServletRequest request) {
         log.warn("[系统异常] [{}] -> {}", request.getRequestURI(), ex.getMessage());
-        return buildErrorResponse(ex, request, ex.getCode());
+        return buildErrorResponse(ex, request, ex.getErrorCode());
     }
 
     /**
@@ -189,7 +190,7 @@ public class GlobalExceptionHandler {
             Throwable ex,
             HttpServletRequest request) {
         log.error("[未知异常] [{}]", request.getRequestURI(), ex);
-        return buildErrorResponse(ex, request, ResponseCodeEnum.INTERNAL_SERVER_ERROR);
+        return buildErrorResponse(ex, request, HttpErrorCodeEnum.INTERNAL_SERVER_ERROR);
     }
 
     /**
@@ -205,18 +206,18 @@ public class GlobalExceptionHandler {
     private static Response<Void> buildErrorResponse(
             Throwable ex,
             HttpServletRequest request,
-            IResponseCode code) {
+            ErrorCode code) {
         // 如果异常实现了 IException，优先使用异常中的 code
-        IResponseCode responseCode = (ex instanceof IException ie)
-                ? ie.getCode()
+        ErrorCode responseCode = (ex instanceof IException ie)
+                ? ie.getErrorCode()
                 : code;
 
         if (responseCode == null) {
-            responseCode = ResponseCodeEnum.INTERNAL_SERVER_ERROR;
+            responseCode = HttpErrorCodeEnum.INTERNAL_SERVER_ERROR;
         }
 
         Response.Builder<Void> builder = Response.<Void>builder()
-                .code(responseCode)
+                .code((HttpErrorCode) responseCode)
                 .path(request.getRequestURI())
                 .error(ErrorDetail.withStackTrace(ex));
 

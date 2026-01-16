@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.web.configuration;
 
-import com.ysmjjsy.goya.component.common.definition.constants.IBaseConstants;
-import com.ysmjjsy.goya.component.common.service.IPlatformService;
+import com.ysmjjsy.goya.component.core.constants.DefaultConst;
+import com.ysmjjsy.goya.component.framework.context.GoyaContext;
 import com.ysmjjsy.goya.component.web.configuration.properties.WebProperties;
 import com.ysmjjsy.goya.component.web.constants.IWebConstants;
 import com.ysmjjsy.goya.component.web.converter.*;
@@ -56,9 +56,9 @@ public class WebAutoConfiguration implements WebMvcConfigurer {
     public void addFormatters(@NonNull FormatterRegistry registry) {
         // ========== 日期时间格式化器 ==========
         DateTimeFormatterRegistrar registrar = new DateTimeFormatterRegistrar();
-        registrar.setDateTimeFormatter(DateTimeFormatter.ofPattern(IBaseConstants.DATE_FORMAT_YYYY_MM_DD_HH_MM_SS));
-        registrar.setDateFormatter(DateTimeFormatter.ofPattern(IBaseConstants.DATE_FORMAT_YYYY_MM_DD));
-        registrar.setTimeFormatter(DateTimeFormatter.ofPattern(IBaseConstants.DATE_FORMAT_HHMMSS));
+        registrar.setDateTimeFormatter(DateTimeFormatter.ofPattern(DefaultConst.DATE_FORMAT_YYYY_MM_DD_HH_MM_SS));
+        registrar.setDateFormatter(DateTimeFormatter.ofPattern(DefaultConst.DATE_FORMAT_YYYY_MM_DD));
+        registrar.setTimeFormatter(DateTimeFormatter.ofPattern(DefaultConst.DATE_FORMAT_HHMMSS));
         registrar.registerFormatters(registry);
 
         // ========== 日期时间转换器（补充）==========
@@ -92,7 +92,7 @@ public class WebAutoConfiguration implements WebMvcConfigurer {
     @ConditionalOnMissingBean
     public ThymeleafTemplateHandler thymeleafTemplateHandler(SpringTemplateEngine springTemplateEngine) {
         ThymeleafTemplateHandler handler = new ThymeleafTemplateHandler(springTemplateEngine);
-        log.trace("[GOYA] |- component [web] WebAutoConfiguration |- bean [thymeleafTemplateHandler] register.");
+        log.trace("[Goya] |- component [web] WebAutoConfiguration |- bean [thymeleafTemplateHandler] register.");
         return handler;
     }
 
@@ -100,9 +100,9 @@ public class WebAutoConfiguration implements WebMvcConfigurer {
     @ConditionalOnMissingBean
     public WebRestMappingScanner restMappingScanner(WebProperties properties,
                                                     ObjectProvider<IRestMappingHandler> handlerObjectProvider,
-                                                    IPlatformService iPlatformService) {
-        WebRestMappingScanner scanner = new WebRestMappingScanner(properties, handlerObjectProvider, iPlatformService);
-        log.trace("[GOYA] |- component [web] WebAutoConfiguration |- bean [restMappingScanner] register.");
+                                                    GoyaContext goyaContext) {
+        WebRestMappingScanner scanner = new WebRestMappingScanner(properties, handlerObjectProvider, goyaContext);
+        log.trace("[Goya] |- component [web] WebAutoConfiguration |- bean [restMappingScanner] register.");
         return scanner;
     }
 

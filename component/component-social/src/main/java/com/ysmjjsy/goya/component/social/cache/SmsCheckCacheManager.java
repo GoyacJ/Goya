@@ -1,9 +1,9 @@
 package com.ysmjjsy.goya.component.social.cache;
 
-import com.ysmjjsy.goya.component.cache.resolver.CacheSpecification;
-import com.ysmjjsy.goya.component.cache.template.AbstractCheckTemplate;
-import com.ysmjjsy.goya.component.cache.ttl.TtlStrategy;
-import com.ysmjjsy.goya.component.common.utils.RandomUtils;
+import com.ysmjjsy.goya.component.cache.multilevel.resolver.CacheSpecification;
+import com.ysmjjsy.goya.component.cache.multilevel.template.AbstractCheckTemplate;
+import com.ysmjjsy.goya.component.cache.multilevel.ttl.TtlStrategy;
+import com.ysmjjsy.goya.component.core.utils.GoyaRandomUtils;
 import com.ysmjjsy.goya.component.social.configuration.properties.SocialProperties;
 import com.ysmjjsy.goya.component.social.constants.ISocialConstants;
 import lombok.Getter;
@@ -28,7 +28,7 @@ public class SmsCheckCacheManager extends AbstractCheckTemplate<String, String> 
         if (Boolean.TRUE.equals(sms.sandbox())) {
             return sms.testCode();
         } else {
-            return RandomUtils.randomNumberString(sms.length());
+            return GoyaRandomUtils.randomNumberString(sms.length());
         }
     }
 

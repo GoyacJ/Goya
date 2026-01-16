@@ -15,7 +15,11 @@
     <dependencies>
         <dependency>
             <groupId>com.ysmjjsy.goya</groupId>
-            <artifactId>component-framework</artifactId>
+            <artifactId>cache-multi-level</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.ysmjjsy.goya</groupId>
+            <artifactId>bus-stream</artifactId>
         </dependency>
 
         <dependency>

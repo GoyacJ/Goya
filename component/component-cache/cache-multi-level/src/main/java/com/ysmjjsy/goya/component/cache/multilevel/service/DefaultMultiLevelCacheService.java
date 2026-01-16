@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 /**
  * 缓存服务实现
  *
- * <p>实现 {@link ICacheService} 接口，提供便捷的缓存操作方法。
+ * <p>实现 {@link MultiLevelCacheService} 接口，提供便捷的缓存操作方法。
  *
  * <p><b>职责：</b>
  * <ul>
@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
  * @since 2025/12/26 15:05
  */
 @Slf4j
-public class DefaultCacheService implements ICacheService {
+public class DefaultMultiLevelCacheService implements MultiLevelCacheService {
 
     /**
      * Spring Cache Manager
@@ -54,10 +54,10 @@ public class DefaultCacheService implements ICacheService {
      * 构造函数
      *
      * @param cacheManager Spring Cache Manager（实际是 GoyaCacheManager）
-     * @param metrics 监控指标（可选，如果为 null 则不记录统计信息）
+     * @param metrics      监控指标（可选，如果为 null 则不记录统计信息）
      * @throws IllegalArgumentException 如果 cacheManager 为 null
      */
-    public DefaultCacheService(CacheManager cacheManager, CacheMetrics metrics) {
+    public DefaultMultiLevelCacheService(CacheManager cacheManager, CacheMetrics metrics) {
         if (cacheManager == null) {
             throw new IllegalArgumentException("CacheManager cannot be null");
         }
@@ -137,6 +137,23 @@ public class DefaultCacheService implements ICacheService {
 
     @Override
     @SuppressWarnings("unchecked")
+    public <K> void delete(String cacheName, K key) {
+        validateCacheNameAndKey(cacheName, key);
+        Cache cache = cacheManager.getCache(cacheName);
+        if (cache == null) {
+            log.warn("Cache not found: cacheName={}", cacheName);
+            return;
+        }
+        if (cache instanceof GoyaCache) {
+            GoyaCache<K, ?> goyaCache = (GoyaCache<K, ?>) cache;
+            goyaCache.evictTyped(key);
+            return;
+        }
+        cache.evict(key);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
     public <K, V> void put(String cacheName, K key, V value, Duration ttl) {
         validateCacheNameAndKey(cacheName, key);
         if (ttl == null || ttl.isNegative() || ttl.isZero()) {
@@ -156,23 +173,6 @@ public class DefaultCacheService implements ICacheService {
         // Spring Cache 的 Cache 接口没有带 TTL 的 put 方法，所以只能使用默认 TTL
         log.warn("Cache implementation does not support custom TTL, using default TTL: cacheName={}", cacheName);
         cache.put(key, value);
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public <K> void evict(String cacheName, K key) {
-        validateCacheNameAndKey(cacheName, key);
-        Cache cache = cacheManager.getCache(cacheName);
-        if (cache == null) {
-            log.warn("Cache not found: cacheName={}", cacheName);
-            return;
-        }
-        if (cache instanceof GoyaCache) {
-            GoyaCache<K, ?> goyaCache = (GoyaCache<K, ?>) cache;
-            goyaCache.evictTyped(key);
-            return;
-        }
-        cache.evict(key);
     }
 
     @Override
@@ -307,7 +307,7 @@ public class DefaultCacheService implements ICacheService {
             if (key == null) {
                 continue;
             }
-            evict(cacheName, key);
+            this.delete(cacheName, key);
         }
     }
 
@@ -408,7 +408,7 @@ public class DefaultCacheService implements ICacheService {
      * 验证 cacheName 和 key
      *
      * @param cacheName 缓存名称
-     * @param key 缓存键
+     * @param key       缓存键
      * @throws IllegalArgumentException 如果参数为 null
      */
     private void validateCacheNameAndKey(String cacheName, Object key) {

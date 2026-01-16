@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.social.service;
 
-import com.ysmjjsy.goya.component.common.strategy.StrategyChoose;
+import com.ysmjjsy.goya.component.framework.strategy.StrategyChoose;
 import com.ysmjjsy.goya.component.social.enums.SocialTypeEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

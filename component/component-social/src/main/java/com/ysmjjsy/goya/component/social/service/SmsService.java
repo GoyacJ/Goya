@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.social.service;
 
-import com.ysmjjsy.goya.component.common.definition.constants.IBaseConstants;
-import com.ysmjjsy.goya.component.common.strategy.IStrategyExecute;
+import com.ysmjjsy.goya.component.core.constants.DefaultConst;
+import com.ysmjjsy.goya.component.core.stragegy.StrategyExecute;
 import com.ysmjjsy.goya.component.social.cache.SmsCheckCacheManager;
 import com.ysmjjsy.goya.component.social.enums.SocialTypeEnum;
 import com.ysmjjsy.goya.component.social.exception.SocialException;
@@ -22,7 +22,7 @@ import java.util.LinkedHashMap;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class SmsService implements IStrategyExecute<String, Boolean> {
+public class SmsService implements StrategyExecute<String, Boolean> {
 
     private final SmsCheckCacheManager smsCheckCacheManager;
 
@@ -55,7 +55,7 @@ public class SmsService implements IStrategyExecute<String, Boolean> {
         } else {
             SmsBlend smsBlend = SmsFactory.getSmsBlend();
             LinkedHashMap<String, String> message = new LinkedHashMap<>();
-            message.put(IBaseConstants.STR_CODE, code);
+            message.put(DefaultConst.STR_CODE, code);
             SmsResponse smsResponse = smsBlend.sendMessage(phoneNumber, smsCheckCacheManager.getSms().templateId(), message);
             log.debug("[Goya] |- component [social] SmsService |- handle sms send response [{}]", smsResponse);
             result = smsResponse.isSuccess();

@@ -19,14 +19,14 @@ public class TenantAutoConfiguration {
 
     @PostConstruct
     public void init() {
-        log.debug("[GOYA] |- component [web] TenantAutoConfiguration auto configure.");
+        log.debug("[Goya] |- component [web] TenantAutoConfiguration auto configure.");
     }
 
     @Bean
     @ConditionalOnMissingBean
     public MultiTenantInterceptor tenantInterceptor() {
         MultiTenantInterceptor multiTenantInterceptor = new MultiTenantInterceptor();
-        log.trace("[GOYA] |- Bean [Idempotent Interceptor] Configure.");
+        log.trace("[Goya] |- Bean [Idempotent Interceptor] Configure.");
         return multiTenantInterceptor;
     }
 }

@@ -1,9 +1,9 @@
 package com.ysmjjsy.goya.component.web.advice;
 
-import com.ysmjjsy.goya.component.common.definition.exception.CommonException;
-import com.ysmjjsy.goya.component.common.utils.JsonUtils;
+import com.ysmjjsy.goya.component.cache.multilevel.crypto.CryptoProcessor;
+import com.ysmjjsy.goya.component.core.exception.CommonException;
+import com.ysmjjsy.goya.component.framework.json.GoyaJson;
 import com.ysmjjsy.goya.component.web.annotation.Crypto;
-import com.ysmjjsy.goya.component.cache.crypto.CryptoProcessor;
 import com.ysmjjsy.goya.component.web.utils.WebUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +29,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 @RequiredArgsConstructor
 public class EncryptResponseBodyAdvice implements ResponseBodyAdvice<Object> {
 
-    private final CryptoProcessor httpCryptoProcessor;
+    private final CryptoProcessor cryptoProcessor;
 
     @Override
     public boolean supports(MethodParameter methodParameter, @NonNull Class<? extends HttpMessageConverter<?>> converterType) {
@@ -39,7 +39,7 @@ public class EncryptResponseBodyAdvice implements ResponseBodyAdvice<Object> {
 
         boolean isSupports = ObjectUtils.isNotEmpty(crypto) && crypto.responseEncrypt();
 
-        log.trace("[GOYA] |- Is EncryptResponseBodyAdvice supports method [{}] ? Status is [{}].", methodName, isSupports);
+        log.trace("[Goya] |- Is EncryptResponseBodyAdvice supports method [{}] ? Status is [{}].", methodName, isSupports);
         return isSupports;
     }
 
@@ -50,26 +50,26 @@ public class EncryptResponseBodyAdvice implements ResponseBodyAdvice<Object> {
         String requestId = WebUtils.getRequestId(request);
         if (WebUtils.isCryptoEnabled(request, requestId)) {
 
-            log.info("[GOYA] |- EncryptResponseBodyAdvice begin encrypt data.");
+            log.info("[Goya] |- EncryptResponseBodyAdvice begin encrypt data.");
 
             String methodName = methodParameter.getMethod().getName();
             String className = methodParameter.getDeclaringClass().getName();
 
             try {
-                String bodyString = JsonUtils.getJsonMapper().writeValueAsString(body);
-                String result = httpCryptoProcessor.encrypt(requestId, bodyString);
+                String bodyString = GoyaJson.getJsonMapper().writeValueAsString(body);
+                String result = cryptoProcessor.encrypt(requestId, bodyString);
                 if (StringUtils.isNotBlank(result)) {
-                    log.debug("[GOYA] |- Encrypt response body for rest method [{}] in [{}] finished.", methodName, className);
+                    log.debug("[Goya] |- Encrypt response body for rest method [{}] in [{}] finished.", methodName, className);
                     return result;
                 } else {
                     return body;
                 }
             } catch (CommonException e) {
-                log.error("[GOYA] |- Session is expired for encrypt response body for rest method [{}] in [{}], skip encrypt operation.", methodName, className, e);
+                log.error("[Goya] |- Session is expired for encrypt response body for rest method [{}] in [{}], skip encrypt operation.", methodName, className, e);
                 return body;
             }
         } else {
-            log.warn("[GOYA] |- Cannot find Goya Cloud custom session header. Use interface crypto function need add X-Goya-Request-ids to request header.");
+            log.warn("[Goya] |- Cannot find Goya Cloud custom session header. Use interface crypto function need add X-Goya-Request-ids to request header.");
             return body;
         }
     }

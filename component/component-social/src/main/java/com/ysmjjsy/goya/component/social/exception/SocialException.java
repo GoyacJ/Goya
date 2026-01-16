@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.social.exception;
 
-import com.ysmjjsy.goya.component.common.code.IResponseCode;
-import com.ysmjjsy.goya.component.common.code.ResponseCodeEnum;
-import com.ysmjjsy.goya.component.common.definition.exception.AbstractRuntimeException;
+import com.ysmjjsy.goya.component.core.exception.CommonException;
+import com.ysmjjsy.goya.component.core.exception.error.ErrorCode;
+import com.ysmjjsy.goya.component.framework.exception.code.HttpErrorCodeEnum;
 
 import java.io.Serial;
 
@@ -12,44 +12,40 @@ import java.io.Serial;
  * @author goya
  * @since 2026/1/1 23:18
  */
-public class SocialException extends AbstractRuntimeException {
+public class SocialException extends CommonException {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
     public SocialException() {
-        super(ResponseCodeEnum.SOCIAL_ERROR);
+        this(HttpErrorCodeEnum.SOCIAL_ERROR);
     }
 
-    public SocialException(IResponseCode code) {
-        super(code);
+    public SocialException(ErrorCode errorCode) {
+        super(errorCode);
     }
 
     public SocialException(String message) {
-        super(message);
+        this(HttpErrorCodeEnum.SOCIAL_ERROR, message);
     }
 
     public SocialException(Throwable cause) {
-        super(cause);
-    }
-
-    public SocialException(IResponseCode code, String message) {
-        super(code, message);
-    }
-
-    public SocialException(IResponseCode code, Throwable cause) {
-        super(code, cause);
+        this(HttpErrorCodeEnum.SOCIAL_ERROR, cause);
     }
 
     public SocialException(String message, Throwable cause) {
-        super(message, cause);
+        this(HttpErrorCodeEnum.SOCIAL_ERROR, message, cause);
     }
 
-    public SocialException(IResponseCode code, String message, Throwable cause) {
-        super(code, message, cause);
+    public SocialException(ErrorCode errorCode, String message) {
+        super(errorCode, message);
     }
 
-    public SocialException(IResponseCode code, String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(code, message, cause, enableSuppression, writableStackTrace);
+    public SocialException(ErrorCode errorCode, Throwable cause) {
+        super(errorCode, cause);
+    }
+
+    public SocialException(ErrorCode errorCode, String message, Throwable cause) {
+        super(errorCode, message, cause);
     }
 }

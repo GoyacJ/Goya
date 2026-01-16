@@ -1,5 +1,6 @@
 package com.ysmjjsy.goya.component.cache.multilevel.template;
 
+import com.ysmjjsy.goya.component.cache.core.exception.CacheException;
 import com.ysmjjsy.goya.component.cache.multilevel.core.GoyaCache;
 import com.ysmjjsy.goya.component.cache.multilevel.enums.CacheLevelEnum;
 import com.ysmjjsy.goya.component.cache.multilevel.enums.ConsistencyLevelEnum;
@@ -370,7 +371,7 @@ public abstract class AbstractCacheTemplate<K, V> implements InitializingBean, D
         try {
             return getCache().get(key, loader);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to get or load cache value", e);
+            throw new CacheException("Failed to get or load cache value", e);
         }
     }
 

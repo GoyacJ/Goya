@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.web.definition;
 
-import com.ysmjjsy.goya.component.common.definition.pojo.PageVO;
+import com.ysmjjsy.goya.component.framework.pojo.PageVO;
 import com.ysmjjsy.goya.component.web.response.Response;
 
 import java.io.Serializable;

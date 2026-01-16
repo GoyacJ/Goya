@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.web.secure;
 
-import com.ysmjjsy.goya.component.common.definition.exception.CommonException;
+import com.ysmjjsy.goya.component.core.exception.CommonException;
 import com.ysmjjsy.goya.component.web.annotation.AccessLimited;
 import com.ysmjjsy.goya.component.web.cache.AccessLimitedCacheManager;
 import com.ysmjjsy.goya.component.web.interceptor.AbstractHandlerInterceptor;
@@ -32,7 +32,7 @@ public class AccessLimitedInterceptor extends AbstractHandlerInterceptor {
     @Override
     public boolean preHandle(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Object handler) throws Exception {
 
-        log.trace("[GOYA] |- AccessLimitedInterceptor preHandle postProcess.");
+        log.trace("[Goya] |- AccessLimitedInterceptor preHandle postProcess.");
 
         if (!(handler instanceof HandlerMethod handlerMethod)) {
             return true;
@@ -66,7 +66,7 @@ public class AccessLimitedInterceptor extends AbstractHandlerInterceptor {
                 try {
                     expireDuration = Duration.parse(annotationDuration);
                 } catch (DateTimeParseException e) {
-                    log.warn("[GOYA] |- AccessLimited duration value is incorrect, on api [{}].", url);
+                    log.warn("[Goya] |- AccessLimited duration value is incorrect, on api [{}].", url);
                 }
             }
 
@@ -85,7 +85,7 @@ public class AccessLimitedInterceptor extends AbstractHandlerInterceptor {
                 }
                 return true;
             } else {
-                log.debug("[GOYA] |- AccessLimited request [{}] times.", times);
+                log.debug("[Goya] |- AccessLimited request [{}] times.", times);
 
                 if (times <= maxTimes) {
                     Duration newDuration = accessLimitedCacheManager.calculateRemainingTime(expireDuration, expireKey);

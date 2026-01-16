@@ -1,9 +1,9 @@
 package com.ysmjjsy.goya.component.web.cache;
 
-import com.ysmjjsy.goya.component.cache.resolver.CacheSpecification;
-import com.ysmjjsy.goya.component.cache.template.AbstractCheckTemplate;
-import com.ysmjjsy.goya.component.cache.ttl.TtlStrategy;
-import com.ysmjjsy.goya.component.common.utils.IdentityUtils;
+import com.ysmjjsy.goya.component.cache.multilevel.resolver.CacheSpecification;
+import com.ysmjjsy.goya.component.cache.multilevel.template.AbstractCheckTemplate;
+import com.ysmjjsy.goya.component.cache.multilevel.ttl.TtlStrategy;
+import com.ysmjjsy.goya.component.core.utils.GoyaIdUtils;
 import com.ysmjjsy.goya.component.web.configuration.properties.WebProperties;
 import com.ysmjjsy.goya.component.web.constants.IWebConstants;
 import lombok.Getter;
@@ -24,7 +24,7 @@ public class IdempotentCacheManager extends AbstractCheckTemplate<String, String
 
     @Override
     public String nextValue(String key) {
-        return IdentityUtils.fastSimpleUUID();
+        return GoyaIdUtils.fastSimpleUUID();
     }
 
     @Override

@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.social.enums;
 
-import com.ysmjjsy.goya.component.common.definition.enums.IEnum;
+import com.ysmjjsy.goya.component.core.enums.IEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

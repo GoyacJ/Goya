@@ -1,11 +1,16 @@
 package com.ysmjjsy.goya.component.web.utils;
 
 import com.google.common.collect.Maps;
-import com.ysmjjsy.goya.component.common.definition.constants.IBaseConstants;
-import com.ysmjjsy.goya.component.common.definition.constants.ISymbolConstants;
-import com.ysmjjsy.goya.component.common.definition.exception.CommonException;
-import com.ysmjjsy.goya.component.common.enums.ProtocolEnum;
-import com.ysmjjsy.goya.component.common.utils.*;
+import com.ysmjjsy.goya.component.core.constants.DefaultConst;
+import com.ysmjjsy.goya.component.core.constants.SymbolConst;
+import com.ysmjjsy.goya.component.core.exception.CommonException;
+import com.ysmjjsy.goya.component.core.utils.GoyaConvertUtils;
+import com.ysmjjsy.goya.component.core.utils.GoyaNetUtils;
+import com.ysmjjsy.goya.component.core.utils.GoyaStringUtils;
+import com.ysmjjsy.goya.component.framework.constants.PropertyConst;
+import com.ysmjjsy.goya.component.framework.context.SpringContext;
+import com.ysmjjsy.goya.component.framework.enums.ProtocolEnum;
+import com.ysmjjsy.goya.component.framework.json.GoyaJson;
 import com.ysmjjsy.goya.component.web.constants.IWebConstants;
 import com.ysmjjsy.goya.component.web.response.Response;
 import jakarta.servlet.ServletRequest;
@@ -235,8 +240,8 @@ public class WebUtils {
      */
     public static String getBearerToken(HttpServletRequest request) {
         String header = getAuthorization(request);
-        if (StringUtils.isNotBlank(header) && Strings.CS.startsWith(header, IBaseConstants.BEARER_TOKEN)) {
-            return Strings.CS.remove(header, IBaseConstants.BEARER_TOKEN);
+        if (StringUtils.isNotBlank(header) && Strings.CS.startsWith(header, DefaultConst.BEARER_TOKEN)) {
+            return Strings.CS.remove(header, DefaultConst.BEARER_TOKEN);
         } else {
             return null;
         }
@@ -278,7 +283,7 @@ public class WebUtils {
             try {
                 return InetAddress.getLocalHost().getHostAddress();
             } catch (UnknownHostException e) {
-                return IBaseConstants.LOCAL_HOST_IP;
+                return DefaultConst.LOCAL_HOST_IP;
             }
         } else {
             return ip;
@@ -352,8 +357,8 @@ public class WebUtils {
      */
     private static Map<String, String> rawCookieToMap(String cookie) {
         if (org.apache.commons.lang3.StringUtils.isNotBlank(cookie)) {
-            return Stream.of(cookie.split(ISymbolConstants.SEMICOLON_AND_SPACE))
-                    .map(pair -> pair.split(ISymbolConstants.EQUAL))
+            return Stream.of(cookie.split(SymbolConst.SEMICOLON_AND_SPACE))
+                    .map(pair -> pair.split(SymbolConst.EQUAL))
                     .collect(Collectors.toMap(kv -> kv[0], kv -> kv[1]));
         } else {
             return Collections.emptyMap();
@@ -481,7 +486,7 @@ public class WebUtils {
             response.getWriter().flush();
             response.getWriter().close();
         } catch (IOException e) {
-            log.error("[GOYA] |- Render response error!");
+            log.error("[Goya] |- Render response error!");
         }
     }
 
@@ -504,7 +509,7 @@ public class WebUtils {
      * @param object     待写入的内容
      */
     public static void renderJson(HttpServletResponse response, int statusCode, Object object) {
-        renderJson(response, statusCode, JsonUtils.toJson(object));
+        renderJson(response, statusCode, GoyaJson.toJson(object));
     }
 
     /**
@@ -531,11 +536,11 @@ public class WebUtils {
     /* ---------- Spring 家族配置属性 ---------- */
 
     public static String getApplicationName(ApplicationContext applicationContext) {
-        return PropertyResolverUtils.getProperty(applicationContext.getEnvironment(), IBaseConstants.PROPERTY_SPRING_APPLICATION_NAME);
+        return SpringContext.getProperty(applicationContext.getEnvironment(), PropertyConst.PROPERTY_SPRING_APPLICATION_NAME);
     }
 
     public static String getContextPath(ApplicationContext applicationContext) {
-        return PropertyResolverUtils.getProperty(applicationContext.getEnvironment(), IBaseConstants.PROPERTY_SERVER_CONTEXT_PATH);
+        return SpringContext.getProperty(applicationContext.getEnvironment(), PropertyConst.PROPERTY_SERVER_CONTEXT_PATH);
     }
 
     /**
@@ -556,7 +561,7 @@ public class WebUtils {
      * @return 参数值或默认值
      */
     public static String getParameter(String name, String defaultValue) {
-        return ConvertUtils.toStr(getRequest().getParameter(name), defaultValue);
+        return GoyaConvertUtils.toStr(getRequest().getParameter(name), defaultValue);
     }
 
     /**
@@ -566,7 +571,7 @@ public class WebUtils {
      * @return 参数值
      */
     public static Integer getParameterToInt(String name) {
-        return ConvertUtils.toInt(getRequest().getParameter(name));
+        return GoyaConvertUtils.toInt(getRequest().getParameter(name));
     }
 
     /**
@@ -577,7 +582,7 @@ public class WebUtils {
      * @return 参数值或默认值
      */
     public static Integer getParameterToInt(String name, Integer defaultValue) {
-        return ConvertUtils.toInt(getRequest().getParameter(name), defaultValue);
+        return GoyaConvertUtils.toInt(getRequest().getParameter(name), defaultValue);
     }
 
     /**
@@ -587,7 +592,7 @@ public class WebUtils {
      * @return 参数值
      */
     public static Boolean getParameterToBool(String name) {
-        return ConvertUtils.toBool(getRequest().getParameter(name));
+        return GoyaConvertUtils.toBool(getRequest().getParameter(name));
     }
 
     /**
@@ -598,7 +603,7 @@ public class WebUtils {
      * @return 参数值或默认值
      */
     public static Boolean getParameterToBool(String name, Boolean defaultValue) {
-        return ConvertUtils.toBool(getRequest().getParameter(name), defaultValue);
+        return GoyaConvertUtils.toBool(getRequest().getParameter(name), defaultValue);
     }
 
     /**
@@ -621,7 +626,7 @@ public class WebUtils {
     public static Map<String, String> getParamMap(ServletRequest request) {
         Map<String, String> params = Maps.newHashMap();
         for (Map.Entry<String, String[]> entry : getParams(request).entrySet()) {
-            params.put(entry.getKey(), CommonUtils.joinComma(entry.getValue()));
+            params.put(entry.getKey(), GoyaStringUtils.joinComma(entry.getValue()));
         }
         return params;
     }
@@ -786,52 +791,52 @@ public class WebUtils {
 
         // 按优先级检查各种请求头（IP 地址不需要 URL 解码，直接获取原始值）
         String ip = request.getHeader("X-Forwarded-For");
-        if (NetUtils.isValidIp(ip)) {
+        if (GoyaNetUtils.isValidIp(ip)) {
             // X-Forwarded-For 可能包含多个 IP，格式：client, proxy1, proxy2
             // 取第一个非 unknown 的 IP
             String[] ips = ip.split(",");
             for (String ipAddr : ips) {
                 ipAddr = ipAddr.trim();
-                if (NetUtils.isValidIp(ipAddr) && !"unknown".equalsIgnoreCase(ipAddr)) {
+                if (GoyaNetUtils.isValidIp(ipAddr) && !"unknown".equalsIgnoreCase(ipAddr)) {
                     return ipAddr;
                 }
             }
         }
 
         ip = request.getHeader("X-Real-IP");
-        if (NetUtils.isValidIp(ip)) {
+        if (GoyaNetUtils.isValidIp(ip)) {
             return ip;
         }
 
         ip = request.getHeader("Proxy-Client-IP");
-        if (NetUtils.isValidIp(ip)) {
+        if (GoyaNetUtils.isValidIp(ip)) {
             return ip;
         }
 
         ip = request.getHeader("WL-Proxy-Client-IP");
-        if (NetUtils.isValidIp(ip)) {
+        if (GoyaNetUtils.isValidIp(ip)) {
             return ip;
         }
 
         ip = request.getHeader("HTTP_CLIENT_IP");
-        if (NetUtils.isValidIp(ip)) {
+        if (GoyaNetUtils.isValidIp(ip)) {
             return ip;
         }
 
         ip = request.getHeader("HTTP_X_FORWARDED_FOR");
-        if (NetUtils.isValidIp(ip)) {
+        if (GoyaNetUtils.isValidIp(ip)) {
             return ip;
         }
 
         // 最后使用 request.getRemoteAddr()
         ip = request.getRemoteAddr();
-        if (NetUtils.isValidIp(ip)) {
+        if (GoyaNetUtils.isValidIp(ip)) {
             // 处理 IPv6 本地地址，转换为实际的本地 IP
             if ("0:0:0:0:0:0:0:1".equals(ip) || "::1".equals(ip)) {
                 try {
                     return InetAddress.getLocalHost().getHostAddress();
                 } catch (UnknownHostException e) {
-                    log.warn("[GOYA] |- Failed to get local host address: {}", e.getMessage());
+                    log.warn("[Goya] |- Failed to get local host address: {}", e.getMessage());
                     return "127.0.0.1";
                 }
             }
@@ -870,10 +875,10 @@ public class WebUtils {
      * @return 结构合理的请求地址字符串
      */
     public static String url(String url) {
-        if (Strings.CS.endsWith(url, ISymbolConstants.FORWARD_SLASH)) {
+        if (Strings.CS.endsWith(url, SymbolConst.FORWARD_SLASH)) {
             return url;
         } else {
-            return url + ISymbolConstants.FORWARD_SLASH;
+            return url + SymbolConst.FORWARD_SLASH;
         }
     }
 
@@ -887,7 +892,7 @@ public class WebUtils {
      */
     public static String parentId(String parentId) {
         if (org.apache.commons.lang3.StringUtils.isBlank(parentId)) {
-            return IBaseConstants.TREE_ROOT_ID;
+            return DefaultConst.TREE_ROOT_ID;
         } else {
             return parentId;
         }
@@ -949,7 +954,7 @@ public class WebUtils {
             address = InetAddress.getLocalHost();
             return address.getHostAddress();
         } catch (UnknownHostException e) {
-            log.error("[GOYA] |- Get host address error: {}", e.getLocalizedMessage());
+            log.error("[Goya] |- Get host address error: {}", e.getLocalizedMessage());
             return null;
         }
     }
@@ -959,11 +964,11 @@ public class WebUtils {
             return serviceUri;
         } else {
             if (org.apache.commons.lang3.StringUtils.isBlank(serviceName)) {
-                log.error("[GOYA] |- Property [{} Service Name] is not set or property format is incorrect!", abbreviation);
+                log.error("[Goya] |- Property [{} Service Name] is not set or property format is incorrect!", abbreviation);
                 throw new CommonException();
             } else {
                 if (org.apache.commons.lang3.StringUtils.isBlank(gatewayServiceUri)) {
-                    log.error("[GOYA] |- Property [gateway-service-uri] is not set or property format is incorrect!");
+                    log.error("[Goya] |- Property [gateway-service-uri] is not set or property format is incorrect!");
                     throw new CommonException();
                 } else {
                     return url(gatewayServiceUri) + serviceName;
@@ -977,7 +982,7 @@ public class WebUtils {
             return uri;
         } else {
             if (org.apache.commons.lang3.StringUtils.isBlank(issuerUri)) {
-                log.error("[GOYA] |- Property [issuer-uri] is not set or property format is incorrect!");
+                log.error("[Goya] |- Property [issuer-uri] is not set or property format is incorrect!");
                 throw new CommonException();
             } else {
                 return issuerUri + endpoint;

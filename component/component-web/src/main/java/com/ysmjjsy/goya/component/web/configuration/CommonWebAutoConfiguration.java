@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.web.configuration;
 
-import com.ysmjjsy.goya.component.common.service.IPlatformService;
+import com.ysmjjsy.goya.component.framework.context.GoyaContext;
 import com.ysmjjsy.goya.component.web.configuration.properties.WebProperties;
-import com.ysmjjsy.goya.component.web.service.WebPlatformService;
+import com.ysmjjsy.goya.component.web.context.GoyaWebContext;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -24,14 +24,14 @@ public class CommonWebAutoConfiguration {
 
     @PostConstruct
     public void postConstruct() {
-        log.debug("[GOYA] |- component [web] DefaultServiceContextHolderAutoConfiguration auto configure.");
+        log.debug("[Goya] |- component [web] DefaultServiceContextHolderAutoConfiguration auto configure.");
     }
 
     @Bean
-    @ConditionalOnMissingBean(IPlatformService.class)
-    public IPlatformService iPlatformService(ServerProperties serverProperties) {
-        WebPlatformService defaultServiceContextHolder = new WebPlatformService(serverProperties);
-        log.trace("[GOYA] |- component [web] DefaultServiceContextHolderAutoConfiguration |- bean [iPlatformService] register.");
-        return defaultServiceContextHolder;
+    @ConditionalOnMissingBean(GoyaContext.class)
+    public GoyaContext goyaWebContext(ServerProperties serverProperties) {
+        GoyaWebContext goyaWebContext = new GoyaWebContext(serverProperties);
+        log.trace("[Goya] |- component [web] DefaultServiceContextHolderAutoConfiguration |- bean [iPlatformService] register.");
+        return goyaWebContext;
     }
 }

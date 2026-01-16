@@ -1,16 +1,12 @@
-package com.ysmjjsy.goya.component.web.service;
+package com.ysmjjsy.goya.component.web.context;
 
-import com.ysmjjsy.goya.component.common.definition.constants.ISymbolConstants;
-import com.ysmjjsy.goya.component.common.service.IPlatformService;
+import com.ysmjjsy.goya.component.core.constants.SymbolConst;
+import com.ysmjjsy.goya.component.framework.context.GoyaContext;
 import com.ysmjjsy.goya.component.web.utils.WebUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
-import org.jspecify.annotations.NonNull;
-import org.springframework.beans.BeansException;
 import org.springframework.boot.web.server.autoconfigure.ServerProperties;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 
 import java.util.Objects;
 
@@ -21,19 +17,14 @@ import java.util.Objects;
  * @since 2025/10/13 14:19
  */
 @Slf4j
-public abstract class AbstractPlatformService implements IPlatformService, ApplicationContextAware {
+public abstract class AbstractGoyaContext implements GoyaContext {
 
-    private ApplicationContext applicationContext;
     private final ServerProperties serverProperties;
 
-    protected AbstractPlatformService(ServerProperties serverProperties) {
+    protected AbstractGoyaContext(ServerProperties serverProperties) {
         this.serverProperties = serverProperties;
     }
 
-    @Override
-    public void setApplicationContext(@NonNull ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
-    }
 
     @Override
     public Integer getPort() {
@@ -57,7 +48,7 @@ public abstract class AbstractPlatformService implements IPlatformService, Appli
     public String getUrl() {
         String address = getAddress();
         if (StringUtils.isNotBlank(address)) {
-            return WebUtils.addressToUri(address, getPlatformProperties().protocol(), true);
+            return WebUtils.addressToUri(address, getProperties().protocol(), true);
         }
         return null;
     }
@@ -65,8 +56,8 @@ public abstract class AbstractPlatformService implements IPlatformService, Appli
     @Override
     public String getContextPath() {
         String contextPath = serverProperties.getServlet().getContextPath();
-        if (StringUtils.isNotBlank(contextPath) && !Strings.CS.equals(contextPath, ISymbolConstants.FORWARD_SLASH)) {
-            return WebUtils.robustness(contextPath, ISymbolConstants.FORWARD_SLASH, false, false);
+        if (StringUtils.isNotBlank(contextPath) && !Strings.CS.equals(contextPath, SymbolConst.FORWARD_SLASH)) {
+            return WebUtils.robustness(contextPath, SymbolConst.FORWARD_SLASH, false, false);
         } else {
             return StringUtils.EMPTY;
         }

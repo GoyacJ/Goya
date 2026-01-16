@@ -30,20 +30,20 @@ public class CaptchaAutoConfiguration {
 
     @PostConstruct
     public void init() {
-        log.debug("[GOYA] |- common [captcha] CaptchaAutoConfiguration auto configure.");
+        log.debug("[Goya] |- common [captcha] CaptchaAutoConfiguration auto configure.");
     }
 
     @Bean
     public CaptchaRendererFactory captchaRendererFactory() {
         CaptchaRendererFactory factory = new CaptchaRendererFactory();
-        log.trace("[GOYA] |- common [captcha] CaptchaAutoConfiguration |- bean [captchaRendererFactory] register.");
+        log.trace("[Goya] |- common [captcha] CaptchaAutoConfiguration |- bean [captchaRendererFactory] register.");
         return factory;
     }
 
     @Bean
     public CaptchaService defaultCaptchaManager(CaptchaRendererFactory captchaRendererFactory) {
         DefaultCaptchaManager manager = new DefaultCaptchaManager(captchaRendererFactory);
-        log.trace("[GOYA] |- common [captcha] CaptchaAutoConfiguration |- bean [defaultCaptchaManager] register.");
+        log.trace("[Goya] |- common [captcha] CaptchaAutoConfiguration |- bean [defaultCaptchaManager] register.");
         return manager;
     }
 
@@ -51,7 +51,7 @@ public class CaptchaAutoConfiguration {
     @ConditionalOnMissingBean
     public ResourceProvider resourceProvider(CaptchaProperties captchaProperties) {
         ResourceProvider resourceProvider = new ResourceProvider(captchaProperties);
-        log.trace("[GOYA] |- common [captcha] CaptchaAutoConfiguration |- bean [resourceProvider] register.");
+        log.trace("[Goya] |- common [captcha] CaptchaAutoConfiguration |- bean [resourceProvider] register.");
         return resourceProvider;
     }
 
@@ -60,20 +60,20 @@ public class CaptchaAutoConfiguration {
 
         @PostConstruct
         public void init() {
-            log.debug("[GOYA] |- common [captcha] BehaviorCaptchaConfiguration auto configure.");
+            log.debug("[Goya] |- common [captcha] BehaviorCaptchaConfiguration auto configure.");
         }
 
         @Bean(CaptchaCategoryEnum.JIGSAW_CAPTCHA)
         public JigsawCaptchaRenderer jigsawCaptchaRenderer() {
             JigsawCaptchaRenderer jigsawCaptchaRenderer = new JigsawCaptchaRenderer();
-            log.trace("[GOYA] |- common [captcha] BehaviorCaptchaConfiguration |- bean [jigsawCaptchaRenderer] register.");
+            log.trace("[Goya] |- common [captcha] BehaviorCaptchaConfiguration |- bean [jigsawCaptchaRenderer] register.");
             return jigsawCaptchaRenderer;
         }
 
         @Bean(CaptchaCategoryEnum.WORD_CLICK_CAPTCHA)
         public WordClickCaptchaRenderer wordClickCaptchaRenderer() {
             WordClickCaptchaRenderer wordClickCaptchaRenderer = new WordClickCaptchaRenderer();
-            log.trace("[GOYA] |- common [captcha] BehaviorCaptchaConfiguration |- bean [wordClickCaptchaRenderer] register.");
+            log.trace("[Goya] |- common [captcha] BehaviorCaptchaConfiguration |- bean [wordClickCaptchaRenderer] register.");
             return wordClickCaptchaRenderer;
         }
     }
@@ -83,41 +83,41 @@ public class CaptchaAutoConfiguration {
 
         @PostConstruct
         public void init() {
-            log.debug("[GOYA] |- common [captcha] GraphicCaptchaConfiguration auto configure.");
+            log.debug("[Goya] |- common [captcha] GraphicCaptchaConfiguration auto configure.");
         }
 
         @Bean(CaptchaCategoryEnum.ARITHMETIC_CAPTCHA)
         public ArithmeticCaptchaRenderer arithmeticCaptchaRenderer() {
             ArithmeticCaptchaRenderer arithmeticCaptchaRenderer = new ArithmeticCaptchaRenderer();
-            log.trace("[GOYA] |- common [captcha] BehaviorCaptchaConfiguration |- bean [arithmeticCaptchaRenderer] register.");
+            log.trace("[Goya] |- common [captcha] BehaviorCaptchaConfiguration |- bean [arithmeticCaptchaRenderer] register.");
             return arithmeticCaptchaRenderer;
         }
 
         @Bean(CaptchaCategoryEnum.CHINESE_CAPTCHA)
         public ChineseCaptchaRenderer chineseCaptchaRenderer() {
             ChineseCaptchaRenderer chineseCaptchaRenderer = new ChineseCaptchaRenderer();
-            log.trace("[GOYA] |- common [captcha] BehaviorCaptchaConfiguration |- bean [chineseCaptchaRenderer] register.");
+            log.trace("[Goya] |- common [captcha] BehaviorCaptchaConfiguration |- bean [chineseCaptchaRenderer] register.");
             return chineseCaptchaRenderer;
         }
 
         @Bean(CaptchaCategoryEnum.CHINESE_GIF_CAPTCHA)
         public ChineseGifCaptchaRenderer chineseGifCaptchaRenderer() {
             ChineseGifCaptchaRenderer chineseGifCaptchaRenderer = new ChineseGifCaptchaRenderer();
-            log.trace("[GOYA] |- common [captcha] BehaviorCaptchaConfiguration |- bean [chineseGifCaptchaRenderer] register.");
+            log.trace("[Goya] |- common [captcha] BehaviorCaptchaConfiguration |- bean [chineseGifCaptchaRenderer] register.");
             return chineseGifCaptchaRenderer;
         }
 
         @Bean(CaptchaCategoryEnum.SPEC_GIF_CAPTCHA)
         public SpecGifCaptchaRenderer specGifCaptchaRenderer() {
             SpecGifCaptchaRenderer specGifCaptchaRenderer = new SpecGifCaptchaRenderer();
-            log.trace("[GOYA] |- common [captcha] BehaviorCaptchaConfiguration |- bean [specGifCaptchaRenderer] register.");
+            log.trace("[Goya] |- common [captcha] BehaviorCaptchaConfiguration |- bean [specGifCaptchaRenderer] register.");
             return specGifCaptchaRenderer;
         }
 
         @Bean(CaptchaCategoryEnum.SPEC_CAPTCHA)
         public SpecCaptchaRenderer specCaptchaRenderer() {
             SpecCaptchaRenderer specCaptchaRenderer = new SpecCaptchaRenderer();
-            log.trace("[GOYA] |- common [captcha] BehaviorCaptchaConfiguration |- bean [specCaptchaRenderer] register.");
+            log.trace("[Goya] |- common [captcha] BehaviorCaptchaConfiguration |- bean [specCaptchaRenderer] register.");
             return specCaptchaRenderer;
         }
     }

@@ -29,9 +29,9 @@ public class EnumeratedValueValidator implements ConstraintValidator<EnumeratedV
                     return true;
                 }
             }
-        } else if (value instanceof Integer) {
+        } else if (value instanceof Integer intV) {
             for (int ordinal : ordinals) {
-                if (ordinal == (Integer) value) {
+                if (ordinal == intV) {
                     return true;
                 }
             }

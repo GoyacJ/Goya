@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.social.service.dto;
 
-import com.ysmjjsy.goya.component.common.definition.pojo.DTO;
+import com.ysmjjsy.goya.component.core.pojo.DTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 

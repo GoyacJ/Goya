@@ -20,7 +20,7 @@ public class XssHttpServletFilter implements Filter {
         HttpServletRequest request = (HttpServletRequest) servletRequest;
 
         XssHttpServletRequestWrapper xssRequest = new XssHttpServletRequestWrapper(request);
-        log.trace("[GOYA] |- XssHttpServletFilter wrapper request for [{}].", request.getRequestURI());
+        log.trace("[Goya] |- XssHttpServletFilter wrapper request for [{}].", request.getRequestURI());
         filterChain.doFilter(xssRequest, servletResponse);
     }
 }

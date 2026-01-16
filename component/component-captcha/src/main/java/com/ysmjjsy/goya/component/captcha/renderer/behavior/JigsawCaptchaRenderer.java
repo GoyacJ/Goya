@@ -122,8 +122,8 @@ public class JigsawCaptchaRenderer extends AbstractBehaviorRenderer<String, Coor
         int templateImageWidth = templateImage.getWidth();
         int templateImageHeight = templateImage.getHeight();
 
-        log.trace("[GOYA] |- Jigsaw captcha original image width is [{}], height is [{}].", originalImageWidth, originalImageHeight);
-        log.trace("[GOYA] |- Jigsaw captcha template image width is [{}], height is [{}].", templateImageWidth, templateImageHeight);
+        log.trace("[Goya] |- Jigsaw captcha original image width is [{}], height is [{}].", originalImageWidth, originalImageHeight);
+        log.trace("[Goya] |- Jigsaw captcha template image width is [{}], height is [{}].", templateImageWidth, templateImageHeight);
 
         // 随机生成拼图坐标
         Coordinate coordinate = createImageMattingCoordinate(originalImageWidth, originalImageHeight, templateImageWidth, templateImageHeight);
@@ -152,7 +152,7 @@ public class JigsawCaptchaRenderer extends AbstractBehaviorRenderer<String, Coor
         graphics.drawImage(jigsawImage, 0, 0, null);
         graphics.dispose();
 
-        log.trace("[GOYA] |- Jigsaw captcha jigsaw image width is [{}], height is [{}].", jigsawImage.getWidth(), jigsawImage.getHeight());
+        log.trace("[Goya] |- Jigsaw captcha jigsaw image width is [{}], height is [{}].", jigsawImage.getWidth(), jigsawImage.getHeight());
 
         Metadata metadata = new Metadata();
         metadata.setOriginalImageBase64(toBase64(originalImage));
@@ -187,7 +187,7 @@ public class JigsawCaptchaRenderer extends AbstractBehaviorRenderer<String, Coor
             y = RandomProvider.randomInt(availableHeight) + BOLD;
         }
 
-        log.debug("[GOYA] |- Jigsaw captcha image matting coordinate is x: [{}], y: [{}].", x, y);
+        log.debug("[Goya] |- Jigsaw captcha image matting coordinate is x: [{}], y: [{}].", x, y);
         return new Coordinate(x, y);
     }
 

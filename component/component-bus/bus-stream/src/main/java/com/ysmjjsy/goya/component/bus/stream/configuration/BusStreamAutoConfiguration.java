@@ -16,7 +16,7 @@ import com.ysmjjsy.goya.component.bus.stream.publish.LocalBusEventPublisher;
 import com.ysmjjsy.goya.component.bus.stream.publish.StreamBusEventPublisher;
 import com.ysmjjsy.goya.component.bus.stream.service.DefaultBusService;
 import com.ysmjjsy.goya.component.bus.stream.service.IBusService;
-import com.ysmjjsy.goya.component.cache.redis.service.RedisCacheService;
+import com.ysmjjsy.goya.component.cache.multilevel.service.MultiLevelCacheService;
 import com.ysmjjsy.goya.component.framework.strategy.StrategyChoose;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -119,8 +119,8 @@ public class BusStreamAutoConfiguration {
      * <p>负责事件路由、幂等性检查等业务逻辑</p>
      * <p>作为普通 Bean，可以正常依赖业务组件</p>
      *
-     * @param scanner                     扫描器
-     * @param idempotencyHandlerProvider  幂等性处理器提供者（延迟注入）
+     * @param scanner                    扫描器
+     * @param idempotencyHandlerProvider 幂等性处理器提供者（延迟注入）
      * @param eventDeserializerProvider  事件反序列化器提供者（延迟注入）
      * @param interceptorsProvider       拦截器列表提供者（延迟注入）
      * @return BusEventListenerHandler 实例
@@ -141,8 +141,8 @@ public class BusStreamAutoConfiguration {
      * 注册默认拦截器
      * <p>按顺序注册：DeserializeInterceptor、IdempotencyInterceptor、RouteInterceptor、InvokeInterceptor</p>
      *
-     * @param scanner                     扫描器
-     * @param idempotencyHandlerProvider  幂等性处理器提供者
+     * @param scanner                    扫描器
+     * @param idempotencyHandlerProvider 幂等性处理器提供者
      * @param eventDeserializerProvider  事件反序列化器提供者
      * @return 默认拦截器列表
      */
@@ -166,14 +166,14 @@ public class BusStreamAutoConfiguration {
     /**
      * 注册幂等性处理器
      *
-     * @param redisCacheService  缓存服务
+     * @param cacheService  缓存服务
      * @param busProperties 总线配置属性
      * @return IIdempotencyHandler 实例
      */
     @Bean
     @ConditionalOnMissingBean
-    public IIdempotencyHandler idempotencyHandler(RedisCacheService redisCacheService, BusProperties busProperties) {
-        CacheIdempotencyHandler cacheIdempotencyHandler = new CacheIdempotencyHandler(redisCacheService, busProperties);
+    public IIdempotencyHandler idempotencyHandler(MultiLevelCacheService cacheService, BusProperties busProperties) {
+        CacheIdempotencyHandler cacheIdempotencyHandler = new CacheIdempotencyHandler(cacheService, busProperties);
         log.trace("[Goya] |- component [bus] BusAutoConfiguration |- bean [idempotencyHandler] register.");
         return cacheIdempotencyHandler;
     }
@@ -181,7 +181,7 @@ public class BusStreamAutoConfiguration {
     /**
      * 注册本地事件发布器
      *
-     * @param eventPublisher 应用事件发布器
+     * @param eventPublisher  应用事件发布器
      * @param handlerProvider 事件监听器处理器提供者
      * @return LocalEventPublisher 实例
      */

@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.web.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.ysmjjsy.goya.component.common.context.SpringContext;
-import com.ysmjjsy.goya.component.common.definition.pojo.VO;
+import com.ysmjjsy.goya.component.core.pojo.VO;
+import com.ysmjjsy.goya.component.framework.context.SpringContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.commons.lang3.StringUtils;
 
@@ -124,7 +124,7 @@ public record ErrorDetail(
         if (!SpringContext.isProd()) {
             return throwable != null ? throwable.getStackTrace() : null;
         }
-        return null;
+        return new StackTraceElement[0];
     }
 
     /**

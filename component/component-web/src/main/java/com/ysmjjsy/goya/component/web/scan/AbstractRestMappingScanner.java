@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.web.scan;
 
-import com.ysmjjsy.goya.component.common.context.ApplicationInitializingEvent;
-import com.ysmjjsy.goya.component.common.definition.constants.ISymbolConstants;
-import com.ysmjjsy.goya.component.common.utils.CommonUtils;
+import com.ysmjjsy.goya.component.core.constants.SymbolConst;
+import com.ysmjjsy.goya.component.core.utils.GoyaStringUtils;
+import com.ysmjjsy.goya.component.framework.processor.ApplicationInitializingEvent;
 import com.ysmjjsy.goya.component.web.configuration.properties.WebProperties;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
@@ -115,12 +115,12 @@ public abstract class AbstractRestMappingScanner implements ApplicationListener<
      * @return url 对应的 code
      */
     protected String createCode(String url, String requestMethods) {
-        String[] search = new String[]{ISymbolConstants.OPEN_CURLY_BRACE, ISymbolConstants.CLOSE_CURLY_BRACE, ISymbolConstants.FORWARD_SLASH};
-        String[] replacement = new String[]{ISymbolConstants.BLANK, ISymbolConstants.BLANK, ISymbolConstants.COLON};
+        String[] search = new String[]{SymbolConst.OPEN_CURLY_BRACE, SymbolConst.CLOSE_CURLY_BRACE, SymbolConst.FORWARD_SLASH};
+        String[] replacement = new String[]{SymbolConst.BLANK, SymbolConst.BLANK, SymbolConst.COLON};
         String code = StringUtils.replaceEach(url, search, replacement);
 
-        String resultCode = StringUtils.isNotBlank(requestMethods) ? StringUtils.lowerCase(requestMethods) + code : Strings.CS.removeStart(code, ISymbolConstants.COLON);
-        log.trace("[GOYA] |- Create code [{}] for Request [{}] : [{}]", resultCode, requestMethods, url);
+        String resultCode = StringUtils.isNotBlank(requestMethods) ? StringUtils.lowerCase(requestMethods) + code : Strings.CS.removeStart(code, SymbolConst.COLON);
+        log.trace("[Goya] |- Create code [{}] for Request [{}] : [{}]", resultCode, requestMethods, url);
         return resultCode;
     }
 
@@ -135,14 +135,14 @@ public abstract class AbstractRestMappingScanner implements ApplicationListener<
 
         // 去除首尾的斜杠
         url = url.trim();
-        if (url.startsWith(ISymbolConstants.FORWARD_SLASH)) {
+        if (url.startsWith(SymbolConst.FORWARD_SLASH)) {
             url = url.substring(1);
         }
-        if (url.endsWith(ISymbolConstants.FORWARD_SLASH)) {
+        if (url.endsWith(SymbolConst.FORWARD_SLASH)) {
             url = url.substring(0, url.length() - 1);
         }
 
-        String[] parts = url.split(ISymbolConstants.FORWARD_SLASH);
+        String[] parts = url.split(SymbolConst.FORWARD_SLASH);
         if (parts.length < 3) {
             // 不足三级路径，直接返回下划线连接
             return String.join(":", parts);
@@ -152,7 +152,7 @@ public abstract class AbstractRestMappingScanner implements ApplicationListener<
         String module = parts[0];
 
         // 资源部分 (例如: swMaintenanceTasks -> sw_maintenance_tasks)
-        String resource = CommonUtils.humpToLine(parts[1]);
+        String resource = GoyaStringUtils.humpToLine(parts[1]);
 
         // 操作部分 (例如: add / deleteBatch / exportXls)
         String action = parts[2];
@@ -168,14 +168,14 @@ public abstract class AbstractRestMappingScanner implements ApplicationListener<
      */
     protected void complete(String serviceId, List<RestMapping> resources) {
         if (CollectionUtils.isNotEmpty(resources)) {
-            log.debug("[GOYA] |- [R2] Request mapping scan found [{}] resources in service [{}], go to next stage!", serviceId, resources.size());
+            log.debug("[Goya] |- [R2] Request mapping scan found [{}] resources in service [{}], go to next stage!", serviceId, resources.size());
             if (ObjectUtils.isNotEmpty(iRestMappingHandler)) {
                 iRestMappingHandler.handler(serviceId, resources);
             }
         } else {
-            log.debug("[GOYA] |- [R2] Request mapping scan can not find any resources in service [{}]!", serviceId);
+            log.debug("[Goya] |- [R2] Request mapping scan can not find any resources in service [{}]!", serviceId);
         }
 
-        log.debug("[GOYA] |- Request Mapping Scan for Service: [{}] FINISHED!", serviceId);
+        log.debug("[Goya] |- Request Mapping Scan for Service: [{}] FINISHED!", serviceId);
     }
 }

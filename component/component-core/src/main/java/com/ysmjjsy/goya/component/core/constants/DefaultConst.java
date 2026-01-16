@@ -75,4 +75,17 @@ public interface DefaultConst {
      * DEFAULT_TENANT_ID
      */
     String DEFAULT_TENANT_ID = "public";
+
+    String DEFAULT_USER = "default";
+
+    /**
+     * BEARER_TYPE
+     */
+    String BEARER_TYPE = "Bearer";
+
+    /**
+     * BEARER_TOKEN
+     */
+    String BEARER_TOKEN = BEARER_TYPE + SymbolConst.SPACE;
+
 }

@@ -1,5 +1,6 @@
 package com.ysmjjsy.goya.component.cache.multilevel.service;
 
+import com.ysmjjsy.goya.component.cache.core.definition.CacheService;
 import lombok.Getter;
 
 import java.time.Duration;
@@ -32,21 +33,8 @@ import java.util.function.Function;
  * @author goya
  * @since 2025/12/26 15:03
  */
-public interface ICacheService {
+public interface MultiLevelCacheService extends CacheService {
 
-    /**
-     * 获取缓存值
-     *
-     * <p>从缓存中获取指定 key 的值，如果不存在则返回 null。
-     *
-     * @param cacheName 缓存名称
-     * @param key 缓存键
-     * @param <K> 键类型
-     * @param <V> 值类型
-     * @return 缓存值，如果不存在则返回 null
-     * @throws IllegalArgumentException 如果 cacheName 或 key 为 null
-     */
-    <K, V> V get(String cacheName, K key);
 
     /**
      * 获取缓存值（带加载器）
@@ -63,21 +51,6 @@ public interface ICacheService {
      * @throws RuntimeException 如果 valueLoader 执行失败
      */
     <K, V> V get(String cacheName, K key, Callable<V> valueLoader);
-
-    /**
-     * 写入缓存
-     *
-     * <p>将键值对写入缓存，使用配置的默认 TTL。
-     *
-     * @param cacheName 缓存名称
-     * @param key 缓存键
-     * @param value 缓存值（可以为 null，如果配置允许）
-     * @param <K> 键类型
-     * @param <V> 值类型
-     * @throws IllegalArgumentException 如果 cacheName 或 key 为 null
-     * @throws IllegalArgumentException 如果 value 为 null 且配置不允许 null 值
-     */
-    <K, V> void put(String cacheName, K key, V value);
 
     /**
      * 写入缓存（带自定义 TTL）
@@ -98,18 +71,6 @@ public interface ICacheService {
     <K, V> void put(String cacheName, K key, V value, Duration ttl);
 
     /**
-     * 失效缓存
-     *
-     * <p>从缓存中移除指定 key 的数据。
-     *
-     * @param cacheName 缓存名称
-     * @param key 缓存键
-     * @param <K> 键类型
-     * @throws IllegalArgumentException 如果 cacheName 或 key 为 null
-     */
-    <K> void evict(String cacheName, K key);
-
-    /**
      * 清空缓存
      *
      * <p>清空指定缓存的所有数据。
@@ -118,19 +79,6 @@ public interface ICacheService {
      * @throws IllegalArgumentException 如果 cacheName 为 null
      */
     void clear(String cacheName);
-
-    /**
-     * 检查缓存是否存在
-     *
-     * <p>检查指定 key 是否存在于缓存中。
-     *
-     * @param cacheName 缓存名称
-     * @param key 缓存键
-     * @param <K> 键类型
-     * @return true 如果存在，false 如果不存在
-     * @throws IllegalArgumentException 如果 cacheName 或 key 为 null
-     */
-    <K> boolean exists(String cacheName, K key);
 
     /**
      * 批量获取缓存值

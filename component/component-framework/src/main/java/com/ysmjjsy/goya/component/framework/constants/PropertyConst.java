@@ -36,4 +36,6 @@ public interface PropertyConst {
      * PROPERTY_PREFIX_PLATFORM
      */
     String PROPERTY_CRYPTO = PROPERTY_GOYA + ".crypto";
+    String PROPERTY_PROTOCOL = PROPERTY_GOYA + ".protocol";
+    String PROPERTY_ARCHITECTURE = PROPERTY_GOYA + ".architecture";
 }

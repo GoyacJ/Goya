@@ -1,7 +1,6 @@
 package com.ysmjjsy.goya.component.social.exception;
 
-import com.ysmjjsy.goya.component.common.code.IResponseCode;
-import com.ysmjjsy.goya.component.common.code.ResponseCodeEnum;
+import com.ysmjjsy.goya.component.framework.exception.code.HttpErrorCodeEnum;
 
 import java.io.Serial;
 
@@ -12,43 +11,23 @@ import java.io.Serial;
  * @since 2026/1/1 23:20
  */
 public class SocialAccessException extends SocialException {
+
     @Serial
     private static final long serialVersionUID = -2765577510100722995L;
 
-
     public SocialAccessException() {
-        super(ResponseCodeEnum.SOCIAL_ACCESS_ERROR);
-    }
-
-    public SocialAccessException(IResponseCode code) {
-        super(code);
+        super(HttpErrorCodeEnum.SOCIAL_ACCESS_ERROR);
     }
 
     public SocialAccessException(String message) {
-        super(message);
+        super(HttpErrorCodeEnum.SOCIAL_ACCESS_ERROR, message);
     }
 
     public SocialAccessException(Throwable cause) {
-        super(cause);
-    }
-
-    public SocialAccessException(IResponseCode code, String message) {
-        super(code, message);
-    }
-
-    public SocialAccessException(IResponseCode code, Throwable cause) {
-        super(code, cause);
+        super(HttpErrorCodeEnum.SOCIAL_ACCESS_ERROR, cause);
     }
 
     public SocialAccessException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public SocialAccessException(IResponseCode code, String message, Throwable cause) {
-        super(code, message, cause);
-    }
-
-    public SocialAccessException(IResponseCode code, String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(code, message, cause, enableSuppression, writableStackTrace);
+        super(HttpErrorCodeEnum.SOCIAL_ACCESS_ERROR, message, cause);
     }
 }

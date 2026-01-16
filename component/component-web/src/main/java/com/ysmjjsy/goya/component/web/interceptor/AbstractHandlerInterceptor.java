@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.web.interceptor;
 
-import com.ysmjjsy.goya.component.common.definition.constants.ISymbolConstants;
-import com.ysmjjsy.goya.component.common.utils.MD5Utils;
+import com.ysmjjsy.goya.component.core.constants.SymbolConst;
+import com.ysmjjsy.goya.component.core.utils.GoyaMD5Utils;
 import com.ysmjjsy.goya.component.web.utils.WebUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
@@ -27,11 +27,11 @@ public abstract class AbstractHandlerInterceptor implements HandlerInterceptor {
         String method = request.getMethod();
 
         if (StringUtils.isNotBlank(requestId)) {
-            String key = MD5Utils.md5(requestId + ISymbolConstants.COLON + url + ISymbolConstants.COLON + method);
-            log.debug("[GOYA] |- IdempotentInterceptor key is [{}].", key);
+            String key = GoyaMD5Utils.md5(requestId + SymbolConst.COLON + url + SymbolConst.COLON + method);
+            log.debug("[Goya] |- IdempotentInterceptor key is [{}].", key);
             return key;
         } else {
-            log.warn("[GOYA] |- IdempotentInterceptor cannot create key, because requestId is null.");
+            log.warn("[Goya] |- IdempotentInterceptor cannot create key, because requestId is null.");
             return null;
         }
     }
