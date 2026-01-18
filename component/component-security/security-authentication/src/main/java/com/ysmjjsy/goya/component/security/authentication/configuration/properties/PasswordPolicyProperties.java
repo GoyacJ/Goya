@@ -1,12 +1,9 @@
 package com.ysmjjsy.goya.component.security.authentication.configuration.properties;
 
-import com.ysmjjsy.goya.component.cache.annotation.PropertiesCache;
-import com.ysmjjsy.goya.security.core.constants.ISecurityConstants;
+import com.ysmjjsy.goya.component.security.core.constants.SecurityConst;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
-
-import java.time.Duration;
 
 /**
  * <p>密码策略配置属性</p>
@@ -16,8 +13,7 @@ import java.time.Duration;
  * @since 2026/1/5
  */
 @Schema(description = "密码策略配置")
-@PropertiesCache
-@ConfigurationProperties(prefix = ISecurityConstants.PROPERTY_PLATFORM_SECURITY_AUTHENTICATION + ".password-policy")
+@ConfigurationProperties(prefix = SecurityConst.PROPERTY_PLATFORM_SECURITY_AUTHENTICATION + ".password-policy")
 public record PasswordPolicyProperties(
 
         @Schema(description = "是否启用密码策略")

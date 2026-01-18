@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.security.core.domain;
 
-import com.ysmjjsy.goya.security.core.domain.SecurityUserDeserializer;
+import com.ysmjjsy.goya.component.framework.context.GoyaUser;
 import lombok.Getter;
 import lombok.ToString;
 import org.springframework.security.core.CredentialsContainer;
@@ -22,7 +22,7 @@ import java.util.*;
 @Getter
 @ToString
 @JsonDeserialize(using = SecurityUserDeserializer.class)
-public class SecurityUser implements UserDetails, CredentialsContainer {
+public class SecurityUser implements UserDetails, CredentialsContainer, GoyaUser {
 
     @Serial
     private static final long serialVersionUID = 4719371763229244364L;
@@ -86,6 +86,11 @@ public class SecurityUser implements UserDetails, CredentialsContainer {
             sorted.add(authority);
         }
         return sorted;
+    }
+
+    @Override
+    public String getName() {
+        return username;
     }
 
     private static class AuthorityComparator implements Comparator<GrantedAuthority>, Serializable {

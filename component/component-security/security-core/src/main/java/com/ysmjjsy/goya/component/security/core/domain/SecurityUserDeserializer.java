@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.security.core.domain;
 
-import com.ysmjjsy.goya.component.common.utils.JsonUtils;
+import com.ysmjjsy.goya.component.framework.json.GoyaJson;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import tools.jackson.core.JacksonException;
@@ -9,6 +9,7 @@ import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.DeserializationContext;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ValueDeserializer;
+
 import java.util.Set;
 
 /**
@@ -38,32 +39,32 @@ public class SecurityUserDeserializer extends ValueDeserializer<SecurityUser> {
     @Override
     public SecurityUser deserialize(JsonParser jp, DeserializationContext ctxt) throws JacksonException {
         JsonNode jsonNode = ctxt.readTree(jp);
-        String userId = JsonUtils.findStringValue(jsonNode, "userId");
-        String username = JsonUtils.findStringValue(jsonNode, "username");
+        String userId = GoyaJson.findStringValue(jsonNode, "userId");
+        String username = GoyaJson.findStringValue(jsonNode, "username");
         String password = readPassword(jsonNode);
 
-        Set<GrantedAuthority> authorities = ctxt.readTreeAsValue(JsonUtils.readJsonNode(jsonNode, "authorities"),
+        Set<GrantedAuthority> authorities = ctxt.readTreeAsValue(GoyaJson.readJsonNode(jsonNode, "authorities"),
                 ctxt.getTypeFactory().constructType(SECURITY_GRANTED_AUTHORITY_SET));
 
-        Set<String> roles = ctxt.readTreeAsValue(JsonUtils.readJsonNode(jsonNode, "authorities"),
+        Set<String> roles = ctxt.readTreeAsValue(GoyaJson.readJsonNode(jsonNode, "authorities"),
                 ctxt.getTypeFactory().constructType(SECURITY_ROLE_SET));
 
         SecurityUser.Builder b = SecurityUser.builder()
                 .userId(userId)
                 .username(username)
                 .password(password)
-                .openId(JsonUtils.findStringValue(jsonNode, "openId"))
-                .tenantId(JsonUtils.findStringValue(jsonNode, "tenantId"))
-                .nickname(JsonUtils.findStringValue(jsonNode, "nickname"))
-                .phoneNumber(JsonUtils.findStringValue(jsonNode, "phoneNumber"))
-                .email(JsonUtils.findStringValue(jsonNode, "email"))
-                .avatar(JsonUtils.findStringValue(jsonNode, "avatar"))
+                .openId(GoyaJson.findStringValue(jsonNode, "openId"))
+                .tenantId(GoyaJson.findStringValue(jsonNode, "tenantId"))
+                .nickname(GoyaJson.findStringValue(jsonNode, "nickname"))
+                .phoneNumber(GoyaJson.findStringValue(jsonNode, "phoneNumber"))
+                .email(GoyaJson.findStringValue(jsonNode, "email"))
+                .avatar(GoyaJson.findStringValue(jsonNode, "avatar"))
                 .authorities(authorities)
                 .roles(roles)
-                .enabled(JsonUtils.findBooleanValue(jsonNode, "enabled"))
-                .accountNonExpired(JsonUtils.findBooleanValue(jsonNode, "accountNonExpired"))
-                .accountNonLocked(JsonUtils.findBooleanValue(jsonNode, "accountNonLocked"))
-                .credentialsNonExpired(JsonUtils.findBooleanValue(jsonNode, "credentialsNonExpired"));
+                .enabled(GoyaJson.findBooleanValue(jsonNode, "enabled"))
+                .accountNonExpired(GoyaJson.findBooleanValue(jsonNode, "accountNonExpired"))
+                .accountNonLocked(GoyaJson.findBooleanValue(jsonNode, "accountNonLocked"))
+                .credentialsNonExpired(GoyaJson.findBooleanValue(jsonNode, "credentialsNonExpired"));
 
         SecurityUser user = b.build();
 

@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.security.core.service;
 
-import com.ysmjjsy.goya.component.auth.domain.UserAuthAuditLog;
-import com.ysmjjsy.goya.component.auth.domain.UserDevice;
-import com.ysmjjsy.goya.component.auth.domain.UserPrincipal;
+import com.ysmjjsy.goya.component.security.core.domain.SecurityUser;
+import com.ysmjjsy.goya.component.security.core.domain.SecurityUserAuthAuditLog;
+import com.ysmjjsy.goya.component.security.core.domain.SecurityUserDevice;
 import com.ysmjjsy.goya.component.social.enums.SocialTypeEnum;
 import com.ysmjjsy.goya.component.social.service.dto.SocialDetails;
 import com.ysmjjsy.goya.component.web.utils.UserAgent;
@@ -23,7 +23,7 @@ public interface IUserService {
      * @param username 用户名
      * @return 用户
      */
-    UserPrincipal findUserByUsername(String username);
+    SecurityUser findUserByUsername(String username);
 
     /**
      * 根据手机号查询用户
@@ -31,7 +31,7 @@ public interface IUserService {
      * @param phoneNumber 手机号
      * @return 用户
      */
-    UserPrincipal findUserByPhone(String phoneNumber);
+    SecurityUser findUserByPhone(String phoneNumber);
 
     /**
      * 根据 openId 查询用户
@@ -40,7 +40,7 @@ public interface IUserService {
      * @param socialType 类型
      * @return 用户
      */
-    UserPrincipal findUserByOpenId(String openId, SocialTypeEnum socialType);
+    SecurityUser findUserByOpenId(String openId, SocialTypeEnum socialType);
 
     /**
      * 注册用户
@@ -48,7 +48,7 @@ public interface IUserService {
      * @param userPrincipal 用户信息
      * @return 用户信息
      */
-    UserPrincipal registerUser(UserPrincipal userPrincipal);
+    SecurityUser registerUser(SecurityUser userPrincipal);
 
     /**
      * 注册用户
@@ -56,7 +56,7 @@ public interface IUserService {
      * @param socialDetails 用户信息
      * @return 用户信息
      */
-    UserPrincipal registerUser(SocialDetails socialDetails);
+    SecurityUser registerUser(SocialDetails socialDetails);
 
     /**
      * 注册设备
@@ -64,7 +64,7 @@ public interface IUserService {
      * @param userDevice 用户设备信息
      * @return 设备信息
      */
-    UserDevice registerDevice(UserDevice userDevice);
+    SecurityUserDevice registerDevice(SecurityUserDevice userDevice);
 
     /**
      * 根据用户ID查询设备列表
@@ -72,7 +72,7 @@ public interface IUserService {
      * @param userId 用户ID
      * @return 设备列表
      */
-    List<UserDevice> findByUserId(String userId);
+    List<SecurityUserDevice> findByUserId(String userId);
 
     /**
      * 根据设备ID查询设备
@@ -80,7 +80,7 @@ public interface IUserService {
      * @param deviceId 设备ID
      * @return 设备信息
      */
-    UserDevice findByDeviceId(String deviceId);
+    SecurityUserDevice findByDeviceId(String deviceId);
 
     /**
      * 信任设备
@@ -116,7 +116,7 @@ public interface IUserService {
      *
      * @param auditLog 审计日志
      */
-    void recordAuditLog(UserAuthAuditLog auditLog);
+    void recordAuditLog(SecurityUserAuthAuditLog auditLog);
 
     /**
      * 记录登录成功审计日志
@@ -130,7 +130,7 @@ public interface IUserService {
      */
     default void recordLoginSuccess(String userId, String username, String tenantId,
                                     String ipAddress, UserAgent userAgent, String requestUri) {
-        UserAuthAuditLog auditLog = UserAuthAuditLog.builder()
+        SecurityUserAuthAuditLog auditLog = SecurityUserAuthAuditLog.builder()
                 .userId(userId)
                 .username(username)
                 .tenantId(tenantId)
@@ -155,7 +155,7 @@ public interface IUserService {
      */
     default void recordLoginFailure(String username, String ipAddress, UserAgent userAgent,
                                     String requestUri, String errorMessage) {
-        UserAuthAuditLog auditLog = UserAuthAuditLog.builder()
+        SecurityUserAuthAuditLog auditLog = SecurityUserAuthAuditLog.builder()
                 .username(username)
                 .operation("LOGIN_FAILURE")
                 .ipAddress(ipAddress)
@@ -179,7 +179,7 @@ public interface IUserService {
      */
     default void recordTokenGenerate(String userId, String username, String clientId,
                                      String ipAddress, String requestUri) {
-        UserAuthAuditLog auditLog = UserAuthAuditLog.builder()
+        SecurityUserAuthAuditLog auditLog = SecurityUserAuthAuditLog.builder()
                 .userId(userId)
                 .username(username)
                 .clientId(clientId)
@@ -203,7 +203,7 @@ public interface IUserService {
      */
     default void recordTokenRefresh(String userId, String username, String clientId,
                                     String ipAddress, String requestUri) {
-        UserAuthAuditLog auditLog = UserAuthAuditLog.builder()
+        SecurityUserAuthAuditLog auditLog = SecurityUserAuthAuditLog.builder()
                 .userId(userId)
                 .username(username)
                 .clientId(clientId)
@@ -227,7 +227,7 @@ public interface IUserService {
      */
     default void recordTokenRevoke(String userId, String username, String clientId,
                                    String ipAddress, String requestUri) {
-        UserAuthAuditLog auditLog = UserAuthAuditLog.builder()
+        SecurityUserAuthAuditLog auditLog = SecurityUserAuthAuditLog.builder()
                 .userId(userId)
                 .username(username)
                 .clientId(clientId)
@@ -251,7 +251,7 @@ public interface IUserService {
      */
     default void recordAuthorizationCodeGenerate(String userId, String username, String clientId,
                                                  String ipAddress, String requestUri) {
-        UserAuthAuditLog auditLog = UserAuthAuditLog.builder()
+        SecurityUserAuthAuditLog auditLog = SecurityUserAuthAuditLog.builder()
                 .userId(userId)
                 .username(username)
                 .clientId(clientId)
@@ -274,7 +274,7 @@ public interface IUserService {
      */
     default void recordClientAuthFailure(String clientId, String ipAddress,
                                          String requestUri, String errorMessage) {
-        UserAuthAuditLog auditLog = UserAuthAuditLog.builder()
+        SecurityUserAuthAuditLog auditLog = SecurityUserAuthAuditLog.builder()
                 .clientId(clientId)
                 .operation("CLIENT_AUTH_FAILURE")
                 .ipAddress(ipAddress)

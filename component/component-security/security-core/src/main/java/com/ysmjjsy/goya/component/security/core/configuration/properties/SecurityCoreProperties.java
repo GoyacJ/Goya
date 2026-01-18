@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.security.core.configuration.properties;
 
-import com.ysmjjsy.goya.security.core.constants.ISecurityConstants;
+import com.ysmjjsy.goya.component.security.core.constants.SecurityConst;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -11,7 +11,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @since 2026/1/1 16:51
  */
 @Schema(defaultValue = "Security 核心配置")
-@ConfigurationProperties(prefix = ISecurityConstants.PROPERTY_PLATFORM_SECURITY)
+@ConfigurationProperties(prefix = SecurityConst.PROPERTY_PLATFORM_SECURITY)
 public record SecurityCoreProperties(
 
         @Schema(defaultValue = "认证中心地址")

@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.security.authorization.jwt;
 
-import com.ysmjjsy.goya.security.core.constants.IStandardClaimNamesConstants;
+import com.ysmjjsy.goya.component.security.core.constants.StandardClaimNamesConst;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.core.GrantedAuthority;
@@ -34,7 +34,7 @@ public class JwtAuthorityConverter implements Converter<Jwt, Collection<GrantedA
         List<GrantedAuthority> authorities = new ArrayList<>();
 
         // 1. 从roles claim提取角色（转换为ROLE_xxx格式）
-        Object rolesObj = jwt.getClaim(IStandardClaimNamesConstants.ROLES);
+        Object rolesObj = jwt.getClaim(StandardClaimNamesConst.ROLES);
         if (rolesObj instanceof Collection) {
             @SuppressWarnings("unchecked")
             Collection<String> roles = (Collection<String>) rolesObj;
@@ -49,7 +49,7 @@ public class JwtAuthorityConverter implements Converter<Jwt, Collection<GrantedA
         }
 
         // 2. 从authorities claim提取权限（直接使用）
-        Object authoritiesObj = jwt.getClaim(IStandardClaimNamesConstants.AUTHORITIES);
+        Object authoritiesObj = jwt.getClaim(StandardClaimNamesConst.AUTHORITIES);
         if (authoritiesObj instanceof Collection) {
             @SuppressWarnings("unchecked")
             Collection<String> auths = (Collection<String>) authoritiesObj;

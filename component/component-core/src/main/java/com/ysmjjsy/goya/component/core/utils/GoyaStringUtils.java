@@ -156,4 +156,12 @@ public class GoyaStringUtils {
     public static boolean equals(String str1, String str2) {
         return org.apache.commons.lang3.Strings.CS.equals(str1, str2);
     }
+
+    public static boolean equalsAny(final CharSequence string, final CharSequence... searchStrings) {
+        return org.apache.commons.lang3.Strings.CS.equalsAny(string, searchStrings);
+    }
+
+    public static boolean equalsAnyIgnoreCase(final CharSequence string, final CharSequence... searchStrings) {
+        return org.apache.commons.lang3.Strings.CI.equalsAny(string, searchStrings);
+    }
 }

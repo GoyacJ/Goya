@@ -1,7 +1,9 @@
 package com.ysmjjsy.goya.component.security.authentication.exception;
 
-import com.ysmjjsy.goya.component.common.code.IResponseCode;
-import com.ysmjjsy.goya.component.common.code.ResponseCodeEnum;
+
+import com.ysmjjsy.goya.component.core.exception.error.ErrorCode;
+import com.ysmjjsy.goya.component.framework.exception.code.HttpErrorCodeEnum;
+import com.ysmjjsy.goya.component.security.core.exception.SecurityAuthenticationException;
 
 import java.io.Serial;
 
@@ -11,7 +13,7 @@ import java.io.Serial;
  * @author goya
  * @since 2025/12/7 23:20
  */
-public class IllegalSymmetricKeyException extends com.ysmjjsy.goya.security.core.exception.SecurityAuthenticationException {
+public class IllegalSymmetricKeyException extends SecurityAuthenticationException {
 
     @Serial
     private static final long serialVersionUID = 4319230368723902966L;
@@ -25,7 +27,7 @@ public class IllegalSymmetricKeyException extends com.ysmjjsy.goya.security.core
     }
 
     @Override
-    public IResponseCode getCode() {
-        return ResponseCodeEnum.CRYPTO_ERROR;
+    public ErrorCode getErrorCode() {
+        return HttpErrorCodeEnum.CRYPTO_ERROR;
     }
 }

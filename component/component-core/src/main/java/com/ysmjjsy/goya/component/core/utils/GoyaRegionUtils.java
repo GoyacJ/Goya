@@ -1,7 +1,6 @@
 package com.ysmjjsy.goya.component.core.utils;
 
 import lombok.experimental.UtilityClass;
-import lombok.extern.slf4j.Slf4j;
 import org.lionsoul.ip2region.xdb.*;
 
 import java.io.IOException;
@@ -14,7 +13,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @author goya
  * @since 2025/10/14 17:35
  */
-@Slf4j
 @UtilityClass
 public final class GoyaRegionUtils {
 

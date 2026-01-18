@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.security.authentication.entrypoint;
 
-import com.ysmjjsy.goya.security.authentication.request.CustomizerRequestCache;
+import com.ysmjjsy.goya.component.security.authentication.request.CustomizerRequestCache;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;

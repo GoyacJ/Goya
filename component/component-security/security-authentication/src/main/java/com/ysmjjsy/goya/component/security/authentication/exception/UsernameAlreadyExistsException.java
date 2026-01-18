@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.security.authentication.exception;
 
-import com.ysmjjsy.goya.security.core.exception.SecurityAuthenticationException;
+import com.ysmjjsy.goya.component.security.core.exception.SecurityAuthenticationException;
 
 import java.io.Serial;
 

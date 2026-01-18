@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.security.authentication.exception;
 
-import com.ysmjjsy.goya.component.common.code.IResponseCode;
-import com.ysmjjsy.goya.component.common.code.ResponseCodeEnum;
+import com.ysmjjsy.goya.component.core.exception.error.ErrorCode;
+import com.ysmjjsy.goya.component.framework.exception.code.HttpErrorCodeEnum;
 
 import java.io.Serial;
 
@@ -29,7 +29,7 @@ public class SecurityCaptchaArgumentIllegalException extends SecurityCaptchaExce
     }
 
     @Override
-    public IResponseCode getCode() {
-        return ResponseCodeEnum.CAPTCHA_PARAMETER_ILLEGAL_ERROR;
+    public ErrorCode getErrorCode() {
+        return HttpErrorCodeEnum.CAPTCHA_PARAMETER_ILLEGAL_ERROR;
     }
 }

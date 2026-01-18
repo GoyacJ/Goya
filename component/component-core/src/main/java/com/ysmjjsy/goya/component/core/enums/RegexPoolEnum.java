@@ -1,5 +1,7 @@
 package com.ysmjjsy.goya.component.core.enums;
 
+import lombok.Getter;
+
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -10,6 +12,7 @@ import java.util.regex.Pattern;
  * @author goya
  * @since 2025/12/21 22:42
  */
+@Getter
 public enum RegexPoolEnum {
 
     /**
@@ -84,14 +87,6 @@ public enum RegexPoolEnum {
     RegexPoolEnum(String regex) {
         this.regex = regex;
         this.pattern = Pattern.compile(regex);
-    }
-
-    public String regex() {
-        return regex;
-    }
-
-    public Pattern pattern() {
-        return pattern;
     }
 
     /**

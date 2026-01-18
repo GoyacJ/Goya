@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.security.authorization.jwt;
 
-import com.ysmjjsy.goya.component.cache.service.ICacheService;
-import com.ysmjjsy.goya.security.resource.server.configuration.properties.SecurityResourceProperties;
+import com.ysmjjsy.goya.component.cache.multilevel.service.MultiLevelCacheService;
+import com.ysmjjsy.goya.component.security.authorization.configuration.properties.SecurityResourceProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.core.OAuth2Error;
@@ -29,7 +29,7 @@ import org.springframework.security.oauth2.jwt.JwtException;
 public class JwtBlacklistValidator implements JwtDecoder {
 
     private final JwtDecoder delegate;
-    private final ICacheService cacheService;
+    private final MultiLevelCacheService cacheService;
     private final SecurityResourceProperties.TokenBlacklistConfig tokenBlacklistConfig;
 
     @Override

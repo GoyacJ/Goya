@@ -2,9 +2,17 @@ package com.ysmjjsy.goya.component.log.aspect;
 
 import com.ysmjjsy.goya.component.bus.stream.service.IBusService;
 import com.ysmjjsy.goya.component.core.constants.DefaultConst;
+import com.ysmjjsy.goya.component.core.utils.GoyaCollectionUtils;
+import com.ysmjjsy.goya.component.core.utils.GoyaIdUtils;
+import com.ysmjjsy.goya.component.core.utils.GoyaMapUtils;
+import com.ysmjjsy.goya.component.core.utils.GoyaStringUtils;
+import com.ysmjjsy.goya.component.framework.context.GoyaContext;
+import com.ysmjjsy.goya.component.framework.context.SpringContext;
 import com.ysmjjsy.goya.component.framework.enums.StateEnum;
+import com.ysmjjsy.goya.component.framework.json.GoyaJson;
 import com.ysmjjsy.goya.component.log.annotation.GoyaLog;
 import com.ysmjjsy.goya.component.log.event.OperatorLogEvent;
+import com.ysmjjsy.goya.component.web.utils.WebUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -16,8 +24,8 @@ import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.AfterThrowing;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
-import org.codehaus.groovy.runtime.ArrayUtil;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -92,9 +100,9 @@ public class GoyaLogAspect {
             stopWatch.stop();
 
             String userId = DefaultConst.DEFAULT_USER;
-            ICurrentService currentService = SpringUtils.getBean(ICurrentService.class);
-            if (Objects.nonNull(currentService)) {
-                userId = currentService.currentUser().getUserId();
+            GoyaContext goyaContext = SpringContext.getBean(GoyaContext.class);
+            if (Objects.nonNull(goyaContext)) {
+                userId = goyaContext.currentUser().getUserId();
             }
 
             StateEnum stateEnum = StateEnum.ENABLED;
@@ -107,16 +115,16 @@ public class GoyaLogAspect {
 
             // *========数据库日志=========*//
             OperatorLogEvent operLog = new OperatorLogEvent(
-                    IdUtil.getSeataSnowflakeNextIdStr(),
+                    GoyaIdUtils.getSeataSnowflakeNextIdStr(),
                     "",
                     controllerLog.title(),
                     className + "." + methodName + "()",
-                    ServletUtils.getRequest().getMethod(),
+                    WebUtils.getRequest().getMethod(),
                     controllerLog.operatorType(),
                     userId,
-                    StringUtils.substring(ServletUtils.getRequest().getRequestURI(), 0, 255),
-                    ServletUtils.getClientIp(),
-                    getOperParam(joinPoint, ServletUtils.getRequest().getMethod(), controllerLog),
+                    StringUtils.substring(WebUtils.getRequest().getRequestURI(), 0, 255),
+                    WebUtils.getClientIp(),
+                    getOperParam(joinPoint, WebUtils.getRequest().getMethod(), controllerLog),
                     getJsonResult(controllerLog, jsonResult),
                     stateEnum,
                     errorMsg,
@@ -124,11 +132,11 @@ public class GoyaLogAspect {
                     stopWatch.getDuration().toMillis()
             );
             // 发布事件保存数据库
-            iBus.publish("logging.operlog",operLog);
+            iBus.publishLocal(operLog);
+            iBus.publishRemote(operLog);
         } catch (Exception exp) {
             // 记录本地异常日志
             log.error("异常信息:{}", exp.getMessage());
-            exp.printStackTrace();
         } finally {
             KEY_CACHE.remove();
         }
@@ -143,7 +151,7 @@ public class GoyaLogAspect {
     public String getJsonResult(GoyaLog log, Object jsonResult) {
         // 是否需要保存response，参数和值
         if (log.isSaveResponseData() && Objects.nonNull(jsonResult)) {
-            return StringUtils.substring(JsonUtils.toJson(jsonResult), 0, 3800);
+            return StringUtils.substring(GoyaJson.toJson(jsonResult), 0, 3800);
         }
         return StringUtils.EMPTY;
     }
@@ -155,14 +163,14 @@ public class GoyaLogAspect {
      */
     private String getOperParam(JoinPoint joinPoint, String requestMethod, GoyaLog log) {
         if (log.isSaveRequestData()) {
-            Map<String, String> paramsMap = ServletUtils.getParamMap(ServletUtils.getRequest());
-            if (MapUtil.isEmpty(paramsMap) && StringUtils.equalsAny(requestMethod, HttpMethod.PUT.name(), HttpMethod.POST.name(), HttpMethod.DELETE.name())) {
+            Map<String, String> paramsMap = WebUtils.getParamMap(WebUtils.getRequest());
+            if (GoyaMapUtils.isEmpty(paramsMap) && GoyaStringUtils.equalsAnyIgnoreCase(requestMethod, HttpMethod.PUT.name(), HttpMethod.POST.name(), HttpMethod.DELETE.name())) {
                 String params = argsArrayToString(joinPoint.getArgs(), log.excludeParamNames());
                 return StringUtils.substring(params, 0, 3800);
             } else {
-                MapUtil.removeAny(paramsMap, EXCLUDE_PROPERTIES);
-                MapUtil.removeAny(paramsMap, log.excludeParamNames());
-                return StringUtils.substring(JsonUtils.toJson(paramsMap), 0, 3800);
+                GoyaMapUtils.removeAny(paramsMap, EXCLUDE_PROPERTIES);
+                GoyaMapUtils.removeAny(paramsMap, log.excludeParamNames());
+                return StringUtils.substring(GoyaJson.toJson(paramsMap), 0, 3800);
             }
         }
         return StringUtils.EMPTY;
@@ -173,36 +181,50 @@ public class GoyaLogAspect {
      */
     private String argsArrayToString(Object[] paramsArray, String[] excludeParamNames) {
         StringJoiner params = new StringJoiner(" ");
-        if (ArrayUtil.isEmpty(paramsArray)) {
+
+        if (GoyaCollectionUtils.isEmpty(paramsArray)) {
             return params.toString();
         }
-        String[] exclude = ArrayUtil.addAll(excludeParamNames, EXCLUDE_PROPERTIES);
-        for (Object o : paramsArray) {
-            if (Objects.nonNull(o) && !isFilterObject(o)) {
-                String str = "";
-                if (o instanceof List<?> list) {
-                    List<Dict> list1 = new ArrayList<>();
-                    for (Object obj : list) {
-                        String str1 = JsonUtils.toJson(obj);
-                        Dict dict = JsonUtils.parseMap(str1);
-                        if (MapUtil.isNotEmpty(dict)) {
-                            MapUtil.removeAny(dict, exclude);
-                            list1.add(dict);
-                        }
-                    }
-                    str = JsonUtils.toJson(list1);
-                } else {
-                    str = JsonUtils.toJson(o);
-                    Dict dict = JsonUtils.parseMap(str);
-                    if (MapUtil.isNotEmpty(dict)) {
-                        MapUtil.removeAny(dict, exclude);
-                        str = JsonUtils.toJson(dict);
-                    }
-                }
-                params.add(str);
+
+        String[] exclude = GoyaCollectionUtils.addAll(excludeParamNames, EXCLUDE_PROPERTIES);
+        Set<String> excludeSet = Set.of(exclude);
+
+        for (Object arg : paramsArray) {
+            if (arg == null || isFilterObject(arg)) {
+                continue;
+            }
+
+            String json = serializeAndFilter(arg, excludeSet);
+            if (json != null) {
+                params.add(json);
             }
         }
+
         return params.toString();
+    }
+
+    private String serializeAndFilter(Object value, Set<String> excludeSet) {
+        if (value instanceof List<?> list) {
+            List<Map<String, Object>> filteredList = new ArrayList<>();
+
+            for (Object element : list) {
+                Map<String, Object> map = GoyaJson.toMap(element);
+                if (map != null && !map.isEmpty()) {
+                    map.keySet().removeAll(excludeSet);
+                    filteredList.add(map);
+                }
+            }
+
+            return GoyaJson.toJson(filteredList);
+        }
+
+        Map<String, Object> map = GoyaJson.toMap(value);
+        if (map != null && !map.isEmpty()) {
+            map.keySet().removeAll(excludeSet);
+            return GoyaJson.toJson(map);
+        }
+
+        return GoyaJson.toJson(value);
     }
 
     /**

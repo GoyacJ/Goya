@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.security.authentication.exception;
 
-import com.ysmjjsy.goya.component.common.code.IResponseCode;
-import com.ysmjjsy.goya.component.common.code.ResponseCodeEnum;
-import com.ysmjjsy.goya.component.common.definition.exception.IException;
+import com.ysmjjsy.goya.component.core.exception.IException;
+import com.ysmjjsy.goya.component.core.exception.error.ErrorCode;
+import com.ysmjjsy.goya.component.framework.exception.code.HttpErrorCodeEnum;
 import org.springframework.security.authentication.AccountStatusException;
 
 import java.io.Serial;
@@ -28,7 +28,7 @@ public class AccountEndpointLimitedException extends AccountStatusException impl
     }
 
     @Override
-    public IResponseCode getCode() {
-        return ResponseCodeEnum.NOT_ACCEPTABLE;
+    public ErrorCode getErrorCode() {
+        return HttpErrorCodeEnum.NOT_ACCEPTABLE;
     }
 }

@@ -1,1 +1,2 @@
-com.ysmjjsy.goya.security.resource.server.configuration.SecurityResourceAutoConfiguration
+com.ysmjjsy.goya.component.security.core.configuration.SecurityGoyaContextAutoConfiguration
+com.ysmjjsy.goya.component.security.core.configuration.SecurityCoreAutoConfiguration

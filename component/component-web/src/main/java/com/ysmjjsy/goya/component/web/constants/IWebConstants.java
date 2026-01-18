@@ -1,12 +1,12 @@
 package com.ysmjjsy.goya.component.web.constants;
 
 import com.google.common.collect.Lists;
-import com.ysmjjsy.goya.component.common.definition.constants.IBaseConstants;
-import com.ysmjjsy.goya.component.common.definition.constants.ISymbolConstants;
+import com.ysmjjsy.goya.component.core.constants.SymbolConst;
+import com.ysmjjsy.goya.component.framework.constants.PropertyConst;
 
 import java.util.List;
 
-import static com.ysmjjsy.goya.component.cache.constants.CacheConst.CACHE_PREFIX;
+import static com.ysmjjsy.goya.component.cache.core.constants.CacheConst.CACHE_PREFIX;
 
 /**
  * <p></p>
@@ -20,7 +20,7 @@ public interface IWebConstants {
      * 配置前缀
      * 配置示例: platform.web
      */
-    String PROPERTY_WEB = IBaseConstants.PROPERTY_PLATFORM + ".web";
+    String PROPERTY_WEB = PropertyConst.PROPERTY_GOYA + ".web";
 
     /**
      * 缓存属性前缀
@@ -56,7 +56,7 @@ public interface IWebConstants {
     /**
      * 默认树形结构根节点
      */
-    String TREE_ROOT_ID = ISymbolConstants.ZERO;
+    String TREE_ROOT_ID = SymbolConst.ZERO;
 
     String MATCHER_WEBJARS = "/webjars/**";
     String MATCHER_STATIC = "/static/**";

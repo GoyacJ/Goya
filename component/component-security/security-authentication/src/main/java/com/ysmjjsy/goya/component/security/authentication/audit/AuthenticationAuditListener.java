@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.security.authentication.audit;
 
+import com.ysmjjsy.goya.component.security.core.domain.SecurityUser;
 import com.ysmjjsy.goya.component.web.utils.UserAgent;
 import com.ysmjjsy.goya.component.web.utils.WebUtils;
-import com.ysmjjsy.goya.security.core.domain.SecurityUser;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

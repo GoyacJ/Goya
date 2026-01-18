@@ -535,6 +535,10 @@ public class WebUtils {
 
     /* ---------- Spring 家族配置属性 ---------- */
 
+    public static String getApplicationName() {
+        return getApplicationName(SpringContext.getContext());
+    }
+
     public static String getApplicationName(ApplicationContext applicationContext) {
         return SpringContext.getProperty(applicationContext.getEnvironment(), PropertyConst.PROPERTY_SPRING_APPLICATION_NAME);
     }

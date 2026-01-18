@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.security.core.exception;
 
-import com.ysmjjsy.goya.component.common.code.IResponseCode;
-import com.ysmjjsy.goya.component.common.code.ResponseCodeEnum;
-import com.ysmjjsy.goya.component.common.definition.exception.IException;
+import com.ysmjjsy.goya.component.core.exception.IException;
+import com.ysmjjsy.goya.component.core.exception.error.ErrorCode;
+import com.ysmjjsy.goya.component.framework.exception.code.HttpErrorCodeEnum;
 import org.springframework.security.core.AuthenticationException;
 
 import java.io.Serial;
@@ -27,7 +27,7 @@ public class SecurityAuthenticationException extends AuthenticationException imp
     }
 
     @Override
-    public IResponseCode getCode() {
-        return ResponseCodeEnum.INTERNAL_SERVER_ERROR;
+    public ErrorCode getErrorCode() {
+        return HttpErrorCodeEnum.INTERNAL_SERVER_ERROR;
     }
 }

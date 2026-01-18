@@ -14,34 +14,34 @@ import java.util.Map;
  * @since 2025/12/21
  */
 public record SavedRequestData(
-        /**
-         * 请求 URL（完整路径，包含查询参数）
+        /*
+          请求 URL（完整路径，包含查询参数）
          */
         String redirectUrl,
 
-        /**
-         * HTTP 方法
+        /*
+          HTTP 方法
          */
         String method,
 
-        /**
-         * 请求参数（Map<String, String[]>）
+        /*
+          请求参数（Map<String, String[]>）
          */
         Map<String, String[]> parameterMap,
 
-        /**
-         * 请求头（Map<String, List<String>>）
+        /*
+          请求头（Map<String, List<String>>）
          */
         Map<String, List<String>> headers,
 
-        /**
-         * Cookies（List<String>，格式：name=value）
+        /*
+          Cookies（List<String>，格式：name=value）
          */
         List<String> cookies,
 
-        /**
-         * 语言环境列表（List<Locale>）
-         * 从 Accept-Language 请求头提取，用于国际化支持
+        /*
+          语言环境列表（List<Locale>）
+          从 Accept-Language 请求头提取，用于国际化支持
          */
         List<Locale> locales
 ) implements Serializable {

@@ -2,7 +2,9 @@ package com.ysmjjsy.goya.component.web.context;
 
 import com.ysmjjsy.goya.component.core.constants.SymbolConst;
 import com.ysmjjsy.goya.component.framework.context.GoyaContext;
+import com.ysmjjsy.goya.component.framework.context.GoyaUser;
 import com.ysmjjsy.goya.component.web.utils.WebUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
@@ -24,7 +26,6 @@ public abstract class AbstractGoyaContext implements GoyaContext {
     protected AbstractGoyaContext(ServerProperties serverProperties) {
         this.serverProperties = serverProperties;
     }
-
 
     @Override
     public Integer getPort() {
@@ -65,11 +66,31 @@ public abstract class AbstractGoyaContext implements GoyaContext {
 
     @Override
     public String getAuthServiceUri() {
-        return "";
+        return getUrl();
     }
 
     @Override
     public String getAuthServiceName() {
-        return "";
+        return WebUtils.getApplicationName();
+    }
+
+    @Override
+    public GoyaUser currentUser() {
+        throw new UnsupportedOperationException("Not supported");
+    }
+
+    @Override
+    public GoyaUser currentUser(HttpServletRequest request) {
+        throw new UnsupportedOperationException("Not supported");
+    }
+
+    @Override
+    public GoyaUser currentUser(String token) {
+        throw new UnsupportedOperationException("Not supported");
+    }
+
+    @Override
+    public String currentTenant() {
+        throw new UnsupportedOperationException("Not supported");
     }
 }

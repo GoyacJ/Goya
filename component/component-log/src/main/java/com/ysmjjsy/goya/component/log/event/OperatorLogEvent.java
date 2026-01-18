@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.log.event;
 
-import com.ysmjjsy.goya.component.bus.core.event.IEvent;
+import com.ysmjjsy.goya.component.bus.stream.definition.IBusEvent;
 import com.ysmjjsy.goya.component.framework.enums.StateEnum;
 import com.ysmjjsy.goya.component.log.enums.OperatorTypeEnum;
 
@@ -87,5 +87,5 @@ public record OperatorLogEvent(
          * 消耗时间
          */
         Long costTime
-) implements IEvent {
+) implements IBusEvent {
 }

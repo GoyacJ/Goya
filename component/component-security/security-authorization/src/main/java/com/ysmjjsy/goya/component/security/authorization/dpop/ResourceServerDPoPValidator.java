@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.security.authorization.dpop;
 
-import com.ysmjjsy.goya.security.core.utils.DPoPKeyUtils;
-import com.ysmjjsy.goya.security.resource.server.configuration.properties.SecurityResourceProperties;
+import com.ysmjjsy.goya.component.security.authorization.configuration.properties.SecurityResourceProperties;
+import com.ysmjjsy.goya.component.security.core.utils.DPoPKeyUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

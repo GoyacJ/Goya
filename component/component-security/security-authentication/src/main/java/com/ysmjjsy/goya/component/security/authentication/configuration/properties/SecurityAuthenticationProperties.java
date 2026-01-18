@@ -1,8 +1,7 @@
 package com.ysmjjsy.goya.component.security.authentication.configuration.properties;
 
-import com.ysmjjsy.goya.component.cache.annotation.PropertiesCache;
-import com.ysmjjsy.goya.security.core.constants.ISecurityConstants;
-import com.ysmjjsy.goya.security.core.enums.CertificateEnum;
+import com.ysmjjsy.goya.component.security.core.constants.SecurityConst;
+import com.ysmjjsy.goya.component.security.core.enums.CertificateEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
@@ -16,8 +15,7 @@ import java.time.Duration;
  * @since 2025/10/10 14:26
  */
 @Schema(description = "认证中心配置")
-@PropertiesCache
-@ConfigurationProperties(prefix = ISecurityConstants.PROPERTY_PLATFORM_SECURITY_AUTHENTICATION)
+@ConfigurationProperties(prefix = SecurityConst.PROPERTY_PLATFORM_SECURITY_AUTHENTICATION)
 public record SecurityAuthenticationProperties(
 
         @Schema(description = "登录失败配置")

@@ -1,13 +1,14 @@
 package com.ysmjjsy.goya.component.security.authentication.request;
 
-import com.ysmjjsy.goya.component.cache.service.ICacheService;
-import com.ysmjjsy.goya.component.common.utils.JsonUtils;
+import com.ysmjjsy.goya.component.cache.multilevel.service.MultiLevelCacheService;
+import com.ysmjjsy.goya.component.framework.json.GoyaJson;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.jspecify.annotations.NullMarked;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.savedrequest.SavedRequest;
 
@@ -45,7 +46,7 @@ import java.util.*;
 @RequiredArgsConstructor
 public class CustomizerRequestCache implements RequestCache {
 
-    private final ICacheService cacheService;
+    private final MultiLevelCacheService cacheService;
 
     // Redis Key 前缀
     private static final String REQUEST_KEY_PREFIX = "oauth2:request:";
@@ -71,7 +72,7 @@ public class CustomizerRequestCache implements RequestCache {
         // 3. 保存到 Redis
         String key = REQUEST_KEY_PREFIX + requestId;
         try {
-            String value = JsonUtils.toJson(requestData);
+            String value = GoyaJson.toJson(requestData);
             cacheService.put(CACHE_NAME, key, value, REQUEST_TTL);
             log.debug("[Goya] |- security [authentication] SavedRequest saved: {} -> {}", key, requestData.redirectUrl());
 
@@ -102,7 +103,7 @@ public class CustomizerRequestCache implements RequestCache {
 
         // 3. 反序列化并转换为 SavedRequest
         try {
-            SavedRequestData requestData = JsonUtils.fromJson(value, SavedRequestData.class);
+            SavedRequestData requestData = GoyaJson.fromJson(value, SavedRequestData.class);
             return createSavedRequest(requestData);
         } catch (Exception e) {
             log.error("[Goya] |- security [authentication] Failed to deserialize SavedRequest: {}", key, e);
@@ -111,6 +112,7 @@ public class CustomizerRequestCache implements RequestCache {
     }
 
     @Override
+    @NullMarked
     public HttpServletRequest getMatchingRequest(HttpServletRequest request, HttpServletResponse response) {
         // Spring Security 标准实现：返回匹配的请求
         // 对于无状态场景，我们直接返回原始请求
@@ -124,6 +126,7 @@ public class CustomizerRequestCache implements RequestCache {
     }
 
     @Override
+    @NullMarked
     public void removeRequest(HttpServletRequest request, HttpServletResponse response) {
         // 1. 获取 Request ID
         String requestId = getRequestId(request);
@@ -134,7 +137,7 @@ public class CustomizerRequestCache implements RequestCache {
         // 2. 从 Redis 删除
         String key = REQUEST_KEY_PREFIX + requestId;
         try {
-            cacheService.evict(CACHE_NAME, key);
+            cacheService.delete(CACHE_NAME, key);
             log.debug("[Goya] |- security [authentication] SavedRequest removed: {}", key);
         } catch (Exception e) {
             log.error("[Goya] |- security [authentication] Failed to remove SavedRequest: {}", key, e);

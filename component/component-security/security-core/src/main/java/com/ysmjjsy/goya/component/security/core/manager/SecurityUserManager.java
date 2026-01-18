@@ -1,13 +1,11 @@
 package com.ysmjjsy.goya.component.security.core.manager;
 
-import com.ysmjjsy.goya.component.auth.domain.UserPrincipal;
-import com.ysmjjsy.goya.component.auth.service.IUserService;
+import com.ysmjjsy.goya.component.security.core.domain.SecurityUser;
+import com.ysmjjsy.goya.component.security.core.enums.LoginTypeEnum;
+import com.ysmjjsy.goya.component.security.core.exception.SecurityAuthenticationException;
+import com.ysmjjsy.goya.component.security.core.service.IUserService;
 import com.ysmjjsy.goya.component.social.enums.SocialTypeEnum;
 import com.ysmjjsy.goya.component.social.service.SocialService;
-import com.ysmjjsy.goya.security.core.domain.SecurityUser;
-import com.ysmjjsy.goya.security.core.enums.LoginTypeEnum;
-import com.ysmjjsy.goya.security.core.exception.SecurityAuthenticationException;
-import com.ysmjjsy.goya.security.core.mapper.UserPrincipalToSecurityUserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NullMarked;
@@ -27,7 +25,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 public class SecurityUserManager implements UserDetailsService {
 
     private final IUserService userService;
-    private final UserPrincipalToSecurityUserMapper mapper;
     private final SocialService socialService;
 
     /**
@@ -61,8 +58,7 @@ public class SecurityUserManager implements UserDetailsService {
      * @throws AuthenticationException 异常
      */
     public SecurityUser findUserByUsername(String username) throws AuthenticationException {
-        UserPrincipal user = userService.findUserByUsername(username);
-        return mapper.toTarget(user);
+        return userService.findUserByUsername(username);
     }
 
     /**
@@ -73,8 +69,7 @@ public class SecurityUserManager implements UserDetailsService {
      * @throws AuthenticationException 异常
      */
     public SecurityUser findUserByPhone(String phoneNumber) throws AuthenticationException {
-        UserPrincipal user = userService.findUserByPhone(phoneNumber);
-        return mapper.toTarget(user);
+        return userService.findUserByPhone(phoneNumber);
     }
 
     /**
@@ -85,8 +80,7 @@ public class SecurityUserManager implements UserDetailsService {
      * @throws AuthenticationException 异常
      */
     public SecurityUser findUserByOpenId(String openId, SocialTypeEnum socialType) throws AuthenticationException {
-        UserPrincipal user = userService.findUserByOpenId(openId, socialType);
-        return mapper.toTarget(user);
+        return userService.findUserByOpenId(openId, socialType);
     }
 
     @Override

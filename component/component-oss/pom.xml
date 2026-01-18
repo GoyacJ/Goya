@@ -10,12 +10,15 @@
     </parent>
 
     <artifactId>component-oss</artifactId>
+    <packaging>pom</packaging>
     <description>oss component</description>
 
     <modules>
         <module>oss-minio</module>
         <module>oss-aliyun</module>
         <module>oss-s3</module>
+        <module>oss-core</module>
+        <module>oss-boot-starter</module>
     </modules>
 
     <dependencies>

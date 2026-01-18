@@ -1,12 +1,12 @@
 package com.ysmjjsy.goya.component.security.authorization.configuration;
 
-import com.ysmjjsy.goya.component.cache.service.ICacheService;
-import com.ysmjjsy.goya.security.core.utils.DPoPKeyUtils;
-import com.ysmjjsy.goya.security.resource.server.configuration.properties.SecurityResourceProperties;
-import com.ysmjjsy.goya.security.resource.server.dpop.ResourceServerDPoPValidator;
-import com.ysmjjsy.goya.security.resource.server.jwt.JwtAuthenticationFilter;
-import com.ysmjjsy.goya.security.resource.server.jwt.JwtAuthorityConverter;
-import com.ysmjjsy.goya.security.resource.server.jwt.JwtBlacklistValidator;
+import com.ysmjjsy.goya.component.cache.multilevel.service.MultiLevelCacheService;
+import com.ysmjjsy.goya.component.security.authorization.configuration.properties.SecurityResourceProperties;
+import com.ysmjjsy.goya.component.security.authorization.dpop.ResourceServerDPoPValidator;
+import com.ysmjjsy.goya.component.security.authorization.jwt.JwtAuthenticationFilter;
+import com.ysmjjsy.goya.component.security.authorization.jwt.JwtAuthorityConverter;
+import com.ysmjjsy.goya.component.security.authorization.jwt.JwtBlacklistValidator;
+import com.ysmjjsy.goya.component.security.core.utils.DPoPKeyUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -141,7 +141,7 @@ public class SecurityResourceAutoConfiguration {
         // 5. 如果启用了Token黑名单，包装JwtDecoder
         if (resourceProperties.tokenBlacklist().enabled()) {
             try {
-                ICacheService cacheService = applicationContext.getBean(ICacheService.class);
+                MultiLevelCacheService cacheService = applicationContext.getBean(MultiLevelCacheService.class);
                 jwtDecoder = new JwtBlacklistValidator(jwtDecoder, cacheService, resourceProperties.tokenBlacklist());
                 log.debug("[Goya] |- security [resource] JWT blacklist validator enabled.");
             } catch (Exception e) {

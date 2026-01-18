@@ -15,7 +15,7 @@
     <dependencies>
         <dependency>
             <groupId>com.ysmjjsy.goya</groupId>
-            <artifactId>component-framework</artifactId>
+            <artifactId>oss-core</artifactId>
         </dependency>
 
         <dependency>

@@ -48,6 +48,7 @@ public class GoyaCryptoUtils {
     private static final String PKCS8_PUBLIC_KEY_END = "-----END PUBLIC KEY-----";
     public static final String RSA_ECB_PKCS_1_PADDING = "RSA/ECB/PKCS1Padding";
     public static final String AES_ECB_PKCS_5_PADDING = "AES/ECB/PKCS5Padding";
+    public static final String AES = "AES";
 
     static {
         if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
@@ -473,4 +474,5 @@ public class GoyaCryptoUtils {
             throw new IllegalStateException("AES algorithm not available", e);
         }
     }
+
 }

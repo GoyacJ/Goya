@@ -3,6 +3,7 @@ package com.ysmjjsy.goya.component.framework.context;
 import com.ysmjjsy.goya.component.core.constants.SymbolConst;
 import com.ysmjjsy.goya.component.framework.configuration.properties.GoyaProperties;
 import com.ysmjjsy.goya.component.framework.configuration.properties.PlatformInfo;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.util.StringUtils;
 
 /**
@@ -79,13 +80,46 @@ public interface GoyaContext {
 
     /**
      * 获取认证中心地址
+     *
      * @return 认证中心地址
      */
     String getAuthServiceUri();
 
     /**
      * 获取认证中心名称
+     *
      * @return 认证中心名称
      */
     String getAuthServiceName();
+
+    /**
+     * 当前用户
+     *
+     * @return GoyaUser
+     */
+    GoyaUser currentUser();
+
+    /**
+     * 当前用户
+     *
+     * @param request request
+     * @return GoyaUser
+     */
+    GoyaUser currentUser(HttpServletRequest request);
+
+    /**
+     * 当前用户
+     *
+     * @param token token
+     * @return GoyaUser
+     */
+    GoyaUser currentUser(String token);
+
+    /**
+     * 当前租户
+     *
+     * @return 租户Id
+     */
+    String currentTenant();
+
 }

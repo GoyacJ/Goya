@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.security.core.utils;
 
-import com.ysmjjsy.goya.component.common.utils.JsonUtils;
-import com.ysmjjsy.goya.security.core.exception.SecurityAuthenticationException;
+import com.ysmjjsy.goya.component.framework.json.GoyaJson;
+import com.ysmjjsy.goya.component.security.core.exception.SecurityAuthenticationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.jwt.Jwt;
 
@@ -94,8 +94,8 @@ public class DPoPKeyUtils {
                 jwkMap = new HashMap<>(map);
             } else {
                 // 如果不是Map，先转换为JSON再解析
-                String jwkJson = JsonUtils.toJson(jwkObject);
-                jwkMap = JsonUtils.fromJson(jwkJson, Map.class);
+                String jwkJson = GoyaJson.toJson(jwkObject);
+                jwkMap = GoyaJson.fromJson(jwkJson, Map.class);
             }
 
             // 2. 提取并过滤字段（根据RFC 7638，只保留特定字段）
@@ -138,7 +138,7 @@ public class DPoPKeyUtils {
             Map<String, Object> sortedMap = new TreeMap<>(normalizedMap);
 
             // 4. 转换为无空格的JSON字符串
-            String normalizedJson = JsonUtils.toJson(sortedMap);
+            String normalizedJson = GoyaJson.toJson(sortedMap);
             // 移除所有空格（RFC 7638要求）
             return normalizedJson.replaceAll("\\s+", "");
 

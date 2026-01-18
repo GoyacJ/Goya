@@ -38,6 +38,6 @@ public enum ArchitectureEnum implements IPropertyEnum {
 
     @Override
     public String getPrefix() {
-        return PropertyConst.PROPERTY_PLATFORM_ARCHITECTURE;
+        return PropertyConst.PROPERTY_ARCHITECTURE;
     }
 }

@@ -1,7 +1,6 @@
 package com.ysmjjsy.goya.component.security.authorization.configuration.properties;
 
-import com.ysmjjsy.goya.component.cache.annotation.PropertiesCache;
-import com.ysmjjsy.goya.security.core.constants.ISecurityConstants;
+import com.ysmjjsy.goya.component.security.core.constants.SecurityConst;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
@@ -22,8 +21,7 @@ import java.util.List;
  * @since 2025/12/11 21:16
  */
 @Schema(description = "资源服务器配置")
-@PropertiesCache
-@ConfigurationProperties(prefix = ISecurityConstants.PROPERTY_PLATFORM_SECURITY_RESOURCE)
+@ConfigurationProperties(prefix = SecurityConst.PROPERTY_PLATFORM_SECURITY_RESOURCE)
 public record SecurityResourceProperties(
 
         @Schema(description = "JWT配置")

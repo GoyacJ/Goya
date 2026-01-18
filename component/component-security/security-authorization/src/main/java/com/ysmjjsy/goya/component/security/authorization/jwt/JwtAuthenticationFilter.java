@@ -1,9 +1,9 @@
 package com.ysmjjsy.goya.component.security.authorization.jwt;
 
-import com.ysmjjsy.goya.component.common.tenant.TenantContext;
-import com.ysmjjsy.goya.security.core.constants.IStandardClaimNamesConstants;
-import com.ysmjjsy.goya.security.resource.server.configuration.properties.SecurityResourceProperties;
-import com.ysmjjsy.goya.security.resource.server.dpop.ResourceServerDPoPValidator;
+import com.ysmjjsy.goya.component.framework.tenant.TenantContext;
+import com.ysmjjsy.goya.component.security.authorization.configuration.properties.SecurityResourceProperties;
+import com.ysmjjsy.goya.component.security.authorization.dpop.ResourceServerDPoPValidator;
+import com.ysmjjsy.goya.component.security.core.constants.StandardClaimNamesConst;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -60,7 +60,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (resourceProperties.multiTenant() != null && resourceProperties.multiTenant().enabled()) {
                 try {
                     // 从JWT中提取tenantId
-                    tenantId = jwt.getClaimAsString(IStandardClaimNamesConstants.TENANT_ID);
+                    tenantId = jwt.getClaimAsString(StandardClaimNamesConst.TENANT_ID);
                     
                     // 如果JWT中没有tenantId，使用默认值
                     if (StringUtils.isBlank(tenantId)) {

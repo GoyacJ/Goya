@@ -153,6 +153,26 @@
             </dependency>
             <dependency>
                 <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>oss-core</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>oss-aliyun</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>oss-s3</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>oss-minio</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
                 <artifactId>component-social</artifactId>
                 <version>${revision}</version>
             </dependency>

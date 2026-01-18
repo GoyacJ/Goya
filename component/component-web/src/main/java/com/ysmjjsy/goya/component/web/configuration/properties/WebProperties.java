@@ -16,7 +16,6 @@ import java.util.List;
  * @author goya
  * @since 2025/12/29 19:33
  */
-@PropertiesCache
 @ConfigurationProperties(prefix = IWebConstants.PROPERTY_WEB)
 @Schema(description = "web 配置")
 public record WebProperties(
