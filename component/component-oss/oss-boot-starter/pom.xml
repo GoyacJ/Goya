@@ -11,5 +11,23 @@
 
     <artifactId>oss-boot-starter</artifactId>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.ysmjjsy.goya</groupId>
+            <artifactId>component-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.ysmjjsy.goya</groupId>
+            <artifactId>oss-aliyun</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.ysmjjsy.goya</groupId>
+            <artifactId>oss-minio</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.ysmjjsy.goya</groupId>
+            <artifactId>oss-s3</artifactId>
+        </dependency>
+    </dependencies>
 
 </project>
