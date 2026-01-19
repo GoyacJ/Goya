@@ -105,6 +105,8 @@ public enum HttpErrorCodeEnum implements HttpErrorCode {
 
     SOCIAL_ERROR("0500130", HttpStatus.INTERNAL_SERVER_ERROR),
     SOCIAL_ACCESS_ERROR("0500131", HttpStatus.PRECONDITION_FAILED),
+
+    OSS_ERROR("0500140", HttpStatus.INTERNAL_SERVER_ERROR),
     ;
     @Schema(description = "业务状态码")
     private final String code;

@@ -31,7 +31,8 @@ public class ListMultipartUploadsResponseToDomainConverter implements Converter<
         if (source.encodingType() != null) {
             domain.setEncodingType(source.encodingType().toString());
         }
-        
+
+        domain.setTruncated(source.isTruncated());
         domain.setNextKeyMarker(source.nextKeyMarker());
         domain.setNextUploadIdMarker(source.nextUploadIdMarker());
         
