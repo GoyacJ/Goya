@@ -4,6 +4,7 @@ import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -59,5 +60,9 @@ public class GoyaDateUtils {
 
     public static LocalDateTime toLocalDateTime(Date creationDate) {
         return ObjectUtils.isNotEmpty(creationDate) ? LocalDateTime.ofInstant(creationDate.toInstant(), ZoneId.systemDefault()) : LocalDateTime.now();
+    }
+
+    public static LocalDateTime toLocalDateTime(Instant instant) {
+        return ObjectUtils.isNotEmpty(instant) ? LocalDateTime.ofInstant(instant, ZoneId.systemDefault()) : LocalDateTime.now();
     }
 }

@@ -1,6 +1,5 @@
 package com.ysmjjsy.goya.component.web.configuration.properties;
 
-import com.ysmjjsy.goya.component.cache.annotation.PropertiesCache;
 import com.ysmjjsy.goya.component.web.constants.IWebConstants;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.boot.context.properties.ConfigurationProperties;

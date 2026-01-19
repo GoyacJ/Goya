@@ -1,13 +1,13 @@
 package com.ysmjjsy.goya.component.oss.controller;
 
-import com.hzzhg.common.component.oss.arguments.bucket.CreateBucketArguments;
-import com.hzzhg.common.component.oss.arguments.bucket.DeleteBucketArguments;
-import com.hzzhg.common.component.oss.core.repository.OssBucketRepository;
-import com.hzzhg.common.component.oss.domain.bucket.BucketDomain;
-import com.hzzhg.common.component.security.annotation.AccessLimited;
-import com.hzzhg.common.component.security.annotation.Idempotent;
-import com.hzzhg.common.component.web.definition.IController;
-import com.hzzhg.common.component.web.response.Response;
+import com.ysmjjsy.goya.component.oss.core.arguments.bucket.CreateBucketArguments;
+import com.ysmjjsy.goya.component.oss.core.arguments.bucket.DeleteBucketArguments;
+import com.ysmjjsy.goya.component.oss.core.core.repository.OssBucketRepository;
+import com.ysmjjsy.goya.component.oss.core.domain.bucket.BucketDomain;
+import com.ysmjjsy.goya.component.web.annotation.AccessLimited;
+import com.ysmjjsy.goya.component.web.annotation.Idempotent;
+import com.ysmjjsy.goya.component.web.definition.IController;
+import com.ysmjjsy.goya.component.web.response.Response;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 

@@ -6,7 +6,7 @@
 
     <groupId>com.ysmjjsy.goya</groupId>
     <artifactId>bom</artifactId>
-    <version>1.0.0</version>
+    <version>${revision}</version>
     <packaging>pom</packaging>
     <description>Spring Boot 4 Enterprise Framework Parent BOM</description>
     <url>https://www.ysmjjsy.com</url>
@@ -32,6 +32,7 @@
     </scm>
 
     <properties>
+        <revision>1.0.0</revision>
         <!-- ======================== Spring & Cloud ======================== -->
         <spring-boot-dependencies.version>4.0.1</spring-boot-dependencies.version>
         <spring-cloud-dependencies.version>2025.1.0</spring-cloud-dependencies.version>
@@ -55,7 +56,8 @@
 
         <!-- ======================== SDK ======================== -->
         <minio.version>8.6.0</minio.version>
-        <software.amazon.awssdk.version>2.40.11</software.amazon.awssdk.version>
+        <software.amazon.awssdk.version>2.41.10</software.amazon.awssdk.version>
+        <aws.lambda.java.version>1.4.0</aws.lambda.java.version>
         <aliyun-java-sdk-core.version>4.7.8</aliyun-java-sdk-core.version>
         <aliyun-java-sdk-green.version>3.6.6</aliyun-java-sdk-green.version>
         <aliyun-sdk-oss.version>3.18.3</aliyun-sdk-oss.version>
@@ -226,9 +228,13 @@
             </dependency>
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
-                <artifactId>s3</artifactId>
+                <artifactId>aws-sdk-java</artifactId>
                 <version>${software.amazon.awssdk.version}</version>
-                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-lambda-java-core</artifactId>
+                <version>${aws.lambda.java.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.aliyun</groupId>

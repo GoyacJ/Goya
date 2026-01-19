@@ -101,7 +101,7 @@ public class OssObjectStreamService {
             arguments.setBucketName(bucketName);
             return ossObjectRepository.putObject(arguments);
         } catch (IOException e) {
-            log.error("[HZ-ZHG] |- Minio upload catch IOException.", e);
+            log.error("[Goya] |- Minio upload catch IOException.", e);
             throw new CommonException(e.getMessage());
         }
     }

@@ -1,6 +1,5 @@
 package com.ysmjjsy.goya.component.cache.multilevel.core;
 
-import com.ysmjjsy.goya.component.cache.core.GoyaCache;
 import org.springframework.cache.Cache;
 
 import java.time.Duration;

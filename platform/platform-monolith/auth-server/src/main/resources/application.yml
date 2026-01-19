@@ -1,20 +1,13 @@
 server:
   port: 8101
-  error:
-    whitelabel:
-      enabled: false
-    include-exception: true
-    include-message: always
-    include-stacktrace: always
-    include-binding-errors: always
 
 ---
 # spring
 spring:
   application:
-    name:  @artifactId@
+    name: "@artifactId@"
   profiles:
-    active: @profile@
+    active: @env@
   thymeleaf:
     mode: HTML
     cache: false

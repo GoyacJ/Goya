@@ -1,12 +1,11 @@
 package com.ysmjjsy.goya.auth.server;
 
-import com.ysmjjsy.goya.component.bus.annotation.BusEventListener;
-import com.ysmjjsy.goya.component.bus.definition.EventScope;
-import com.ysmjjsy.goya.component.bus.service.IBusService;
-import com.ysmjjsy.goya.component.cache.exception.CacheException;
-import com.ysmjjsy.goya.component.cache.service.ICacheService;
-import com.ysmjjsy.goya.component.common.service.IPlatformService;
-import com.ysmjjsy.goya.component.common.utils.JsonUtils;
+import com.ysmjjsy.goya.component.bus.stream.annotation.BusEventListener;
+import com.ysmjjsy.goya.component.bus.stream.definition.EventScope;
+import com.ysmjjsy.goya.component.bus.stream.service.IBusService;
+import com.ysmjjsy.goya.component.cache.core.definition.CacheService;
+import com.ysmjjsy.goya.component.cache.core.exception.CacheException;
+import com.ysmjjsy.goya.component.framework.json.GoyaJson;
 import com.ysmjjsy.goya.component.web.response.Response;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Objects;
-import java.util.Set;
 
 /**
  * <p></p>
@@ -30,7 +28,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class TestController {
 
-    private final ICacheService iCacheService;
+    private final CacheService iCacheService;
     private final IBusService iBusService;
 
     @GetMapping("test")
@@ -45,7 +43,7 @@ public class TestController {
 
     @PostMapping("test2")
     public Response<String> test2(@RequestBody TestDTO time) {
-        String json = JsonUtils.toJson(time);
+        String json = GoyaJson.toJson(time);
         log.warn("json:{}", json);
 
         return Response.success(json);
@@ -53,9 +51,6 @@ public class TestController {
 
     @PostMapping("test3")
     public Response<Void> test3() {
-        Set<String> packageNames = IPlatformService.getPackageNames();
-        log.warn("json:{}", packageNames);
-
         return Response.success();
     }
 

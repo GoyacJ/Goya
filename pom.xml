@@ -25,7 +25,6 @@
     </licenses>
 
     <properties>
-        <revision>1.0.0</revision>
         <docker.build.directory>../../configurations/docker/context/target</docker.build.directory>
         <docker.resource.name>${project.build.finalName}.${project.packaging}</docker.resource.name>
 
@@ -210,7 +209,7 @@
             </activation>
             <properties>
                 <!--current-->
-                <build.env>dev</build.env>
+                <env>dev</env>
                 <skip.build.source.package>false</skip.build.source.package>
                 <skip.copy.docker.resource>true</skip.copy.docker.resource>
                 <skip.build.git.commit.info>true</skip.build.git.commit.info>
@@ -220,7 +219,7 @@
         <profile>
             <id>docker</id>
             <properties>
-                <build.env>docker</build.env>
+                <env>docker</env>
                 <skip.build.source.package>true</skip.build.source.package>
                 <skip.copy.docker.resource>false</skip.copy.docker.resource>
                 <skip.build.git.commit.info>false</skip.build.git.commit.info>
@@ -230,7 +229,7 @@
         <profile>
             <id>prod</id>
             <properties>
-                <build.env>prod</build.env>
+                <env>prod</env>
                 <skip.build.source.package>false</skip.build.source.package>
                 <skip.copy.docker.resource>true</skip.copy.docker.resource>
                 <skip.build.git.commit.info>false</skip.build.git.commit.info>

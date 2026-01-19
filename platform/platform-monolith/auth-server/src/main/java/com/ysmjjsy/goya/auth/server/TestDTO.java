@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.auth.server;
 
-import com.ysmjjsy.goya.component.common.annotation.ArrayDelimited;
+import com.ysmjjsy.goya.component.framework.annotation.ArrayDelimited;
 
 import java.time.LocalDateTime;
 

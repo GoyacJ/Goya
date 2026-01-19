@@ -167,23 +167,9 @@ public class DefaultResolver implements I18nResolver, ApplicationContextAware {
      * @return 当前 Locale，不会返回 null
      */
     private static Locale getLocale() {
-
-        try {
-            // 2. 使优先用系统配置的默认 Locale
-            Locale locale = LocaleEnum.getDefaultLocal();
-            if (locale != null) {
-                return locale;
-            }
-        } catch (Exception e) {
-            log.debug("[Goya] |- 获取系统默认 Locale 失败: {}", e.getMessage());
-        }
-
         try {
             // 1. 使用请求级别的 Locale（从 HTTP 请求头获取）
-            Locale locale = LocaleContextHolder.getLocale();
-            if (locale != null) {
-                return locale;
-            }
+            return LocaleContextHolder.getLocale();
         } catch (Exception e) {
             log.debug("[Goya] |- 获取请求级别 Locale 失败: {}", e.getMessage());
         }

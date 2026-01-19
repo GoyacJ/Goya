@@ -3,7 +3,6 @@ package com.ysmjjsy.goya.component.core.utils;
 import com.ysmjjsy.goya.component.core.exception.CryptoException;
 import com.ysmjjsy.goya.component.core.pojo.DTO;
 import lombok.experimental.UtilityClass;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.bouncycastle.asn1.gm.GMNamedCurves;
 import org.bouncycastle.crypto.digests.SM3Digest;
@@ -40,7 +39,6 @@ import java.util.Random;
  * @author goya
  * @since 2026/1/7 23:43
  */
-@Slf4j
 @UtilityClass
 public class GoyaCryptoUtils {
 

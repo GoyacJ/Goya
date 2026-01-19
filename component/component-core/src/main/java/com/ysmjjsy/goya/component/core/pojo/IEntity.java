@@ -9,4 +9,6 @@ import java.io.Serializable;
  * @since 2026/1/18 20:57
  */
 public interface IEntity extends Serializable {
+
+
 }

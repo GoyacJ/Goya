@@ -34,7 +34,7 @@ public class OssProxyAddressFunction implements Function<HttpServletRequest, Str
         String params = queryString != null ? SymbolConst.QUESTION + queryString : SymbolConst.BLANK;
 
         String target = ossProperties.destination() + path + params;
-        log.debug("[HZ-ZHG] |- Convert request [{}] to [{}].", uri, target);
+        log.debug("[Goya] |- Convert request [{}] to [{}].", uri, target);
         return target;
     }
 }

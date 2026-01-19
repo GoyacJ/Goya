@@ -63,7 +63,7 @@ public class SpringContext implements ApplicationContextInitializer<Configurable
         Set<String> packageNames = new LinkedHashSet<>();
 
         String rootPackage = Arrays.stream(
-                        SpringContext.class.getPackageName().split(RegexPoolEnum.PACKAGE_SEPARATOR_REGEX.regex()))
+                        SpringContext.class.getPackageName().split(RegexPoolEnum.PACKAGE_SEPARATOR_REGEX.getRegex()))
                 .limit(3)
                 .collect(Collectors.joining(SymbolConst.PERIOD));
         packageNames.add(rootPackage);

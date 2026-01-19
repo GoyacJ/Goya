@@ -1,17 +1,17 @@
 package com.ysmjjsy.goya.component.oss.controller;
 
-import com.hzzhg.common.component.oss.arguments.object.DeleteObjectArguments;
-import com.hzzhg.common.component.oss.arguments.object.DeleteObjectsArguments;
-import com.hzzhg.common.component.oss.arguments.object.ListObjectsArguments;
-import com.hzzhg.common.component.oss.arguments.object.ListObjectsV2Arguments;
-import com.hzzhg.common.component.oss.core.repository.OssObjectRepository;
-import com.hzzhg.common.component.oss.domain.object.DeleteObjectDomain;
-import com.hzzhg.common.component.oss.domain.object.ListObjectsDomain;
-import com.hzzhg.common.component.oss.domain.object.ListObjectsV2Domain;
-import com.hzzhg.common.component.security.annotation.AccessLimited;
-import com.hzzhg.common.component.security.annotation.Idempotent;
-import com.hzzhg.common.component.web.definition.IController;
-import com.hzzhg.common.component.web.response.Response;
+import com.ysmjjsy.goya.component.oss.core.arguments.object.DeleteObjectArguments;
+import com.ysmjjsy.goya.component.oss.core.arguments.object.DeleteObjectsArguments;
+import com.ysmjjsy.goya.component.oss.core.arguments.object.ListObjectsArguments;
+import com.ysmjjsy.goya.component.oss.core.arguments.object.ListObjectsV2Arguments;
+import com.ysmjjsy.goya.component.oss.core.core.repository.OssObjectRepository;
+import com.ysmjjsy.goya.component.oss.core.domain.object.DeleteObjectDomain;
+import com.ysmjjsy.goya.component.oss.core.domain.object.ListObjectsDomain;
+import com.ysmjjsy.goya.component.oss.core.domain.object.ListObjectsV2Domain;
+import com.ysmjjsy.goya.component.web.annotation.AccessLimited;
+import com.ysmjjsy.goya.component.web.annotation.Idempotent;
+import com.ysmjjsy.goya.component.web.definition.IController;
+import com.ysmjjsy.goya.component.web.response.Response;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -20,6 +20,10 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 

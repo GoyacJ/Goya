@@ -1,16 +1,16 @@
 package com.ysmjjsy.goya.component.oss.controller;
 
-import com.hzzhg.common.component.oss.arguments.multipart.CompleteMultipartUploadArguments;
-import com.hzzhg.common.component.oss.constants.OssConstants;
-import com.hzzhg.common.component.oss.domain.base.ObjectWriteDomain;
-import com.hzzhg.common.component.oss.domain.multipart.CompleteMultipartUploadDomain;
-import com.hzzhg.common.component.security.annotation.Idempotent;
-import com.hzzhg.common.component.web.definition.IController;
-import com.hzzhg.common.component.web.response.Response;
-import com.hzzhg.common.module.oss.arguments.CreateMultipartUploadArguments;
-import com.hzzhg.common.module.oss.business.CreateMultipartUploadBusiness;
-import com.hzzhg.common.module.oss.proxy.OssPresignedUrlProxy;
-import com.hzzhg.common.module.oss.service.OssMultipartUploadService;
+import com.ysmjjsy.goya.component.oss.arguments.CompleteMultipartUploadArguments;
+import com.ysmjjsy.goya.component.oss.arguments.CreateMultipartUploadArguments;
+import com.ysmjjsy.goya.component.oss.business.CreateMultipartUploadBusiness;
+import com.ysmjjsy.goya.component.oss.core.constants.OssConstants;
+import com.ysmjjsy.goya.component.oss.core.domain.base.ObjectWriteDomain;
+import com.ysmjjsy.goya.component.oss.core.domain.multipart.CompleteMultipartUploadDomain;
+import com.ysmjjsy.goya.component.oss.proxy.OssPresignedUrlProxy;
+import com.ysmjjsy.goya.component.oss.service.OssMultipartUploadService;
+import com.ysmjjsy.goya.component.web.annotation.Idempotent;
+import com.ysmjjsy.goya.component.web.definition.IController;
+import com.ysmjjsy.goya.component.web.response.Response;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -21,6 +21,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * <p>对象存储管理接口-OSS统一大文件分片接口</p>

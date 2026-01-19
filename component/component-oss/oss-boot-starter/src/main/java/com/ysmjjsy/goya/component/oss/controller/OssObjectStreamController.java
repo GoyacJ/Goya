@@ -1,10 +1,10 @@
 package com.ysmjjsy.goya.component.oss.controller;
 
-import com.hzzhg.common.component.oss.domain.object.PutObjectDomain;
-import com.hzzhg.common.component.security.annotation.Idempotent;
-import com.hzzhg.common.component.web.definition.IController;
-import com.hzzhg.common.module.oss.arguments.ObjectStreamDownloadArguments;
-import com.hzzhg.common.module.oss.service.OssObjectStreamService;
+import com.ysmjjsy.goya.component.oss.arguments.ObjectStreamDownloadArguments;
+import com.ysmjjsy.goya.component.oss.core.domain.object.PutObjectDomain;
+import com.ysmjjsy.goya.component.oss.service.OssObjectStreamService;
+import com.ysmjjsy.goya.component.web.annotation.Idempotent;
+import com.ysmjjsy.goya.component.web.definition.IController;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -16,6 +16,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -54,7 +55,7 @@ public class OssObjectStreamController implements IController {
         try {
             ossObjectStreamService.download(arguments.getBucketName(), arguments.getObjectName(), response);
         } catch (IOException e) {
-            log.error("[HZ-ZHG] |- Download file from minio catch error", e);
+            log.error("[Goya] |- Download file from minio catch error", e);
         }
     }
 
@@ -73,7 +74,7 @@ public class OssObjectStreamController implements IController {
         try {
             ossObjectStreamService.display(arguments.getBucketName(), arguments.getObjectName(), response);
         } catch (IOException e) {
-            log.error("[HZ-ZHG] |- Download file from minio catch error", e);
+            log.error("[Goya] |- Download file from minio catch error", e);
         }
     }
 

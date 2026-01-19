@@ -33,7 +33,7 @@ public class ModuleOssAutoConfiguration {
 
     @PostConstruct
     public void init() {
-        log.debug("[HZ-ZHG] |- module [oss] ModuleOssAutoConfiguration auto configure.");
+        log.debug("[Goya] |- module [oss] ModuleOssAutoConfiguration auto configure.");
     }
 
     @Configuration(proxyBeanMethods = false)
@@ -70,7 +70,7 @@ public class ModuleOssAutoConfiguration {
     @Bean
     public OssPresignedUrlProxy ossPresignedUrlProxy(OssProperties ossProperties) {
         OssPresignedUrlProxy ossPresignedUrlProxy = new OssPresignedUrlProxy(ossProperties);
-        log.trace("[HZ-ZHG] |- Bean [Oss Presigned Url Proxy] Configure.");
+        log.trace("[Goya] |- Bean [Oss Presigned Url Proxy] Configure.");
         return ossPresignedUrlProxy;
     }
 }

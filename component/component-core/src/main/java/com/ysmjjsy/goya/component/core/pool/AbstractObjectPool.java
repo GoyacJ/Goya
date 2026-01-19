@@ -1,7 +1,6 @@
 package com.ysmjjsy.goya.component.core.pool;
 
 import com.ysmjjsy.goya.component.core.exception.CommonException;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.pool2.PooledObjectFactory;
 import org.apache.commons.pool2.impl.GenericObjectPool;
@@ -14,7 +13,6 @@ import org.jspecify.annotations.NonNull;
  * @author goya
  * @since 2025/11/1 16:02
  */
-@Slf4j
 public abstract class AbstractObjectPool<T> {
 
     private final GenericObjectPool<T> genericObjectPool;

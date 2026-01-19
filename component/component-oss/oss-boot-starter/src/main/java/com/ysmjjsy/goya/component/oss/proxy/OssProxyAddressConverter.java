@@ -28,7 +28,7 @@ public class OssProxyAddressConverter implements Converter<String, String> {
         if (ossProperties.useProxy()) {
             String endpoint = ossProperties.proxySourceEndpoint() + OssConstants.PRESIGNED_OBJECT_URL_PROXY;
             String target = Strings.CS.replace(source, ossProperties.destination(), endpoint);
-            log.debug("[HZ-ZHG] |- Convert presignedObjectUrl [{}] to [{}].", endpoint, target);
+            log.debug("[Goya] |- Convert presignedObjectUrl [{}] to [{}].", endpoint, target);
             return target;
         }
 
