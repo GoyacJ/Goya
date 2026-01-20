@@ -35,9 +35,4 @@ public class ArgumentsToPutObjectRequestConverter extends ArgumentsToBucketConve
 
         return builder.build();
     }
-    
-    @Override
-    public void prepare(PutObjectArguments arguments, PutObjectRequest request) {
-        super.prepare(arguments, request);
-    }
 }

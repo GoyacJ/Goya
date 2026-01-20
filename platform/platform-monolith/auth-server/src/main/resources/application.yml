@@ -5,9 +5,9 @@ server:
 # spring
 spring:
   application:
-    name: "@artifactId@"
+    name: @artifactId@
   profiles:
-    active: @env@
+    active: @profile@
   thymeleaf:
     mode: HTML
     cache: false

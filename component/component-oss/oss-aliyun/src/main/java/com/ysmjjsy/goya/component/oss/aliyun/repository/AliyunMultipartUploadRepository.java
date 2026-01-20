@@ -11,8 +11,6 @@ import com.ysmjjsy.goya.component.oss.aliyun.converter.domain.*;
 import com.ysmjjsy.goya.component.oss.core.arguments.multipart.*;
 import com.ysmjjsy.goya.component.oss.core.core.repository.OssMultipartUploadRepository;
 import com.ysmjjsy.goya.component.oss.core.domain.multipart.*;
-import com.ysmjjsy.goya.oss.aliyun.converter.arguments.*;
-import com.ysmjjsy.goya.oss.aliyun.converter.domain.*;
 import com.ysmjjsy.goya.component.oss.aliyun.definition.service.BaseAliyunService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.convert.converter.Converter;
