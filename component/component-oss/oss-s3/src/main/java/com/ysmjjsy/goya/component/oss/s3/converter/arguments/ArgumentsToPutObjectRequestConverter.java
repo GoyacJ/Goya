@@ -30,9 +30,7 @@ public class ArgumentsToPutObjectRequestConverter extends ArgumentsToBucketConve
         
         if (arguments.getRequestHeaders() != null && !arguments.getRequestHeaders().isEmpty()) {
             Map<String, String> headers = arguments.getRequestHeaders();
-            builder.overrideConfiguration(overrideConfig -> {
-                headers.forEach(overrideConfig::putHeader);
-            });
+            builder.overrideConfiguration(overrideConfig -> headers.forEach(overrideConfig::putHeader));
         }
 
         return builder.build();
