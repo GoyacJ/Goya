@@ -8,11 +8,8 @@ import cn.binarywang.wx.miniapp.message.WxMaMessageHandler;
 import cn.binarywang.wx.miniapp.message.WxMaMessageRouter;
 import cn.binarywang.wx.miniapp.message.WxMaOutMessage;
 import com.google.common.collect.Maps;
-import com.ysmjjsy.goya.component.core.stragegy.StrategyExecute;
 import com.ysmjjsy.goya.component.social.configuration.properties.SocialProperties;
-import com.ysmjjsy.goya.component.social.enums.SocialTypeEnum;
 import com.ysmjjsy.goya.component.social.exception.SocialException;
-import com.ysmjjsy.goya.component.social.service.dto.WxAppLoginRequest;
 import com.ysmjjsy.goya.component.social.service.dto.WxAppLoginResponse;
 import lombok.extern.slf4j.Slf4j;
 import me.chanjar.weixin.common.error.WxErrorException;
@@ -35,7 +32,7 @@ import java.util.stream.Collectors;
  * @since 2026/1/1 23:03
  */
 @Slf4j
-public class WxMiniProgramService implements StrategyExecute<WxAppLoginRequest, WxAppLoginResponse> {
+public class WxMiniProgramService {
 
     private final SocialProperties.WxMiniProgram wxMiniProgram;
     private final WxMiniProgramLogHandler wxMiniProgramLogHandler;
@@ -75,16 +72,6 @@ public class WxMiniProgramService implements StrategyExecute<WxAppLoginRequest, 
         final WxMaMessageRouter router = new WxMaMessageRouter(wxMaService);
         router.rule().handler(wxMiniProgramLogHandler).next();
         return router;
-    }
-
-    @Override
-    public String mark() {
-        return SocialTypeEnum.WECHAT_MINI_PROGRAM.getMark();
-    }
-
-    @Override
-    public WxAppLoginResponse executeResp(WxAppLoginRequest request) {
-        return login(request.code(), request.appId());
     }
 
     /**

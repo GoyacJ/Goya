@@ -3,9 +3,6 @@ package com.ysmjjsy.goya.component.security.core.service;
 import com.ysmjjsy.goya.component.security.core.domain.SecurityUser;
 import com.ysmjjsy.goya.component.security.core.domain.SecurityUserAuthAuditLog;
 import com.ysmjjsy.goya.component.security.core.domain.SecurityUserDevice;
-import com.ysmjjsy.goya.component.social.enums.SocialTypeEnum;
-import com.ysmjjsy.goya.component.social.service.dto.SocialDetails;
-import com.ysmjjsy.goya.component.web.utils.UserAgent;
 
 import java.util.List;
 
@@ -20,27 +17,18 @@ public interface IUserService {
     /**
      * 根据用户名查询用户
      *
+     * @param userId userId
+     * @return 用户
+     */
+    SecurityUser findUserByUserId(String userId);
+
+    /**
+     * 根据用户名查询用户
+     *
      * @param username 用户名
      * @return 用户
      */
     SecurityUser findUserByUsername(String username);
-
-    /**
-     * 根据手机号查询用户
-     *
-     * @param phoneNumber 手机号
-     * @return 用户
-     */
-    SecurityUser findUserByPhone(String phoneNumber);
-
-    /**
-     * 根据 openId 查询用户
-     *
-     * @param openId     openId
-     * @param socialType 类型
-     * @return 用户
-     */
-    SecurityUser findUserByOpenId(String openId, SocialTypeEnum socialType);
 
     /**
      * 注册用户
@@ -49,14 +37,6 @@ public interface IUserService {
      * @return 用户信息
      */
     SecurityUser registerUser(SecurityUser userPrincipal);
-
-    /**
-     * 注册用户
-     *
-     * @param socialDetails 用户信息
-     * @return 用户信息
-     */
-    SecurityUser registerUser(SocialDetails socialDetails);
 
     /**
      * 注册设备
@@ -117,172 +97,4 @@ public interface IUserService {
      * @param auditLog 审计日志
      */
     void recordAuditLog(SecurityUserAuthAuditLog auditLog);
-
-    /**
-     * 记录登录成功审计日志
-     *
-     * @param userId     用户ID
-     * @param username   用户名
-     * @param tenantId   租户ID
-     * @param ipAddress  IP地址
-     * @param userAgent  User-Agent
-     * @param requestUri 请求URI
-     */
-    default void recordLoginSuccess(String userId, String username, String tenantId,
-                                    String ipAddress, UserAgent userAgent, String requestUri) {
-        SecurityUserAuthAuditLog auditLog = SecurityUserAuthAuditLog.builder()
-                .userId(userId)
-                .username(username)
-                .tenantId(tenantId)
-                .operation("LOGIN_SUCCESS")
-                .ipAddress(ipAddress)
-                .userAgent(userAgent)
-                .requestUri(requestUri)
-                .requestMethod("POST")
-                .status("SUCCESS")
-                .build();
-        recordAuditLog(auditLog);
-    }
-
-    /**
-     * 记录登录失败审计日志
-     *
-     * @param username     用户名
-     * @param ipAddress    IP地址
-     * @param userAgent    User-Agent
-     * @param requestUri   请求URI
-     * @param errorMessage 错误消息
-     */
-    default void recordLoginFailure(String username, String ipAddress, UserAgent userAgent,
-                                    String requestUri, String errorMessage) {
-        SecurityUserAuthAuditLog auditLog = SecurityUserAuthAuditLog.builder()
-                .username(username)
-                .operation("LOGIN_FAILURE")
-                .ipAddress(ipAddress)
-                .userAgent(userAgent)
-                .requestUri(requestUri)
-                .requestMethod("POST")
-                .status("FAILURE")
-                .errorMessage(errorMessage)
-                .build();
-        recordAuditLog(auditLog);
-    }
-
-    /**
-     * 记录Token生成审计日志
-     *
-     * @param userId     用户ID
-     * @param username   用户名
-     * @param clientId   客户端ID
-     * @param ipAddress  IP地址
-     * @param requestUri 请求URI
-     */
-    default void recordTokenGenerate(String userId, String username, String clientId,
-                                     String ipAddress, String requestUri) {
-        SecurityUserAuthAuditLog auditLog = SecurityUserAuthAuditLog.builder()
-                .userId(userId)
-                .username(username)
-                .clientId(clientId)
-                .operation("TOKEN_GENERATE")
-                .ipAddress(ipAddress)
-                .requestUri(requestUri)
-                .requestMethod("POST")
-                .status("SUCCESS")
-                .build();
-        recordAuditLog(auditLog);
-    }
-
-    /**
-     * 记录Token刷新审计日志
-     *
-     * @param userId     用户ID
-     * @param username   用户名
-     * @param clientId   客户端ID
-     * @param ipAddress  IP地址
-     * @param requestUri 请求URI
-     */
-    default void recordTokenRefresh(String userId, String username, String clientId,
-                                    String ipAddress, String requestUri) {
-        SecurityUserAuthAuditLog auditLog = SecurityUserAuthAuditLog.builder()
-                .userId(userId)
-                .username(username)
-                .clientId(clientId)
-                .operation("TOKEN_REFRESH")
-                .ipAddress(ipAddress)
-                .requestUri(requestUri)
-                .requestMethod("POST")
-                .status("SUCCESS")
-                .build();
-        recordAuditLog(auditLog);
-    }
-
-    /**
-     * 记录Token撤销审计日志
-     *
-     * @param userId     用户ID
-     * @param username   用户名
-     * @param clientId   客户端ID
-     * @param ipAddress  IP地址
-     * @param requestUri 请求URI
-     */
-    default void recordTokenRevoke(String userId, String username, String clientId,
-                                   String ipAddress, String requestUri) {
-        SecurityUserAuthAuditLog auditLog = SecurityUserAuthAuditLog.builder()
-                .userId(userId)
-                .username(username)
-                .clientId(clientId)
-                .operation("TOKEN_REVOKE")
-                .ipAddress(ipAddress)
-                .requestUri(requestUri)
-                .requestMethod("POST")
-                .status("SUCCESS")
-                .build();
-        recordAuditLog(auditLog);
-    }
-
-    /**
-     * 记录授权码生成审计日志
-     *
-     * @param userId     用户ID
-     * @param username   用户名
-     * @param clientId   客户端ID
-     * @param ipAddress  IP地址
-     * @param requestUri 请求URI
-     */
-    default void recordAuthorizationCodeGenerate(String userId, String username, String clientId,
-                                                 String ipAddress, String requestUri) {
-        SecurityUserAuthAuditLog auditLog = SecurityUserAuthAuditLog.builder()
-                .userId(userId)
-                .username(username)
-                .clientId(clientId)
-                .operation("AUTHORIZATION_CODE_GENERATE")
-                .ipAddress(ipAddress)
-                .requestUri(requestUri)
-                .requestMethod("GET")
-                .status("SUCCESS")
-                .build();
-        recordAuditLog(auditLog);
-    }
-
-    /**
-     * 记录客户端认证失败审计日志
-     *
-     * @param clientId     客户端ID
-     * @param ipAddress    IP地址
-     * @param requestUri   请求URI
-     * @param errorMessage 错误消息
-     */
-    default void recordClientAuthFailure(String clientId, String ipAddress,
-                                         String requestUri, String errorMessage) {
-        SecurityUserAuthAuditLog auditLog = SecurityUserAuthAuditLog.builder()
-                .clientId(clientId)
-                .operation("CLIENT_AUTH_FAILURE")
-                .ipAddress(ipAddress)
-                .requestUri(requestUri)
-                .requestMethod("POST")
-                .status("FAILURE")
-                .errorMessage(errorMessage)
-                .build();
-        recordAuditLog(auditLog);
-    }
 }

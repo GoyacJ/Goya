@@ -1,13 +1,9 @@
 package com.ysmjjsy.goya.component.social.configuration;
 
-import com.ysmjjsy.goya.component.framework.strategy.StrategyChoose;
 import com.ysmjjsy.goya.component.social.cache.SmsCheckCacheManager;
 import com.ysmjjsy.goya.component.social.cache.ThirdPartCheckCacheManager;
 import com.ysmjjsy.goya.component.social.configuration.properties.SocialProperties;
-import com.ysmjjsy.goya.component.social.service.SmsService;
-import com.ysmjjsy.goya.component.social.service.SocialService;
-import com.ysmjjsy.goya.component.social.service.ThirdPartService;
-import com.ysmjjsy.goya.component.social.service.WxMiniProgramService;
+import com.ysmjjsy.goya.component.social.service.*;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -66,10 +62,10 @@ public class SocialAutoConfiguration {
     }
 
     @Bean
-    public SocialService socialService(StrategyChoose strategyChoose, SmsService smsService, ThirdPartService thirdPartService, WxMiniProgramService wxMiniProgramService) {
-        SocialService socialService = new SocialService(strategyChoose, smsService, thirdPartService, wxMiniProgramService);
-        log.trace("[Goya] |- component [social] SocialAutoConfiguration |- bean [socialService] register.");
-        return socialService;
+    public SocialManager defaultSocialManager(ThirdPartService thirdPartService, WxMiniProgramService wxMiniProgramService) {
+        DefaultSocialManager defaultSocialManager = new DefaultSocialManager(thirdPartService, wxMiniProgramService);
+        log.trace("[Goya] |- component [social] SocialAutoConfiguration |- bean [defaultSocialManager] register.");
+        return defaultSocialManager;
     }
 
 }

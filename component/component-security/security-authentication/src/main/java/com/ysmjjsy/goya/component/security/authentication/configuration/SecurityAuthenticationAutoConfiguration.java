@@ -4,19 +4,18 @@ import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
-import com.ysmjjsy.goya.component.cache.service.ICacheService;
-import com.ysmjjsy.goya.component.common.utils.ResourceResolverUtils;
-import com.ysmjjsy.goya.security.authentication.captcha.DynamicLoginCaptchaStrategy;
-import com.ysmjjsy.goya.security.authentication.configuration.properties.SecurityAuthenticationProperties;
-import com.ysmjjsy.goya.security.authentication.service.impl.CacheOAuth2AuthorizationService;
-import com.ysmjjsy.goya.security.authentication.token.JwtTokenCustomizer;
-import com.ysmjjsy.goya.security.authentication.token.TokenBlacklistStamp;
-import com.ysmjjsy.goya.security.authentication.token.TokenManager;
-import com.ysmjjsy.goya.security.authentication.userinfo.OAuth2UserInfoMapper;
-import com.ysmjjsy.goya.security.authentication.userinfo.SocialOAuth2UserService;
-import com.ysmjjsy.goya.security.core.utils.DPoPKeyUtils;
-import com.ysmjjsy.goya.security.core.enums.CertificateEnum;
-import com.ysmjjsy.goya.security.core.manager.SecurityUserManager;
+import com.ysmjjsy.goya.component.security.authentication.audit.SecurityAuthenticationAuditListener;
+import com.ysmjjsy.goya.component.security.authentication.captcha.DynamicLoginCaptchaStrategy;
+import com.ysmjjsy.goya.component.security.authentication.configuration.properties.SecurityAuthenticationProperties;
+import com.ysmjjsy.goya.component.security.authentication.service.impl.CacheOAuth2AuthorizationService;
+import com.ysmjjsy.goya.component.security.authentication.token.JwtTokenCustomizer;
+import com.ysmjjsy.goya.component.security.authentication.token.TokenBlacklistStamp;
+import com.ysmjjsy.goya.component.security.authentication.token.TokenManager;
+import com.ysmjjsy.goya.component.security.authentication.userinfo.OAuth2UserInfoMapper;
+import com.ysmjjsy.goya.component.security.authentication.userinfo.SocialOAuth2UserService;
+import com.ysmjjsy.goya.component.security.core.enums.CertificateEnum;
+import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
+import com.ysmjjsy.goya.component.security.core.utils.DPoPKeyUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
@@ -56,6 +55,13 @@ public class SecurityAuthenticationAutoConfiguration {
     @PostConstruct
     public void init() {
         log.debug("[Goya] |- security [authentication] SecurityAuthenticationAutoConfiguration auto configure.");
+    }
+
+    @Bean
+    public SecurityAuthenticationAuditListener securityAuthenticationAuditListener(SecurityUserManager securityUserManager){
+        SecurityAuthenticationAuditListener listener = new SecurityAuthenticationAuditListener(securityUserManager);
+        log.trace("[Goya] |- security [authentication] securityAuthenticationAuditListener auto configure.");
+        return listener;
     }
 
     @Bean

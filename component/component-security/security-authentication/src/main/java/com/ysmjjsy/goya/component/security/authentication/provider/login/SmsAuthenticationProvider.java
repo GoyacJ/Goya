@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.security.authentication.provider.login;
 
 import com.ysmjjsy.goya.component.social.enums.SocialTypeEnum;
-import com.ysmjjsy.goya.component.social.service.SocialService;
+import com.ysmjjsy.goya.component.social.service.SmsService;
 import com.ysmjjsy.goya.security.authentication.provider.AbstractAuthenticationProvider;
 import com.ysmjjsy.goya.security.core.enums.LoginTypeEnum;
 import com.ysmjjsy.goya.security.core.manager.SecurityUserManager;
@@ -34,11 +34,11 @@ import org.springframework.security.core.userdetails.UserDetails;
 @Slf4j
 public class SmsAuthenticationProvider extends AbstractAuthenticationProvider {
 
-    private final SocialService socialService;
+    private final SmsService smsService;
 
-    public SmsAuthenticationProvider(SecurityUserManager securityUserService, SocialService socialService) {
+    public SmsAuthenticationProvider(SecurityUserManager securityUserService, SmsService smsService) {
         super(securityUserService);
-        this.socialService = socialService;
+        this.smsService = smsService;
     }
 
     @Override
@@ -63,7 +63,7 @@ public class SmsAuthenticationProvider extends AbstractAuthenticationProvider {
             throw new BadCredentialsException("手机号或短信验证码不能为空");
         }
 
-        if (!socialService.verify(phoneNumber, smsCode)) {
+        if (!smsService.verify(phoneNumber, smsCode)) {
             log.warn("[Goya] |- SMS code mismatch or expired for phoneNumber: {}", phoneNumber);
             throw new BadCredentialsException("短信验证码错误或已过期");
         }

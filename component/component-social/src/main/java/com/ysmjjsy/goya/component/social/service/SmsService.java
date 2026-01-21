@@ -1,9 +1,7 @@
 package com.ysmjjsy.goya.component.social.service;
 
 import com.ysmjjsy.goya.component.core.constants.DefaultConst;
-import com.ysmjjsy.goya.component.core.stragegy.StrategyExecute;
 import com.ysmjjsy.goya.component.social.cache.SmsCheckCacheManager;
-import com.ysmjjsy.goya.component.social.enums.SocialTypeEnum;
 import com.ysmjjsy.goya.component.social.exception.SocialException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,24 +20,9 @@ import java.util.LinkedHashMap;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class SmsService implements StrategyExecute<String, Boolean> {
+public class SmsService {
 
     private final SmsCheckCacheManager smsCheckCacheManager;
-
-    @Override
-    public String mark() {
-        return SocialTypeEnum.SMS.getMark();
-    }
-
-    @Override
-    public void execute(String phone) {
-        executeResp(phone);
-    }
-
-    @Override
-    public Boolean executeResp(String phoneNumber) {
-        return sendSms(phoneNumber);
-    }
 
     /**
      * 发送验证码
@@ -75,6 +58,9 @@ public class SmsService implements StrategyExecute<String, Boolean> {
         if (StringUtils.isAnyBlank(phoneNumber, code)) {
             throw new SocialException("params is null");
         }
-        return smsCheckCacheManager.check(phoneNumber, code);
+
+        boolean checked = smsCheckCacheManager.check(phoneNumber, code);
+        smsCheckCacheManager.evict(phoneNumber);
+        return checked;
     }
 }

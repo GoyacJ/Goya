@@ -1,5 +1,8 @@
 package com.ysmjjsy.goya.component.security.core.domain;
 
+import com.ysmjjsy.goya.component.framework.enums.StatusEnum;
+import com.ysmjjsy.goya.component.security.core.enums.SecurityOperationEnum;
+import com.ysmjjsy.goya.component.web.enums.RequestMethodEnum;
 import com.ysmjjsy.goya.component.web.utils.UserAgent;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -35,8 +38,8 @@ public class SecurityUserAuthAuditLog {
     @Schema(description = "租户ID")
     private String tenantId;
 
-    @Schema(description = "操作类型（LOGIN_SUCCESS, LOGIN_FAILURE, TOKEN_GENERATE, TOKEN_REFRESH, TOKEN_REVOKE, AUTHORIZATION_CODE_GENERATE, CLIENT_AUTH_FAILURE等）")
-    private String operation;
+    @Schema(description = "操作类型")
+    private SecurityOperationEnum operation;
 
     @Schema(description = "IP地址")
     private String ipAddress;
@@ -48,10 +51,10 @@ public class SecurityUserAuthAuditLog {
     private String requestUri;
 
     @Schema(description = "请求方法")
-    private String requestMethod;
+    private RequestMethodEnum requestMethod;
 
-    @Schema(description = "操作状态（SUCCESS, FAILURE）")
-    private String status;
+    @Schema(description = "操作状态")
+    private StatusEnum status;
 
     @Schema(description = "错误消息（如果失败）")
     private String errorMessage;

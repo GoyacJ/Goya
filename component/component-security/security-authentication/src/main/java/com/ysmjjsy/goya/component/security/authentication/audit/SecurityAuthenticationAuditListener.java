@@ -1,6 +1,7 @@
 package com.ysmjjsy.goya.component.security.authentication.audit;
 
 import com.ysmjjsy.goya.component.security.core.domain.SecurityUser;
+import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
 import com.ysmjjsy.goya.component.web.utils.UserAgent;
 import com.ysmjjsy.goya.component.web.utils.WebUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,9 +23,9 @@ import java.util.Objects;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class AuthenticationAuditListener {
+public class SecurityAuthenticationAuditListener {
 
-    private final SecurityAuditService securityAuditService;
+    private final SecurityUserManager securityUserManager;
 
     /**
      * 监听认证成功事件
@@ -60,7 +61,7 @@ public class AuthenticationAuditListener {
             }
 
             // 记录登录成功审计日志
-            securityAuditService.recordLoginSuccess(userId, username, tenantId, ipAddress, userAgent, requestUri);
+            securityUserManager.recordLoginSuccess(userId, username, tenantId, ipAddress, userAgent, requestUri);
         } catch (Exception e) {
             log.error("[Goya] |- security [authentication] Failed to record authentication success audit log", e);
         }
@@ -88,7 +89,7 @@ public class AuthenticationAuditListener {
             String errorMessage = event.getException().getMessage();
 
             // 记录登录失败审计日志
-            securityAuditService.recordLoginFailure(username, ipAddress, userAgent, requestUri, errorMessage);
+            securityUserManager.recordLoginFailure(username, ipAddress, userAgent, requestUri, errorMessage);
         } catch (Exception e) {
             log.error("[Goya] |- security [authentication] Failed to record authentication failure audit log", e);
         }

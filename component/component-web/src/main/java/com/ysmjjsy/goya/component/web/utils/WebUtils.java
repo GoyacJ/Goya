@@ -644,6 +644,7 @@ public class WebUtils {
         try {
             return getRequestAttributes().getRequest();
         } catch (Exception e) {
+            log.error("[Goya] |- Get request error!", e);
             return null;
         }
     }
@@ -657,6 +658,7 @@ public class WebUtils {
         try {
             return getRequestAttributes().getResponse();
         } catch (Exception e) {
+            log.error("[Goya] |- Get response error!", e);
             return null;
         }
     }
@@ -689,7 +691,6 @@ public class WebUtils {
             return null;
         }
     }
-
 
 
     /**

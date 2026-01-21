@@ -19,18 +19,8 @@ import lombok.extern.slf4j.Slf4j;
 public enum SocialTypeEnum implements IEnum<String> {
 
     SMS("SMS", "短信","SMS"),
-    EMAIL("EMAIL", "邮件","EMAIL"),
-    ALIPAY("ALIPAY", "支付宝","THIRDPART"),
-    QQ("QQ", "QQ","THIRDPART"),
-    GITHUB("GITHUB", "Github","THIRDPART"),
-    GITEE("GITEE", "Gitee","THIRDPART"),
-    WEIBO("WEIBO", "新浪微博","THIRDPART"),
+    THIRD_PART("THIRDPART", "第三方","THIRDPART"),
     WECHAT_MINI_PROGRAM("WECHAT_MINI_PROGRAM", "微信小程序授权登录","WECHAT_MINI_PROGRAM"),
-    WECHAT_MP("WECHAT_MP", "微信公众平台","THIRDPART"),
-    WECHAT_OPEN("WECHAT_OPEN", "微信开放平台","THIRDPART"),
-    TAOBAO("TAOBAO", "淘宝","THIRDPART"),
-    GOOGLE("GOOGLE", "Google","THIRDPART"),
-    DOUYIN("DOUYIN", "抖音","THIRDPART"),
     ;
 
     private final String code;

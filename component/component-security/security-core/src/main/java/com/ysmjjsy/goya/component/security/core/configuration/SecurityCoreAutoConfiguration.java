@@ -5,7 +5,7 @@ import com.ysmjjsy.goya.component.security.core.configuration.properties.Securit
 import com.ysmjjsy.goya.component.security.core.context.GoyaSecurityContext;
 import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
 import com.ysmjjsy.goya.component.security.core.service.IUserService;
-import com.ysmjjsy.goya.component.social.service.SocialService;
+import com.ysmjjsy.goya.component.social.service.SocialManager;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -37,7 +37,7 @@ public class SecurityCoreAutoConfiguration {
     }
 
     @Bean
-    public SecurityUserManager securityUserManager(IUserService userService, SocialService socialService) {
+    public SecurityUserManager securityUserManager(IUserService userService, SocialManager socialService) {
         SecurityUserManager securityUserManager = new SecurityUserManager(userService, socialService);
         log.trace("[Goya] |- component [core] SecurityCoreAutoConfiguration |- bean [securityUserManager] register.");
         return securityUserManager;

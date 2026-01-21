@@ -1,9 +1,11 @@
-package com.ysmjjsy.goya.component.social.service.dto;
+package com.ysmjjsy.goya.component.social.domain;
 
-import com.ysmjjsy.goya.component.core.pojo.DTO;
+import com.ysmjjsy.goya.component.framework.context.GoyaUser;
+import com.ysmjjsy.goya.component.social.enums.GenderEnum;
+import com.ysmjjsy.goya.component.social.enums.SocialTypeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Builder;
 import lombok.Data;
-import me.zhyd.oauth.enums.AuthUserGender;
 
 import java.io.Serial;
 
@@ -11,28 +13,26 @@ import java.io.Serial;
  * <p></p>
  *
  * @author goya
- * @since 2026/1/6 09:47
+ * @since 2026/1/20 23:19
  */
 @Data
-public class SocialDetails implements DTO {
+@Builder
+public class SocialUser implements GoyaUser {
 
     @Serial
-    private static final long serialVersionUID = 1793977806432185493L;
-    
-    /**
-     * JustAuth中的关键词
-     * 以下内容了解后，将会使你更容易地上手JustAuth。
-     * <p>
-     * source JustAuth支持的第三方平台，比如：GITHUB、GITEE等
-     * uuid 一般为第三方平台的用户ID。以下几个平台需特别注意：
-     * 钉钉、抖音：uuid 为用户的 unionid
-     * 微信公众平台登录、京东、酷家乐、美团：uuid 为用户的 openId
-     * 微信开放平台登录、QQ：uuid 为用户的 openId，平台支持获取unionid， unionid 在 AuthToken 中（如果支持），在登录完成后，可以通过 response.getData().getToken().getUnionId() 获取
-     * Google：uuid 为用户的 sub，sub为Google的所有账户体系中用户唯一的身份标识符，详见：OpenID Connect (opens new window)
-     * 注：建议通过uuid + source的方式唯一确定一个用户，这样可以解决用户身份归属的问题。因为 单个用户ID 在某一平台中是唯一的，但不能保证在所有平台中都是唯一的。
-     */
+    private static final long serialVersionUID = 8792357383746684594L;
+
+    @Schema(description = "本系统userId")
+    private String userId;
+
+    @Schema(description = "本系统username")
+    private String name;
+
+    @Schema(description = "第三方系统类型")
+    private SocialTypeEnum socialTypeEnum;
+
     @Schema(name = "用户第三方系统的唯一id", description = "在调用方集成该组件时，可以用uuid + source唯一确定一个用")
-    private String thirdPartId;
+    private String uuid;
 
     @Schema(name = "用户名")
     private String username;
@@ -57,11 +57,9 @@ public class SocialDetails implements DTO {
 
     @Schema(name = "用户邮箱")
     private String remark;
-    /**
-     * 性别
-     */
+
     @Schema(name = "性别")
-    private AuthUserGender gender;
+    private GenderEnum gender;
 
     @Schema(name = "第三方用户来源")
     private String source;

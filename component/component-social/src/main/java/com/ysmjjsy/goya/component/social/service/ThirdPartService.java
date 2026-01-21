@@ -1,13 +1,15 @@
 package com.ysmjjsy.goya.component.social.service;
 
 import cn.hutool.core.util.EnumUtil;
-import com.ysmjjsy.goya.component.core.stragegy.StrategyExecute;
 import com.ysmjjsy.goya.component.social.cache.ThirdPartCheckCacheManager;
 import com.ysmjjsy.goya.component.social.exception.SocialException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.zhyd.oauth.config.AuthConfig;
 import me.zhyd.oauth.config.AuthDefaultSource;
+import me.zhyd.oauth.model.AuthCallback;
+import me.zhyd.oauth.model.AuthResponse;
+import me.zhyd.oauth.model.AuthUser;
 import me.zhyd.oauth.request.*;
 import me.zhyd.oauth.utils.AuthStateUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -25,19 +27,9 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class ThirdPartService implements StrategyExecute<String, String> {
+public class ThirdPartService {
 
     private final ThirdPartCheckCacheManager thirdPartCheckCacheManager;
-
-    @Override
-    public String mark() {
-        return "THIRDPART";
-    }
-
-    @Override
-    public String executeResp(String resource) {
-        return getAuthorizeUrl(resource);
-    }
 
     public AuthRequest getAuthRequest(String source) {
         AuthDefaultSource authDefaultSource = parseAuthDefaultSource(source);
@@ -64,6 +56,15 @@ public class ThirdPartService implements StrategyExecute<String, String> {
     public String getAuthorizeUrl(String source, AuthConfig authConfig) {
         AuthRequest authRequest = this.getAuthRequest(source, authConfig);
         return authRequest.authorize(AuthStateUtils.createState());
+    }
+
+    public AuthUser login(String source, AuthCallback authCallback) {
+        AuthRequest authRequest = getAuthRequest(source);
+        AuthResponse<AuthUser> response = authRequest.login(authCallback);
+        if (response.ok()) {
+            return response.getData();
+        }
+        throw new SocialException("social login fail!");
     }
 
     public Map<String, String> getAuthorizeUrls() {
@@ -99,7 +100,7 @@ public class ThirdPartService implements StrategyExecute<String, String> {
         try {
             authDefaultSource = EnumUtil.fromString(AuthDefaultSource.class, source.toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new SocialException();
+            throw new SocialException(e);
         }
         return authDefaultSource;
     }
