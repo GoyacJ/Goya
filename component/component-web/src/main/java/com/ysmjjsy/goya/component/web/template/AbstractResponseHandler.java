@@ -5,7 +5,7 @@ import com.ysmjjsy.goya.component.web.utils.WebUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.function.Supplier;
 
@@ -17,29 +17,26 @@ import java.util.function.Supplier;
  */
 public abstract class AbstractResponseHandler {
 
-    private final ThymeleafTemplateHandler templateHandler;
+    @Autowired
+    private ThymeleafTemplateHandler templateHandler;
 
-    protected AbstractResponseHandler(ThymeleafTemplateHandler templateHandler) {
-        this.templateHandler = templateHandler;
-    }
+    protected void process(HttpServletRequest request, HttpServletResponse response, Supplier<Response<Void>> supplier) {
 
-    protected void process(HttpServletRequest request, HttpServletResponse response, Supplier<ResponseEntity<Response<Void>>> supplier) {
-
-        ResponseEntity<Response<Void>> result = supplier.get();
+        Response<Void> voidResponse = supplier.get();
 
         if (WebUtils.isHtml(request)) {
             String content = null;
-            if (result.getBody() != null) {
-                content = templateHandler.renderToError(request, response, result.getBody());
+            if (supplier.get() != null) {
+                content = templateHandler.renderToError(request, response, supplier.get());
             }
             if (StringUtils.isNotBlank(content)) {
-                WebUtils.renderHtml(response, result.getBody().httpStatus().value(), content);
+                WebUtils.renderHtml(response, voidResponse.httpStatus().value(), content);
             } else {
                 // 主要防止 Thymeleaf 模版转换有异常，做一项保护。
-                WebUtils.renderResult(response, result.getBody());
+                WebUtils.renderResult(response, voidResponse);
             }
         } else {
-            WebUtils.renderResult(response, result.getBody());
+            WebUtils.renderResult(response, voidResponse);
         }
     }
 }

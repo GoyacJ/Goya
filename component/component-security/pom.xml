@@ -17,5 +17,6 @@
         <module>security-authentication</module>
         <module>security-core</module>
         <module>security-authorization</module>
+        <module>security-oauth2</module>
     </modules>
 </project>

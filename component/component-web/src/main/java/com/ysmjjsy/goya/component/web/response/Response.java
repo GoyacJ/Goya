@@ -343,6 +343,20 @@ public record Response<D>(
         }
 
         /**
+         * 构建错误响应（使用默认错误码）
+         *
+         * @return Builder
+         */
+        public Builder<D> error(HttpErrorCode errorCode) {
+            this.code = errorCode;
+            // 使用国际化消息
+            this.message = getI18nMessage(errorCode);
+            // 修复：HTTP 状态码应该与 code 的 status 一致
+            this.httpStatus = errorCode.getStatus();
+            return this;
+        }
+
+        /**
          * 构建错误响应（带自定义消息）
          *
          * @param msg 自定义错误消息

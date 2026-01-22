@@ -180,7 +180,7 @@ public record SecurityAuthenticationProperties(
     @Schema(description = "CORS配置")
     public record CorsConfig(
             @Schema(description = "允许的来源（支持多个，生产环境必须配置具体域名，不允许使用*）")
-            @DefaultValue({"http://localhost:3000", "http://localhost:5173"})
+            @DefaultValue({"http://localhost:8101"})
             List<String> allowedOrigins,
 
             @Schema(description = "允许的HTTP方法")

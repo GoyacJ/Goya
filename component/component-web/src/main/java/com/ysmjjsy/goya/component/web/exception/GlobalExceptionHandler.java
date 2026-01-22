@@ -203,7 +203,7 @@ public class GlobalExceptionHandler {
      * @param code    响应码（如果异常实现了 IException，会优先使用异常中的 code）
      * @return 错误响应实体
      */
-    private static Response<Void> buildErrorResponse(
+    public static Response<Void> buildErrorResponse(
             Throwable ex,
             HttpServletRequest request,
             ErrorCode code) {

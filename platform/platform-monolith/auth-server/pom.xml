@@ -25,10 +25,10 @@
             <groupId>com.ysmjjsy.goya</groupId>
             <artifactId>cache-boot-starter</artifactId>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>com.ysmjjsy.goya</groupId>-->
-<!--            <artifactId>security-authentication</artifactId>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>com.ysmjjsy.goya</groupId>
+            <artifactId>security-authentication</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

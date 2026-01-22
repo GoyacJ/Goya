@@ -35,8 +35,8 @@ public class SmsAuthenticationProvider extends AbstractAuthenticationProvider {
 
     private final SmsService smsService;
 
-    public SmsAuthenticationProvider(SecurityUserManager securityUserService, SmsService smsService) {
-        super(securityUserService);
+    public SmsAuthenticationProvider(SecurityUserManager securityUserManager, SmsService smsService) {
+        super(securityUserManager);
         this.smsService = smsService;
     }
 

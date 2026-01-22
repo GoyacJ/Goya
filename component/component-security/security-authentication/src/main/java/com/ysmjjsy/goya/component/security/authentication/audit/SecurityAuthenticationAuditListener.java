@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.security.authentication.audit;
 
-import com.ysmjjsy.goya.component.security.authentication.login.LoginFailureCacheManger;
+import com.ysmjjsy.goya.component.security.authentication.errortimes.LoginFailureCacheManger;
 import com.ysmjjsy.goya.component.security.core.domain.SecurityUser;
 import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
 import com.ysmjjsy.goya.component.web.utils.UserAgent;

@@ -198,6 +198,12 @@
 
             <dependency>
                 <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>security-oauth2</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
                 <artifactId>auth-server</artifactId>
                 <version>${revision}</version>
             </dependency>
