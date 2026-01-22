@@ -6,7 +6,6 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.stream.function.StreamBridge;
@@ -70,7 +69,6 @@ public class KafkaAutoConfiguration {
      * @return Consumer
      */
     @Bean
-    @ConditionalOnBean(BusEventListenerHandler.class)
     public Consumer<Message<?>> kafkaBusEventConsumer(BusEventListenerHandler handler) {
         return message -> {
             if (message == null) {

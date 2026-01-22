@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.security.authentication.service.impl;
 
-import com.ysmjjsy.goya.component.cache.service.ICacheService;
-import com.ysmjjsy.goya.component.common.utils.JsonUtils;
+import com.ysmjjsy.goya.component.cache.multilevel.service.MultiLevelCacheService;
+import com.ysmjjsy.goya.component.framework.json.GoyaJson;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
@@ -38,7 +38,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class CacheOAuth2AuthorizationService implements OAuth2AuthorizationService {
 
-    private final ICacheService cacheService;
+    private final MultiLevelCacheService cacheService;
 
     // Redis Key 前缀
     private static final String AUTHORIZATION_KEY_PREFIX = "oauth2:authorization:";
@@ -68,7 +68,7 @@ public class CacheOAuth2AuthorizationService implements OAuth2AuthorizationServi
 
         try {
             // 1. 序列化并保存主授权记录
-            String value = JsonUtils.toJson(authorization);
+            String value = GoyaJson.toJson(authorization);
             cacheService.put(CACHE_NAME, key, value, AUTHORIZATION_TTL);
 
             // 2. 如果存在Authorization Code，建立映射关系（短生命周期）
@@ -115,14 +115,14 @@ public class CacheOAuth2AuthorizationService implements OAuth2AuthorizationServi
 
         try {
             // 删除主授权记录
-            cacheService.evict(CACHE_NAME, key);
+            cacheService.delete(CACHE_NAME, key);
 
             // 删除关联的Code映射
             OAuth2Authorization.Token<OAuth2AuthorizationCode> authCode =
                     authorization.getToken(OAuth2AuthorizationCode.class);
             if (authCode != null && authCode.getToken() != null) {
                 String codeKey = AUTHORIZATION_CODE_KEY_PREFIX + authCode.getToken().getTokenValue();
-                cacheService.evict(CACHE_NAME, codeKey);
+                cacheService.delete(CACHE_NAME, codeKey);
             }
 
             // 删除关联的Refresh Token映射
@@ -130,7 +130,7 @@ public class CacheOAuth2AuthorizationService implements OAuth2AuthorizationServi
                     authorization.getToken(OAuth2RefreshToken.class);
             if (refreshToken != null && refreshToken.getToken() != null) {
                 String refreshKey = REFRESH_TOKEN_KEY_PREFIX + refreshToken.getToken().getTokenValue();
-                cacheService.evict(CACHE_NAME, refreshKey);
+                cacheService.delete(CACHE_NAME, refreshKey);
             }
 
             log.trace("[Goya] |- security [authentication] OAuth2Authorization removed: {}", id);
@@ -153,7 +153,7 @@ public class CacheOAuth2AuthorizationService implements OAuth2AuthorizationServi
         }
 
         try {
-            return JsonUtils.fromJson(value, OAuth2Authorization.class);
+            return GoyaJson.fromJson(value, OAuth2Authorization.class);
         } catch (Exception e) {
             log.error("[Goya] |- security [authentication] Failed to deserialize OAuth2Authorization: {}", id, e);
             return null;
@@ -174,7 +174,7 @@ public class CacheOAuth2AuthorizationService implements OAuth2AuthorizationServi
             id = cacheService.get(CACHE_NAME, codeKey);
             if (id != null) {
                 // 删除Code映射（一次性使用）
-                cacheService.evict(CACHE_NAME, codeKey);
+                cacheService.delete(CACHE_NAME, codeKey);
                 log.debug("[Goya] |- security [authentication] Authorization code used and removed: {}", codeKey);
             }
         } else if (OAuth2TokenType.REFRESH_TOKEN.equals(tokenType)) {

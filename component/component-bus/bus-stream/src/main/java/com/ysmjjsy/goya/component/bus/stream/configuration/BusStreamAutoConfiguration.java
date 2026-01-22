@@ -130,7 +130,7 @@ public class BusStreamAutoConfiguration {
     public BusEventListenerHandler busEventListenerHandler(BusEventListenerScanner scanner,
                                                            ObjectProvider<IIdempotencyHandler> idempotencyHandlerProvider,
                                                            ObjectProvider<EventDeserializer> eventDeserializerProvider,
-                                                           ObjectProvider<java.util.List<IEventInterceptor>> interceptorsProvider,
+                                                           ObjectProvider<List<IEventInterceptor>> interceptorsProvider,
                                                            BusProperties busProperties) {
         BusEventListenerHandler handler = new BusEventListenerHandler(scanner, idempotencyHandlerProvider, eventDeserializerProvider, interceptorsProvider, busProperties);
         log.trace("[Goya] |- component [bus] BusAutoConfiguration |- bean [busEventListenerHandler] register.");
@@ -187,10 +187,10 @@ public class BusStreamAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    public LocalBusEventPublisher localEventPublisher(ApplicationEventPublisher eventPublisher,
+    public LocalBusEventPublisher localBusEventPublisher(ApplicationEventPublisher eventPublisher,
                                                       ObjectProvider<BusEventListenerHandler> handlerProvider) {
         LocalBusEventPublisher publisher = new LocalBusEventPublisher(eventPublisher, handlerProvider);
-        log.trace("[Goya] |- component [bus] BusAutoConfiguration |- bean [localEventPublisher] register.");
+        log.trace("[Goya] |- component [bus] BusAutoConfiguration |- bean [localBusEventPublisher] register.");
         return publisher;
     }
 

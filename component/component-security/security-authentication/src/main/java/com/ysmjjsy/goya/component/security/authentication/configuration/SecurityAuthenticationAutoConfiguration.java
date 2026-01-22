@@ -4,9 +4,12 @@ import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import com.ysmjjsy.goya.component.cache.multilevel.service.MultiLevelCacheService;
+import com.ysmjjsy.goya.component.framework.context.SpringContext;
 import com.ysmjjsy.goya.component.security.authentication.audit.SecurityAuthenticationAuditListener;
 import com.ysmjjsy.goya.component.security.authentication.captcha.DynamicLoginCaptchaStrategy;
 import com.ysmjjsy.goya.component.security.authentication.configuration.properties.SecurityAuthenticationProperties;
+import com.ysmjjsy.goya.component.security.authentication.login.LoginFailureCacheManger;
 import com.ysmjjsy.goya.component.security.authentication.service.impl.CacheOAuth2AuthorizationService;
 import com.ysmjjsy.goya.component.security.authentication.token.JwtTokenCustomizer;
 import com.ysmjjsy.goya.component.security.authentication.token.TokenBlacklistStamp;
@@ -15,7 +18,6 @@ import com.ysmjjsy.goya.component.security.authentication.userinfo.OAuth2UserInf
 import com.ysmjjsy.goya.component.security.authentication.userinfo.SocialOAuth2UserService;
 import com.ysmjjsy.goya.component.security.core.enums.CertificateEnum;
 import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
-import com.ysmjjsy.goya.component.security.core.utils.DPoPKeyUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
@@ -32,7 +34,6 @@ import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.token.*;
 
-import java.io.IOException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -58,8 +59,15 @@ public class SecurityAuthenticationAutoConfiguration {
     }
 
     @Bean
-    public SecurityAuthenticationAuditListener securityAuthenticationAuditListener(SecurityUserManager securityUserManager){
-        SecurityAuthenticationAuditListener listener = new SecurityAuthenticationAuditListener(securityUserManager);
+    public LoginFailureCacheManger loginFailureCacheManger(SecurityAuthenticationProperties securityAuthenticationProperties){
+        LoginFailureCacheManger loginFailureCacheManger = new LoginFailureCacheManger(securityAuthenticationProperties);
+        log.trace("[Goya] |- security [authentication] loginFailureCacheManger auto configure.");
+        return loginFailureCacheManger;
+    }
+
+    @Bean
+    public SecurityAuthenticationAuditListener securityAuthenticationAuditListener(SecurityUserManager securityUserManager, LoginFailureCacheManger loginFailureCacheManger) {
+        SecurityAuthenticationAuditListener listener = new SecurityAuthenticationAuditListener(securityUserManager, loginFailureCacheManger);
         log.trace("[Goya] |- security [authentication] securityAuthenticationAuditListener auto configure.");
         return listener;
     }
@@ -73,14 +81,14 @@ public class SecurityAuthenticationAutoConfiguration {
 
     @Bean
     public SocialOAuth2UserService socialOAuth2UserService(OidcUserService oidcUserService,
-                                                           SecurityUserManager iSecurityUserService){
-        SocialOAuth2UserService socialOAuth2UserService = new SocialOAuth2UserService(oidcUserService,iSecurityUserService);
+                                                           SecurityUserManager iSecurityUserService) {
+        SocialOAuth2UserService socialOAuth2UserService = new SocialOAuth2UserService(oidcUserService, iSecurityUserService);
         log.trace("[Goya] |- security [authentication] socialOAuth2UserService auto configure.");
         return socialOAuth2UserService;
     }
 
     @Bean
-    public DynamicLoginCaptchaStrategy dynamicLoginCaptchaStrategy(SecurityAuthenticationProperties securityAuthenticationProperties){
+    public DynamicLoginCaptchaStrategy dynamicLoginCaptchaStrategy(SecurityAuthenticationProperties securityAuthenticationProperties) {
         DynamicLoginCaptchaStrategy strategy = new DynamicLoginCaptchaStrategy(securityAuthenticationProperties.captcha());
         log.trace("[Goya] |- security [authentication] SecurityAuthenticationAutoConfiguration |- bean [dynamicLoginCaptchaStrategy] register.");
         return strategy;
@@ -91,14 +99,10 @@ public class SecurityAuthenticationAutoConfiguration {
         SecurityAuthenticationProperties.Jwk jwk = authenticationProperties.jwk();
         KeyPair keyPair = null;
         if (jwk.certificate() == CertificateEnum.CUSTOM) {
-            try {
-                Resource[] resource = ResourceResolverUtils.getResources(jwk.jksKeyStore());
-                if (ArrayUtils.isNotEmpty(resource)) {
-                    KeyStoreKeyFactory keyStoreKeyFactory = new KeyStoreKeyFactory(resource[0], jwk.jksStorePassword().toCharArray());
-                    keyPair = keyStoreKeyFactory.getKeyPair(jwk.jksKeyAlias(), jwk.jksKeyPassword().toCharArray());
-                }
-            } catch (IOException e) {
-                log.error("[Goya] |- Read custom certificate under resource folder error!", e);
+            Resource[] resource = SpringContext.getResources(jwk.jksKeyStore());
+            if (ArrayUtils.isNotEmpty(resource)) {
+                KeyStoreKeyFactory keyStoreKeyFactory = new KeyStoreKeyFactory(resource[0], jwk.jksStorePassword().toCharArray());
+                keyPair = keyStoreKeyFactory.getKeyPair(jwk.jksKeyAlias(), jwk.jksKeyPassword().toCharArray());
             }
 
         } else {
@@ -128,12 +132,11 @@ public class SecurityAuthenticationAutoConfiguration {
     /**
      * 配置JWT Token自定义器（支持DPoP）
      *
-     * @param dPoPKeyFingerprintService DPoP公钥指纹服务
      * @return JwtTokenCustomizer
      */
     @Bean
-    public JwtTokenCustomizer jwtTokenCustomizer(DPoPKeyUtils dPoPKeyFingerprintService) {
-        return new JwtTokenCustomizer(dPoPKeyFingerprintService);
+    public JwtTokenCustomizer jwtTokenCustomizer() {
+        return new JwtTokenCustomizer();
     }
 
     /**
@@ -162,15 +165,15 @@ public class SecurityAuthenticationAutoConfiguration {
      * @return RedisOAuth2AuthorizationService
      */
     @Bean
-    @ConditionalOnBean(ICacheService.class)
-    public OAuth2AuthorizationService cacheOAuth2AuthorizationService(ICacheService cacheService) {
+    @ConditionalOnBean(MultiLevelCacheService.class)
+    public OAuth2AuthorizationService cacheOAuth2AuthorizationService(MultiLevelCacheService cacheService) {
         CacheOAuth2AuthorizationService service = new CacheOAuth2AuthorizationService(cacheService);
         log.trace("[Goya] |- security [authentication] cacheOAuth2AuthorizationService auto configure.");
         return service;
     }
 
     @Bean
-    public TokenBlacklistStamp tokenBlacklistStamp(SecurityAuthenticationProperties properties){
+    public TokenBlacklistStamp tokenBlacklistStamp(SecurityAuthenticationProperties properties) {
         TokenBlacklistStamp stamp = new TokenBlacklistStamp(properties.tokenBlackList());
         log.trace("[Goya] |- security [authentication] tokenBlacklistStamp auto configure.");
         return stamp;
@@ -184,7 +187,6 @@ public class SecurityAuthenticationAutoConfiguration {
      * @param tokenGenerator       Token生成器
      * @param authorizationService 授权服务
      * @param securityUserService  用户服务
-     * @param securityAuditService 审计服务
      * @param tokenBlacklistStamp  token黑名单管理
      * @return TokenService
      */
@@ -193,10 +195,9 @@ public class SecurityAuthenticationAutoConfiguration {
             OAuth2TokenGenerator<?> tokenGenerator,
             OAuth2AuthorizationService authorizationService,
             SecurityUserManager securityUserService,
-            SecurityAuditService securityAuditService,
             TokenBlacklistStamp tokenBlacklistStamp) {
         TokenManager tokenService = new TokenManager(
-                tokenGenerator, authorizationService, securityUserService, securityAuditService, tokenBlacklistStamp
+                tokenGenerator, authorizationService, securityUserService, tokenBlacklistStamp
         );
         log.trace("[Goya] |- security [authentication] TokenService auto configure.");
         return tokenService;

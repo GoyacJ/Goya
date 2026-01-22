@@ -3,8 +3,8 @@ package com.ysmjjsy.goya.auth.server;
 import com.ysmjjsy.goya.component.bus.stream.annotation.BusEventListener;
 import com.ysmjjsy.goya.component.bus.stream.definition.EventScope;
 import com.ysmjjsy.goya.component.bus.stream.service.IBusService;
-import com.ysmjjsy.goya.component.cache.core.definition.CacheService;
 import com.ysmjjsy.goya.component.cache.core.exception.CacheException;
+import com.ysmjjsy.goya.component.cache.multilevel.service.MultiLevelCacheService;
 import com.ysmjjsy.goya.component.framework.json.GoyaJson;
 import com.ysmjjsy.goya.component.web.response.Response;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +28,7 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class TestController {
 
-    private final CacheService iCacheService;
+    private final MultiLevelCacheService iCacheService;
     private final IBusService iBusService;
 
     @GetMapping("test")

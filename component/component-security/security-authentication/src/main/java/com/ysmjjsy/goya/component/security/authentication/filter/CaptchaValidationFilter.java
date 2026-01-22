@@ -1,14 +1,14 @@
 package com.ysmjjsy.goya.component.security.authentication.filter;
 
-import com.ysmjjsy.goya.component.captcha.api.ICaptchaService;
+import com.ysmjjsy.goya.component.captcha.api.CaptchaService;
 import com.ysmjjsy.goya.component.captcha.definition.Verification;
 import com.ysmjjsy.goya.component.captcha.exception.*;
-import com.ysmjjsy.goya.security.authentication.captcha.LoginCaptchaStrategy;
-import com.ysmjjsy.goya.security.authentication.exception.*;
-import com.ysmjjsy.goya.security.authentication.utils.SecurityRequestUtils;
-import com.ysmjjsy.goya.security.authentication.utils.VerificationAssembler;
+import com.ysmjjsy.goya.component.security.authentication.captcha.LoginCaptchaStrategy;
+import com.ysmjjsy.goya.component.security.authentication.exception.*;
+import com.ysmjjsy.goya.component.security.authentication.utils.SecurityRequestUtils;
+import com.ysmjjsy.goya.component.security.authentication.utils.VerificationAssembler;
+import com.ysmjjsy.goya.component.security.core.enums.LoginTypeEnum;
 import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -17,8 +17,6 @@ import org.jspecify.annotations.NullMarked;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.web.filter.OncePerRequestFilter;
-
-import java.io.IOException;
 
 /**
  * <p></p>
@@ -31,14 +29,14 @@ import java.io.IOException;
 public class CaptchaValidationFilter extends OncePerRequestFilter {
 
     private final LoginCaptchaStrategy loginCaptchaStrategy;
-    private final ICaptchaService iCaptchaService;
+    private final CaptchaService iCaptchaService;
 
     @Override
     @NullMarked
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) {
         try {
-            com.ysmjjsy.goya.security.core.enums.LoginTypeEnum grantType = com.ysmjjsy.goya.security.core.enums.LoginTypeEnum.resolve(request);
-            if (grantType == null) {
+            LoginTypeEnum loginTypeEnum = LoginTypeEnum.resolve(request);
+            if (loginTypeEnum == null) {
                 SecurityRequestUtils.throwError(
                         OAuth2ErrorCodes.INVALID_REQUEST,
                         "不支持的登录类型"
@@ -46,12 +44,12 @@ public class CaptchaValidationFilter extends OncePerRequestFilter {
             }
 
             String tenantId = request.getParameter("tenant_id");
-            if (!loginCaptchaStrategy.shouldValidate(request, grantType, tenantId)) {
+            if (!loginCaptchaStrategy.shouldValidate(request, loginTypeEnum, tenantId)) {
                 filterChain.doFilter(request, response);
                 return;
             }
 
-            Verification verification = VerificationAssembler.from(request, grantType);
+            Verification verification = VerificationAssembler.from(request, loginTypeEnum);
 
             // 校验失败直接抛异常，成功即放行
             if (iCaptchaService.verify(verification)) {

@@ -27,7 +27,7 @@ public record CryptoProperties(
         /*
           加密过期时间
          */
-        @DefaultValue
+        @DefaultValue("PT5M")
         Duration expire
 ) {
 }

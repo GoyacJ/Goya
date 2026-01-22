@@ -1,9 +1,9 @@
 package com.ysmjjsy.goya.component.security.authentication.provider.login;
 
-import com.ysmjjsy.goya.component.cache.crypto.CryptoProcessor;
-import com.ysmjjsy.goya.security.authentication.constants.ISecurityAuthenticationConstants;
-import com.ysmjjsy.goya.security.authentication.provider.AbstractAuthenticationConverter;
-import com.ysmjjsy.goya.security.authentication.utils.SecurityRequestUtils;
+import com.ysmjjsy.goya.component.cache.multilevel.crypto.CryptoProcessor;
+import com.ysmjjsy.goya.component.security.authentication.constants.SecurityAuthenticationConst;
+import com.ysmjjsy.goya.component.security.authentication.provider.AbstractAuthenticationConverter;
+import com.ysmjjsy.goya.component.security.authentication.utils.SecurityRequestUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -46,17 +46,17 @@ public class PasswordAuthenticationConverter extends AbstractAuthenticationConve
             Map<String, Object> additionalParameters) {
 
         SecurityRequestUtils.checkRequiredParameter(
-                parameters, ISecurityAuthenticationConstants.PARAM_USERNAME);
+                parameters, SecurityAuthenticationConst.PARAM_USERNAME);
         SecurityRequestUtils.checkRequiredParameter(
-                parameters, ISecurityAuthenticationConstants.PARAM_PASSWORD);
+                parameters, SecurityAuthenticationConst.PARAM_PASSWORD);
 
         String username =
                 (String) additionalParameters.get(
-                        ISecurityAuthenticationConstants.PARAM_USERNAME);
+                        SecurityAuthenticationConst.PARAM_USERNAME);
 
         String password =
                 (String) additionalParameters.get(
-                        ISecurityAuthenticationConstants.PARAM_PASSWORD);
+                        SecurityAuthenticationConst.PARAM_PASSWORD);
 
         log.debug("[Goya] |- security [authentication] Convert password login for user: {}", username);
 

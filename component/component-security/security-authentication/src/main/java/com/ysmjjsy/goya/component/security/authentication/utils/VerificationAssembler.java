@@ -3,7 +3,8 @@ package com.ysmjjsy.goya.component.security.authentication.utils;
 import com.ysmjjsy.goya.component.captcha.definition.Coordinate;
 import com.ysmjjsy.goya.component.captcha.definition.Verification;
 import com.ysmjjsy.goya.component.captcha.enums.CaptchaCategoryEnum;
-import com.ysmjjsy.goya.component.common.definition.constants.ISymbolConstants;
+import com.ysmjjsy.goya.component.core.constants.SymbolConst;
+import com.ysmjjsy.goya.component.security.core.enums.LoginTypeEnum;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.util.StringUtils;
@@ -22,7 +23,7 @@ public class VerificationAssembler {
     private VerificationAssembler() {
     }
 
-    public static Verification from(HttpServletRequest request, com.ysmjjsy.goya.security.core.enums.LoginTypeEnum grantType) {
+    public static Verification from(HttpServletRequest request, LoginTypeEnum grantType) {
 
         CaptchaCategoryEnum category = resolveCategory(request);
         Verification verification = new Verification();
@@ -45,7 +46,7 @@ public class VerificationAssembler {
         return categoryEnum;
     }
 
-    private static String resolveIdentity(HttpServletRequest request, com.ysmjjsy.goya.security.core.enums.LoginTypeEnum grantType) {
+    private static String resolveIdentity(HttpServletRequest request, LoginTypeEnum grantType) {
         String identity = request.getParameter("identity");
         if (!StringUtils.hasText(identity)) {
             throw new IllegalArgumentException("identity 不能为空");
@@ -78,13 +79,13 @@ public class VerificationAssembler {
             return List.of();
         }
 
-        return Arrays.stream(captchaCoordinates.split(ISymbolConstants.COMMA))
+        return Arrays.stream(captchaCoordinates.split(SymbolConst.COMMA))
                 .map(VerificationAssembler::parseCoordinate)
                 .toList();
     }
 
     private static Coordinate parseCoordinate(String value) {
-        String[] split = StringUtils.split(value, ISymbolConstants.AT);
+        String[] split = StringUtils.split(value, SymbolConst.AT);
         if (split == null || split.length < 2) {
             throw new IllegalArgumentException("非法验证码坐标格式");
         }

@@ -37,7 +37,6 @@ import tools.jackson.databind.json.JsonMapper;
  */
 @Slf4j
 @AutoConfiguration
-@ConditionalOnBean(RedissonClient.class)
 @EnableConfigurationProperties({GoyaRedisProperties.class})
 public class GoyaRedisAutoConfiguration {
 
@@ -79,9 +78,9 @@ public class GoyaRedisAutoConfiguration {
      *   <li>在 CacheSpecification 中指定 clusterName 选择对应集群</li>
      * </ul>
      */
-    @Bean(name = "remoteCacheFactory")
-    @ConditionalOnMissingBean(name = "remoteCacheFactory")
-    public MultiClusterRemoteCacheFactory remoteCacheFactory(
+    @Bean
+    @ConditionalOnMissingBean(GoyaCacheManager.RemoteCacheFactory.class)
+    public GoyaCacheManager.RemoteCacheFactory remoteCacheFactory(
             RedissonClient redissonClient,
             JsonMapper jsonMapper,
             CacheKeySerializer cacheKeySerializer,

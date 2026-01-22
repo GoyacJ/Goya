@@ -13,9 +13,11 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 public record PlatformInfo(
 
         @Schema(description = "平台名称")
+        @DefaultValue("Goya")
         String projectName,
 
         @Schema(description = "平台网站url")
+        @DefaultValue("www.ysmjjsy.com")
         String website,
 
         @Schema(description = "基础包名")

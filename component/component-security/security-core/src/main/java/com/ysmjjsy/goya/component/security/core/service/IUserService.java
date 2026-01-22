@@ -4,6 +4,7 @@ import com.ysmjjsy.goya.component.security.core.domain.SecurityUser;
 import com.ysmjjsy.goya.component.security.core.domain.SecurityUserAuthAuditLog;
 import com.ysmjjsy.goya.component.security.core.domain.SecurityUserDevice;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -37,6 +38,13 @@ public interface IUserService {
      * @return 用户信息
      */
     SecurityUser registerUser(SecurityUser userPrincipal);
+
+    /**
+     * 用户锁定
+     *
+     * @param userId 用户Id
+     */
+    void lockedUser(String userId);
 
     /**
      * 注册设备
@@ -80,8 +88,9 @@ public interface IUserService {
      * 更新设备最后登录时间
      *
      * @param deviceId 设备ID
+     * @param lastLoginTime     最后登录时间
      */
-    void updateLastLoginTime(String deviceId);
+    void updateLastLoginTime(String deviceId, LocalDateTime lastLoginTime);
 
     /**
      * 删除设备
@@ -97,4 +106,14 @@ public interface IUserService {
      * @param auditLog 审计日志
      */
     void recordAuditLog(SecurityUserAuthAuditLog auditLog);
+
+    /**
+     * 检查密码是否在历史密码中（防止重复使用）
+     * <p>注意：此方法需要用户服务实现历史密码存储和检查逻辑</p>
+     *
+     * @param userId   用户名
+     * @param password 新密码
+     * @return true如果密码在历史中，false如果不在
+     */
+    boolean isPasswordInHistory(String userId, String password);
 }

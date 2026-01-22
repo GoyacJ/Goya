@@ -1,10 +1,9 @@
 package com.ysmjjsy.goya.component.security.authentication.provider.login;
 
-import com.ysmjjsy.goya.component.social.enums.SocialTypeEnum;
+import com.ysmjjsy.goya.component.security.authentication.provider.AbstractAuthenticationProvider;
+import com.ysmjjsy.goya.component.security.core.enums.LoginTypeEnum;
+import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
 import com.ysmjjsy.goya.component.social.service.SmsService;
-import com.ysmjjsy.goya.security.authentication.provider.AbstractAuthenticationProvider;
-import com.ysmjjsy.goya.security.core.enums.LoginTypeEnum;
-import com.ysmjjsy.goya.security.core.manager.SecurityUserManager;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.authentication.AuthenticationServiceException;
@@ -54,7 +53,7 @@ public class SmsAuthenticationProvider extends AbstractAuthenticationProvider {
 
         validateSmsCode(phoneNumber,smsCode);
 
-        UserDetails user = retrieveUser(phoneNumber, SocialTypeEnum.SMS);
+        UserDetails user = retrieveUserByPhone(phoneNumber);
         return new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
     }
 

@@ -111,7 +111,8 @@ public class ResourceServerDPoPValidator {
             Jwt dPoPProofJwt = dPoPProofDecoder.decode(dPoPProof);
 
             // 2. 验证DPoP Proof的类型
-            String typ = dPoPProofJwt.getHeader().get("typ").toString();
+            Map<String, Object> headers = dPoPProofJwt.getHeaders();
+            String typ = headers.get("typ").toString();
             if (!"dpop+jwt".equals(typ)) {
                 throw new OAuth2AuthenticationException(
                         new OAuth2Error(

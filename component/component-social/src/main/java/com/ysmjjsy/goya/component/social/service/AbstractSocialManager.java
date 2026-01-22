@@ -67,12 +67,12 @@ public abstract class AbstractSocialManager implements SocialManager {
     @Override
     public SocialUser loadThirdSocialUser(String source, ThirdPrincipal principal) {
         AuthCallback authCallback = AuthCallback.builder()
-                .code(principal.code())
-                .auth_code(principal.auth_code())
-                .state(principal.state())
-                .authorization_code(principal.authorization_code())
-                .oauth_token(principal.oauth_token())
-                .oauth_verifier(principal.oauth_verifier())
+                .code(principal.getCode())
+                .auth_code(principal.getAuth_code())
+                .state(principal.getState())
+                .authorization_code(principal.getAuthorization_code())
+                .oauth_token(principal.getOauth_token())
+                .oauth_verifier(principal.getOauth_verifier())
                 .build();
 
         AuthUser authUser = thirdPartService.login(source, authCallback);

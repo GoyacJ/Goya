@@ -40,7 +40,7 @@ public class CaffeineCacheAutoConfiguration {
      * <p>注意：RemoteCache 工厂需要由 redis 模块提供
      */
     @Bean
-    @ConditionalOnMissingBean(name = "localCacheFactory")
+    @ConditionalOnMissingBean(GoyaCacheManager.LocalCacheFactory.class)
     public GoyaCacheManager.LocalCacheFactory localCacheFactory() {
         log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [localCacheFactory] register.");
         return CaffeineLocalCache::new;

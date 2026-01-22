@@ -1,8 +1,11 @@
 package com.ysmjjsy.goya.component.security.authentication.provider.login;
 
-import org.springframework.security.core.Authentication;
+import com.ysmjjsy.goya.component.social.enums.SocialTypeEnum;
+import lombok.EqualsAndHashCode;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.core.authority.AuthorityUtils;
 
-import java.util.Collections;
+import java.io.Serial;
 import java.util.Map;
 
 /**
@@ -13,67 +16,51 @@ import java.util.Map;
  * @author goya
  * @since 2025/12/21
  */
-public class SocialAuthenticationToken implements Authentication {
+@EqualsAndHashCode(callSuper = true)
+public class SocialAuthenticationToken extends AbstractAuthenticationToken {
 
-    private final String socialProviderId;
-    private final Map<String, Object> socialUserAttributes;
-    private final Map<String, Object> additionalParams;
-    private boolean authenticated = false;
+    @Serial
+    private static final long serialVersionUID = -7230255892235869520L;
+
+    private final SocialTypeEnum socialType;
+    private final String source;
+    private final Map<String, Object> additionalParameters;
 
     public SocialAuthenticationToken(
-            String socialProviderId,
-            Map<String, Object> socialUserAttributes,
-            Map<String, Object> additionalParams) {
-        this.socialProviderId = socialProviderId;
-        this.socialUserAttributes = socialUserAttributes != null ? socialUserAttributes : Collections.emptyMap();
-        this.additionalParams = additionalParams != null ? additionalParams : Collections.emptyMap();
-    }
+            SocialTypeEnum socialType, String source, Map<String, Object> additionalParameters) {
 
-    public String getSocialProviderId() {
-        return socialProviderId;
-    }
+        super(AuthorityUtils.NO_AUTHORITIES);
+        this.socialType = socialType;
+        this.source = source;
+        this.additionalParameters =
+                additionalParameters != null ? additionalParameters : Map.of();
 
-    public Map<String, Object> getSocialUserAttributes() {
-        return socialUserAttributes;
-    }
-
-    public Map<String, Object> getAdditionalParams() {
-        return additionalParams;
-    }
-
-    @Override
-    public java.util.Collection<? extends org.springframework.security.core.GrantedAuthority> getAuthorities() {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public Object getCredentials() {
-        return null; // 社交登录不需要凭证
-    }
-
-    @Override
-    public Object getDetails() {
-        return additionalParams;
+        super.setAuthenticated(false);
     }
 
     @Override
     public Object getPrincipal() {
-        return socialProviderId;
+        return this.socialType;
     }
 
     @Override
-    public boolean isAuthenticated() {
-        return authenticated;
+    public Object getCredentials() {
+        return this.source;
     }
 
     @Override
-    public void setAuthenticated(boolean isAuthenticated) throws IllegalArgumentException {
-        this.authenticated = isAuthenticated;
+    public Object getDetails() {
+        return this.additionalParameters;
     }
 
     @Override
-    public String getName() {
-        return socialProviderId;
+    public void setAuthenticated(boolean authenticated) {
+        if (authenticated) {
+            throw new IllegalArgumentException(
+                    "SocialAuthenticationToken cannot be marked as authenticated"
+            );
+        }
+        super.setAuthenticated(false);
     }
 }
 

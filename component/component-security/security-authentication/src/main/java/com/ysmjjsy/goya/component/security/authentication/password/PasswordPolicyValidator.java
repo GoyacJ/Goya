@@ -1,9 +1,8 @@
 package com.ysmjjsy.goya.component.security.authentication.password;
 
-import com.ysmjjsy.goya.component.security.authentication.configuration.properties.PasswordPolicyProperties;
+import com.ysmjjsy.goya.component.security.authentication.configuration.properties.SecurityAuthenticationProperties;
 import com.ysmjjsy.goya.component.security.authentication.exception.PasswordPolicyException;
 import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.core.AuthenticationException;
@@ -19,12 +18,19 @@ import java.util.regex.Pattern;
  * @since 2026/1/5
  */
 @Slf4j
-@RequiredArgsConstructor
 public class PasswordPolicyValidator {
 
-    private final SecurityUserManager securityUserService;
+    private final SecurityUserManager securityUserManager;
     private final PasswordEncoder passwordEncoder;
-    private final PasswordPolicyProperties passwordPolicy;
+    private final SecurityAuthenticationProperties.PasswordPolicy passwordPolicy;
+
+    public PasswordPolicyValidator(SecurityUserManager securityUserManager,
+                                   PasswordEncoder passwordEncoder,
+                                   SecurityAuthenticationProperties properties) {
+        this.securityUserManager = securityUserManager;
+        this.passwordEncoder = passwordEncoder;
+        this.passwordPolicy = properties.passwordPolicy();
+    }
 
     /**
      * 校验密码是否相等
@@ -86,20 +92,17 @@ public class PasswordPolicyValidator {
      * 检查密码是否在历史密码中（防止重复使用）
      * <p>注意：此方法需要用户服务实现历史密码存储和检查逻辑</p>
      *
-     * @param username 用户名
+     * @param userId   用户名
      * @param password 新密码
      * @return true如果密码在历史中，false如果不在
      */
-    public boolean isPasswordInHistory(String username, String password) {
+    public boolean isPasswordInHistory(String userId, String password) {
         if (passwordPolicy.preventReuse() == null || !passwordPolicy.preventReuse()) {
             return false;
         }
 
-        // TODO: 实现历史密码检查逻辑
-        // 需要从用户服务或数据库查询历史密码
-        // 这里仅提供框架，具体实现需要根据业务需求
         log.debug("[Goya] |- security [authentication] Password history check not implemented yet.");
-        return false;
+        return securityUserManager.isPasswordInHistory(userId, password);
     }
 
     /**

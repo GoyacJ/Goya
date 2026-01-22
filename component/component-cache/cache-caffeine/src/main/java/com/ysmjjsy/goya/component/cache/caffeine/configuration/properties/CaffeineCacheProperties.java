@@ -19,11 +19,13 @@ public record CaffeineCacheProperties(
         /*
           默认配置
          */
+        @DefaultValue
         CaffeineCacheConfig defaultConfig,
 
         /*
           缓存配置
          */
+        @DefaultValue
         Map<String, CaffeineCacheConfig> cacheConfigs
 ) {
 

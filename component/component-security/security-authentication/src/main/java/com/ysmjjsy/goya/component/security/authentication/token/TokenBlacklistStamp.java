@@ -1,10 +1,10 @@
 package com.ysmjjsy.goya.component.security.authentication.token;
 
-import com.ysmjjsy.goya.component.cache.resolver.CacheSpecification;
-import com.ysmjjsy.goya.component.cache.template.AbstractCheckTemplate;
-import com.ysmjjsy.goya.component.cache.ttl.TtlStrategy;
-import com.ysmjjsy.goya.security.authentication.configuration.properties.SecurityAuthenticationProperties;
-import com.ysmjjsy.goya.security.authentication.constants.ISecurityAuthenticationConstants;
+import com.ysmjjsy.goya.component.cache.multilevel.resolver.CacheSpecification;
+import com.ysmjjsy.goya.component.cache.multilevel.template.AbstractCheckTemplate;
+import com.ysmjjsy.goya.component.cache.multilevel.ttl.TtlStrategy;
+import com.ysmjjsy.goya.component.security.authentication.configuration.properties.SecurityAuthenticationProperties;
+import com.ysmjjsy.goya.component.security.authentication.constants.SecurityAuthenticationConst;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -29,7 +29,7 @@ public class TokenBlacklistStamp extends AbstractCheckTemplate<String, String> {
 
     @Override
     protected String getCacheName() {
-        return ISecurityAuthenticationConstants.CACHE_SECURITY_AUTHENTICATION_TOKEN_BLACK_LIST_PREFIX;
+        return SecurityAuthenticationConst.CACHE_SECURITY_AUTHENTICATION_TOKEN_BLACK_LIST_PREFIX;
     }
 
     @Override

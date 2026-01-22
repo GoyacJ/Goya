@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.security.authentication.service.impl;
 
-import com.ysmjjsy.goya.component.cache.service.ICacheService;
-import com.ysmjjsy.goya.component.common.utils.JsonUtils;
-import com.ysmjjsy.goya.security.authentication.service.ConsentService;
+import com.ysmjjsy.goya.component.cache.multilevel.service.MultiLevelCacheService;
+import com.ysmjjsy.goya.component.framework.json.GoyaJson;
+import com.ysmjjsy.goya.component.security.authentication.service.ConsentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -22,7 +22,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class CacheConsentService implements ConsentService {
 
-    private final ICacheService cacheService;
+    private final MultiLevelCacheService cacheService;
     private static final String CACHE_NAME = "oauth2_consent";
     private static final String KEY_PREFIX = "consent:";
     private static final Duration CONSENT_EXPIRY = Duration.ofDays(365); // 授权同意有效期1年
@@ -41,7 +41,7 @@ public class CacheConsentService implements ConsentService {
         }
 
         try {
-            Set<String> consentedScopes = JsonUtils.fromJsonSet(consentData, String.class);
+            Set<String> consentedScopes = GoyaJson.fromJsonSet(consentData, String.class);
             if (consentedScopes == null || consentedScopes.isEmpty()) {
                 return false;
             }
@@ -61,7 +61,7 @@ public class CacheConsentService implements ConsentService {
         }
 
         String key = buildKey(userId, clientId);
-        String consentData = JsonUtils.toJson(scopes);
+        String consentData = GoyaJson.toJson(scopes);
 
         cacheService.put(CACHE_NAME, key, consentData, CONSENT_EXPIRY);
         log.debug("[Goya] |- security [authentication] Consent saved for user: {} | client: {} | scopes: {}", 
@@ -75,7 +75,7 @@ public class CacheConsentService implements ConsentService {
         }
 
         String key = buildKey(userId, clientId);
-        cacheService.evict(CACHE_NAME, key);
+        cacheService.delete(CACHE_NAME, key);
         log.debug("[Goya] |- security [authentication] Consent revoked for user: {} | client: {}", userId, clientId);
     }
 
@@ -93,7 +93,7 @@ public class CacheConsentService implements ConsentService {
         }
 
         try {
-            Set<String> scopes = JsonUtils.fromJsonSet(consentData, String.class);
+            Set<String> scopes = GoyaJson.fromJsonSet(consentData, String.class);
             return scopes != null ? scopes : new HashSet<>();
         } catch (Exception e) {
             log.error("[Goya] |- security [authentication] Failed to parse consent data for key: {}", key, e);

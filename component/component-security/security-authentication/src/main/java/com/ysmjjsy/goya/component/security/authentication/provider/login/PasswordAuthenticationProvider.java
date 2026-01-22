@@ -1,9 +1,9 @@
 package com.ysmjjsy.goya.component.security.authentication.provider.login;
 
-import com.ysmjjsy.goya.security.authentication.password.PasswordPolicyValidator;
-import com.ysmjjsy.goya.security.authentication.provider.AbstractAuthenticationProvider;
-import com.ysmjjsy.goya.security.core.enums.LoginTypeEnum;
-import com.ysmjjsy.goya.security.core.manager.SecurityUserManager;
+import com.ysmjjsy.goya.component.security.authentication.password.PasswordPolicyValidator;
+import com.ysmjjsy.goya.component.security.authentication.provider.AbstractAuthenticationProvider;
+import com.ysmjjsy.goya.component.security.core.enums.LoginTypeEnum;
+import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.BadCredentialsException;

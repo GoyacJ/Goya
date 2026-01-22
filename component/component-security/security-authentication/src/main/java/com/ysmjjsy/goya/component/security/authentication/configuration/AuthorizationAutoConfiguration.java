@@ -1,6 +1,7 @@
 package com.ysmjjsy.goya.component.security.authentication.configuration;
 
 import com.ysmjjsy.goya.component.cache.multilevel.crypto.CryptoProcessor;
+import com.ysmjjsy.goya.component.cache.multilevel.service.MultiLevelCacheService;
 import com.ysmjjsy.goya.component.security.authentication.configuration.properties.SecurityAuthenticationProperties;
 import com.ysmjjsy.goya.component.security.authentication.entrypoint.OAuth2AuthenticationEntryPoint;
 import com.ysmjjsy.goya.component.security.authentication.filter.UnifiedLoginAuthenticationFilter;
@@ -8,12 +9,13 @@ import com.ysmjjsy.goya.component.security.authentication.handler.OAuth2Authenti
 import com.ysmjjsy.goya.component.security.authentication.password.PasswordPolicyValidator;
 import com.ysmjjsy.goya.component.security.authentication.provider.login.*;
 import com.ysmjjsy.goya.component.security.authentication.request.CustomizerRequestCache;
+import com.ysmjjsy.goya.component.security.authentication.userinfo.OAuth2UserInfoMapper;
 import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
+import com.ysmjjsy.goya.component.social.service.SmsService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.Ordered;
@@ -21,17 +23,20 @@ import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
-import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.factory.PasswordEncoderFactories;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationConverter;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * <p>OAuth2授权服务器自动配置（OAuth 2.1）</p>
@@ -81,33 +86,17 @@ public class AuthorizationAutoConfiguration {
             ApplicationContext applicationContext,
             CompositeAuthenticationConverter compositeAuthenticationConverter,
             OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler,
-            CustomizerRequestCache customizerRequestCache) throws Exception {
+            CustomizerRequestCache customizerRequestCache,
+            OAuth2UserInfoMapper oAuth2UserInfoMapper,
+            SecurityAuthenticationProperties securityAuthenticationProperties) throws Exception {
         // 应用OAuth2 Authorization Server的默认配置
-        OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
-
-        // 获取OAuth2AuthorizationServerConfigurer
-        OAuth2AuthorizationServerConfigurer authorizationServerConfigurer =
-                OAuth2AuthorizationServerConfigurer.authorizationServer();
-
         // 配置授权服务器
-        http
-                .securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
-                // 配置无状态Session（前后端分离）
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                // 禁用CSRF（前后端分离，使用Token认证）
-                .csrf(csrf -> csrf.disable())
-                // 配置RequestCache（Redis版本，用于保存和恢复SavedRequest）
-                .requestCache(requestCache -> requestCache.requestCache(customizerRequestCache))
-                .with(authorizationServerConfigurer, (authorizationServer) -> {
-                    // 1. 配置Authorization端点（Authorization Code流程）
-                    authorizationServer
-                            .authorizationEndpoint(authorizationEndpoint -> {
+        http.oauth2AuthorizationServer(oauth2 -> {
+                    oauth2.authorizationEndpoint(authorizationEndpoint -> {
                                 // PKCE验证由Spring Authorization Server根据RegisteredClient配置自动完成
                                 // Public Client强制PKCE，Confidential Client可选
                                 log.debug("[Goya] |- security [authentication] Authorization endpoint configured with PKCE support.");
-                            })
-                            // 2. 配置Token端点
-                            .tokenEndpoint(tokenEndpoint -> {
+                            }).tokenEndpoint(tokenEndpoint -> {
                                 // 支持Refresh Token Grant（Refresh Token Rotation）
                                 log.debug("[Goya] |- security [authentication] Token endpoint configured.");
                             })
@@ -132,6 +121,12 @@ public class AuthorizationAutoConfiguration {
                                 log.debug("[Goya] |- security [authentication] OIDC user info endpoint configured.");
                             });
                 })
+                // 配置无状态Session（前后端分离）
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // 禁用CSRF（前后端分离，使用Token认证）
+                .csrf(csrf -> csrf.disable())
+                // 配置RequestCache（Redis版本，用于保存和恢复SavedRequest）
+                .requestCache(requestCache -> requestCache.requestCache(customizerRequestCache))
                 // 6. 配置登录页面和登录认证
                 .authorizeHttpRequests(authorize -> {
                     authorize
@@ -151,7 +146,7 @@ public class AuthorizationAutoConfiguration {
                     log.debug("[Goya] |- security [authentication] Default formLogin disabled, using UnifiedLoginAuthenticationFilter.");
                 })
                 // 9. 配置CORS支持（前后端分离）
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .cors(cors -> cors.configurationSource(corsConfigurationSource(securityAuthenticationProperties)))
                 // 10. 配置异常处理
                 .exceptionHandling(exceptionHandling -> {
                     // 尝试使用自定义的 OAuth2AuthenticationEntryPoint（如果可用）
@@ -178,6 +173,11 @@ public class AuthorizationAutoConfiguration {
                 });
 
         return http.build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
     }
 
     /**
@@ -223,11 +223,13 @@ public class AuthorizationAutoConfiguration {
      * @return CompositeAuthenticationConverter
      */
     @Bean
-    public CompositeAuthenticationConverter compositeAuthenticationConverter() {
-        java.util.List<org.springframework.security.web.authentication.AuthenticationConverter> converters = new java.util.ArrayList<>();
-        converters.add(passwordAuthenticationConverter());
-        converters.add(smsAuthenticationConverter());
-        converters.add(socialAuthenticationConverter());
+    public CompositeAuthenticationConverter compositeAuthenticationConverter(PasswordAuthenticationConverter passwordAuthenticationConverter,
+                                                                             SmsAuthenticationConverter smsAuthenticationConverter,
+                                                                             SocialAuthenticationConverter socialAuthenticationConverter) {
+        List<AuthenticationConverter> converters = new ArrayList<>();
+        converters.add(passwordAuthenticationConverter);
+        converters.add(smsAuthenticationConverter);
+        converters.add(socialAuthenticationConverter);
 
         CompositeAuthenticationConverter converter = new CompositeAuthenticationConverter(converters);
         log.trace("[Goya] |- security [authentication] CompositeAuthenticationConverter auto configure.");
@@ -254,6 +256,15 @@ public class AuthorizationAutoConfiguration {
         return filter;
     }
 
+    @Bean
+    public PasswordPolicyValidator passwordPolicyValidator(SecurityUserManager securityUserManager,
+                                                           PasswordEncoder passwordEncoder,
+                                                           SecurityAuthenticationProperties properties) {
+        PasswordPolicyValidator passwordPolicyValidator = new PasswordPolicyValidator(securityUserManager, passwordEncoder, properties);
+        log.trace("[Goya] |- security [authentication] passwordPolicyValidator auto configure.");
+        return passwordPolicyValidator;
+    }
+
     /**
      * 创建密码登录认证提供者
      * <p>处理用户名密码登录方式的认证</p>
@@ -271,15 +282,13 @@ public class AuthorizationAutoConfiguration {
      * 创建短信登录认证提供者
      * <p>处理短信验证码登录方式的认证</p>
      *
-     * @param cacheService 缓存服务（可选）
      * @return SmsAuthenticationProvider
      */
     @Bean
-    @ConditionalOnBean(ICacheService.class)
     public SmsAuthenticationProvider smsAuthenticationProvider(
             SecurityUserManager iSecurityUserService,
-            ICacheService cacheService) {
-        SmsAuthenticationProvider provider = new SmsAuthenticationProvider(iSecurityUserService, cacheService);
+            SmsService smsService) {
+        SmsAuthenticationProvider provider = new SmsAuthenticationProvider(iSecurityUserService, smsService);
         log.trace("[Goya] |- security [authentication] SmsAuthenticationProvider auto configure.");
         return provider;
     }
@@ -291,8 +300,8 @@ public class AuthorizationAutoConfiguration {
      * @return SocialAuthenticationProvider
      */
     @Bean
-    public SocialAuthenticationProvider socialAuthenticationProvider(SecurityUserManager iSecurityUserService, SecurityAuthenticationProperties securityAuthenticationProperties) {
-        SocialAuthenticationProvider provider = new SocialAuthenticationProvider(iSecurityUserService, securityAuthenticationProperties);
+    public SocialAuthenticationProvider socialAuthenticationProvider(SecurityUserManager securityUserManager) {
+        SocialAuthenticationProvider provider = new SocialAuthenticationProvider(securityUserManager);
         log.trace("[Goya] |- security [authentication] SocialAuthenticationProvider auto configure.");
         return provider;
     }
@@ -305,8 +314,7 @@ public class AuthorizationAutoConfiguration {
      * @return RedisRequestCache
      */
     @Bean
-    @ConditionalOnBean(ICacheService.class)
-    public CustomizerRequestCache customizerRequestCache(ICacheService cacheService) {
+    public CustomizerRequestCache customizerRequestCache(MultiLevelCacheService cacheService) {
         CustomizerRequestCache requestCache = new CustomizerRequestCache(cacheService);
         log.trace("[Goya] |- security [authentication] customizerRequestCache auto configure.");
         return requestCache;
@@ -319,7 +327,6 @@ public class AuthorizationAutoConfiguration {
      * @return OAuth2AuthenticationEntryPoint
      */
     @Bean
-    @ConditionalOnBean(ICacheService.class)
     public OAuth2AuthenticationEntryPoint oAuth2AuthenticationEntryPoint(CustomizerRequestCache customizerRequestCache) {
         OAuth2AuthenticationEntryPoint entryPoint = new OAuth2AuthenticationEntryPoint(customizerRequestCache);
         log.trace("[Goya] |- security [authentication] OAuth2AuthenticationEntryPoint auto configure.");
@@ -333,7 +340,6 @@ public class AuthorizationAutoConfiguration {
      * @return OAuth2AuthenticationSuccessHandler
      */
     @Bean
-    @ConditionalOnBean(ICacheService.class)
     public OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler(CustomizerRequestCache customizerRequestCache) {
         OAuth2AuthenticationSuccessHandler handler = new OAuth2AuthenticationSuccessHandler(customizerRequestCache);
         log.trace("[Goya] |- security [authentication] OAuth2AuthenticationSuccessHandler auto configure.");

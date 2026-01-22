@@ -1,9 +1,9 @@
 package com.ysmjjsy.goya.component.security.authentication.provider.login;
 
-import com.ysmjjsy.goya.component.cache.crypto.CryptoProcessor;
-import com.ysmjjsy.goya.security.authentication.constants.ISecurityAuthenticationConstants;
-import com.ysmjjsy.goya.security.authentication.provider.AbstractAuthenticationConverter;
-import com.ysmjjsy.goya.security.authentication.utils.SecurityRequestUtils;
+import com.ysmjjsy.goya.component.cache.multilevel.crypto.CryptoProcessor;
+import com.ysmjjsy.goya.component.security.authentication.constants.SecurityAuthenticationConst;
+import com.ysmjjsy.goya.component.security.authentication.provider.AbstractAuthenticationConverter;
+import com.ysmjjsy.goya.component.security.authentication.utils.SecurityRequestUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -42,11 +42,11 @@ public class SmsAuthenticationConverter extends AbstractAuthenticationConverter 
             MultiValueMap<String, String> parameters,
             Map<String, Object> additionalParameters) {
 
-        SecurityRequestUtils.checkRequiredParameter(parameters, ISecurityAuthenticationConstants.PARAM_PHONE_NUMBER);
-        SecurityRequestUtils.checkRequiredParameter(parameters, ISecurityAuthenticationConstants.PARAM_SMS_CODE);
+        SecurityRequestUtils.checkRequiredParameter(parameters, SecurityAuthenticationConst.PARAM_PHONE_NUMBER);
+        SecurityRequestUtils.checkRequiredParameter(parameters, SecurityAuthenticationConst.PARAM_SMS_CODE);
 
-        String phoneNumber = (String) additionalParameters.get(ISecurityAuthenticationConstants.PARAM_PHONE_NUMBER);
-        String smsCode = (String) additionalParameters.get(ISecurityAuthenticationConstants.PARAM_SMS_CODE);
+        String phoneNumber = (String) additionalParameters.get(SecurityAuthenticationConst.PARAM_PHONE_NUMBER);
+        String smsCode = (String) additionalParameters.get(SecurityAuthenticationConst.PARAM_SMS_CODE);
 
         log.debug("[Goya] |- security [authentication] Convert SMS login for phone: {}", phoneNumber);
 

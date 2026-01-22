@@ -18,6 +18,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 public record GoyaProperties(
 
         @Schema(description = "平台信息")
+        @DefaultValue
         PlatformInfo platformInfo,
 
         @Schema(description = "系统架构模式")

@@ -203,7 +203,6 @@ public class MultiLevelAutoConfiguration {
      */
     @Bean
     @Primary
-    @ConditionalOnMissingBean(CacheManager.class)
     public GoyaCacheManager goyaCacheManager(CacheFactory cacheFactory) {
         GoyaCacheManager manager = new GoyaCacheManager(cacheFactory);
         log.trace("[Goya] |- component [cache] CacheAutoConfiguration |- bean [goyaCacheManager] register.");

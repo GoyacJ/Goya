@@ -2,7 +2,6 @@ package com.ysmjjsy.goya.component.security.authentication.utils;
 
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
-import com.ysmjjsy.goya.security.authentication.utils.DefaultOAuth2TokenCustomizers;
 import lombok.experimental.UtilityClass;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.NoUniqueBeanDefinitionException;

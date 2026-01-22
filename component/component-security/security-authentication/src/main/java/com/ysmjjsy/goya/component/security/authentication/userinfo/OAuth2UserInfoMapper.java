@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.security.authentication.userinfo;
 
-import com.ysmjjsy.goya.security.core.constants.IStandardClaimNamesConstants;
-import com.ysmjjsy.goya.security.core.domain.SecurityUser;
-import com.ysmjjsy.goya.security.core.manager.SecurityUserManager;
+import com.ysmjjsy.goya.component.security.core.constants.StandardClaimNamesConst;
+import com.ysmjjsy.goya.component.security.core.domain.SecurityUser;
+import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 public class OAuth2UserInfoMapper
         implements Function<OidcUserInfoAuthenticationContext, OidcUserInfo> {
 
-    private final SecurityUserManager securityUserService;
+    private final SecurityUserManager securityUserManager;
 
     @Override
     public OidcUserInfo apply(OidcUserInfoAuthenticationContext context) {
@@ -50,12 +50,12 @@ public class OAuth2UserInfoMapper
         String subject = jwt.getSubject();
         claims.put(StandardClaimNames.SUB, subject);
 
-        String tenantId = jwt.getClaimAsString(IStandardClaimNamesConstants.TENANT_ID);
+        String tenantId = jwt.getClaimAsString(StandardClaimNamesConst.TENANT_ID);
         if (StringUtils.isNotBlank(tenantId)) {
-            claims.put(IStandardClaimNamesConstants.TENANT_ID, tenantId);
+            claims.put(StandardClaimNamesConst.TENANT_ID, tenantId);
         }
 
-        SecurityUser user = securityUserService.findUserByUsername(subject);
+        SecurityUser user = securityUserManager.findUserByUsername(subject);
         if (user == null) {
             return new OidcUserInfo(claims);
         }
@@ -83,12 +83,12 @@ public class OAuth2UserInfoMapper
 
         // ===== 扩展（非 OIDC 标准）=====
         if (CollectionUtils.isNotEmpty(user.getRoles())) {
-            claims.put(IStandardClaimNamesConstants.ROLES, user.getRoles());
+            claims.put(StandardClaimNamesConst.ROLES, user.getRoles());
         }
 
         if (CollectionUtils.isNotEmpty(user.getAuthorities())) {
             claims.put(
-                    IStandardClaimNamesConstants.AUTHORITIES,
+                    StandardClaimNamesConst.AUTHORITIES,
                     user.getAuthorities()
                             .stream()
                             .map(GrantedAuthority::getAuthority)

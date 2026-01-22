@@ -38,6 +38,6 @@ public enum CryptoStrategyEnum implements IPropertyEnum {
 
     @Override
     public String getPrefix() {
-        return PropertyConst.PROPERTY_CRYPTO;
+        return PropertyConst.PROPERTY_CRYPTO + ".strategy";
     }
 }

@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.security.authentication.provider.oauth2;
 
-import com.ysmjjsy.goya.security.core.domain.SecurityUser;
+import com.ysmjjsy.goya.component.security.core.domain.SecurityUser;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.ObjectUtils;

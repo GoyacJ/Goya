@@ -1,16 +1,22 @@
 package com.ysmjjsy.goya.component.security.authentication.provider.login;
 
-import com.ysmjjsy.goya.component.cache.crypto.CryptoProcessor;
-import com.ysmjjsy.goya.security.authentication.provider.AbstractAuthenticationConverter;
-import com.ysmjjsy.goya.security.authentication.utils.SecurityRequestUtils;
+import com.ysmjjsy.goya.component.cache.multilevel.crypto.CryptoProcessor;
+import com.ysmjjsy.goya.component.core.utils.GoyaStringUtils;
+import com.ysmjjsy.goya.component.security.authentication.constants.SecurityAuthenticationConst;
+import com.ysmjjsy.goya.component.security.authentication.provider.AbstractAuthenticationConverter;
+import com.ysmjjsy.goya.component.security.authentication.utils.SecurityRequestUtils;
+import com.ysmjjsy.goya.component.social.enums.SocialTypeEnum;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2Error;
+import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.util.MultiValueMap;
 
 import java.util.Map;
+
+import static com.ysmjjsy.goya.component.security.authentication.utils.SecurityRequestUtils.ACCESS_TOKEN_REQUEST_ERROR_URI;
 
 /**
  * <p>社交登录认证转换器</p>
@@ -33,44 +39,22 @@ import java.util.Map;
 @Slf4j
 public class SocialAuthenticationConverter extends AbstractAuthenticationConverter {
 
-    /**
-     * 社交登录提供商ID参数名
-     */
-    private static final String PARAM_SOCIAL_PROVIDER_ID = "social_provider_id";
-
     public SocialAuthenticationConverter(CryptoProcessor cryptoProcessor) {
         super(cryptoProcessor);
     }
 
     @Override
-    public Authentication convert(@NonNull HttpServletRequest request) {
-        MultiValueMap<String, String> parameters = SecurityRequestUtils.getParameters(request);
-
-        // 检查grant_type是否为social（如果提供了grant_type）
-        String grantType = parameters.getFirst("grant_type");
-        if (grantType != null && !"social".equalsIgnoreCase(grantType)) {
-            // 如果提供了grant_type但不是social，则此Converter不支持
-            return null;
+    protected Authentication convertInternal(HttpServletRequest request, MultiValueMap<String, String> parameters, Map<String, Object> additionalParameters) {
+        String social = SecurityRequestUtils.checkRequiredParameter(parameters, SecurityAuthenticationConst.PARAM_SOCIAL);
+        String socialSource = SecurityRequestUtils.checkRequiredParameter(parameters, SecurityAuthenticationConst.PARAM_SOCIAL_SOURCE);
+        if (GoyaStringUtils.isNotBlank(social)) {
+            SocialTypeEnum socialTypeEnum = SocialTypeEnum.findByCode(social);
+            if (socialTypeEnum != null) {
+                return new SocialAuthenticationToken(socialTypeEnum, socialSource, additionalParameters);
+            }
         }
-
-        // 提取社交登录参数
-        String socialProviderId = parameters.getFirst(PARAM_SOCIAL_PROVIDER_ID);
-        // 社交登录的用户属性通常从OAuth2回调中获取，这里可能需要从session或其他地方获取
-        // 为了简化，这里假设从additionalParams中获取
-        Map<String, Object> additionalParams = getAdditionalParameters(request, parameters);
-        SecurityRequestUtils.validateAndAddDPoPParametersIfAvailable(request, additionalParams);
-
-        @SuppressWarnings("unchecked")
-        Map<String, Object> socialUserAttributes = (Map<String, Object>) additionalParams.get("social_user_attributes");
-
-        if (StringUtils.isBlank(socialProviderId)) {
-            log.debug("[Goya] |- security [authentication] Missing social_provider_id for social login");
-            return null;
-        }
-
-        log.debug("[Goya] |- security [authentication] Converting social authentication request for provider: {}", socialProviderId);
-
-        return new SocialAuthenticationToken(socialProviderId, socialUserAttributes, additionalParams);
+        OAuth2Error error = new OAuth2Error(OAuth2ErrorCodes.INVALID_REQUEST, "", ACCESS_TOKEN_REQUEST_ERROR_URI);
+        throw new OAuth2AuthenticationException(error);
     }
 }
 

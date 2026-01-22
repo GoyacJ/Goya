@@ -1,11 +1,9 @@
 package com.ysmjjsy.goya.component.security.authentication.token;
 
+import com.ysmjjsy.goya.component.security.authentication.provider.oauth2.OAuth2GrantAuthenticationToken;
+import com.ysmjjsy.goya.component.security.core.domain.SecurityUser;
+import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
 import com.ysmjjsy.goya.component.web.utils.WebUtils;
-import com.ysmjjsy.goya.security.authentication.provider.oauth2.OAuth2GrantAuthenticationToken;
-import com.ysmjjsy.goya.security.authentication.token.TokenBlacklistStamp;
-import com.ysmjjsy.goya.security.authentication.token.TokenResponse;
-import com.ysmjjsy.goya.security.core.domain.SecurityUser;
-import com.ysmjjsy.goya.security.core.manager.SecurityUserManager;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,8 +40,7 @@ public class TokenManager {
 
     private final OAuth2TokenGenerator<? extends OAuth2Token> tokenGenerator;
     private final OAuth2AuthorizationService authorizationService;
-    private final SecurityUserManager securityUserService;
-    private final SecurityAuditService securityAuditService;
+    private final SecurityUserManager securityUserManager;
     private final TokenBlacklistStamp tokenBlacklistStamp;
 
     /**
@@ -147,7 +144,7 @@ public class TokenManager {
             HttpServletRequest request = WebUtils.getRequest();
             if (request != null) {
                 String ipAddress = WebUtils.getClientIp(request);
-                securityAuditService.recordTokenGenerate(
+                securityUserManager.recordTokenGenerate(
                         userDetails.getUserId(),
                         userDetails.getUsername(),
                         registeredClient.getClientId(),
@@ -223,7 +220,7 @@ public class TokenManager {
             HttpServletRequest request = WebUtils.getRequest();
             if (request != null) {
                 String ipAddress = WebUtils.getClientIp(request);
-                securityAuditService.recordTokenRefresh(
+                securityUserManager.recordTokenRefresh(
                         user.getUserId(),
                         user.getUsername(),
                         registeredClient.getClientId(),
@@ -253,7 +250,7 @@ public class TokenManager {
         }
 
         try {
-            SecurityUser user = securityUserService.findUserByUsername(principalName);
+            SecurityUser user = securityUserManager.findUserByUsername(principalName);
             if (user == null) {
                 throw new OAuth2AuthenticationException(
                         new OAuth2Error(OAuth2ErrorCodes.SERVER_ERROR, "用户不存在: " + principalName, null));

@@ -3,6 +3,7 @@ package com.ysmjjsy.goya.component.security.core.manager;
 import com.ysmjjsy.goya.component.framework.enums.StatusEnum;
 import com.ysmjjsy.goya.component.security.core.domain.SecurityUser;
 import com.ysmjjsy.goya.component.security.core.domain.SecurityUserAuthAuditLog;
+import com.ysmjjsy.goya.component.security.core.domain.SecurityUserDevice;
 import com.ysmjjsy.goya.component.security.core.enums.SecurityOperationEnum;
 import com.ysmjjsy.goya.component.security.core.service.IUserService;
 import com.ysmjjsy.goya.component.social.domain.SocialUser;
@@ -18,6 +19,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
+import java.time.LocalDateTime;
+
 /**
  * <p>用户服务接口</p>
  *
@@ -30,6 +33,15 @@ public class SecurityUserManager implements UserDetailsService {
 
     private final IUserService userService;
     private final SocialManager socialManager;
+
+    /**
+     * 用户锁定
+     *
+     * @param userId 用户Id
+     */
+    public void lockedUser(String userId) {
+        userService.lockedUser(userId);
+    }
 
     /**
      * 根据手机号获取用户并保存
@@ -72,6 +84,16 @@ public class SecurityUserManager implements UserDetailsService {
                                           String iv) {
         SocialUser socialUser = socialManager.loadAndSaveWxAppSocialUser(openId, appId, sessionKey, encryptedData, iv);
         return findUserByUserId(socialUser.getUserId());
+    }
+
+    /**
+     * 根据设备ID查询设备
+     *
+     * @param deviceId 设备ID
+     * @return 设备信息
+     */
+    public SecurityUserDevice findByDeviceId(String deviceId) {
+        return userService.findByDeviceId(deviceId);
     }
 
     /**
@@ -268,5 +290,24 @@ public class SecurityUserManager implements UserDetailsService {
                 .errorMessage(errorMessage)
                 .build();
         userService.recordAuditLog(auditLog);
+    }
+
+    public void registerDevice(String userId, String deviceId, String deviceName, String deviceType, String ipAddress, UserAgent userAgent) {
+        userService.registerDevice(SecurityUserDevice.builder()
+                .userId(userId)
+                .deviceId(deviceId)
+                .deviceName(deviceName)
+                .deviceType(deviceType)
+                .ipAddress(ipAddress)
+                .userAgent(userAgent)
+                .build());
+    }
+
+    public void updateLastLoginTime(String deviceId, LocalDateTime lastLoginTime) {
+        userService.updateLastLoginTime(deviceId, lastLoginTime);
+    }
+
+    public boolean isPasswordInHistory(String userId, String password) {
+        return userService.isPasswordInHistory(userId,password);
     }
 }

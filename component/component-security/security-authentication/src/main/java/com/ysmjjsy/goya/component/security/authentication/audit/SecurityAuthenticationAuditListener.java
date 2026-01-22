@@ -1,5 +1,6 @@
 package com.ysmjjsy.goya.component.security.authentication.audit;
 
+import com.ysmjjsy.goya.component.security.authentication.login.LoginFailureCacheManger;
 import com.ysmjjsy.goya.component.security.core.domain.SecurityUser;
 import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
 import com.ysmjjsy.goya.component.web.utils.UserAgent;
@@ -26,6 +27,7 @@ import java.util.Objects;
 public class SecurityAuthenticationAuditListener {
 
     private final SecurityUserManager securityUserManager;
+    private final LoginFailureCacheManger loginFailureCacheManger;
 
     /**
      * 监听认证成功事件
@@ -60,6 +62,7 @@ public class SecurityAuthenticationAuditListener {
                 }
             }
 
+            loginFailureCacheManger.clear(userId);
             // 记录登录成功审计日志
             securityUserManager.recordLoginSuccess(userId, username, tenantId, ipAddress, userAgent, requestUri);
         } catch (Exception e) {
@@ -88,6 +91,21 @@ public class SecurityAuthenticationAuditListener {
             String requestUri = request.getRequestURI();
             String errorMessage = event.getException().getMessage();
 
+            String userId = null;
+
+            if (authentication.getPrincipal() instanceof SecurityUser securityUser) {
+                // 如果是SecurityUser，可以提取更多信息
+                try {
+                    userId = securityUser.getUserId();
+                } catch (Exception _) {
+                    // 忽略反射异常
+                }
+            }
+
+
+            if (loginFailureCacheManger.checkErrorTimes(userId)) {
+                securityUserManager.lockedUser(userId);
+            }
             // 记录登录失败审计日志
             securityUserManager.recordLoginFailure(username, ipAddress, userAgent, requestUri, errorMessage);
         } catch (Exception e) {

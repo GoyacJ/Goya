@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 
 import java.util.Comparator;
 import java.util.List;
@@ -62,10 +63,6 @@ public class BusEventListenerHandler {
         }
 
         IBusEvent event = message.getPayload();
-        if (event == null) {
-            log.warn("[Goya] |- component [bus] BusEventListenerHandler |- received message with null payload");
-            return;
-        }
 
         log.debug("[Goya] |- component [bus] BusEventListenerHandler |- handle local event [{}]", event.eventName());
 
@@ -126,7 +123,7 @@ public class BusEventListenerHandler {
             return;
         }
 
-        org.springframework.messaging.MessageHeaders headers = message.getHeaders();
+        MessageHeaders headers = message.getHeaders();
 
         // 设置 MDC（链路追踪）
         String traceId = MetadataAccessor.getTraceId(headers);

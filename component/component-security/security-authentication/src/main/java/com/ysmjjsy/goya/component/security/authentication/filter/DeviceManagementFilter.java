@@ -1,9 +1,10 @@
 package com.ysmjjsy.goya.component.security.authentication.filter;
 
+import com.ysmjjsy.goya.component.security.core.domain.SecurityUser;
 import com.ysmjjsy.goya.component.security.core.domain.SecurityUserDevice;
+import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
 import com.ysmjjsy.goya.component.web.utils.UserAgent;
 import com.ysmjjsy.goya.component.web.utils.WebUtils;
-import com.ysmjjsy.goya.security.core.domain.SecurityUser;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 
 /**
  * <p>设备管理过滤器</p>
@@ -30,7 +32,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class DeviceManagementFilter extends OncePerRequestFilter {
 
-    private final UserDeviceService userDeviceService;
+    private final SecurityUserManager securityUserManager;
 
     @Override
     @NullMarked
@@ -63,14 +65,14 @@ public class DeviceManagementFilter extends OncePerRequestFilter {
                         UserAgent userAgent = WebUtils.getUserAgent(request);
 
                         // 注册或更新设备
-                        SecurityUserDevice device = userDeviceService.findByDeviceId(deviceId);
+                        SecurityUserDevice device = securityUserManager.findByDeviceId(deviceId);
                         if (device == null) {
                             // 新设备，注册
-                            userDeviceService.registerDevice(userId, deviceId, deviceName, deviceType, ipAddress, userAgent);
+                            securityUserManager.registerDevice(userId, deviceId, deviceName, deviceType, ipAddress, userAgent);
                             log.debug("[Goya] |- security [authentication] Device registered: {} | user: {}", deviceId, userId);
                         } else {
                             // 更新最后登录时间
-                            userDeviceService.updateLastLoginTime(deviceId);
+                            securityUserManager.updateLastLoginTime(deviceId, LocalDateTime.now());
                             log.debug("[Goya] |- security [authentication] Device login time updated: {} | user: {}", deviceId, userId);
                         }
                     }

@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.security.authentication.constants;
 
-import static com.ysmjjsy.goya.component.cache.constants.CacheConst.CACHE_PREFIX;
+import static com.ysmjjsy.goya.component.cache.core.constants.CacheConst.CACHE_PREFIX;
 
 /**
  * <p></p>
@@ -8,7 +8,7 @@ import static com.ysmjjsy.goya.component.cache.constants.CacheConst.CACHE_PREFIX
  * @author goya
  * @since 2025/12/17 22:59
  */
-public interface ISecurityAuthenticationConstants {
+public interface SecurityAuthenticationConst {
 
 
     String OAUTH2_CALLBACK_PATH = "/oauth2/callback";
@@ -32,4 +32,6 @@ public interface ISecurityAuthenticationConstants {
     String PARAM_PASSWORD = "password";
     String PARAM_PHONE_NUMBER = "phone_number";
     String PARAM_SMS_CODE = "sms_code";
+    String PARAM_SOCIAL = "social";
+    String PARAM_SOCIAL_SOURCE = "social_source";
 }

@@ -7,6 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 import java.time.Duration;
+import java.util.List;
 
 /**
  * <p>认证中心配置</p>
@@ -22,7 +23,7 @@ public record SecurityAuthenticationProperties(
         LoginFailureConfig loginFailure,
 
         @Schema(description = "token黑名单配置")
-        @DefaultValue 
+        @DefaultValue
         TokenBlackListConfig tokenBlackList,
 
         @Schema(description = "jwt配置")
@@ -38,7 +39,11 @@ public record SecurityAuthenticationProperties(
 
         @Schema(description = "CORS配置")
         @DefaultValue
-        CorsConfig cors
+        CorsConfig cors,
+
+        @Schema(description = "密码安全策略")
+        @DefaultValue
+        PasswordPolicy passwordPolicy
 ) {
 
     @Schema(description = "登录了失败配置")
@@ -116,6 +121,59 @@ public record SecurityAuthenticationProperties(
             @DefaultValue("true")
             Boolean requireDpopProof
     ) {
+    }
+
+    @Schema(description = "密码安全策略")
+    public record PasswordPolicy(
+
+            @Schema(description = "是否启用密码策略")
+            @DefaultValue("true")
+            Boolean enabled,
+
+            @Schema(description = "最小长度")
+            @DefaultValue("8")
+            Integer minLength,
+
+            @Schema(description = "最大长度")
+            @DefaultValue("128")
+            Integer maxLength,
+
+            @Schema(description = "是否要求大写字母")
+            @DefaultValue("true")
+            Boolean requireUppercase,
+
+            @Schema(description = "是否要求小写字母")
+            @DefaultValue("true")
+            Boolean requireLowercase,
+
+            @Schema(description = "是否要求数字")
+            @DefaultValue("true")
+            Boolean requireDigit,
+
+            @Schema(description = "是否要求特殊字符")
+            @DefaultValue("true")
+            Boolean requireSpecialChar,
+
+            @Schema(description = "特殊字符集合")
+            @DefaultValue("!@#$%^&*()_+-=[]{}|;:,.<>?")
+            String specialChars,
+
+            @Schema(description = "是否防止重复使用历史密码")
+            @DefaultValue("true")
+            Boolean preventReuse,
+
+            @Schema(description = "历史密码检查数量（最近N个密码不能重复使用）")
+            @DefaultValue("5")
+            Integer historyCount,
+
+            @Schema(description = "密码过期天数（0表示永不过期）")
+            @DefaultValue("90")
+            Integer expirationDays,
+
+            @Schema(description = "密码过期前提醒天数")
+            @DefaultValue("7")
+            Integer expirationWarningDays
+    ) {
 
     }
 
@@ -123,15 +181,15 @@ public record SecurityAuthenticationProperties(
     public record CorsConfig(
             @Schema(description = "允许的来源（支持多个，生产环境必须配置具体域名，不允许使用*）")
             @DefaultValue({"http://localhost:3000", "http://localhost:5173"})
-            java.util.List<String> allowedOrigins,
+            List<String> allowedOrigins,
 
             @Schema(description = "允许的HTTP方法")
             @DefaultValue({"GET", "POST", "PUT", "DELETE", "OPTIONS"})
-            java.util.List<String> allowedMethods,
+            List<String> allowedMethods,
 
             @Schema(description = "允许的请求头")
             @DefaultValue({"*"})
-            java.util.List<String> allowedHeaders,
+            List<String> allowedHeaders,
 
             @Schema(description = "是否允许携带凭证（Cookie等）")
             @DefaultValue("true")

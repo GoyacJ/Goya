@@ -5,7 +5,6 @@ import com.ysmjjsy.goya.component.security.authorization.configuration.propertie
 import com.ysmjjsy.goya.component.security.authorization.dpop.ResourceServerDPoPValidator;
 import com.ysmjjsy.goya.component.security.authorization.jwt.JwtAuthenticationFilter;
 import com.ysmjjsy.goya.component.security.authorization.jwt.JwtAuthorityConverter;
-import com.ysmjjsy.goya.component.security.authorization.jwt.JwtBlacklistValidator;
 import com.ysmjjsy.goya.component.security.core.utils.DPoPKeyUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -73,7 +72,7 @@ public class SecurityResourceAutoConfiguration {
      */
     @Bean
     @Order(1)
-    public SecurityFilterChain resourceServerSecurityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain resourceServerSecurityFilterChain(HttpSecurity http,ResourceServerDPoPValidator resourceServerDPoPValidator) throws Exception {
         http
                 .securityMatcher("/api/**") // 资源服务器只处理 /api/** 路径
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -91,7 +90,7 @@ public class SecurityResourceAutoConfiguration {
                 });
 
         // 添加自定义JWT认证过滤器（用于DPoP验证等）
-        http.addFilterAfter(jwtAuthenticationFilter(), BearerTokenAuthenticationFilter.class);
+        http.addFilterAfter(jwtAuthenticationFilter(resourceServerDPoPValidator), BearerTokenAuthenticationFilter.class);
 
         return http.build();
     }
@@ -117,7 +116,7 @@ public class SecurityResourceAutoConfiguration {
         // 2. 使用issuerUri（自动从/.well-known/jwks.json获取JWK Set）
         else if (StringUtils.isNotBlank(jwtConfig.issuerUri())) {
             jwtDecoder = NimbusJwtDecoder.withIssuerLocation(jwtConfig.issuerUri())
-                    .validateTypes(jwtConfig.validateType())
+                    .validateType(jwtConfig.validateType())
                     .build();
             log.debug("[Goya] |- security [resource] JWT decoder configured with issuerUri: {}", jwtConfig.issuerUri());
         }
@@ -132,8 +131,6 @@ public class SecurityResourceAutoConfiguration {
         if (jwtConfig.audiences() != null && !jwtConfig.audiences().isEmpty()) {
             jwtDecoder.setJwtValidator(
                     JwtValidators.createDefaultWithIssuer(jwtConfig.issuerUri())
-                            .audience(jwtConfig.audiences().toArray(new String[0]))
-                            .build()
             );
             log.debug("[Goya] |- security [resource] JWT validator configured with audiences: {}", jwtConfig.audiences());
         }
@@ -142,7 +139,7 @@ public class SecurityResourceAutoConfiguration {
         if (resourceProperties.tokenBlacklist().enabled()) {
             try {
                 MultiLevelCacheService cacheService = applicationContext.getBean(MultiLevelCacheService.class);
-                jwtDecoder = new JwtBlacklistValidator(jwtDecoder, cacheService, resourceProperties.tokenBlacklist());
+//                jwtDecoder = new JwtBlacklistValidator(jwtDecoder, cacheService, resourceProperties.tokenBlacklist());
                 log.debug("[Goya] |- security [resource] JWT blacklist validator enabled.");
             } catch (Exception e) {
                 log.debug("[Goya] |- security [resource] ICacheService not available, skipping blacklist validation.");

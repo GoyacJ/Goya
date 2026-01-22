@@ -1,18 +1,22 @@
 package com.ysmjjsy.goya.component.security.authentication.provider;
 
-import com.ysmjjsy.goya.component.social.enums.SocialTypeEnum;
-import com.ysmjjsy.goya.security.core.domain.SecurityUser;
-import com.ysmjjsy.goya.security.core.enums.LoginTypeEnum;
-import com.ysmjjsy.goya.security.core.manager.SecurityUserManager;
+import com.ysmjjsy.goya.component.core.exception.CommonException;
+import com.ysmjjsy.goya.component.security.core.domain.SecurityUser;
+import com.ysmjjsy.goya.component.security.core.enums.LoginTypeEnum;
+import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
+import com.ysmjjsy.goya.component.social.domain.ThirdPrincipal;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NullMarked;
+import org.springframework.beans.MutablePropertyValues;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.support.WebRequestDataBinder;
 
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * <p></p>
@@ -23,10 +27,10 @@ import java.util.Collection;
 @Slf4j
 public abstract class AbstractAuthenticationProvider implements AuthenticationProvider {
 
-    private final SecurityUserManager securityUserService;
+    private final SecurityUserManager securityUserManager;
 
-    protected AbstractAuthenticationProvider(SecurityUserManager securityUserService) {
-        this.securityUserService = securityUserService;
+    protected AbstractAuthenticationProvider(SecurityUserManager securityUserManager) {
+        this.securityUserManager = securityUserManager;
     }
 
     protected abstract LoginTypeEnum loginType();
@@ -63,14 +67,40 @@ public abstract class AbstractAuthenticationProvider implements AuthenticationPr
         }
     }
 
-    public UserDetails retrieveUser(String param) {
-        return retrieveUser(param, null);
+    public UserDetails retrieveUser(String username) {
+        return securityUserManager.findUserByUsername(username);
     }
 
-    public UserDetails retrieveUser(String param, SocialTypeEnum socialType) {
-        SecurityUser user = securityUserService.findUser(loginType(), param, socialType);
+    public UserDetails retrieveUserByPhone(String phoneNumber) {
+        SecurityUser user = securityUserManager.smsLoginAndSave(phoneNumber);
         if (user == null) {
-            log.warn("[Goya] |- user not found: param: {}, socialType:{}", param, socialType);
+            log.warn("[Goya] |- user not found: phoneNumber: {}", phoneNumber);
+            throw new BadCredentialsException("用户名或密码错误");
+        }
+        return user;
+    }
+
+    public UserDetails retrieveUser(String source, ThirdPrincipal thirdPrincipal) {
+        SecurityUser user = securityUserManager.thirdLoginAndSave(source, thirdPrincipal);
+        if (user == null) {
+            log.warn("[Goya] |- user not found: source: {},thirdPrincipal:{}", source, thirdPrincipal);
+            throw new BadCredentialsException("用户名或密码错误");
+        }
+        return user;
+    }
+
+    public UserDetails retrieveUser(String openId,
+                                    String appId,
+                                    String sessionKey,
+                                    String encryptedData,
+                                    String iv) {
+        SecurityUser user = securityUserManager.wxAppLoginAndSave(
+                openId,
+                appId,
+                sessionKey,
+                encryptedData,
+                iv);
+        if (user == null) {
             throw new BadCredentialsException("用户名或密码错误");
         }
         return user;
@@ -171,4 +201,15 @@ public abstract class AbstractAuthenticationProvider implements AuthenticationPr
      * 子类定义是否支持该类型 Authentication
      */
     protected abstract boolean supportsAuthentication(Class<?> authentication);
+
+    protected ThirdPrincipal parameterBinder(Map<String, Object> parameters) throws CommonException {
+        ThirdPrincipal accessPrincipal = new ThirdPrincipal();
+
+        MutablePropertyValues mutablePropertyValues = new MutablePropertyValues(parameters);
+
+        WebRequestDataBinder webRequestDataBinder = new WebRequestDataBinder(accessPrincipal);
+        webRequestDataBinder.bind(mutablePropertyValues);
+        return accessPrincipal;
+
+    }
 }

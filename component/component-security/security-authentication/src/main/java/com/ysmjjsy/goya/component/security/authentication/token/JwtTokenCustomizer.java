@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.security.authentication.token;
 
-import com.ysmjjsy.goya.security.core.utils.DPoPKeyUtils;
-import com.ysmjjsy.goya.security.core.constants.IStandardClaimNamesConstants;
-import com.ysmjjsy.goya.security.core.domain.SecurityUser;
+import com.ysmjjsy.goya.component.security.core.constants.StandardClaimNamesConst;
+import com.ysmjjsy.goya.component.security.core.domain.SecurityUser;
+import com.ysmjjsy.goya.component.security.core.utils.DPoPKeyUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -50,7 +50,7 @@ public class JwtTokenCustomizer implements OAuth2TokenCustomizer<JwtEncodingCont
 
         // ===== 通用：sub + tenant =====
         claims.subject(user.getUserId());
-        claims.claim(IStandardClaimNamesConstants.TENANT_ID, user.getTenantId());
+        claims.claim(StandardClaimNamesConst.TENANT_ID, user.getTenantId());
 
         // ===== Access Token =====
         if (OAuth2TokenType.ACCESS_TOKEN.equals(tokenType)) {
@@ -61,14 +61,14 @@ public class JwtTokenCustomizer implements OAuth2TokenCustomizer<JwtEncodingCont
 
             // roles / authorities（仅授权用途）
             if (CollectionUtils.isNotEmpty(user.getRoles())) {
-                claims.claim(IStandardClaimNamesConstants.ROLES, user.getRoles());
+                claims.claim(StandardClaimNamesConst.ROLES, user.getRoles());
             }
 
             if (CollectionUtils.isNotEmpty(user.getAuthorities())) {
                 Set<String> authorities = user.getAuthorities().stream()
                         .map(GrantedAuthority::getAuthority)
                         .collect(Collectors.toSet());
-                claims.claim(IStandardClaimNamesConstants.AUTHORITIES, authorities);
+                claims.claim(StandardClaimNamesConst.AUTHORITIES, authorities);
             }
 
             // ===== DPoP支持：注入公钥指纹到JWT的cnf字段（RFC 9449）=====

@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.security.authentication.provider;
 
-import com.ysmjjsy.goya.component.cache.crypto.CryptoProcessor;
+import com.ysmjjsy.goya.component.cache.multilevel.crypto.CryptoProcessor;
+import com.ysmjjsy.goya.component.security.authentication.utils.SecurityRequestUtils;
 import com.ysmjjsy.goya.component.web.utils.WebUtils;
-import com.ysmjjsy.goya.security.authentication.utils.SecurityRequestUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;

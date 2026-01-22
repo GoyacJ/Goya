@@ -21,6 +21,14 @@
             <groupId>com.ysmjjsy.goya</groupId>
             <artifactId>bus-kafka-boot-starter</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.ysmjjsy.goya</groupId>
+            <artifactId>cache-boot-starter</artifactId>
+        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>com.ysmjjsy.goya</groupId>-->
+<!--            <artifactId>security-authentication</artifactId>-->
+<!--        </dependency>-->
     </dependencies>
 
     <build>
