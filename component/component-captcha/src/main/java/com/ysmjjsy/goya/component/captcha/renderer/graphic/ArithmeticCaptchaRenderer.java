@@ -1,8 +1,10 @@
 package com.ysmjjsy.goya.component.captcha.renderer.graphic;
 
+import com.ysmjjsy.goya.component.captcha.configuration.properties.CaptchaProperties;
 import com.ysmjjsy.goya.component.captcha.definition.Metadata;
 import com.ysmjjsy.goya.component.captcha.enums.CaptchaCategoryEnum;
 import com.ysmjjsy.goya.component.captcha.provider.RandomProvider;
+import com.ysmjjsy.goya.component.captcha.provider.ResourceProvider;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.script.ScriptEngine;
@@ -25,7 +27,8 @@ public class ArithmeticCaptchaRenderer extends AbstractBaseGraphicRenderer {
      */
     private String computedResult;
 
-    public ArithmeticCaptchaRenderer() {
+    public ArithmeticCaptchaRenderer(ResourceProvider resourceProvider, CaptchaProperties captchaProperties) {
+        super(resourceProvider,captchaProperties);
         this.complexity = this.getCaptchaProperties().graphics().complexity();
     }
 

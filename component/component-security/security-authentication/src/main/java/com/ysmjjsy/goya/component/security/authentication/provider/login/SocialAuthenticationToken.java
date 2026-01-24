@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.security.authentication.provider.login;
 
-import com.ysmjjsy.goya.component.social.enums.SocialTypeEnum;
+import com.ysmjjsy.goya.component.security.core.enums.SocialTypeEnum;
 import lombok.EqualsAndHashCode;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.authority.AuthorityUtils;
@@ -63,4 +63,3 @@ public class SocialAuthenticationToken extends AbstractAuthenticationToken {
         super.setAuthenticated(false);
     }
 }
-

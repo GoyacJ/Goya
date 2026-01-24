@@ -1,19 +1,15 @@
 package com.ysmjjsy.goya.component.security.authentication.provider;
 
-import com.ysmjjsy.goya.component.core.exception.CommonException;
 import com.ysmjjsy.goya.component.security.core.domain.SecurityUser;
 import com.ysmjjsy.goya.component.security.core.enums.LoginTypeEnum;
 import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
-import com.ysmjjsy.goya.component.social.domain.ThirdPrincipal;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NullMarked;
-import org.springframework.beans.MutablePropertyValues;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.support.WebRequestDataBinder;
 
 import java.util.Collection;
 import java.util.Map;
@@ -80,10 +76,10 @@ public abstract class AbstractAuthenticationProvider implements AuthenticationPr
         return user;
     }
 
-    public UserDetails retrieveUser(String source, ThirdPrincipal thirdPrincipal) {
-        SecurityUser user = securityUserManager.thirdLoginAndSave(source, thirdPrincipal);
+    public UserDetails retrieveUser(String source, Map<String, Object> attributes) {
+        SecurityUser user = securityUserManager.thirdLoginAndSave(source, attributes);
         if (user == null) {
-            log.warn("[Goya] |- user not found: source: {},thirdPrincipal:{}", source, thirdPrincipal);
+            log.warn("[Goya] |- user not found: source: {}", source);
             throw new BadCredentialsException("用户名或密码错误");
         }
         return user;
@@ -202,14 +198,4 @@ public abstract class AbstractAuthenticationProvider implements AuthenticationPr
      */
     protected abstract boolean supportsAuthentication(Class<?> authentication);
 
-    protected ThirdPrincipal parameterBinder(Map<String, Object> parameters) throws CommonException {
-        ThirdPrincipal accessPrincipal = new ThirdPrincipal();
-
-        MutablePropertyValues mutablePropertyValues = new MutablePropertyValues(parameters);
-
-        WebRequestDataBinder webRequestDataBinder = new WebRequestDataBinder(accessPrincipal);
-        webRequestDataBinder.bind(mutablePropertyValues);
-        return accessPrincipal;
-
-    }
 }

@@ -1,21 +1,32 @@
 package com.ysmjjsy.goya.component.security.authorization.configuration;
 
 import com.ysmjjsy.goya.component.cache.multilevel.service.MultiLevelCacheService;
+import com.ysmjjsy.goya.component.framework.json.GoyaJson;
 import com.ysmjjsy.goya.component.security.authorization.configuration.properties.SecurityResourceProperties;
 import com.ysmjjsy.goya.component.security.authorization.dpop.ResourceServerDPoPValidator;
 import com.ysmjjsy.goya.component.security.authorization.jwt.JwtAuthenticationFilter;
 import com.ysmjjsy.goya.component.security.authorization.jwt.JwtAuthorityConverter;
+import com.ysmjjsy.goya.component.security.authorization.jwt.JwtBlacklistValidator;
+import com.ysmjjsy.goya.component.security.core.constants.StandardClaimNamesConst;
+import com.ysmjjsy.goya.component.security.core.domain.SecurityTenant;
+import com.ysmjjsy.goya.component.security.core.service.ITenantService;
+import com.ysmjjsy.goya.component.security.core.tenant.PathTenantIdResolver;
+import com.ysmjjsy.goya.component.security.core.tenant.TenantIdResolver;
 import com.ysmjjsy.goya.component.security.core.utils.DPoPKeyUtils;
 import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.annotation.Order;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationManagerResolver;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -24,8 +35,14 @@ import org.springframework.security.oauth2.jwt.JwtDecoders;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * <p>资源服务器自动配置</p>
@@ -56,6 +73,7 @@ public class SecurityResourceAutoConfiguration {
 
     private final SecurityResourceProperties resourceProperties;
     private final ApplicationContext applicationContext;
+    private final ObjectProvider<ITenantService> tenantServiceProvider;
 
     @PostConstruct
     public void init() {
@@ -72,7 +90,9 @@ public class SecurityResourceAutoConfiguration {
      */
     @Bean
     @Order(1)
-    public SecurityFilterChain resourceServerSecurityFilterChain(HttpSecurity http,ResourceServerDPoPValidator resourceServerDPoPValidator) throws Exception {
+    public SecurityFilterChain resourceServerSecurityFilterChain(HttpSecurity http,
+                                                                 ResourceServerDPoPValidator resourceServerDPoPValidator,
+                                                                 AuthenticationManagerResolver<HttpServletRequest> authenticationManagerResolver) throws Exception {
         http
                 .securityMatcher("/api/**") // 资源服务器只处理 /api/** 路径
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -82,17 +102,54 @@ public class SecurityResourceAutoConfiguration {
                             .requestMatchers("/api/public/**").permitAll()
                             .anyRequest().authenticated();
                 })
-                .oauth2ResourceServer(oauth2 -> {
-                    oauth2.jwt(jwt -> {
-                        jwt.decoder(jwtDecoder());
-                        jwt.jwtAuthenticationConverter(jwtAuthenticationConverter());
-                    });
-                });
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .authenticationManagerResolver(authenticationManagerResolver));
 
         // 添加自定义JWT认证过滤器（用于DPoP验证等）
         http.addFilterAfter(jwtAuthenticationFilter(resourceServerDPoPValidator), BearerTokenAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    public TenantIdResolver tenantIdResolver() {
+        String pathPrefix = resourceProperties.multiTenant().pathPrefix();
+        TenantIdResolver pathResolver = new PathTenantIdResolver(pathPrefix);
+        return request -> {
+            ITenantService tenantService = tenantServiceProvider.getIfAvailable();
+            if (tenantService != null) {
+                String tenantId = tenantService.resolveTenantId(request);
+                if (StringUtils.isNotBlank(tenantId)) {
+                    return tenantId;
+                }
+            }
+            return pathResolver.resolveTenantId(request);
+        };
+    }
+
+    @Bean
+    public AuthenticationManagerResolver<HttpServletRequest> authenticationManagerResolver(
+            TenantIdResolver tenantIdResolver,
+            JwtAuthenticationConverter jwtAuthenticationConverter) {
+
+        Map<String, AuthenticationManager> managers = new ConcurrentHashMap<>();
+
+        return request -> {
+            String tenantId = tenantIdResolver.resolveTenantId(request);
+            if (StringUtils.isBlank(tenantId)) {
+                tenantId = resolveTenantFromToken(request);
+            }
+            if (StringUtils.isBlank(tenantId)) {
+                tenantId = resourceProperties.multiTenant().defaultTenantId();
+            }
+            final String resolvedTenantId = tenantId;
+            return managers.computeIfAbsent(resolvedTenantId, key -> {
+                JwtDecoder decoder = resolveJwtDecoder(key);
+                JwtAuthenticationProvider provider = new JwtAuthenticationProvider(decoder);
+                provider.setJwtAuthenticationConverter(jwtAuthenticationConverter);
+                return provider::authenticate;
+            });
+        };
     }
 
     /**
@@ -139,7 +196,7 @@ public class SecurityResourceAutoConfiguration {
         if (resourceProperties.tokenBlacklist().enabled()) {
             try {
                 MultiLevelCacheService cacheService = applicationContext.getBean(MultiLevelCacheService.class);
-//                jwtDecoder = new JwtBlacklistValidator(jwtDecoder, cacheService, resourceProperties.tokenBlacklist());
+                jwtDecoder = new JwtBlacklistValidator(jwtDecoder, cacheService, resourceProperties.tokenBlacklist());
                 log.debug("[Goya] |- security [resource] JWT blacklist validator enabled.");
             } catch (Exception e) {
                 log.debug("[Goya] |- security [resource] ICacheService not available, skipping blacklist validation.");
@@ -147,6 +204,85 @@ public class SecurityResourceAutoConfiguration {
         }
 
         return jwtDecoder;
+    }
+
+    private JwtDecoder resolveJwtDecoder(String tenantId) {
+        SecurityResourceProperties.JwtConfig jwtConfig = resourceProperties.jwt();
+        SecurityTenant tenant = null;
+        ITenantService tenantService = tenantServiceProvider.getIfAvailable();
+        if (tenantService != null) {
+            tenant = tenantService.loadTenant(tenantId);
+        }
+
+        String jwkSetUri = tenant != null ? tenant.jwkSetUri() : null;
+        String issuerUri = tenant != null ? tenant.issuer() : null;
+
+        NimbusJwtDecoder decoder;
+        if (StringUtils.isNotBlank(jwkSetUri)) {
+            decoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
+        } else if (StringUtils.isNotBlank(issuerUri)) {
+            decoder = NimbusJwtDecoder.withIssuerLocation(issuerUri)
+                    .validateType(jwtConfig.validateType())
+                    .build();
+        } else if (StringUtils.isNotBlank(jwtConfig.jwkSetUri())) {
+            decoder = NimbusJwtDecoder.withJwkSetUri(jwtConfig.jwkSetUri()).build();
+        } else if (StringUtils.isNotBlank(jwtConfig.issuerUri())) {
+            decoder = NimbusJwtDecoder.withIssuerLocation(jwtConfig.issuerUri())
+                    .validateType(jwtConfig.validateType())
+                    .build();
+        } else {
+            decoder = (NimbusJwtDecoder) JwtDecoders.fromOidcIssuerLocation("http://localhost:8080");
+        }
+
+        if (jwtConfig.audiences() != null && !jwtConfig.audiences().isEmpty()) {
+            String issuer = StringUtils.defaultIfBlank(issuerUri, jwtConfig.issuerUri());
+            if (StringUtils.isNotBlank(issuer)) {
+                decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(issuer));
+            }
+        }
+
+        if (resourceProperties.tokenBlacklist().enabled()) {
+            try {
+                MultiLevelCacheService cacheService = applicationContext.getBean(MultiLevelCacheService.class);
+                return new JwtBlacklistValidator(decoder, cacheService, resourceProperties.tokenBlacklist());
+            } catch (Exception e) {
+                log.debug("[Goya] |- security [resource] ICacheService not available, skipping blacklist validation.");
+            }
+        }
+
+        return decoder;
+    }
+
+    private String resolveTenantFromToken(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (StringUtils.isBlank(authHeader) || !StringUtils.startsWithIgnoreCase(authHeader, "Bearer ")) {
+            return null;
+        }
+        String token = authHeader.substring(7).trim();
+        if (StringUtils.isBlank(token)) {
+            return null;
+        }
+        String[] parts = token.split("\\.");
+        if (parts.length < 2) {
+            return null;
+        }
+        try {
+            byte[] decoded = Base64.getUrlDecoder().decode(parts[1]);
+            String payload = new String(decoded, StandardCharsets.UTF_8);
+            Map<String, Object> claims = GoyaJson.fromJson(payload, Map.class);
+            if (claims == null) {
+                return null;
+            }
+            Object tenantValue = claims.get(StandardClaimNamesConst.TENANT_ID);
+            if (tenantValue == null) {
+                return null;
+            }
+            String tenantId = tenantValue.toString();
+            return StringUtils.isNotBlank(tenantId) ? tenantId : null;
+        } catch (IllegalArgumentException ex) {
+            log.debug("[Goya] |- security [resource] Invalid JWT payload for tenant lookup.", ex);
+            return null;
+        }
     }
 
     /**

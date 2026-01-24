@@ -1,6 +1,5 @@
 package com.ysmjjsy.goya.component.security.oauth2.request.entrypoint;
 
-import com.ysmjjsy.goya.component.security.authentication.request.CustomizerRequestCache;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +8,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.NullMarked;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.savedrequest.RequestCache;
 
 import java.io.IOException;
 
@@ -31,7 +31,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class OAuth2AuthenticationEntryPoint implements AuthenticationEntryPoint {
 
-    private final CustomizerRequestCache requestCache;
+    private final RequestCache requestCache;
 
     @Override
     @NullMarked
@@ -72,7 +72,10 @@ public class OAuth2AuthenticationEntryPoint implements AuthenticationEntryPoint 
      * @return 登录 URL
      */
     private String buildLoginUrl(HttpServletRequest request) {
-        String loginUrl = "/login";
+        String tenantId = (String) request.getAttribute(
+                com.ysmjjsy.goya.component.security.oauth2.tenant.TenantRequestAttributes.ATTR_TENANT_ID);
+        String prefix = tenantId != null ? "/t/" + tenantId : "";
+        String loginUrl = prefix + "/login";
 
         // 如果是授权请求，保留 client_id 等参数（可选，用于前端显示）
         if (isAuthorizationRequest(request.getRequestURI())) {
@@ -85,4 +88,3 @@ public class OAuth2AuthenticationEntryPoint implements AuthenticationEntryPoint 
         return loginUrl;
     }
 }
-

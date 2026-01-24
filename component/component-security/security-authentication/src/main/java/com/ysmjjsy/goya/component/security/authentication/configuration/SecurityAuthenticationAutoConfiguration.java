@@ -4,8 +4,11 @@ import com.ysmjjsy.goya.component.security.authentication.audit.SecurityAuthenti
 import com.ysmjjsy.goya.component.security.authentication.captcha.DynamicLoginCaptchaStrategy;
 import com.ysmjjsy.goya.component.security.authentication.configuration.properties.SecurityAuthenticationProperties;
 import com.ysmjjsy.goya.component.security.authentication.errortimes.LoginFailureCacheManger;
+import com.ysmjjsy.goya.component.security.authentication.filter.CaptchaValidationFilter;
+import com.ysmjjsy.goya.component.security.authentication.filter.DeviceManagementFilter;
 import com.ysmjjsy.goya.component.security.authentication.handler.SecurityAuthenticationFailureHandler;
 import com.ysmjjsy.goya.component.security.authentication.password.PasswordPolicyValidator;
+import com.ysmjjsy.goya.component.captcha.api.CaptchaService;
 import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -67,5 +70,20 @@ public class SecurityAuthenticationAutoConfiguration {
         DynamicLoginCaptchaStrategy strategy = new DynamicLoginCaptchaStrategy(securityAuthenticationProperties.captcha());
         log.trace("[Goya] |- security [authentication] SecurityAuthenticationAutoConfiguration |- bean [dynamicLoginCaptchaStrategy] register.");
         return strategy;
+    }
+
+    @Bean
+    public CaptchaValidationFilter captchaValidationFilter(DynamicLoginCaptchaStrategy loginCaptchaStrategy,
+                                                           CaptchaService captchaService) {
+        CaptchaValidationFilter filter = new CaptchaValidationFilter(loginCaptchaStrategy, captchaService);
+        log.trace("[Goya] |- security [authentication] CaptchaValidationFilter auto configure.");
+        return filter;
+    }
+
+    @Bean
+    public DeviceManagementFilter deviceManagementFilter(SecurityUserManager securityUserManager) {
+        DeviceManagementFilter filter = new DeviceManagementFilter(securityUserManager);
+        log.trace("[Goya] |- security [authentication] DeviceManagementFilter auto configure.");
+        return filter;
     }
 }

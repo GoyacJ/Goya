@@ -9,10 +9,15 @@ import com.ysmjjsy.goya.component.framework.context.SpringContext;
 import com.ysmjjsy.goya.component.security.authentication.configuration.properties.SecurityAuthenticationProperties;
 import com.ysmjjsy.goya.component.security.core.enums.CertificateEnum;
 import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
-import com.ysmjjsy.goya.component.security.oauth2.authorization.CacheOAuth2AuthorizationService;
 import com.ysmjjsy.goya.component.security.oauth2.request.CustomizerRequestCache;
 import com.ysmjjsy.goya.component.security.oauth2.request.entrypoint.OAuth2AuthenticationEntryPoint;
 import com.ysmjjsy.goya.component.security.oauth2.request.handler.OAuth2AuthenticationSuccessHandler;
+import com.ysmjjsy.goya.component.security.oauth2.service.IOAuth2AuthorizationConsentService;
+import com.ysmjjsy.goya.component.security.oauth2.service.IOAuth2AuthorizationService;
+import com.ysmjjsy.goya.component.security.oauth2.service.IRegisteredClientService;
+import com.ysmjjsy.goya.component.security.oauth2.service.adapter.OAuth2AuthorizationConsentServiceAdapter;
+import com.ysmjjsy.goya.component.security.oauth2.service.adapter.OAuth2AuthorizationServiceAdapter;
+import com.ysmjjsy.goya.component.security.oauth2.service.adapter.RegisteredClientRepositoryAdapter;
 import com.ysmjjsy.goya.component.security.oauth2.token.JwtTokenCustomizer;
 import com.ysmjjsy.goya.component.security.oauth2.token.TokenBlacklistStamp;
 import com.ysmjjsy.goya.component.security.oauth2.token.TokenManager;
@@ -23,14 +28,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.Resource;
 import org.springframework.security.crypto.encrypt.KeyStoreKeyFactory;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.token.*;
+import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
+import org.springframework.security.web.savedrequest.RequestCache;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -62,9 +72,19 @@ public class SecurityOAuth2AutoConfiguration {
      * @return RedisRequestCache
      */
     @Bean
-    public CustomizerRequestCache customizerRequestCache(MultiLevelCacheService cacheService) {
-        CustomizerRequestCache requestCache = new CustomizerRequestCache(cacheService);
+    @ConditionalOnBean(MultiLevelCacheService.class)
+    public RequestCache requestCache(MultiLevelCacheService cacheService) {
+        CustomizerRequestCache requestCache =
+                new CustomizerRequestCache(cacheService);
         log.trace("[Goya] |- security [authentication] customizerRequestCache auto configure.");
+        return requestCache;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(RequestCache.class)
+    public RequestCache sessionRequestCache() {
+        HttpSessionRequestCache requestCache = new HttpSessionRequestCache();
+        log.trace("[Goya] |- security [authentication] HttpSessionRequestCache auto configure.");
         return requestCache;
     }
 
@@ -75,8 +95,8 @@ public class SecurityOAuth2AutoConfiguration {
      * @return OAuth2AuthenticationEntryPoint
      */
     @Bean
-    public OAuth2AuthenticationEntryPoint oAuth2AuthenticationEntryPoint(CustomizerRequestCache customizerRequestCache) {
-        OAuth2AuthenticationEntryPoint entryPoint = new OAuth2AuthenticationEntryPoint(customizerRequestCache);
+    public OAuth2AuthenticationEntryPoint oAuth2AuthenticationEntryPoint(RequestCache requestCache) {
+        OAuth2AuthenticationEntryPoint entryPoint = new OAuth2AuthenticationEntryPoint(requestCache);
         log.trace("[Goya] |- security [authentication] OAuth2AuthenticationEntryPoint auto configure.");
         return entryPoint;
     }
@@ -88,8 +108,8 @@ public class SecurityOAuth2AutoConfiguration {
      * @return OAuth2AuthenticationSuccessHandler
      */
     @Bean
-    public OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler(CustomizerRequestCache customizerRequestCache) {
-        OAuth2AuthenticationSuccessHandler handler = new OAuth2AuthenticationSuccessHandler(customizerRequestCache);
+    public OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler(RequestCache requestCache) {
+        OAuth2AuthenticationSuccessHandler handler = new OAuth2AuthenticationSuccessHandler(requestCache);
         log.trace("[Goya] |- security [authentication] OAuth2AuthenticationSuccessHandler auto configure.");
         return handler;
     }
@@ -116,15 +136,31 @@ public class SecurityOAuth2AutoConfiguration {
      * 配置缓存 OAuth2授权服务（优先使用）
      * <p>实现全无状态设计，支持水平扩展</p>
      *
-     * @param cacheService 缓存服务
+     * @param authorizationService authorizationService
      * @return RedisOAuth2AuthorizationService
      */
     @Bean
-    @ConditionalOnBean(MultiLevelCacheService.class)
-    public OAuth2AuthorizationService cacheOAuth2AuthorizationService(MultiLevelCacheService cacheService) {
-        CacheOAuth2AuthorizationService service = new CacheOAuth2AuthorizationService(cacheService);
-        log.trace("[Goya] |- security [authentication] cacheOAuth2AuthorizationService auto configure.");
-        return service;
+    @ConditionalOnBean(IOAuth2AuthorizationService.class)
+    public OAuth2AuthorizationService oAuth2AuthorizationService(IOAuth2AuthorizationService authorizationService) {
+        OAuth2AuthorizationServiceAdapter adapter = new OAuth2AuthorizationServiceAdapter(authorizationService);
+        log.trace("[Goya] |- security [oauth2] OAuth2AuthorizationService adapter auto configure.");
+        return adapter;
+    }
+
+    @Bean
+    @ConditionalOnBean(IOAuth2AuthorizationConsentService.class)
+    public OAuth2AuthorizationConsentService oAuth2AuthorizationConsentService(IOAuth2AuthorizationConsentService consentService) {
+        OAuth2AuthorizationConsentServiceAdapter adapter = new OAuth2AuthorizationConsentServiceAdapter(consentService);
+        log.trace("[Goya] |- security [oauth2] OAuth2AuthorizationConsentService adapter auto configure.");
+        return adapter;
+    }
+
+    @Bean
+    @ConditionalOnBean(IRegisteredClientService.class)
+    public RegisteredClientRepository registeredClientRepository(IRegisteredClientService registeredClientService) {
+        RegisteredClientRepositoryAdapter adapter = new RegisteredClientRepositoryAdapter(registeredClientService);
+        log.trace("[Goya] |- security [oauth2] RegisteredClientRepository adapter auto configure.");
+        return adapter;
     }
 
     @Bean
@@ -159,6 +195,7 @@ public class SecurityOAuth2AutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean(JWKSource.class)
     public JWKSource<SecurityContext> jwkSource(SecurityAuthenticationProperties authenticationProperties) throws NoSuchAlgorithmException {
         SecurityAuthenticationProperties.Jwk jwk = authenticationProperties.jwk();
         KeyPair keyPair = null;
@@ -189,6 +226,7 @@ public class SecurityOAuth2AutoConfiguration {
      * 配置JWT Encoder
      */
     @Bean
+    @ConditionalOnMissingBean(JwtEncoder.class)
     public JwtEncoder jwtEncoder(JWKSource<SecurityContext> jwkSource) {
         return new NimbusJwtEncoder(jwkSource);
     }

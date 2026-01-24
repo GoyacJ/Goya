@@ -1,5 +1,6 @@
 package com.ysmjjsy.goya.component.captcha.renderer.behavior;
 
+import com.ysmjjsy.goya.component.captcha.configuration.properties.CaptchaProperties;
 import com.ysmjjsy.goya.component.captcha.constants.CaptchaConst;
 import com.ysmjjsy.goya.component.captcha.definition.AbstractCaptcha;
 import com.ysmjjsy.goya.component.captcha.definition.Coordinate;
@@ -8,6 +9,7 @@ import com.ysmjjsy.goya.component.captcha.definition.Verification;
 import com.ysmjjsy.goya.component.captcha.enums.CaptchaCategoryEnum;
 import com.ysmjjsy.goya.component.captcha.enums.FontStyleEnum;
 import com.ysmjjsy.goya.component.captcha.provider.RandomProvider;
+import com.ysmjjsy.goya.component.captcha.provider.ResourceProvider;
 import com.ysmjjsy.goya.component.core.exception.CommonException;
 import com.ysmjjsy.goya.component.core.utils.GoyaIdUtils;
 import org.apache.commons.collections4.CollectionUtils;
@@ -28,6 +30,10 @@ import java.util.stream.IntStream;
  * @since 2021/12/14 9:31
  */
 public class WordClickCaptchaRenderer extends AbstractBehaviorRenderer<String, List<Coordinate>> {
+
+    public WordClickCaptchaRenderer(ResourceProvider resourceProvider, CaptchaProperties captchaProperties) {
+        super(resourceProvider,captchaProperties);
+    }
 
     private WordClickCaptcha wordClickCaptcha;
 

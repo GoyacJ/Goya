@@ -74,7 +74,59 @@
                 <scope>import</scope>
             </dependency>
 
-            <!-- ======================== module ======================== -->
+            <!-- ======================== framework ======================== -->
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>framework-core</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>framework-common</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>framework-masker</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>framework-crypto</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>framework-cache</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>framework-bus</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>framework-log</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>framework-oss</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>framework-servlet</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>framework-boot-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- ======================== component ======================== -->
             <dependency>
                 <groupId>com.ysmjjsy.goya</groupId>
                 <artifactId>component-core</artifactId>
@@ -127,22 +179,12 @@
             </dependency>
             <dependency>
                 <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>database-core</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>database-mybatisplus-boot-starter</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>database-jpa-boot-starter</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
                 <artifactId>component-captcha</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ysmjjsy.goya</groupId>
+                <artifactId>component-mybatisplus</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>

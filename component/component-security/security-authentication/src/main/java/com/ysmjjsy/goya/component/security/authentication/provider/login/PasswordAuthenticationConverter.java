@@ -4,10 +4,12 @@ import com.ysmjjsy.goya.component.cache.multilevel.crypto.CryptoProcessor;
 import com.ysmjjsy.goya.component.security.authentication.constants.SecurityAuthenticationConst;
 import com.ysmjjsy.goya.component.security.authentication.provider.AbstractAuthenticationConverter;
 import com.ysmjjsy.goya.component.security.authentication.utils.SecurityRequestUtils;
+import com.ysmjjsy.goya.component.security.core.enums.LoginTypeEnum;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.util.MultiValueMap;
+import org.springframework.util.StringUtils;
 
 import java.util.Map;
 
@@ -45,6 +47,15 @@ public class PasswordAuthenticationConverter extends AbstractAuthenticationConve
             MultiValueMap<String, String> parameters,
             Map<String, Object> additionalParameters) {
 
+        LoginTypeEnum loginType = LoginTypeEnum.resolve(request);
+        String loginTypeParam = request.getParameter("login_type");
+        if (loginType != null && loginType != LoginTypeEnum.PASSWORD) {
+            return null;
+        }
+        if (loginType == null && StringUtils.hasText(loginTypeParam)) {
+            return null;
+        }
+
         SecurityRequestUtils.checkRequiredParameter(
                 parameters, SecurityAuthenticationConst.PARAM_USERNAME);
         SecurityRequestUtils.checkRequiredParameter(
@@ -65,4 +76,3 @@ public class PasswordAuthenticationConverter extends AbstractAuthenticationConve
     }
 
 }
-

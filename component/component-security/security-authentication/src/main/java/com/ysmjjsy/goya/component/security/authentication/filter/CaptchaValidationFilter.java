@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NullMarked;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
+import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
@@ -35,12 +36,17 @@ public class CaptchaValidationFilter extends OncePerRequestFilter {
     @NullMarked
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) {
         try {
+            String loginTypeParam = request.getParameter("login_type");
             LoginTypeEnum loginTypeEnum = LoginTypeEnum.resolve(request);
             if (loginTypeEnum == null) {
-                SecurityRequestUtils.throwError(
-                        OAuth2ErrorCodes.INVALID_REQUEST,
-                        "不支持的登录类型"
-                );
+                if (!StringUtils.hasText(loginTypeParam)) {
+                    loginTypeEnum = LoginTypeEnum.PASSWORD;
+                } else {
+                    SecurityRequestUtils.throwError(
+                            OAuth2ErrorCodes.INVALID_REQUEST,
+                            "不支持的登录类型"
+                    );
+                }
             }
 
             String tenantId = request.getParameter("tenant_id");
@@ -83,5 +89,17 @@ public class CaptchaValidationFilter extends OncePerRequestFilter {
                     "验证码服务异常"
             );
         }
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        if (!"POST".equalsIgnoreCase(request.getMethod())) {
+            return true;
+        }
+        if (uri == null) {
+            return true;
+        }
+        return !uri.endsWith("/login");
     }
 }

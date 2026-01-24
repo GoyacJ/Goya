@@ -58,12 +58,11 @@ public class ResourceServerDPoPValidator {
      */
     public void validateIfRequired(Jwt jwt, HttpServletRequest request) {
         // 1. 检查是否启用DPoP验证
-        if (!dpopConfig.enabled()) {
+        if (Boolean.FALSE.equals(dpopConfig.enabled())) {
             return;
         }
 
         // 2. 检查JWT是否包含cnf.jkt claim（表示是DPoP-bound Token）
-        @SuppressWarnings("unchecked")
         Map<String, Object> cnf = jwt.getClaim("cnf");
         if (cnf == null || !cnf.containsKey("jkt")) {
             // 不是DPoP-bound Token，无需验证
@@ -75,7 +74,7 @@ public class ResourceServerDPoPValidator {
         log.debug("[Goya] |- security [resource] JWT is DPoP-bound with jkt: {}", jkt);
 
         // 3. 如果强制要求DPoP，检查请求中是否提供了DPoP Proof
-        if (dpopConfig.requireDpopForBoundTokens()) {
+        if (Boolean.TRUE.equals(dpopConfig.requireDpopForBoundTokens())) {
             String dPoPProof = request.getHeader("DPoP");
             if (StringUtils.isBlank(dPoPProof)) {
                 throw new OAuth2AuthenticationException(

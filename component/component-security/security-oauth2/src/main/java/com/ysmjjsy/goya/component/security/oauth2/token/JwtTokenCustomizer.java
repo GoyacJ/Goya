@@ -59,6 +59,13 @@ public class JwtTokenCustomizer implements OAuth2TokenCustomizer<JwtEncodingCont
             String issuer = AuthorizationServerContextHolder.getContext().getIssuer();
             claims.issuer(issuer);
 
+            if (context.getRegisteredClient() != null) {
+                String clientId = context.getRegisteredClient().getClientId();
+                if (StringUtils.isNotBlank(clientId)) {
+                    claims.claim(StandardClaimNamesConst.CLIENT_ID, clientId);
+                }
+            }
+
             // roles / authorities（仅授权用途）
             if (CollectionUtils.isNotEmpty(user.getRoles())) {
                 claims.claim(StandardClaimNamesConst.ROLES, user.getRoles());

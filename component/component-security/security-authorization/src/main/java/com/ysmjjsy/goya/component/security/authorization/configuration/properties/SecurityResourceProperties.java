@@ -90,7 +90,11 @@ public record SecurityResourceProperties(
 
             @Schema(description = "默认租户ID（当JWT中不包含tenant_id时使用）")
             @DefaultValue("public")
-            String defaultTenantId
+            String defaultTenantId,
+
+            @Schema(description = "租户路径前缀")
+            @DefaultValue("/t")
+            String pathPrefix
     ) {
     }
 }

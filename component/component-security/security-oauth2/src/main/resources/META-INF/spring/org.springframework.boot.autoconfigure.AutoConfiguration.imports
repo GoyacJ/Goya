@@ -1,2 +1,2 @@
-com.ysmjjsy.goya.component.security.authentication.configuration.SecurityAuthenticationAutoConfiguration
-com.ysmjjsy.goya.component.security.authentication.configuration.AuthorizationAutoConfiguration
+com.ysmjjsy.goya.component.security.oauth2.configuration.SecurityOAuth2AutoConfiguration
+com.ysmjjsy.goya.component.security.oauth2.configuration.SecurityAuthorizationServerAutoConfiguration

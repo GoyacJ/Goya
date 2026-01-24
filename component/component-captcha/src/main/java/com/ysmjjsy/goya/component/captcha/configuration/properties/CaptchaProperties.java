@@ -91,9 +91,11 @@ public record CaptchaProperties(
             Duration expire,
 
             @Schema(description = "本地缓存过期时间")
+            @DefaultValue("PT1H")
             Duration localExpire,
 
             @Schema(description = "本地缓存数量限制")
+            @DefaultValue("100000")
             Integer localLimit
     ) {
     }

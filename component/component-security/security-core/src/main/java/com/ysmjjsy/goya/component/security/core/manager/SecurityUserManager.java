@@ -5,15 +5,14 @@ import com.ysmjjsy.goya.component.security.core.domain.SecurityUser;
 import com.ysmjjsy.goya.component.security.core.domain.SecurityUserAuthAuditLog;
 import com.ysmjjsy.goya.component.security.core.domain.SecurityUserDevice;
 import com.ysmjjsy.goya.component.security.core.enums.SecurityOperationEnum;
+import com.ysmjjsy.goya.component.security.core.service.ISocialUserService;
 import com.ysmjjsy.goya.component.security.core.service.IUserService;
-import com.ysmjjsy.goya.component.social.domain.SocialUser;
-import com.ysmjjsy.goya.component.social.domain.ThirdPrincipal;
-import com.ysmjjsy.goya.component.social.service.SocialManager;
 import com.ysmjjsy.goya.component.web.enums.RequestMethodEnum;
 import com.ysmjjsy.goya.component.web.utils.UserAgent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NullMarked;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -32,7 +31,7 @@ import java.time.LocalDateTime;
 public class SecurityUserManager implements UserDetailsService {
 
     private final IUserService userService;
-    private final SocialManager socialManager;
+    private final ObjectProvider<ISocialUserService> socialUserServiceProvider;
 
     /**
      * 用户锁定
@@ -50,8 +49,11 @@ public class SecurityUserManager implements UserDetailsService {
      * @return 用户
      */
     public SecurityUser smsLoginAndSave(String phoneNumber) {
-        SocialUser socialUser = socialManager.loadAndSaveSmsSocialUser(phoneNumber);
-        return findUserByUserId(socialUser.getUserId());
+        SecurityUser user = userService.findUserByPhoneNumber(phoneNumber);
+        if (user == null) {
+            throw new UsernameNotFoundException("用户不存在: " + phoneNumber);
+        }
+        return user;
     }
 
     /**
@@ -59,12 +61,19 @@ public class SecurityUserManager implements UserDetailsService {
      * 根据source+principal获取用户并保存
      *
      * @param source    source
-     * @param principal principal
+     * @param attributes attributes
      * @return SocialUser
      */
-    public SecurityUser thirdLoginAndSave(String source, ThirdPrincipal principal) {
-        SocialUser socialUser = socialManager.loadAndSaveThirdSocialUser(source, principal);
-        return findUserByUserId(socialUser.getUserId());
+    public SecurityUser thirdLoginAndSave(String source, java.util.Map<String, Object> attributes) {
+        ISocialUserService socialUserService = socialUserServiceProvider.getIfAvailable();
+        if (socialUserService == null) {
+            throw new UsernameNotFoundException("社交登录服务未配置");
+        }
+        String userId = socialUserService.resolveUserId(source, attributes);
+        if (userId == null) {
+            throw new UsernameNotFoundException("社交用户未绑定: " + source);
+        }
+        return findUserByUserId(userId);
     }
 
     /**
@@ -82,8 +91,15 @@ public class SecurityUserManager implements UserDetailsService {
                                           String sessionKey,
                                           String encryptedData,
                                           String iv) {
-        SocialUser socialUser = socialManager.loadAndSaveWxAppSocialUser(openId, appId, sessionKey, encryptedData, iv);
-        return findUserByUserId(socialUser.getUserId());
+        ISocialUserService socialUserService = socialUserServiceProvider.getIfAvailable();
+        if (socialUserService == null) {
+            throw new UsernameNotFoundException("社交登录服务未配置");
+        }
+        String userId = socialUserService.resolveUserIdForWxApp(openId, appId, sessionKey, encryptedData, iv);
+        if (userId == null) {
+            throw new UsernameNotFoundException("社交用户未绑定: " + openId);
+        }
+        return findUserByUserId(userId);
     }
 
     /**

@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.StringUtils;
 
 /**
  * <p></p>
@@ -34,6 +35,14 @@ public enum LoginTypeEnum implements IEnum<String> {
 
     public static LoginTypeEnum resolve(HttpServletRequest request) {
         String loginType = request.getParameter("login_type");
-        return LoginTypeEnum.valueOf(loginType);
+        if (!StringUtils.hasText(loginType)) {
+            return null;
+        }
+        for (LoginTypeEnum value : values()) {
+            if (value.code.equalsIgnoreCase(loginType) || value.description.equalsIgnoreCase(loginType)) {
+                return value;
+            }
+        }
+        return null;
     }
 }

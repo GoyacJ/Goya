@@ -4,14 +4,15 @@ import com.ysmjjsy.goya.component.framework.context.GoyaContext;
 import com.ysmjjsy.goya.component.security.core.configuration.properties.SecurityCoreProperties;
 import com.ysmjjsy.goya.component.security.core.context.GoyaSecurityContext;
 import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
+import com.ysmjjsy.goya.component.security.core.service.ISocialUserService;
 import com.ysmjjsy.goya.component.security.core.service.IUserService;
-import com.ysmjjsy.goya.component.social.service.SocialManager;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.server.autoconfigure.ServerProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.beans.factory.ObjectProvider;
 
 /**
  * <p>安全核心模块自动配置</p>
@@ -37,8 +38,9 @@ public class SecurityCoreAutoConfiguration {
     }
 
     @Bean
-    public SecurityUserManager securityUserManager(IUserService userService, SocialManager socialService) {
-        SecurityUserManager securityUserManager = new SecurityUserManager(userService, socialService);
+    public SecurityUserManager securityUserManager(IUserService userService,
+                                                   ObjectProvider<ISocialUserService> socialUserServiceProvider) {
+        SecurityUserManager securityUserManager = new SecurityUserManager(userService, socialUserServiceProvider);
         log.trace("[Goya] |- component [core] SecurityCoreAutoConfiguration |- bean [securityUserManager] register.");
         return securityUserManager;
     }

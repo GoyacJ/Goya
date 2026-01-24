@@ -16,15 +16,13 @@
     <modules>
         <module>component-cache</module>
         <module>component-bus</module>
-        <module>component-database</module>
         <module>component-oss</module>
         <module>component-captcha</module>
         <module>component-web</module>
         <module>component-security</module>
         <module>component-social</module>
-        <module>component-log</module>
         <module>component-framework</module>
-        <module>component-core</module>
+        <module>component-mybatisplus</module>
     </modules>
 
 

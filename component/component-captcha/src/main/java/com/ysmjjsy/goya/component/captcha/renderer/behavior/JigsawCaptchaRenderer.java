@@ -1,5 +1,6 @@
 package com.ysmjjsy.goya.component.captcha.renderer.behavior;
 
+import com.ysmjjsy.goya.component.captcha.configuration.properties.CaptchaProperties;
 import com.ysmjjsy.goya.component.captcha.constants.CaptchaConst;
 import com.ysmjjsy.goya.component.captcha.definition.AbstractCaptcha;
 import com.ysmjjsy.goya.component.captcha.definition.Coordinate;
@@ -7,6 +8,7 @@ import com.ysmjjsy.goya.component.captcha.definition.Metadata;
 import com.ysmjjsy.goya.component.captcha.definition.Verification;
 import com.ysmjjsy.goya.component.captcha.enums.CaptchaCategoryEnum;
 import com.ysmjjsy.goya.component.captcha.provider.RandomProvider;
+import com.ysmjjsy.goya.component.captcha.provider.ResourceProvider;
 import com.ysmjjsy.goya.component.core.exception.CommonException;
 import com.ysmjjsy.goya.component.core.utils.GoyaIdUtils;
 import com.ysmjjsy.goya.component.core.utils.GoyaImgUtils;
@@ -26,6 +28,10 @@ import java.util.Objects;
  */
 @Slf4j
 public class JigsawCaptchaRenderer extends AbstractBehaviorRenderer<String, Coordinate> {
+
+    public JigsawCaptchaRenderer(ResourceProvider resourceProvider, CaptchaProperties captchaProperties) {
+        super(resourceProvider,captchaProperties);
+    }
 
     private static final int AREA_SIZE = 3;
     private static final int AREA_ARRAY_SIZE = AREA_SIZE * AREA_SIZE;

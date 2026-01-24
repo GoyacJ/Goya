@@ -33,6 +33,10 @@ public record SecurityAuthenticationProperties(
         @Schema(description = "验证码配置")
         CaptchaConfig captcha,
 
+        @Schema(description = "登录方式配置")
+        @DefaultValue
+        LoginConfig login,
+
         @Schema(description = "Token配置")
         @DefaultValue
         TokenConfig token,
@@ -109,6 +113,22 @@ public record SecurityAuthenticationProperties(
             String jksKeyAlias
     ) {
 
+    }
+
+    @Schema(description = "登录方式配置")
+    public record LoginConfig(
+            @Schema(description = "允许密码登录")
+            @DefaultValue("true")
+            boolean allowPasswordLogin,
+
+            @Schema(description = "允许短信OTP登录")
+            @DefaultValue("true")
+            boolean allowSmsLogin,
+
+            @Schema(description = "允许社交登录")
+            @DefaultValue("true")
+            boolean allowSocialLogin
+    ) {
     }
 
     @Schema(description = "Token配置")

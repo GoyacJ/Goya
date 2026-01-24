@@ -28,4 +28,9 @@ public interface StandardClaimNamesConst {
      * openId
      */
     String OPEN_ID = "openId";
+
+    /**
+     * client_id
+     */
+    String CLIENT_ID = "client_id";
 }

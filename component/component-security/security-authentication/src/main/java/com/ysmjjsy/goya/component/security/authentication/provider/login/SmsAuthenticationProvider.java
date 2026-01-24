@@ -3,7 +3,7 @@ package com.ysmjjsy.goya.component.security.authentication.provider.login;
 import com.ysmjjsy.goya.component.security.authentication.provider.AbstractAuthenticationProvider;
 import com.ysmjjsy.goya.component.security.core.enums.LoginTypeEnum;
 import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
-import com.ysmjjsy.goya.component.social.service.SmsService;
+import com.ysmjjsy.goya.component.security.core.service.IOtpService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.authentication.AuthenticationServiceException;
@@ -33,11 +33,11 @@ import org.springframework.security.core.userdetails.UserDetails;
 @Slf4j
 public class SmsAuthenticationProvider extends AbstractAuthenticationProvider {
 
-    private final SmsService smsService;
+    private final IOtpService otpService;
 
-    public SmsAuthenticationProvider(SecurityUserManager securityUserManager, SmsService smsService) {
+    public SmsAuthenticationProvider(SecurityUserManager securityUserManager, IOtpService otpService) {
         super(securityUserManager);
-        this.smsService = smsService;
+        this.otpService = otpService;
     }
 
     @Override
@@ -51,18 +51,26 @@ public class SmsAuthenticationProvider extends AbstractAuthenticationProvider {
         String phoneNumber = (String) smsToken.getPrincipal();
         String smsCode = (String) smsToken.getCredentials();
 
-        validateSmsCode(phoneNumber,smsCode);
+        String tenantId = null;
+        if (smsToken.getDetails() instanceof java.util.Map<?, ?> details) {
+            Object tenant = details.get("tenant_id");
+            if (tenant != null) {
+                tenantId = tenant.toString();
+            }
+        }
+
+        validateSmsCode(tenantId, phoneNumber, smsCode);
 
         UserDetails user = retrieveUserByPhone(phoneNumber);
         return new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
     }
 
-    private void validateSmsCode(String phoneNumber, String smsCode) {
+    private void validateSmsCode(String tenantId, String phoneNumber, String smsCode) {
         if (StringUtils.isAnyBlank(phoneNumber, smsCode)) {
             throw new BadCredentialsException("手机号或短信验证码不能为空");
         }
 
-        if (!smsService.verify(phoneNumber, smsCode)) {
+        if (!otpService.verify(tenantId, phoneNumber, smsCode)) {
             log.warn("[Goya] |- SMS code mismatch or expired for phoneNumber: {}", phoneNumber);
             throw new BadCredentialsException("短信验证码错误或已过期");
         }
@@ -80,4 +88,3 @@ public class SmsAuthenticationProvider extends AbstractAuthenticationProvider {
         return SmsAuthenticationToken.class.isAssignableFrom(authentication);
     }
 }
-

@@ -1,10 +1,12 @@
 package com.ysmjjsy.goya.component.captcha.definition;
 
+import com.ysmjjsy.goya.component.captcha.configuration.properties.CaptchaProperties;
 import com.ysmjjsy.goya.component.captcha.constants.CaptchaConst;
 import com.ysmjjsy.goya.component.captcha.exception.CaptchaHasExpiredException;
 import com.ysmjjsy.goya.component.captcha.exception.CaptchaIsEmptyException;
 import com.ysmjjsy.goya.component.captcha.exception.CaptchaMismatchException;
 import com.ysmjjsy.goya.component.captcha.exception.CaptchaParameterIllegalException;
+import com.ysmjjsy.goya.component.captcha.provider.ResourceProvider;
 import com.ysmjjsy.goya.component.core.utils.GoyaIdUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -21,6 +23,10 @@ import java.awt.*;
 public abstract class AbstractGraphicRenderer extends AbstractRenderer<String, String> {
 
     private GraphicCaptcha graphicCaptcha;
+
+    protected AbstractGraphicRenderer(ResourceProvider resourceProvider, CaptchaProperties captchaProperties) {
+        super(resourceProvider,captchaProperties);
+    }
 
     protected Font getFont() {
         return this.getResourceProvider().getGraphicFont();

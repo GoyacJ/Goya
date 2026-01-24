@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${status} + ' - 系统异常'">系统异常</title>
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-Control" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
+    <!-- 引入字体和图标 -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        /* 背景动画效果 */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .floating-shapes {
+            position: absolute;
+            top: -100px;
+            left: -100px;
+            width: 200px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 20s infinite linear;
+        }
+
+        .floating-shapes:nth-child(2) {
+            top: 70%;
+            left: 80%;
+            width: 150px;
+            height: 150px;
+            animation-delay: -5s;
+            animation-duration: 25s;
+        }
+
+        .floating-shapes:nth-child(3) {
+            top: 40%;
+            left: -50px;
+            width: 100px;
+            height: 100px;
+            animation-delay: -10s;
+            animation-duration: 15s;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px) rotate(0deg);
+                opacity: 0;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-2000px) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        .container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .error-content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 900px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .error-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb, #f5576c);
+            background-size: 400% 400%;
+            animation: gradientMove 3s ease infinite;
+        }
+
+        @keyframes gradientMove {
+            0%, 100% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+        }
+
+        .error-icon {
+            margin-bottom: 30px;
+        }
+
+        .error-icon i {
+            font-size: 80px;
+            color: #ff6b6b;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        .error-title {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .error-subtitle {
+            font-size: 1.2em;
+            color: #7f8c8d;
+            margin-bottom: 40px;
+            font-weight: 400;
+        }
+
+        .error-details {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 30px 0;
+            border-left: 4px solid #667eea;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+            text-align: left;
+        }
+
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #495057;
+            min-width: 120px;
+        }
+
+        .detail-value {
+            color: #6c757d;
+            word-break: break-all;
+            flex: 1;
+            margin-left: 15px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 30px 0;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-links {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .search-btn {
+            padding: 8px 20px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .search-google {
+            background: #4285f4;
+            color: white;
+        }
+
+        .search-baidu {
+            background: #2932e1;
+            color: white;
+        }
+
+        .search-stackoverflow {
+            background: #f48024;
+            color: white;
+        }
+
+        .search-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .stack-trace {
+            background: #2d3748;
+            color: #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            text-align: left;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #4a5568;
+        }
+
+        .stack-trace::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .stack-trace::-webkit-scrollbar-track {
+            background: #4a5568;
+            border-radius: 3px;
+        }
+
+        .stack-trace::-webkit-scrollbar-thumb {
+            background: #718096;
+            border-radius: 3px;
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .error-content {
+                padding: 30px 20px;
+                margin: 20px;
+            }
+
+            .error-title {
+                font-size: 2em;
+            }
+
+            .error-subtitle {
+                font-size: 1em;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 100%;
+                max-width: 280px;
+                justify-content: center;
+            }
+
+            .detail-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+
+            .detail-value {
+                margin-left: 0;
+            }
+
+            .search-links {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .search-btn {
+                width: 200px;
+                justify-content: center;
+            }
+        }
+
+        /* 加载动画 */
+        .fade-in {
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+<!-- 背景动画 -->
+<div class="bg-animation">
+    <div class="floating-shapes"></div>
+    <div class="floating-shapes"></div>
+    <div class="floating-shapes"></div>
+</div>
+
+<div class="container">
+    <div class="error-content fade-in">
+        <!-- 错误图标 -->
+        <div class="error-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+
+        <!-- 错误标题 -->
+        <h1 class="error-title" th:text="${status} + ' 错误'">错误</h1>
+        <p class="error-subtitle">抱歉，系统遇到了一些问题，请稍后重试或联系管理员</p>
+
+        <!-- 错误详情 -->
+        <div class="error-details">
+            <div class="detail-item">
+                    <span class="detail-label">
+                        <i class="fas fa-link"></i> 请求地址
+                    </span>
+                <span class="detail-value" th:text="${path}">-</span>
+            </div>
+            <div class="detail-item">
+                    <span class="detail-label">
+                        <i class="fas fa-hashtag"></i> 错误代码
+                    </span>
+                <span class="detail-value" th:text="${code}">-</span>
+            </div>
+            <div class="detail-item">
+                    <span class="detail-label">
+                        <i class="fas fa-hashtag"></i> Http错误代码
+                    </span>
+                <span class="detail-value" th:text="${status}">-</span>
+            </div>
+            <div class="detail-item">
+                    <span class="detail-label">
+                        <i class="fas fa-hashtag"></i> 异常消息
+                    </span>
+                <span class="detail-value" th:text="${message}">-</span>
+            </div>
+            <div class="detail-item" th:if="${error != null}">
+                    <span class="detail-label">
+                        <i class="fas fa-info-circle"></i> 错误提示
+                    </span>
+                <span class="detail-value" th:text="${error}">-</span>
+            </div>
+            <div class="detail-item" th:if="${field != null}">
+                    <span class="detail-label">
+                        <i class="fas fa-comment-alt"></i> 异常字段
+                    </span>
+                <span class="detail-value" th:text="${field}">-</span>
+            </div>
+            <div class="detail-item" th:if="${traceId != null}">
+                <span class="detail-label"><i class="fas fa-bug"></i> TraceId</span>
+                <span class="detail-value" th:text="${traceId}">-</span>
+            </div>
+            <div class="detail-item" th:if="${timestamp != null}">
+                    <span class="detail-label">
+                        <i class="fas fa-clock"></i> 发生时间
+                    </span>
+                <span class="detail-value" th:text="${timestamp}">-</span>
+            </div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="action-buttons">
+            <button class="btn btn-primary" onclick="window.history.back()">
+                <i class="fas fa-arrow-left"></i>
+                返回上一页
+            </button>
+            <a href="/" class="btn btn-secondary">
+                <i class="fas fa-home"></i>
+                返回首页
+            </a>
+        </div>
+
+        <!-- 搜索帮助链接 -->
+        <div class="search-links">
+            <a th:href="@{'https://www.google.com/search?q=' + ${message}}"
+               class="search-btn search-google" target="_blank">
+                <i class="fab fa-google"></i>
+                Google 搜索
+            </a>
+            <a th:href="@{'https://www.baidu.com/s?wd=' + ${message}}"
+               class="search-btn search-baidu" target="_blank">
+                <i class="fas fa-search"></i>
+                百度搜索
+            </a>
+            <a th:href="@{'https://stackoverflow.com/search?q=' + ${message}}"
+               class="search-btn search-stackoverflow" target="_blank">
+                <i class="fab fa-stack-overflow"></i>
+                StackOverflow
+            </a>
+        </div>
+
+        <!-- 异常堆栈信息 (可折叠) -->
+        <div th:if="${stackTrace != null}" style="margin-top: 30px;">
+            <button onclick="toggleStackTrace()" class="btn btn-secondary" style="margin-bottom: 15px;">
+                <i class="fas fa-code"></i>
+                <span id="stackToggleText">显示详细错误信息</span>
+            </button>
+            <div id="stackTrace" class="stack-trace" style="display: none;">
+                <div th:each="line : ${stackTrace}"
+                     th:text="${line}"
+                     style="font-family: monospace; white-space: pre;"></div>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <div class="footer">
+            <p>
+                © 2018-2030
+                <a href="https://ysmjjsy.com" target="_blank">Goya Security Framework</a>
+                | 如需技术支持，请联系系统管理员
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 堆栈跟踪切换功能
+    function toggleStackTrace() {
+        const stackTrace = document.getElementById('stackTrace');
+        const toggleText = document.getElementById('stackToggleText');
+
+        if (stackTrace.style.display === 'none') {
+            stackTrace.style.display = 'block';
+            toggleText.textContent = '隐藏详细错误信息';
+        } else {
+            stackTrace.style.display = 'none';
+            toggleText.textContent = '显示详细错误信息';
+        }
+    }
+
+    // 页面加载动画
+    document.addEventListener('DOMContentLoaded', function () {
+        // 为详情项添加延迟动画
+        const detailItems = document.querySelectorAll('.detail-item');
+        detailItems.forEach((item, index) => {
+            item.style.opacity = '0';
+            item.style.transform = 'translateX(-20px)';
+            setTimeout(() => {
+                item.style.transition = 'all 0.3s ease';
+                item.style.opacity = '1';
+                item.style.transform = 'translateX(0)';
+            }, 100 * index);
+        });
+    });
+
+    // 自动刷新页面功能（可选）
+    function refreshPage() {
+        location.reload();
+    }
+
+    // 添加键盘快捷键
+    document.addEventListener('keydown', function (e) {
+        // ESC 键返回上一页
+        if (e.key === 'Escape') {
+            window.history.back();
+        }
+        // Ctrl/Cmd + R 刷新页面
+        if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+            e.preventDefault();
+            refreshPage();
+        }
+    });
+</script>
+</body>
+</html>

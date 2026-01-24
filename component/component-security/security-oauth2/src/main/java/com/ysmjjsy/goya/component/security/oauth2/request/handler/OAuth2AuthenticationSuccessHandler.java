@@ -1,6 +1,5 @@
 package com.ysmjjsy.goya.component.security.oauth2.request.handler;
 
-import com.ysmjjsy.goya.component.security.authentication.request.CustomizerRequestCache;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +8,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.NullMarked;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.savedrequest.SavedRequest;
 
 import java.io.IOException;
@@ -32,7 +32,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccessHandler {
 
-    private final CustomizerRequestCache requestCache;
+    private final RequestCache requestCache;
 
     @Override
     @NullMarked
@@ -53,13 +53,16 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
             // 3. 删除 SavedRequest（一次性使用）
             requestCache.removeRequest(request, response);
         } else {
+            String tenantId = (String) request.getAttribute(
+                    com.ysmjjsy.goya.component.security.oauth2.tenant.TenantRequestAttributes.ATTR_TENANT_ID);
+            String prefix = tenantId != null ? "/t/" + tenantId : "";
             // 4. 如果没有保存的请求，尝试从请求参数获取 redirect_uri
             String redirectUri = request.getParameter("redirect_uri");
             if (StringUtils.isNotBlank(redirectUri)) {
                 redirectUrl = redirectUri;
             } else {
                 // 5. 默认重定向到授权端点（不带参数，SAS 会处理）
-                redirectUrl = "/oauth2/authorize";
+                redirectUrl = prefix + "/oauth2/authorize";
             }
             log.debug("[Goya] |- security [authentication] No SavedRequest found, using default redirect: {}", redirectUrl);
         }
@@ -68,4 +71,3 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
         response.sendRedirect(redirectUrl);
     }
 }
-

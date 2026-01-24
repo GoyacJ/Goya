@@ -4,6 +4,7 @@ import com.ysmjjsy.goya.component.cache.multilevel.crypto.CryptoProcessor;
 import com.ysmjjsy.goya.component.security.authentication.constants.SecurityAuthenticationConst;
 import com.ysmjjsy.goya.component.security.authentication.provider.AbstractAuthenticationConverter;
 import com.ysmjjsy.goya.component.security.authentication.utils.SecurityRequestUtils;
+import com.ysmjjsy.goya.component.security.core.enums.LoginTypeEnum;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -42,6 +43,11 @@ public class SmsAuthenticationConverter extends AbstractAuthenticationConverter 
             MultiValueMap<String, String> parameters,
             Map<String, Object> additionalParameters) {
 
+        LoginTypeEnum loginType = LoginTypeEnum.resolve(request);
+        if (loginType != LoginTypeEnum.SMS) {
+            return null;
+        }
+
         SecurityRequestUtils.checkRequiredParameter(parameters, SecurityAuthenticationConst.PARAM_PHONE_NUMBER);
         SecurityRequestUtils.checkRequiredParameter(parameters, SecurityAuthenticationConst.PARAM_SMS_CODE);
 
@@ -53,4 +59,3 @@ public class SmsAuthenticationConverter extends AbstractAuthenticationConverter 
         return new SmsAuthenticationToken(phoneNumber, smsCode, additionalParameters);
     }
 }
-

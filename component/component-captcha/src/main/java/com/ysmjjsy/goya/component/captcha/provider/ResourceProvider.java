@@ -5,7 +5,6 @@ import com.ysmjjsy.goya.component.captcha.configuration.properties.CaptchaProper
 import com.ysmjjsy.goya.component.captcha.enums.CaptchaResourceEnum;
 import com.ysmjjsy.goya.component.captcha.enums.FontStyleEnum;
 import com.ysmjjsy.goya.component.core.exception.CommonException;
-import com.ysmjjsy.goya.component.core.utils.*;
 import com.ysmjjsy.goya.component.framework.context.SpringContext;
 import lombok.Getter;
 import org.apache.commons.collections4.MapUtils;
@@ -15,8 +14,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
-import org.springframework.stereotype.Component;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -32,7 +31,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author goya
  * @since 2021/12/22 18:52
  */
-@Component
 public class ResourceProvider implements InitializingBean {
 
     private static final Logger log = LoggerFactory.getLogger(ResourceProvider.class);
@@ -48,6 +46,7 @@ public class ResourceProvider implements InitializingBean {
     private final CaptchaProperties captchaProperties;
     private Map<String, Font> fonts = Maps.newConcurrentMap();
 
+    @Autowired
     public ResourceProvider(CaptchaProperties captchaProperties) {
         this.captchaProperties = captchaProperties;
     }

@@ -10,49 +10,17 @@
     </parent>
 
     <artifactId>component-framework</artifactId>
-
-    <dependencies>
-        <dependency>
-            <groupId>com.ysmjjsy.goya</groupId>
-            <artifactId>component-core</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.mapstruct.extensions.spring</groupId>
-            <artifactId>mapstruct-spring-annotations</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.swagger.core.v3</groupId>
-            <artifactId>swagger-core-jakarta</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-autoconfigure</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-configuration-processor</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-validation</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-json</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.servlet</groupId>
-            <artifactId>jakarta.servlet-api</artifactId>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-web</artifactId>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
-    </dependencies>
+    <packaging>pom</packaging>
+    <modules>
+        <module>framework-core</module>
+        <module>framework-cache</module>
+        <module>framework-bus</module>
+        <module>framework-log</module>
+        <module>framework-servlet</module>
+        <module>framework-oss</module>
+        <module>framework-common</module>
+        <module>framework-boot-starter</module>
+        <module>framework-crypto</module>
+        <module>framework-masker</module>
+    </modules>
 </project>

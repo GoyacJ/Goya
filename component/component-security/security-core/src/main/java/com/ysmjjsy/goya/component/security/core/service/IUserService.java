@@ -32,6 +32,14 @@ public interface IUserService {
     SecurityUser findUserByUsername(String username);
 
     /**
+     * 根据手机号查询用户
+     *
+     * @param phoneNumber 手机号
+     * @return 用户
+     */
+    SecurityUser findUserByPhoneNumber(String phoneNumber);
+
+    /**
      * 注册用户
      *
      * @param userPrincipal 用户信息

@@ -2,7 +2,6 @@ package com.ysmjjsy.goya.component.oss.s3.service;
 
 import com.ysmjjsy.goya.component.core.pool.AbstractObjectPool;
 import com.ysmjjsy.goya.component.oss.s3.configuration.properties.S3Properties;
-import com.ysmjjsy.goya.component.oss.s3.definition.pool.S3ClientObjectPool;
 import com.ysmjjsy.goya.component.oss.s3.definition.service.BaseS3Service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

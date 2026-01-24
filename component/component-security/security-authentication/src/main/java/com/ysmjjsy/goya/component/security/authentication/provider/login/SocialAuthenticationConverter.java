@@ -5,7 +5,8 @@ import com.ysmjjsy.goya.component.core.utils.GoyaStringUtils;
 import com.ysmjjsy.goya.component.security.authentication.constants.SecurityAuthenticationConst;
 import com.ysmjjsy.goya.component.security.authentication.provider.AbstractAuthenticationConverter;
 import com.ysmjjsy.goya.component.security.authentication.utils.SecurityRequestUtils;
-import com.ysmjjsy.goya.component.social.enums.SocialTypeEnum;
+import com.ysmjjsy.goya.component.security.core.enums.LoginTypeEnum;
+import com.ysmjjsy.goya.component.security.core.enums.SocialTypeEnum;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -45,6 +46,11 @@ public class SocialAuthenticationConverter extends AbstractAuthenticationConvert
 
     @Override
     protected Authentication convertInternal(HttpServletRequest request, MultiValueMap<String, String> parameters, Map<String, Object> additionalParameters) {
+        LoginTypeEnum loginType = LoginTypeEnum.resolve(request);
+        if (loginType != LoginTypeEnum.SOCIAL) {
+            return null;
+        }
+
         String social = SecurityRequestUtils.checkRequiredParameter(parameters, SecurityAuthenticationConst.PARAM_SOCIAL);
         String socialSource = SecurityRequestUtils.checkRequiredParameter(parameters, SecurityAuthenticationConst.PARAM_SOCIAL_SOURCE);
         if (GoyaStringUtils.isNotBlank(social)) {
@@ -57,4 +63,3 @@ public class SocialAuthenticationConverter extends AbstractAuthenticationConvert
         throw new OAuth2AuthenticationException(error);
     }
 }
-

@@ -4,17 +4,18 @@ import com.ysmjjsy.goya.component.security.authentication.configuration.properti
 import com.ysmjjsy.goya.component.security.authentication.configurer.SecurityAuthenticationProviderConfigurer;
 import com.ysmjjsy.goya.component.security.authentication.password.PasswordPolicyValidator;
 import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
-import com.ysmjjsy.goya.component.social.service.SmsService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import com.ysmjjsy.goya.component.security.core.service.IOtpService;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -55,11 +56,13 @@ public class AuthorizationAutoConfiguration {
     @Bean
     public SecurityAuthenticationProviderConfigurer securityAuthenticationProviderConfigurer(SecurityUserManager securityUserManager,
                                                                                              PasswordPolicyValidator passwordPolicyValidator,
-                                                                                             SmsService smsService) {
+                                                                                             ObjectProvider<IOtpService> otpServiceProvider,
+                                                                                             SecurityAuthenticationProperties authenticationProperties) {
         SecurityAuthenticationProviderConfigurer configurer = new SecurityAuthenticationProviderConfigurer(
                 securityUserManager,
                 passwordPolicyValidator,
-                smsService
+                otpServiceProvider,
+                authenticationProperties
         );
         log.trace("[Goya] |- security [authentication] configurer auto configure.");
         return configurer;

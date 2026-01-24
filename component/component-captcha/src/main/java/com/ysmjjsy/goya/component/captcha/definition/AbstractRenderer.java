@@ -6,7 +6,6 @@ import com.ysmjjsy.goya.component.cache.multilevel.ttl.TtlStrategy;
 import com.ysmjjsy.goya.component.captcha.configuration.properties.CaptchaProperties;
 import com.ysmjjsy.goya.component.captcha.provider.ResourceProvider;
 import com.ysmjjsy.goya.component.core.utils.GoyaImgUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.awt.image.BufferedImage;
 
@@ -21,11 +20,13 @@ public abstract class AbstractRenderer<K, V> extends AbstractCheckTemplate<K, V>
     protected static final String BASE64_PNG_IMAGE_PREFIX = "data:image/png;base64,";
     protected static final String BASE64_GIF_IMAGE_PREFIX = "data:image/gif;base64,";
 
-    @Autowired
-    private ResourceProvider resourceProvider;
+    private final ResourceProvider resourceProvider;
+    private final CaptchaProperties captchaProperties;
 
-    @Autowired
-    private CaptchaProperties captchaProperties;
+    protected AbstractRenderer(ResourceProvider resourceProvider, CaptchaProperties captchaProperties) {
+        this.resourceProvider = resourceProvider;
+        this.captchaProperties = captchaProperties;
+    }
 
     protected ResourceProvider getResourceProvider() {
         return resourceProvider;
