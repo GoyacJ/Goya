@@ -14,7 +14,7 @@
     <description>公共组件</description>
 
     <modules>
-        <module>component-cache</module>
+        <module>component-redis</module>
         <module>component-bus</module>
         <module>component-oss</module>
         <module>component-captcha</module>

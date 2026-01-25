@@ -14,7 +14,7 @@ import java.util.Base64;
  * @since 2026/1/15 13:36
  */
 @Slf4j
-public class DefaultCacheKeySerializer implements CacheKeySerializer{
+public class DefaultCacheKeySerializer implements CacheKeySerializer {
 
     @Override
     public <K> byte[] serialize(K key) {

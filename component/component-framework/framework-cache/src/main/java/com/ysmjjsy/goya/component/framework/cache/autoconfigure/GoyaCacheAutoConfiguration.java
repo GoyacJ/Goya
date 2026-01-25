@@ -1,23 +1,28 @@
 package com.ysmjjsy.goya.component.framework.cache.autoconfigure;
 
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.ysmjjsy.goya.component.framework.cache.autoconfigure.properties.CaffeineCacheProperties;
+import com.ysmjjsy.goya.component.framework.cache.api.CacheService;
+import com.ysmjjsy.goya.component.framework.cache.api.MultiLevelCacheService;
+import com.ysmjjsy.goya.component.framework.cache.autoconfigure.properties.GoyaCacheProperties;
 import com.ysmjjsy.goya.component.framework.cache.caffeine.CaffeineCacheService;
-import com.ysmjjsy.goya.component.framework.cache.caffeine.CaffeineFactory;
 import com.ysmjjsy.goya.component.framework.cache.caffeine.GoyaCaffeineCacheManager;
-import com.ysmjjsy.goya.component.framework.cache.core.CacheService;
 import com.ysmjjsy.goya.component.framework.cache.key.CacheKeySerializer;
 import com.ysmjjsy.goya.component.framework.cache.key.DefaultCacheKeySerializer;
 import com.ysmjjsy.goya.component.framework.cache.metrics.DefaultCacheMetrics;
+import com.ysmjjsy.goya.component.framework.cache.multi.DefaultMultiLevelCacheService;
+import com.ysmjjsy.goya.component.framework.core.context.SpringContext;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.cache.caffeine.CaffeineCacheManager;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 
 /**
  * <p>Goya 缓存核心自动配置类</p>
@@ -29,7 +34,7 @@ import org.springframework.context.annotation.Bean;
 @Slf4j
 @AutoConfiguration
 @EnableCaching
-@EnableConfigurationProperties(CaffeineCacheProperties.class)
+@EnableConfigurationProperties(GoyaCacheProperties.class)
 public class GoyaCacheAutoConfiguration {
 
     @PostConstruct
@@ -53,32 +58,79 @@ public class GoyaCacheAutoConfiguration {
     }
 
     @Bean
-    public Caffeine<Object, Object> caffeine(CaffeineFactory caffeineFactory) {
-        Caffeine<Object, Object> caffeine = caffeineFactory.createCaffeine();
-        log.trace("[Goya] |- framework [framework] CaffeineCacheAutoConfiguration |- bean [caffeine] register.");
-        return caffeine;
-    }
-
-    @Bean
-    public CaffeineFactory caffeineFactory(CaffeineCacheProperties caffeineCacheProperties) {
-        CaffeineFactory caffeineFactory = new CaffeineFactory(caffeineCacheProperties);
-        log.trace("[Goya] |- framework [framework] CaffeineCacheAutoConfiguration |- bean [caffeineFactory] register.");
-        return caffeineFactory;
-    }
-
-    @Bean
     @ConditionalOnMissingBean(CacheManager.class)
-    public CaffeineCacheManager caffeineCacheManager(CaffeineFactory caffeineFactory) {
-        GoyaCaffeineCacheManager caffeineCacheManager = new GoyaCaffeineCacheManager(caffeineFactory);
-        log.trace("[Goya] |- framework [framework] CaffeineCacheAutoConfiguration |- bean [caffeineCacheManager] register.");
-        return caffeineCacheManager;
+    public CacheManager cacheManager(GoyaCacheProperties cacheProperties) {
+        GoyaCaffeineCacheManager cacheManager = new GoyaCaffeineCacheManager(cacheProperties);
+        log.trace("[Goya] |- component [framework] GoyaCacheAutoConfiguration |- bean [cacheManager] register.");
+        return cacheManager;
     }
 
+    /**
+     * 本地缓存服务实现
+     *
+     * <p>业务可直接注入 {@link CaffeineCacheService} 使用本地缓存。</p>
+     */
     @Bean
-    @ConditionalOnMissingBean(CacheService.class)
-    public CacheService caffeineCacheService(CaffeineCacheManager caffeineCacheManager) {
-        CaffeineCacheService cacheService = new CaffeineCacheService(caffeineCacheManager);
-        log.trace("[Goya] |- framework [framework] CaffeineCacheAutoConfiguration |- bean [caffeineCacheService] register.");
-        return cacheService;
+    @ConditionalOnMissingBean(CaffeineCacheService.class)
+    public CaffeineCacheService caffeineCacheService(CacheManager cacheManager) {
+        CaffeineCacheService caffeineCacheService = new CaffeineCacheService(cacheManager);
+        log.trace("[Goya] |- component [framework] GoyaCacheAutoConfiguration |- bean [caffeineCacheService] register.");
+        return caffeineCacheService;
+    }
+
+    /**
+     * 以接口形式暴露本地缓存（固定名：localCacheService）。
+     *
+     * <p>用于多级缓存装配与默认 cacheService 的回退。</p>
+     */
+    @Bean(name = "localCacheService")
+    @ConditionalOnMissingBean(name = "localCacheService")
+    public CacheService localCacheService(CaffeineCacheService caffeineCacheService) {
+        log.trace("[Goya] |- component [framework] GoyaCacheAutoConfiguration |- bean [localCacheService] register.");
+        return caffeineCacheService;
+    }
+
+    /**
+     * 默认 CacheService（@Primary）。
+     *
+     * <p>规则：若存在名为 remoteCacheService 的 Bean，则优先使用远程；否则使用本地。</p>
+     *
+     * <p>注意：用“按名称查找”避免 remoteCacheService 的存在阻止该 Bean 创建。</p>
+     */
+    @Bean(name = "cacheService")
+    @Primary
+    @ConditionalOnMissingBean(name = "cacheService")
+    public CacheService cacheService(
+            @Qualifier("localCacheService") CacheService localCacheService) {
+        CacheService remote = getRemoteByName();
+        return (remote != null) ? remote : localCacheService;
+    }
+
+    /**
+     * 多级缓存服务（始终提供，可退化为本地）。
+     */
+    @Bean(name = "multiLevelCacheService")
+    @ConditionalOnMissingBean(MultiLevelCacheService.class)
+    public MultiLevelCacheService multiLevelCacheService(
+            @Qualifier("localCacheService") CacheService localCacheService,
+            ObjectProvider<ApplicationContext> ctxProvider) {
+
+        org.springframework.context.ApplicationContext ctx = ctxProvider.getIfAvailable();
+        CacheService remote = (ctx == null) ? null : getRemoteByName();
+        DefaultMultiLevelCacheService multiLevelCacheService = new DefaultMultiLevelCacheService(localCacheService, remote);
+        log.trace("[Goya] |- component [framework] GoyaCacheAutoConfiguration |- bean [multiLevelCacheService] register.");
+        return multiLevelCacheService;
+    }
+
+    @Nullable
+    private CacheService getRemoteByName() {
+        if (!SpringContext.containsBean("remoteCacheService")) {
+            return null;
+        }
+        Object bean = SpringContext.getBean("remoteCacheService");
+        if (bean instanceof CacheService cs) {
+            return cs;
+        }
+        throw new IllegalStateException("Bean 'remoteCacheService' 必须实现 CacheService，实际类型：" + bean.getClass().getName());
     }
 }
