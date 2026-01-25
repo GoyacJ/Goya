@@ -3,6 +3,7 @@ package com.ysmjjsy.goya.component.framework.servlet.context;
 import com.ysmjjsy.goya.component.framework.common.constants.SymbolConst;
 import com.ysmjjsy.goya.component.framework.core.context.GoyaContext;
 import com.ysmjjsy.goya.component.framework.core.context.GoyaUser;
+import com.ysmjjsy.goya.component.framework.core.context.TenantContext;
 import com.ysmjjsy.goya.component.framework.servlet.utils.WebUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -91,6 +92,6 @@ public abstract class AbstractGoyaContext implements GoyaContext {
 
     @Override
     public String currentTenant() {
-        throw new UnsupportedOperationException("Not supported");
+        return TenantContext.getTenantId();
     }
 }

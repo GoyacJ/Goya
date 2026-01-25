@@ -189,11 +189,6 @@
             </dependency>
             <dependency>
                 <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>component-web</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
                 <artifactId>security-core</artifactId>
                 <version>${revision}</version>
             </dependency>

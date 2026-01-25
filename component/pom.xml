@@ -18,7 +18,6 @@
         <module>component-bus</module>
         <module>component-oss</module>
         <module>component-captcha</module>
-        <module>component-web</module>
         <module>component-security</module>
         <module>component-social</module>
         <module>component-framework</module>
