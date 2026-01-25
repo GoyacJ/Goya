@@ -1,4 +1,4 @@
-package com.ysmjjsy.goya.component.framework.servlet.context;
+package com.ysmjjsy.goya.component.framework.core.context;
 
 import java.io.Serializable;
 import java.security.Principal;

@@ -1,4 +1,4 @@
-package com.ysmjjsy.goya.component.framework.servlet.autoconfigure.properties;
+package com.ysmjjsy.goya.component.framework.core.autoconfigure.properties;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.boot.context.properties.bind.DefaultValue;

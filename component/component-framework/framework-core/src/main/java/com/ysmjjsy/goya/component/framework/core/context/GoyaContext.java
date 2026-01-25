@@ -1,9 +1,8 @@
-package com.ysmjjsy.goya.component.framework.servlet.context;
+package com.ysmjjsy.goya.component.framework.core.context;
 
 import com.ysmjjsy.goya.component.framework.common.constants.SymbolConst;
-import com.ysmjjsy.goya.component.framework.servlet.autoconfigure.properties.GoyaProperties;
-import com.ysmjjsy.goya.component.framework.servlet.autoconfigure.properties.PlatformInfo;
-import com.ysmjjsy.goya.component.framework.core.context.SpringContext;
+import com.ysmjjsy.goya.component.framework.core.autoconfigure.properties.GoyaProperties;
+import com.ysmjjsy.goya.component.framework.core.autoconfigure.properties.PlatformInfo;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.util.StringUtils;
 

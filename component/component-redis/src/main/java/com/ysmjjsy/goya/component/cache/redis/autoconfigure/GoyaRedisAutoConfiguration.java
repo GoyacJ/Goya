@@ -2,9 +2,8 @@ package com.ysmjjsy.goya.component.cache.redis.autoconfigure;
 
 import com.ysmjjsy.goya.component.cache.redis.autoconfigure.properties.GoyaRedisProperties;
 import com.ysmjjsy.goya.component.cache.redis.cache.RedissonCacheService;
-import com.ysmjjsy.goya.component.cache.redis.codec.TypedJsonMapperCodec;
-import com.ysmjjsy.goya.component.cache.redis.support.RedisKeyBuilder;
 import com.ysmjjsy.goya.component.framework.cache.api.CacheService;
+import com.ysmjjsy.goya.component.framework.cache.key.CacheKeySerializer;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RedissonClient;
@@ -15,7 +14,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
-import tools.jackson.databind.json.JsonMapper;
 
 /**
  * <p>Redis 自动配置类</p>
@@ -41,19 +39,6 @@ public class GoyaRedisAutoConfiguration {
         log.debug("[Goya] |- component [redis] GoyaRedisAutoConfiguration auto configure.");
     }
 
-    /**
-     * 全局 Codec（无类型信息）。
-     *
-     * @param jsonMapper 项目统一 JsonMapper
-     * @return codec
-     */
-    @Bean
-    @ConditionalOnMissingBean
-    public TypedJsonMapperCodec typedJsonMapperCodec(JsonMapper jsonMapper) {
-        log.trace("[Goya] |- component [redis] GoyaRedisAutoConfiguration |- bean [typedJsonMapperCodec] register.");
-        return new TypedJsonMapperCodec(jsonMapper);
-    }
-
     @Bean
     @Primary
     @ConditionalOnMissingBean(CacheManager.class)
@@ -64,31 +49,17 @@ public class GoyaRedisAutoConfiguration {
     }
 
     /**
-     * Redis KeyBuilder。
-     *
-     * @param props 配置项
-     * @return keyBuilder
-     */
-    @Bean
-    @ConditionalOnMissingBean
-    public RedisKeyBuilder redisKeyBuilder(GoyaRedisProperties props) {
-        RedisKeyBuilder redisKeyBuilder = new RedisKeyBuilder(props);
-        log.trace("[Goya] |- component [redis] GoyaRedisAutoConfiguration |- bean [redisKeyBuilder] register.");
-        return redisKeyBuilder;
-    }
-
-    /**
      * 具体远程缓存实现（便于业务直接注入 RedissonCacheService）。
      *
-     * @param redisson   redissonClient
-     * @param props      配置项
-     * @param keyBuilder keyBuilder
+     * @param redisson           redissonClient
+     * @param props              配置项
+     * @param cacheKeySerializer cacheKeySerializer
      * @return RedissonCacheService
      */
     @Bean
     @ConditionalOnMissingBean(RedissonCacheService.class)
-    public RedissonCacheService redissonCacheService(RedissonClient redisson, GoyaRedisProperties props, RedisKeyBuilder keyBuilder) {
-        RedissonCacheService redissonCacheService = new RedissonCacheService(redisson, props, keyBuilder);
+    public RedissonCacheService redissonCacheService(RedissonClient redisson, GoyaRedisProperties props, CacheKeySerializer cacheKeySerializer) {
+        RedissonCacheService redissonCacheService = new RedissonCacheService(redisson, props, cacheKeySerializer);
         log.trace("[Goya] |- component [redis] GoyaRedisAutoConfiguration |- bean [redissonCacheService] register.");
         return redissonCacheService;
     }

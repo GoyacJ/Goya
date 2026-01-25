@@ -1,3 +1,4 @@
+com.ysmjjsy.goya.component.framework.servlet.autoconfigure.GoyaContextAutoConfiguration
 com.ysmjjsy.goya.component.framework.servlet.autoconfigure.GoyaServletAutoConfiguration
 com.ysmjjsy.goya.component.framework.servlet.autoconfigure.ServletErrorAutoConfiguration
 com.ysmjjsy.goya.component.framework.servlet.autoconfigure.ServletI18nAutoConfiguration

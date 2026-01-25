@@ -1,7 +1,8 @@
-package com.ysmjjsy.goya.component.framework.servlet.autoconfigure.properties;
+package com.ysmjjsy.goya.component.framework.core.autoconfigure.properties;
 
-import ch.qos.logback.classic.spi.PlatformInfo;
 import com.ysmjjsy.goya.component.framework.core.constants.PropertyConst;
+import com.ysmjjsy.goya.component.framework.core.enums.ArchitectureEnum;
+import com.ysmjjsy.goya.component.framework.core.enums.ProtocolEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;

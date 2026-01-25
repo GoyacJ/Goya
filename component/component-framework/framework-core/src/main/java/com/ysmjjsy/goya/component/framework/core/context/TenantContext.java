@@ -1,6 +1,6 @@
-package com.ysmjjsy.goya.component.framework.servlet.context;
+package com.ysmjjsy.goya.component.framework.core.context;
 
-import com.ysmjjsy.goya.component.core.constants.DefaultConst;
+import com.ysmjjsy.goya.component.framework.common.constants.DefaultConst;
 import lombok.extern.slf4j.Slf4j;
 
 /**

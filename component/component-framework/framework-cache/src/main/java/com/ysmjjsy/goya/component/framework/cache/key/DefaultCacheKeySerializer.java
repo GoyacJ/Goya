@@ -1,8 +1,13 @@
 package com.ysmjjsy.goya.component.framework.cache.key;
 
+import com.ysmjjsy.goya.component.framework.common.constants.DefaultConst;
 import com.ysmjjsy.goya.component.framework.common.constants.SymbolConst;
+import com.ysmjjsy.goya.component.framework.core.context.GoyaContext;
+import com.ysmjjsy.goya.component.framework.core.context.SpringContext;
 import com.ysmjjsy.goya.component.framework.core.json.GoyaJson;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -14,7 +19,10 @@ import java.util.Base64;
  * @since 2026/1/15 13:36
  */
 @Slf4j
+@RequiredArgsConstructor
 public class DefaultCacheKeySerializer implements CacheKeySerializer {
+
+    private final GoyaContext goyaContext;
 
     @Override
     public <K> byte[] serialize(K key) {
@@ -55,6 +63,31 @@ public class DefaultCacheKeySerializer implements CacheKeySerializer {
     @Override
     public <K> String buildKey(String keyPrefix, String cacheName, K key) {
         String serializedKey = serializeToString(key);
-        return keyPrefix + cacheName + SymbolConst.COLON + serializedKey;
+        String currentTenant = goyaContext.currentTenant();
+        if (StringUtils.isBlank(currentTenant)) {
+            currentTenant = DefaultConst.DEFAULT_TENANT_ID;
+        }
+
+        return keyPrefix +
+                SymbolConst.COLON + normalize(SpringContext.getApplicationName()) +
+                SymbolConst.COLON + currentTenant +
+                SymbolConst.COLON + cacheName +
+                SymbolConst.COLON + serializedKey;
+    }
+
+    private static String normalize(String applicationName) {
+        if (applicationName == null || applicationName.isBlank()) {
+            return applicationName;
+        }
+
+        return applicationName
+                // 1. 将 - 替换为 _
+                .replace('-', '_')
+                // 2. 驼峰转下划线（MyAppName → My_App_Name）
+                .replaceAll("([a-z0-9])([A-Z])", "$1_$2")
+                // 3. 多个下划线压缩成一个（可选但推荐）
+                .replaceAll("_+", "_")
+                // 4. 转小写
+                .toLowerCase();
     }
 }

@@ -39,7 +39,7 @@ public interface CacheKeySerializer {
     <K> String serializeToString(K key);
 
     /**
-     * build key
+     * build key (keyPrefix:applicationName:tenantId:cacheName:key)
      *
      * @param keyPrefix 缓存前缀
      * @param cacheName 缓存名称

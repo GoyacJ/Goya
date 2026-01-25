@@ -1,12 +1,10 @@
 package com.ysmjjsy.goya.component.cache.redis.cache;
 
 import com.ysmjjsy.goya.component.cache.redis.autoconfigure.properties.GoyaRedisProperties;
-import com.ysmjjsy.goya.component.cache.redis.support.RedisKeyBuilder;
 import com.ysmjjsy.goya.component.framework.cache.api.CacheService;
+import com.ysmjjsy.goya.component.framework.cache.key.CacheKeySerializer;
 import lombok.RequiredArgsConstructor;
-import org.redisson.api.RLock;
-import org.redisson.api.RMapCache;
-import org.redisson.api.RedissonClient;
+import org.redisson.api.*;
 import org.springframework.util.Assert;
 
 import java.time.Duration;
@@ -15,37 +13,54 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 /**
- * <p></p>
+ * <p>基于 Redisson 的远程缓存实现（L2，严格模式）</p>
+ * <p><b>Key 策略：</b></p>
+ * <ul>
+ *   <li>最终 Redis Key 为 String</li>
+ *   <li>统一由 {@link CacheKeySerializer#buildKey(String, String, Object)} 生成</li>
+ *   <li>支持“逻辑清空”：通过 cacheName 版本号实现（避免 scan 删除）</li>
+ * </ul>
  *
+ * <p><b>Value 策略：</b></p>
+ * <ul>
+ *   <li>依赖全局 {@code TypedJsonMapperCodec}（携带 typeId）恢复真实类型</li>
+ *   <li>本类不做 JsonMapper 二次转换，仅做类型断言（fail-fast）</li>
+ * </ul>
+ *
+ * <p><b>clear(cacheName)：</b></p>
+ * <ul>
+ *   <li>版本号 +1，旧 key 自然不可达</li>
+ *   <li>不执行 scan/delete，避免性能与误删风险</li>
+ * </ul>
+ *
+ * <p><b>getOrLoad 防击穿：</b></p>
+ * <ul>
+ *   <li>可选使用分布式锁（RLock）</li>
+ * </ul>
  * @author goya
  * @since 2026/1/25 21:52
  */
 @RequiredArgsConstructor
 public class RedissonCacheService implements CacheService {
 
+    /**
+     * 版本号 key 的命名空间（避免与业务缓存冲突）。
+     */
+    private static final String VERSION_NAMESPACE = "__cachever__";
+
     private final RedissonClient redisson;
     private final GoyaRedisProperties props;
-    private final RedisKeyBuilder keyBuilder;
+    private final CacheKeySerializer cacheKeySerializer;
 
     @Override
     public <T> T get(String cacheName, Object key, Class<T> type) {
         Assert.hasText(cacheName, "cacheName 不能为空");
         Assert.notNull(key, "key 不能为空");
+        Assert.notNull(type, "type 不能为空");
 
-        Object v = map(cacheName).get(key);
-        if (v == null || v == NullValue.INSTANCE) {
-            return null;
-        }
-        if (type == null) {
-            @SuppressWarnings("unchecked")
-            T t = (T) v;
-            return t;
-        }
-        if (!type.isInstance(v)) {
-            throw new IllegalStateException("缓存类型不匹配，cacheName=" + cacheName + " key=" + key
-                    + "，期望=" + type.getName() + "，实际=" + v.getClass().getName());
-        }
-        return type.cast(v);
+        String redisKey = buildRedisKey(cacheName, key);
+        Object raw = bucket(redisKey).get();
+        return castOrFail(raw, type);
     }
 
     @Override
@@ -68,41 +83,43 @@ public class RedissonCacheService implements CacheService {
             return;
         }
 
-        Object store = (value == null) ? NullValue.INSTANCE : value;
         Duration useTtl = (ttl == null) ? props.defaultTtl() : ttl;
 
-        // ttl=0：立即过期，直接删除
-        if (useTtl != null && useTtl.isZero()) {
+        // ttl=0：立即过期 -> 删除
+        if (useTtl.isZero()) {
             evict(cacheName, key);
             return;
         }
 
-        // ttl<0：不过期（永久）
-        if (useTtl != null && useTtl.isNegative()) {
-            map(cacheName).put(key, store);
+        String redisKey = buildRedisKey(cacheName, key);
+
+        // ttl<0：永久
+        if (useTtl.isNegative()) {
+            bucket(redisKey).set(value);
             return;
         }
 
-        // ttl>0：按条目 TTL 写入
-        long ms = (useTtl == null) ? props.defaultTtl().toMillis() : useTtl.toMillis();
+        long ms = useTtl.toMillis();
         if (ms <= 0) {
             evict(cacheName, key);
             return;
         }
-        map(cacheName).put(key, store, ms, TimeUnit.MILLISECONDS);
+        bucket(redisKey).set(value, useTtl);
     }
 
     @Override
     public boolean evict(String cacheName, Object key) {
         Assert.hasText(cacheName, "cacheName 不能为空");
         Assert.notNull(key, "key 不能为空");
-        return map(cacheName).fastRemove(key) > 0;
+
+        String redisKey = buildRedisKey(cacheName, key);
+        return bucket(redisKey).delete();
     }
 
     @Override
     public void clear(String cacheName) {
         Assert.hasText(cacheName, "cacheName 不能为空");
-        map(cacheName).clear();
+        versionCounter(cacheName).incrementAndGet();
     }
 
     @Override
@@ -111,17 +128,39 @@ public class RedissonCacheService implements CacheService {
         if (keys == null || keys.isEmpty()) {
             return Map.of();
         }
-        Map<Object, Object> found = map(cacheName).getAll(new HashSet<>(keys));
-        if (found == null || found.isEmpty()) {
-            return Map.of();
-        }
-        Map<Object, Object> out = LinkedHashMap.newLinkedHashMap(found.size());
-        for (Map.Entry<Object, Object> e : found.entrySet()) {
-            Object v = e.getValue();
-            if (v == null || v == NullValue.INSTANCE) {
+
+        Map<Object, String> keyToRedisKey = new LinkedHashMap<>();
+        for (Object k : keys) {
+            if (k == null) {
                 continue;
             }
-            out.put(e.getKey(), v);
+            keyToRedisKey.put(k, buildRedisKey(cacheName, k));
+        }
+        if (keyToRedisKey.isEmpty()) {
+            return Map.of();
+        }
+
+        // RBatch pipeline：一次性发送多个 GET
+        RBatch batch = redisson.createBatch();
+        Map<Object, RFuture<Object>> futures = LinkedHashMap.newLinkedHashMap(keyToRedisKey.size());
+
+        for (Map.Entry<Object, String> e : keyToRedisKey.entrySet()) {
+            RFuture<Object> f = batch.getBucket(e.getValue()).getAsync();
+            futures.put(e.getKey(), f);
+        }
+
+        batch.execute();
+
+        Map<Object, Object> out = LinkedHashMap.newLinkedHashMap(futures.size());
+        for (Map.Entry<Object, RFuture<Object>> e : futures.entrySet()) {
+            try {
+                Object raw = e.getValue().toCompletableFuture().join();
+                if (raw != null) {
+                    out.put(e.getKey(), raw);
+                }
+            } catch (Exception _) {
+                // 单个 key 失败不影响整体：跳过
+            }
         }
         return out;
     }
@@ -135,22 +174,22 @@ public class RedissonCacheService implements CacheService {
     public <T> T getOrLoad(String cacheName, Object key, Class<T> type, Duration ttl, Supplier<T> loader) {
         Assert.hasText(cacheName, "cacheName 不能为空");
         Assert.notNull(key, "key 不能为空");
+        Assert.notNull(type, "type 不能为空");
         Objects.requireNonNull(loader, "loader 不能为空");
 
-        // 先读缓存
         T existed = get(cacheName, key, type);
         if (existed != null) {
             return existed;
         }
 
-        // 未开启防击穿：直接加载写入
         if (!props.stampedeLockEnabled()) {
             T loaded = loader.get();
             put(cacheName, key, loaded, ttl);
             return loaded;
         }
 
-        String lockKey = keyBuilder.stampedeLockKey(cacheName, key);
+        String redisKey = buildRedisKey(cacheName, key);
+        String lockKey = redisKey + ":lock";
         RLock lock = redisson.getLock(lockKey);
 
         boolean locked = false;
@@ -159,19 +198,18 @@ public class RedissonCacheService implements CacheService {
                     props.stampedeLockLease().toMillis(),
                     TimeUnit.MILLISECONDS);
 
-            // 拿不到锁：轻量重试一次读取，降低击穿
             if (!locked) {
+                // 拿不到锁：轻量重试一次
                 T retry = get(cacheName, key, type);
                 if (retry != null) {
                     return retry;
                 }
-                // 兜底：不阻塞，直接加载
                 T loaded = loader.get();
                 put(cacheName, key, loaded, ttl);
                 return loaded;
             }
 
-            // 拿锁后二次检查
+            // 二次检查
             T again = get(cacheName, key, type);
             if (again != null) {
                 return again;
@@ -196,17 +234,77 @@ public class RedissonCacheService implements CacheService {
         }
     }
 
-    private RMapCache<Object, Object> map(String cacheName) {
-        String mapName = keyBuilder.cacheMapName(cacheName);
-        return redisson.getMapCache(mapName);
+    /**
+     * 获取 RBucket（依赖 Redisson 全局 Codec 做序列化/反序列化）。
+     *
+     * @param redisKey Redis key
+     * @return bucket
+     */
+    private RBucket<Object> bucket(String redisKey) {
+        return redisson.getBucket(redisKey);
     }
 
+    /**
+     * 构建最终 Redis key（包含 cacheName 版本号）。
+     *
+     * @param cacheName 缓存名
+     * @param key 业务 key
+     * @return Redis key
+     */
+    private String buildRedisKey(String cacheName, Object key) {
+        long ver = currentVersion(cacheName);
+        String effectiveCacheName = cacheName + ":v" + ver;
+
+        String redisKey = cacheKeySerializer.buildKey(props.keyPrefix(), effectiveCacheName, key);
+        if (redisKey == null || redisKey.isBlank()) {
+            throw new IllegalStateException("buildKey 结果为空，cacheName=" + cacheName + " keyType=" + key.getClass().getName());
+        }
+        return redisKey;
+    }
 
     /**
-     * Null 值标记：避免 Redis 存储 null。
+     * 获取当前版本号。
+     *
+     * @param cacheName 缓存名
+     * @return 版本号（默认 1）
      */
-    private enum NullValue {
-        /** 单例 */
-        INSTANCE
+    private long currentVersion(String cacheName) {
+        long v = versionCounter(cacheName).get();
+        return (v <= 0) ? 1L : v;
+    }
+
+    /**
+     * 获取版本号计数器。
+     *
+     * @param cacheName 缓存名
+     * @return 原子计数器
+     */
+    private RAtomicLong versionCounter(String cacheName) {
+        String versionKey = cacheKeySerializer.buildKey(props.keyPrefix(), VERSION_NAMESPACE, cacheName);
+        if (versionKey == null || versionKey.isBlank()) {
+            throw new IllegalStateException("版本号 key 构建失败，cacheName=" + cacheName);
+        }
+        return redisson.getAtomicLong(versionKey);
+    }
+
+    /**
+     * 严格类型断言：解码结果必须是目标类型，否则 fail-fast。
+     *
+     * <p>由于 {@code TypedJsonMapperCodec} 已携带 typeId 并恢复真实类型，正常情况下应当匹配。</p>
+     *
+     * @param raw 原始值
+     * @param type 目标类型
+     * @param <T> 泛型
+     * @return 目标类型对象
+     */
+    private <T> T castOrFail(Object raw, Class<T> type) {
+        if (raw == null) {
+            return null;
+        }
+        if (type.isInstance(raw)) {
+            return type.cast(raw);
+        }
+        throw new IllegalStateException("缓存值类型不匹配，rawType=" + raw.getClass().getName()
+                + " targetType=" + type.getName());
     }
 }
