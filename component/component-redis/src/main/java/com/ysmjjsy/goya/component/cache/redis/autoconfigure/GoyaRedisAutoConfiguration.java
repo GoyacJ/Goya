@@ -2,14 +2,22 @@ package com.ysmjjsy.goya.component.cache.redis.autoconfigure;
 
 import com.ysmjjsy.goya.component.cache.redis.autoconfigure.properties.GoyaRedisProperties;
 import com.ysmjjsy.goya.component.cache.redis.cache.RedissonCacheService;
+import com.ysmjjsy.goya.component.cache.redis.codec.TypedJsonMapperCodec;
+import com.ysmjjsy.goya.component.cache.redis.key.RedisKeySupport;
+import com.ysmjjsy.goya.component.cache.redis.support.*;
+import com.ysmjjsy.goya.component.cache.redis.support.impl.*;
 import com.ysmjjsy.goya.component.framework.cache.api.CacheService;
 import com.ysmjjsy.goya.component.framework.cache.key.CacheKeySerializer;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RedissonClient;
+import org.redisson.client.codec.Codec;
 import org.redisson.spring.cache.RedissonSpringCacheManager;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
@@ -32,11 +40,21 @@ import org.springframework.context.annotation.Primary;
 @Slf4j
 @AutoConfiguration
 @EnableConfigurationProperties({GoyaRedisProperties.class})
+@ConditionalOnClass(RedissonClient.class)
+@ConditionalOnBean({RedissonClient.class, CacheKeySerializer.class})
+@ConditionalOnProperty(prefix = "goya.redis", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class GoyaRedisAutoConfiguration {
 
     @PostConstruct
     public void init() {
         log.debug("[Goya] |- component [redis] GoyaRedisAutoConfiguration auto configure.");
+    }
+
+    @Bean
+    public TypedJsonMapperCodec typedJsonMapperCodec(){
+        TypedJsonMapperCodec typedJsonMapperCodec = new TypedJsonMapperCodec();
+        log.trace("[Goya] |- component [redis] GoyaRedisAutoConfiguration |- bean [typedJsonMapperCodec] register.");
+        return typedJsonMapperCodec;
     }
 
     @Bean
@@ -77,5 +95,94 @@ public class GoyaRedisAutoConfiguration {
     public CacheService remoteCacheService(RedissonCacheService impl) {
         log.trace("[Goya] |- component [redis] GoyaRedisAutoConfiguration |- bean [remoteCacheService] register.");
         return impl;
+    }
+
+    /**
+     * Redis key 支持（统一命名空间 + 租户隔离）。
+     *
+     * @param cacheKeySerializer key 序列化器
+     * @param goyaRedisProperties Redis 配置（提供 keyPrefix）
+     * @return RedisKeySupport
+     */
+    @Bean
+    public RedisKeySupport redisKeySupport(CacheKeySerializer cacheKeySerializer, GoyaRedisProperties goyaRedisProperties) {
+        RedisKeySupport redisKeySupport = new RedisKeySupport(cacheKeySerializer, goyaRedisProperties);
+        log.trace("[Goya] |- component [redis] GoyaRedisAutoConfiguration |- bean [redisKeySupport] register.");
+        return redisKeySupport;
+    }
+
+    /**
+     * Topic 服务。
+     *
+     * @param redisson RedissonClient
+     * @param keys key 支持
+     * @return RedisTopicService
+     */
+    @Bean
+    @ConditionalOnMissingBean(RedisTopicService.class)
+    public RedisTopicService redisTopicService(RedissonClient redisson, RedisKeySupport keys) {
+        RedissonTopicService redissonTopicService = new RedissonTopicService(redisson, keys);
+        log.trace("[Goya] |- component [redis] GoyaRedisAutoConfiguration |- bean [redisTopicService] register.");
+        return redissonTopicService;
+    }
+
+    /**
+     * 延迟队列服务。
+     *
+     * @param redisson RedissonClient
+     * @param keys key 支持
+     * @return RedisDelayedQueueService
+     */
+    @Bean
+    @ConditionalOnMissingBean(RedisDelayedQueueService.class)
+    public RedisDelayedQueueService redisDelayedQueueService(RedissonClient redisson, RedisKeySupport keys) {
+        RedissonDelayedQueueService redissonDelayedQueueService = new RedissonDelayedQueueService(redisson, keys);
+        log.trace("[Goya] |- component [redis] GoyaRedisAutoConfiguration |- bean [redisDelayedQueueService] register.");
+        return redissonDelayedQueueService;
+    }
+
+    /**
+     * 延迟队列服务（RReliableQueue）
+     *
+     * @param redissonClient Redisson 客户端
+     * @param codec 统一 Codec
+     * @return RedisDelayedQueueService
+     */
+    @Bean
+    @ConditionalOnMissingBean(RedisReliableDelayedQueueService.class)
+    public RedisReliableDelayedQueueService redisReliableDelayedQueueService(RedissonClient redissonClient, Codec codec) {
+        RedissonReliableDelayedQueueService redissonReliableDelayedQueueService = new RedissonReliableDelayedQueueService(redissonClient, codec);
+        log.trace("[Goya] |- component [redis] GoyaRedisAutoConfiguration |- bean [redisReliableDelayedQueueService] register.");
+        return redissonReliableDelayedQueueService;
+    }
+
+    /**
+     * 布隆过滤器服务。
+     *
+     * @param redisson RedissonClient
+     * @param keys key 支持
+     * @return RedisBloomFilterService
+     */
+    @Bean
+    @ConditionalOnMissingBean(RedisBloomFilterService.class)
+    public RedisBloomFilterService redisBloomFilterService(RedissonClient redisson, RedisKeySupport keys) {
+        RedissonBloomFilterService redissonBloomFilterService = new RedissonBloomFilterService(redisson, keys);
+        log.trace("[Goya] |- component [redis] GoyaRedisAutoConfiguration |- bean [redisBloomFilterService] register.");
+        return redissonBloomFilterService;
+    }
+
+    /**
+     * 原子计数服务。
+     *
+     * @param redisson RedissonClient
+     * @param keys key 支持
+     * @return RedisAtomicService
+     */
+    @Bean
+    @ConditionalOnMissingBean(RedisAtomicService.class)
+    public RedisAtomicService redisAtomicService(RedissonClient redisson, RedisKeySupport keys) {
+        RedissonAtomicService redissonAtomicService = new RedissonAtomicService(redisson, keys);
+        log.trace("[Goya] |- component [redis] GoyaRedisAutoConfiguration |- bean [redisAtomicService] register.");
+        return redissonAtomicService;
     }
 }
