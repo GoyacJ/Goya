@@ -188,6 +188,91 @@ public class DefaultMultiLevelCacheService implements MultiLevelCacheService {
         return local.getOrLoad(cacheName, key, type, ttl, loader);
     }
 
+    @Override
+    public <K, V> boolean putIfAbsent(String cacheName, K key, V value, Duration ttl) {
+        // 有 L2：优先 L2，确保跨实例幂等语义
+        if (remote != null) {
+            boolean ok;
+            try {
+                ok = remote.putIfAbsent(cacheName, key, value, ttl);
+            } catch (Exception e) {
+                log.warn("L2 putIfAbsent failed, fallback to L1. cacheName={}, key={}", cacheName, key, e);
+                ok = local.putIfAbsent(cacheName, key, value, ttl);
+            }
+            // 只有真正写入成功才回填 L1，避免把“已存在”的值覆盖/污染本地
+            if (ok) {
+                local.put(cacheName, key, value, ttl);
+            }
+            return ok;
+        }
+
+        // 无 L2：退化为本地幂等（仅单 JVM 原子）
+        return local.putIfAbsent(cacheName, key, value, ttl);
+    }
+
+    @Override
+    public <K> long incrByWithTtlOnCreate(String cacheName, K key, long delta, Duration ttlOnCreate) {
+        // 有 L2：优先 L2，确保分布式原子计数语义
+        if (remote != null) {
+            long v;
+            try {
+                v = remote.incrByWithTtlOnCreate(cacheName, key, delta, ttlOnCreate);
+            } catch (Exception e) {
+                log.warn("L2 incrByWithTtlOnCreate failed, fallback to L1. cacheName={}, key={}", cacheName, key, e);
+                v = local.incrByWithTtlOnCreate(cacheName, key, delta, ttlOnCreate);
+            }
+            // 回填 L1：只写数值，不强行同步 TTL（L1/L2 TTL 允许不同步；L1 作为热点加速层即可）
+            local.put(cacheName, key, v, ttlOnCreate);
+            return v;
+        }
+
+        // 无 L2：退化为本地计数（仅单 JVM 原子）
+        return local.incrByWithTtlOnCreate(cacheName, key, delta, ttlOnCreate);
+    }
+
+    @Override
+    public <K> Long getCounter(String cacheName, K key) {
+        // 先读 L1
+        Long v1 = local.getCounter(cacheName, key);
+        if (v1 != null) {
+            return v1;
+        }
+        if (remote == null) {
+            return null;
+        }
+
+        // 再读 L2 并回填 L1
+        Long v2;
+        try {
+            v2 = remote.getCounter(cacheName, key);
+        } catch (Exception e) {
+            log.warn("L2 getCounter failed. cacheName={}, key={}", cacheName, key, e);
+            return null;
+        }
+        if (v2 != null) {
+            // 回填时不掌握 L2 剩余 TTL，这里用 null 表示使用 L1 默认策略
+            local.put(cacheName, key, v2, null);
+        }
+        return v2;
+    }
+
+    @Override
+    public <K> void resetCounter(String cacheName, K key) {
+        try {
+            local.resetCounter(cacheName, key);
+        } catch (Exception e) {
+            log.warn("L1 resetCounter failed. cacheName={}, key={}", cacheName, key, e);
+        }
+
+        if (remote != null) {
+            try {
+                remote.resetCounter(cacheName, key);
+            } catch (Exception e) {
+                log.warn("L2 resetCounter failed. cacheName={}, key={}", cacheName, key, e);
+            }
+        }
+    }
+
     private void backfillLocal(String cacheName, Object key, Object value, Duration ttl) {
         local.put(cacheName, key, value, ttl);
     }

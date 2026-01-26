@@ -203,11 +203,11 @@ public interface CacheService {
      *
      * <p><b>原子性要求：</b>Redisson/Redis 实现必须满足分布式原子性；Caffeine 实现只保证单 JVM。</p>
      *
-     * @param cacheName    缓存命名空间
-     * @param key          计数 key
-     * @param delta        增量（可为负数，但需业务自行约束）
-     * @param ttlOnCreate  首次创建时设置的 TTL；为 null 或 <=0 表示不设置 TTL（不推荐）
-     * @param <K>          key 类型
+     * @param cacheName   缓存命名空间
+     * @param key         计数 key
+     * @param delta       增量（可为负数，但需业务自行约束）
+     * @param ttlOnCreate 首次创建时设置的 TTL；为 null 或 <=0 表示不设置 TTL（不推荐）
+     * @param <K>         key 类型
      * @return 自增后的值
      */
     <K> long incrByWithTtlOnCreate(String cacheName, K key, long delta, Duration ttlOnCreate);
