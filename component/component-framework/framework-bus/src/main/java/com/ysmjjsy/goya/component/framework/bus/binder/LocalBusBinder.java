@@ -9,7 +9,8 @@ import org.springframework.messaging.support.MessageBuilder;
 import java.util.Objects;
 
 /**
- * <p>Local in-memory binder: outbound -> inbound within same JVM (no persistence).</p>
+ * <p>本地 binder：JVM 内投递，不跨进程，不持久化</p>
+ * 主要用于：单体、本地开发、测试、无 MQ 依赖的最小可运行模式
  *
  * @author goya
  * @since 2026/1/26 23:44
@@ -24,30 +25,31 @@ public final class LocalBusBinder implements BusBinder {
 
     @Override
     public void bindOutbound(BusBinding binding, SubscribableChannel outboundChannel) {
-        // nothing to do; the bridge is created at inbound bind time
+        // 本地 binder 的 outbound 实际通过 bridge 实现：outbound -> inbound
+        // 这里不额外处理
     }
 
     @Override
     public void bindInbound(BusBinding binding, SubscribableChannel inboundChannel) {
-        // Bridge by subscribing outbound channel and forwarding to inbound.
-        // In this minimal skeleton, we assume channels were created by runtime and accessible by bus infrastructure.
-        // The actual bridge is established in BusBindingLifecycle by using the same channels; here we don't have them.
-        // So LocalBusBinder relies on a header-only contract and does not create additional resources.
-        log.debug("Local binder bound inbound for '{}'", binding.name());
+        // 本地 binder 无外部输入
     }
 
     /**
-     * Utility to wire local bridging when both channels are available.
+     * 建立 JVM 内桥接：从 outbound 复制消息到 inbound，并确保带上 bus.binding header。
      */
     public static void bridge(SubscribableChannel outbound, SubscribableChannel inbound, String bindingName) {
-        outbound.subscribe((Message<?> msg) -> {
-            Message<?> enriched = msg;
-            if (!Objects.equals(msg.getHeaders().get(DefaultBusMessageProducer.HDR_BINDING), bindingName)) {
-                enriched = MessageBuilder.fromMessage(msg)
+        Objects.requireNonNull(outbound);
+        Objects.requireNonNull(inbound);
+        Objects.requireNonNull(bindingName);
+
+        outbound.subscribe(msg -> {
+            Message<?> m = msg;
+            if (m.getHeaders().get(DefaultBusMessageProducer.HDR_BINDING) == null) {
+                m = MessageBuilder.fromMessage(m)
                         .setHeader(DefaultBusMessageProducer.HDR_BINDING, bindingName)
                         .build();
             }
-            inbound.send(enriched);
+            inbound.send(m);
         });
     }
 }

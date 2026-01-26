@@ -14,30 +14,17 @@ import org.springframework.util.StringUtils;
  */
 public record SendOptions(
         /*
-          本次发送强制指定的 binder 名（例如 "rabbit"）。
-          为空表示不覆盖，走 binding 配置或全局默认 binder。
+          本次发送强制使用的 binder（例如 rabbit）。
          */
         String binder
 ) {
-
-    /**
-     * 默认发送选项：不覆盖 binder。
-     */
     public static final SendOptions DEFAULT = new SendOptions(null);
 
-    /**
-     * 快捷构造：强制指定 binder。
-     */
     public static SendOptions binder(String binder) {
-        if (!StringUtils.hasText(binder)) {
-            return DEFAULT;
-        }
+        if (!StringUtils.hasText(binder)) return DEFAULT;
         return new SendOptions(binder.trim());
     }
 
-    /**
-     * 是否指定了 binder 覆盖。
-     */
     public boolean hasBinderOverride() {
         return StringUtils.hasText(binder);
     }

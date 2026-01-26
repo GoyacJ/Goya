@@ -47,14 +47,14 @@ public class GoyaCacheAutoConfiguration {
     @ConditionalOnMissingBean(CacheKeySerializer.class)
     public CacheKeySerializer defaultCacheKeySerializer(GoyaContext goyaContext) {
         DefaultCacheKeySerializer serializer = new DefaultCacheKeySerializer(goyaContext);
-        log.trace("[Goya] |- component [cache-core] GoyaCacheAutoConfiguration |- bean [defaultCacheKeySerializer] register.");
+        log.trace("[Goya] |- component [framework] GoyaCacheAutoConfiguration |- bean [defaultCacheKeySerializer] register.");
         return serializer;
     }
 
     @Bean
     public DefaultCacheMetrics defaultCacheMetrics() {
         DefaultCacheMetrics metrics = new DefaultCacheMetrics();
-        log.trace("[Goya] |- component [cache-core] GoyaCacheAutoConfiguration |- bean [defaultCacheMetrics] register.");
+        log.trace("[Goya] |- component [framework] GoyaCacheAutoConfiguration |- bean [defaultCacheMetrics] register.");
         return metrics;
     }
 

@@ -2,67 +2,60 @@ package com.ysmjjsy.goya.component.kafka;
 
 import com.ysmjjsy.goya.component.framework.bus.binder.BusBinder;
 import com.ysmjjsy.goya.component.framework.bus.binder.BusBinding;
+import com.ysmjjsy.goya.component.framework.bus.message.DefaultBusMessageProducer;
 import com.ysmjjsy.goya.component.framework.bus.runtime.BusChannels;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.common.TopicPartition;
+import org.jspecify.annotations.NullMarked;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.expression.common.LiteralExpression;
 import org.springframework.integration.kafka.inbound.KafkaMessageDrivenChannelAdapter;
 import org.springframework.integration.kafka.outbound.KafkaProducerMessageHandler;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.CommonErrorHandler;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
+import org.springframework.kafka.listener.DefaultErrorHandler;
+import org.springframework.kafka.listener.MessageListenerContainer;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.SubscribableChannel;
+import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.util.StringUtils;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * <p>Kafka Binder：把 Bus 的 Integration 骨架“接线”到 Kafka</p>
+ * <p>Kafka Binder：使用 Spring Integration Kafka 官方适配器接入 Kafka</p>
  * <p>
- * 重要原则：
- * <ul>
- *   <li>尽量复用官方配置与官方组件：KafkaTemplate / ConsumerFactory（来源于 spring.kafka.* 自动装配）</li>
- *   <li>本类只做接线，不在这里发明重试/DLQ/并发/ACK 等策略（交给 Spring Kafka / Broker 官方能力）</li>
- * </ul>
+ * Outbound：KafkaProducerMessageHandler
+ * Inbound：KafkaMessageDrivenChannelAdapter + ConcurrentMessageListenerContainer
  * <p>
- * Outbound：SubscribableChannel -> KafkaProducerMessageHandler
- * Inbound：KafkaMessageDrivenChannelAdapter -> SubscribableChannel
- * 同时：把 inbound 端（监听容器层面）发生的异常发布到 Bus 全局 error 通道，便于统一观测/告警。
+ * 额外：inbound 容器层异常发布到 bus 全局 error 通道（不替代官方重试/DLQ等机制）。
  *
  * @author goya
  * @since 2026/1/27 00:08
  */
+@Slf4j
 public final class KafkaIntegrationBusBinder implements BusBinder, DisposableBean {
 
-    private static final Logger log = LoggerFactory.getLogger(KafkaIntegrationBusBinder.class);
-
     private final KafkaTemplate<Object, Object> kafkaTemplate;
-
-    /**
-     * 关键：用官方的 ConcurrentKafkaListenerContainerFactory 创建容器，
-     * 这样可以继承 spring.kafka.* 以及用户对工厂的自定义（并发、ack、errorHandler 等）。
-     */
-    private final ConcurrentKafkaListenerContainerFactory<Object, Object> containerFactory;
-
-    /**
-     * Bus 运行时通道（包含全局 error 通道）
-     */
+    private final ConcurrentKafkaListenerContainerFactory<Object, Object> factory;
     private final BusChannels channels;
 
-    /**
-     * 记录创建的 inbound adapter，便于应用关闭时优雅 stop。
-     */
     private final List<KafkaMessageDrivenChannelAdapter<Object, Object>> inboundAdapters = new CopyOnWriteArrayList<>();
 
     public KafkaIntegrationBusBinder(KafkaTemplate<Object, Object> kafkaTemplate,
-                                     ConcurrentKafkaListenerContainerFactory<Object, Object> containerFactory,
+                                     ConcurrentKafkaListenerContainerFactory<Object, Object> factory,
                                      BusChannels channels) {
         this.kafkaTemplate = Objects.requireNonNull(kafkaTemplate);
-        this.containerFactory = Objects.requireNonNull(containerFactory);
+        this.factory = Objects.requireNonNull(factory);
         this.channels = Objects.requireNonNull(channels);
     }
 
@@ -74,44 +67,41 @@ public final class KafkaIntegrationBusBinder implements BusBinder, DisposableBea
     @Override
     public void bindOutbound(BusBinding binding, SubscribableChannel outboundChannel) {
         KafkaProducerMessageHandler<Object, Object> handler = new KafkaProducerMessageHandler<>(kafkaTemplate);
-        handler.setTopicExpressionString("'" + binding.destination() + "'");
+
+        handler.setTopicExpression(new LiteralExpression(binding.destination()));
         handler.afterPropertiesSet();
 
         outboundChannel.subscribe((Message<?> msg) -> {
             try {
                 handler.handleMessage(msg);
             } catch (Exception ex) {
-                // 注意：这里不吞异常，让上层（DefaultBusMessageProducer）继续抛出并发布到 bus error 通道
-                log.error("Kafka outbound 发送失败: binding='{}', destination='{}'", binding.name(), binding.destination(), ex);
+                log.error("Kafka outbound 发送失败: binding='{}', destination='{}'",
+                        binding.name(), binding.destination(), ex);
                 throw ex;
             }
         });
 
-        log.info("Kafka outbound 已绑定: binding='{}', destination='{}'", binding.name(), binding.destination());
+        log.info("Kafka outbound 已绑定: binding='{}', destination='{}'",
+                binding.name(), binding.destination());
     }
 
     @Override
     public void bindInbound(BusBinding binding, SubscribableChannel inboundChannel) {
-        // 使用官方工厂创建容器（继承 spring.kafka.* 以及用户对工厂的自定义）
-        ConcurrentMessageListenerContainer<Object, Object> container =
-                containerFactory.createContainer(binding.destination());
+        ConcurrentMessageListenerContainer<Object, Object> container = factory.createContainer(binding.destination());
 
-        // 如果用户在 framework.bus.bindings.* 指定 group，则覆盖 group.id
+        // 如果配置了 group，则覆盖 groupId（仍属官方语义）
         if (StringUtils.hasText(binding.group())) {
             container.getContainerProperties().setGroupId(binding.group());
         }
 
-        // 装饰（不替换）已有的 CommonErrorHandler：发布到 bus error 通道 + 继续走官方处理逻辑
         CommonErrorHandler existing = container.getCommonErrorHandler();
-        container.setCommonErrorHandler(new KafkaBusPublishingCommonErrorHandler(existing, channels, binding));
+        container.setCommonErrorHandler(new PublishingCommonErrorHandler(existing, channels, binding));
 
-        // 用 Spring Integration 官方 adapter，把消费到的消息投递到 inboundChannel
         KafkaMessageDrivenChannelAdapter<Object, Object> adapter = new KafkaMessageDrivenChannelAdapter<>(container);
         adapter.setOutputChannel(inboundChannel);
 
         adapter.afterPropertiesSet();
         adapter.start();
-
         inboundAdapters.add(adapter);
 
         log.info("Kafka inbound 已绑定: binding='{}', destination='{}', group='{}'",
@@ -128,5 +118,114 @@ public final class KafkaIntegrationBusBinder implements BusBinder, DisposableBea
             }
         }
         inboundAdapters.clear();
+    }
+
+    /**
+     * CommonErrorHandler 装饰器：
+     * - 先发布到 bus error 通道（便于统一观测）
+     * - 再委托给原有 error handler（保留官方重试/DLQ/seek 等语义）
+     *
+     * 注意：该实现严格对齐你贴出来的 CommonErrorHandler 源码签名。
+     */
+    private static final class PublishingCommonErrorHandler implements CommonErrorHandler {
+
+        private final CommonErrorHandler delegate;
+        private final BusChannels channels;
+        private final BusBinding binding;
+
+        private PublishingCommonErrorHandler(CommonErrorHandler delegate, BusChannels channels, BusBinding binding) {
+            // 没有现成 handler 时，兜底用官方 DefaultErrorHandler（不造轮子）
+            this.delegate = (delegate != null ? delegate : new DefaultErrorHandler());
+            this.channels = channels;
+            this.binding = binding;
+        }
+
+        private void publish(Throwable ex, Object data) {
+            HashMap<String, Object> headers = new HashMap<>();
+            headers.put("stage", "kafka-inbound-container");
+            headers.put("binder", "kafka");
+            headers.put(DefaultBusMessageProducer.HDR_BINDING, binding.name());
+            headers.put("destination", binding.destination());
+            if (data != null) {
+                headers.put("data", data);
+            }
+            channels.error().send(new ErrorMessage(ex, headers));
+        }
+
+        @Override
+        public boolean seeksAfterHandling() {
+            return delegate.seeksAfterHandling();
+        }
+
+        @Override
+        public boolean deliveryAttemptHeader() {
+            return delegate.deliveryAttemptHeader();
+        }
+
+        @Override
+        @NullMarked
+        public void handleOtherException(Exception thrownException, Consumer<?, ?> consumer,
+                                         MessageListenerContainer container, boolean batchListener) {
+            publish(thrownException, null);
+            delegate.handleOtherException(thrownException, consumer, container, batchListener);
+        }
+
+        @Override
+        @NullMarked
+        public boolean handleOne(Exception thrownException, ConsumerRecord<?, ?> record, Consumer<?, ?> consumer,
+                                 MessageListenerContainer container) {
+            publish(thrownException, record);
+            return delegate.handleOne(thrownException, record, consumer, container);
+        }
+
+        @Override
+        @NullMarked
+        public void handleRemaining(Exception thrownException, List<ConsumerRecord<?, ?>> records,
+                                    Consumer<?, ?> consumer, MessageListenerContainer container) {
+            publish(thrownException, records);
+            delegate.handleRemaining(thrownException, records, consumer, container);
+        }
+
+        @Override
+        @NullMarked
+        public void handleBatch(Exception thrownException, ConsumerRecords<?, ?> data,
+                                Consumer<?, ?> consumer, MessageListenerContainer container, Runnable invokeListener) {
+            publish(thrownException, data);
+            delegate.handleBatch(thrownException, data, consumer, container, invokeListener);
+        }
+
+        @Override
+        @NullMarked
+        public <K, V> ConsumerRecords<K, V> handleBatchAndReturnRemaining(Exception thrownException,
+                                                                          ConsumerRecords<?, ?> data,
+                                                                          Consumer<?, ?> consumer,
+                                                                          MessageListenerContainer container,
+                                                                          Runnable invokeListener) {
+            publish(thrownException, data);
+            return delegate.handleBatchAndReturnRemaining(thrownException, data, consumer, container, invokeListener);
+        }
+
+        @Override
+        public void clearThreadState() {
+            delegate.clearThreadState();
+        }
+
+        @Override
+        public boolean isAckAfterHandle() {
+            return delegate.isAckAfterHandle();
+        }
+
+        @Override
+        public void setAckAfterHandle(boolean ack) {
+            // delegate 可能不支持设置，保持其行为（接口默认是抛 UnsupportedOperationException）
+            delegate.setAckAfterHandle(ack);
+        }
+
+        @Override
+        @NullMarked
+        public void onPartitionsAssigned(Consumer<?, ?> consumer, Collection<TopicPartition> partitions,
+                                         Runnable publishPause) {
+            delegate.onPartitionsAssigned(consumer, partitions, publishPause);
+        }
     }
 }

@@ -21,19 +21,10 @@ import java.util.Objects;
  */
 public final class DefaultBusMessageProducer implements BusMessageProducer {
 
-    /**
-     * header：binding 名（供 binder/错误处理/观测使用）
-     */
+    /** header：binding 名（用于路由/观测） */
     public static final String HDR_BINDING = "bus.binding";
 
-    /**
-     * header：目标 destination（供观测使用；binder 也可选用）
-     */
-    public static final String HDR_DESTINATION = "bus.destination";
-
-    /**
-     * header：binder（可选，某些场景会填充）
-     */
+    /** header：本次发送强制 binder（用于 per-send override） */
     public static final String HDR_BINDER = "bus.binder";
 
     private final BusChannels channels;
@@ -49,10 +40,13 @@ public final class DefaultBusMessageProducer implements BusMessageProducer {
 
     @Override
     public <T> void send(String binding, MessageEnvelope<T> envelope, SendOptions options) {
+        Objects.requireNonNull(binding, "binding 不能为空");
+        Objects.requireNonNull(envelope, "envelope 不能为空");
+        if (options == null) options = SendOptions.DEFAULT;
+
         MessageBuilder<MessageEnvelope<T>> builder = MessageBuilder.withPayload(envelope)
                 .setHeader(HDR_BINDING, binding);
 
-        // 如果本次发送指定了 binder，则写入 header，供后续 binder selector / binder 使用
         if (options.hasBinderOverride()) {
             builder.setHeader(HDR_BINDER, options.binder());
         }
@@ -63,28 +57,20 @@ public final class DefaultBusMessageProducer implements BusMessageProducer {
             boolean ok = channels.outbound(binding).send(msg);
             if (!ok) {
                 IllegalStateException ex = new IllegalStateException("outbound channel send 返回 false");
-                publishToErrorChannel(ex, "producer-outbound-send-false", binding, null, null, envelope);
+                publishToErrorChannel(ex, "producer-outbound-send-false", binding, msg);
                 throw ex;
             }
         } catch (Exception ex) {
-            publishToErrorChannel(ex, "producer-outbound-exception", binding, null, null, envelope);
+            publishToErrorChannel(ex, "producer-outbound-exception", binding, msg);
             throw ex;
         }
     }
 
-    private void publishToErrorChannel(Throwable ex,
-                                       String stage,
-                                       String binding,
-                                       String destination,
-                                       String binder,
-                                       Object payload) {
+    private void publishToErrorChannel(Throwable ex, String stage, String binding, Object payload) {
         Map<String, Object> headers = new HashMap<>();
         headers.put("stage", stage);
         headers.put(HDR_BINDING, binding);
-        if (destination != null) headers.put(HDR_DESTINATION, destination);
-        if (binder != null) headers.put(HDR_BINDER, binder);
         if (payload != null) headers.put("payload", payload);
-
         channels.error().send(new ErrorMessage(ex, headers));
     }
 }

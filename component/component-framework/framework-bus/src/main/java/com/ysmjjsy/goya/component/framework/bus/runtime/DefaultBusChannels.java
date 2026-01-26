@@ -23,10 +23,8 @@ import java.util.concurrent.ConcurrentMap;
 public final class DefaultBusChannels implements BusChannels {
 
     private final TaskExecutor executor;
-
     private final ConcurrentMap<String, SubscribableChannel> outbound = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, SubscribableChannel> inbound = new ConcurrentHashMap<>();
-
     private final SubscribableChannel error;
 
     public DefaultBusChannels(TaskExecutor executor) {

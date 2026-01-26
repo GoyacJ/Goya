@@ -1,7 +1,6 @@
 package com.ysmjjsy.goya.component.framework.bus.message;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.context.ApplicationContext;
@@ -34,15 +33,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @author goya
  * @since 2026/1/27 00:41
  */
+@Slf4j
 public class DefaultBusListenerRegistry implements BusListenerRegistry, SmartInitializingSingleton {
-
-    private static final Logger log = LoggerFactory.getLogger(DefaultBusListenerRegistry.class);
 
     private final ApplicationContext applicationContext;
 
-    /**
-     * binding -> invokers
-     */
     private final Map<String, List<ListenerInvoker>> invokers = new ConcurrentHashMap<>();
 
     public DefaultBusListenerRegistry(ApplicationContext applicationContext) {
@@ -51,14 +46,12 @@ public class DefaultBusListenerRegistry implements BusListenerRegistry, SmartIni
 
     @Override
     public void afterSingletonsInstantiated() {
-        // 扫描所有 bean，收集 @BusMessageListener 方法
         String[] beanNames = applicationContext.getBeanDefinitionNames();
         for (String beanName : beanNames) {
             Object bean;
             try {
                 bean = applicationContext.getBean(beanName);
             } catch (Exception ex) {
-                // 某些 bean 可能因为条件装配/懒加载导致取不到，这里跳过
                 continue;
             }
 
@@ -69,40 +62,33 @@ public class DefaultBusListenerRegistry implements BusListenerRegistry, SmartIni
                             AnnotatedElementUtils.findMergedAnnotation(method, BusMessageListener.class)
             );
 
-            if (methods.isEmpty()) {
-                continue;
-            }
+            if (methods.isEmpty()) continue;
 
             for (Map.Entry<Method, BusMessageListener> e : methods.entrySet()) {
-                Method method = e.getKey();
+                Method m = e.getKey();
                 BusMessageListener ann = e.getValue();
 
-                validateListenerMethod(targetClass, method, ann);
+                if (!StringUtils.hasText(ann.binding())) {
+                    throw new IllegalStateException("@BusMessageListener(binding) 不能为空: " + targetClass.getName() + "#" + m.getName());
+                }
 
-                method.setAccessible(true);
-                ListenerInvoker invoker = new ListenerInvoker(bean, method);
+                Class<?>[] params = m.getParameterTypes();
+                if (params.length != 1) {
+                    throw new IllegalStateException("@BusMessageListener 方法必须且只能有 1 个参数: " + targetClass.getName() + "#" + m.getName());
+                }
+                Class<?> p0 = params[0];
+                boolean ok = MessageEnvelope.class.isAssignableFrom(p0) || Message.class.isAssignableFrom(p0);
+                if (!ok) {
+                    throw new IllegalStateException("@BusMessageListener 方法参数必须是 MessageEnvelope 或 Message: " + targetClass.getName() + "#" + m.getName());
+                }
 
-                invokers.computeIfAbsent(ann.binding(), k -> new CopyOnWriteArrayList<>()).add(invoker);
+                m.setAccessible(true);
+                invokers.computeIfAbsent(ann.binding(), k -> new CopyOnWriteArrayList<>())
+                        .add(new ListenerInvoker(bean, m, p0));
 
                 log.info("注册 Bus 监听器: binding='{}', bean='{}', method='{}#{}'",
-                        ann.binding(), beanName, targetClass.getName(), method.getName());
+                        ann.binding(), beanName, targetClass.getName(), m.getName());
             }
-        }
-    }
-
-    private void validateListenerMethod(Class<?> targetClass, Method method, BusMessageListener ann) {
-        if (!StringUtils.hasText(ann.binding())) {
-            throw new IllegalStateException("@BusMessageListener(binding) 不能为空: " + targetClass.getName() + "#" + method.getName());
-        }
-        Class<?>[] params = method.getParameterTypes();
-        if (params.length != 1) {
-            throw new IllegalStateException("@BusMessageListener 方法必须且只能有 1 个参数: " + targetClass.getName() + "#" + method.getName());
-        }
-        Class<?> p0 = params[0];
-        boolean ok = MessageEnvelope.class.isAssignableFrom(p0) || Message.class.isAssignableFrom(p0);
-        if (!ok) {
-            throw new IllegalStateException("@BusMessageListener 方法参数必须是 MessageEnvelope 或 Message: "
-                    + targetClass.getName() + "#" + method.getName());
         }
     }
 
@@ -114,7 +100,6 @@ public class DefaultBusListenerRegistry implements BusListenerRegistry, SmartIni
 
         List<ListenerInvoker> list = invokers.get(binding);
         if (list == null || list.isEmpty()) {
-            // 没有监听器时不算异常：给个 debug 方便排查
             log.debug("未找到 Bus 监听器: binding='{}'", binding);
             return;
         }
@@ -125,18 +110,15 @@ public class DefaultBusListenerRegistry implements BusListenerRegistry, SmartIni
         }
     }
 
-    /**
-     * 方法调用器：封装反射调用细节。
-     */
     private static final class ListenerInvoker {
         private final Object bean;
         private final Method method;
         private final Class<?> paramType;
 
-        private ListenerInvoker(Object bean, Method method) {
+        private ListenerInvoker(Object bean, Method method, Class<?> paramType) {
             this.bean = bean;
             this.method = method;
-            this.paramType = method.getParameterTypes()[0];
+            this.paramType = paramType;
         }
 
         private void invoke(Message<?> message, Object payload) {
@@ -145,7 +127,6 @@ public class DefaultBusListenerRegistry implements BusListenerRegistry, SmartIni
                     method.invoke(bean, message);
                     return;
                 }
-                // 参数是 MessageEnvelope：payload 必须是 MessageEnvelope
                 if (payload instanceof MessageEnvelope<?> env) {
                     method.invoke(bean, env);
                     return;
@@ -154,7 +135,6 @@ public class DefaultBusListenerRegistry implements BusListenerRegistry, SmartIni
             } catch (MessagingException me) {
                 throw me;
             } catch (Exception ex) {
-                // 统一包一层 MessagingException，方便上游 dispatcher 处理
                 throw new MessagingException(message, ex);
             }
         }

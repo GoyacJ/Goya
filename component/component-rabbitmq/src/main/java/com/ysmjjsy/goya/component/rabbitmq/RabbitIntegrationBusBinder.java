@@ -18,6 +18,8 @@ import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.ErrorMessage;
 
 import java.util.HashMap;
+import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * <p>RabbitMQ Binder：把 Bus 的 Integration 骨架“接线”到 RabbitMQ</p>
@@ -45,15 +47,14 @@ public final class RabbitIntegrationBusBinder implements BusBinder, DisposableBe
     private final ConnectionFactory connectionFactory;
     private final BusChannels channels;
 
-    private final java.util.List<AmqpInboundChannelAdapter> inboundAdapters =
-            new java.util.concurrent.CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<AmqpInboundChannelAdapter> inboundAdapters = new CopyOnWriteArrayList<>();
 
     public RabbitIntegrationBusBinder(RabbitTemplate rabbitTemplate,
                                       ConnectionFactory connectionFactory,
                                       BusChannels channels) {
-        this.rabbitTemplate = java.util.Objects.requireNonNull(rabbitTemplate);
-        this.connectionFactory = java.util.Objects.requireNonNull(connectionFactory);
-        this.channels = java.util.Objects.requireNonNull(channels);
+        this.rabbitTemplate = Objects.requireNonNull(rabbitTemplate);
+        this.connectionFactory = Objects.requireNonNull(connectionFactory);
+        this.channels = Objects.requireNonNull(channels);
     }
 
     @Override
@@ -64,9 +65,6 @@ public final class RabbitIntegrationBusBinder implements BusBinder, DisposableBe
     @Override
     public void bindOutbound(BusBinding binding, SubscribableChannel outboundChannel) {
         AmqpOutboundEndpoint endpoint = new AmqpOutboundEndpoint(rabbitTemplate);
-
-        // 约定：destination 默认作为 routingKey（即 queue 名），发送到默认 exchange。
-        // 贴近 RabbitTemplate 默认行为，不额外引入新的配置概念。
         endpoint.setExchangeName("");
         endpoint.setRoutingKeyExpression(new LiteralExpression(binding.destination()));
         endpoint.afterPropertiesSet();
@@ -75,7 +73,6 @@ public final class RabbitIntegrationBusBinder implements BusBinder, DisposableBe
             try {
                 endpoint.handleMessage(msg);
             } catch (Exception ex) {
-                // 不吞异常，让上层继续抛出并发布到 bus error 通道
                 log.error("RabbitMQ outbound 发送失败: binding='{}', destination='{}'", binding.name(), binding.destination(), ex);
                 throw ex;
             }
@@ -89,17 +86,16 @@ public final class RabbitIntegrationBusBinder implements BusBinder, DisposableBe
         SimpleMessageListenerContainer container = new SimpleMessageListenerContainer(connectionFactory);
         container.setQueueNames(binding.destination());
 
-        // 监听容器层异常处理：只做“发布到 bus error 通道”，不改变 Spring AMQP 原有处理语义。
+        // 容器层异常发布到 bus error 通道（不吞异常，不替代官方策略）
         container.setErrorHandler(t -> {
             try {
-                var headers = new HashMap<String, Object>();
+                HashMap<String, Object> headers = new HashMap<>();
                 headers.put("stage", "rabbit-inbound-container");
                 headers.put("binder", "rabbit");
                 headers.put(DefaultBusMessageProducer.HDR_BINDING, binding.name());
                 headers.put("destination", binding.destination());
                 channels.error().send(new ErrorMessage(t, headers));
             } catch (Exception ex) {
-                // 防御：错误处理回调里不要再抛出异常导致更混乱
                 log.warn("发布到 bus error 通道失败（忽略），原始异常: {}", t.toString(), ex);
             }
         });
@@ -111,8 +107,7 @@ public final class RabbitIntegrationBusBinder implements BusBinder, DisposableBe
         adapter.start();
         inboundAdapters.add(adapter);
 
-        log.info("RabbitMQ inbound 已绑定: binding='{}', destination='{}', group='{}'",
-                binding.name(), binding.destination(), binding.group());
+        log.info("RabbitMQ inbound 已绑定: binding='{}', destination='{}'", binding.name(), binding.destination());
     }
 
     @Override

@@ -16,18 +16,16 @@ public interface BusChannels {
 
     /**
      * 获取某个 binding 的出站通道。
-     * 发送端会把消息投递到该通道，由 binder 输出到 MQ/本地。
      */
     SubscribableChannel outbound(String bindingName);
 
     /**
      * 获取某个 binding 的入站通道。
-     * binder 从 MQ/本地接收到消息后投递到该通道，再由 dispatcher 分发给业务监听器。
      */
     SubscribableChannel inbound(String bindingName);
 
     /**
-     * 全局错误通道：所有异常统一发布到这里。
+     * 全局错误通道。
      */
     SubscribableChannel error();
 }

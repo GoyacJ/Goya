@@ -8,15 +8,9 @@ import org.springframework.messaging.support.MessageBuilder;
 import java.util.Objects;
 
 /**
- * <p>Helper for Spring Cloud Stream function-style consumers.</p>
- * Usage (in application):
- * <pre>
- * {@code
- *   @Bean
- *   public Consumer<Message<byte[]>> orderCreated(BusStreamInboundAdapter adapter) {
- *       return msg -> adapter.accept("orderCreated", msg);
- *   }
- * }
+ * <p>Cloud Stream 入站桥接器</p>
+ * 用户在函数式 Consumer 中调用 accept(bindingName, message)，将消息投递到 bus inbound(binding)
+ *
  * @author goya
  * @since 2026/1/26 23:36
  */
@@ -28,10 +22,13 @@ public final class BusStreamInboundAdapter {
         this.channels = Objects.requireNonNull(channels);
     }
 
-    public void accept(String bindingName, Message<?> msg) {
-        Message<?> enriched = MessageBuilder.fromMessage(msg)
-                .setHeader(DefaultBusMessageProducer.HDR_BINDING, bindingName)
-                .build();
-        channels.inbound(bindingName).send(enriched);
+    public void accept(String bindingName, Message<?> message) {
+        Message<?> m = message;
+        if (m.getHeaders().get(DefaultBusMessageProducer.HDR_BINDING) == null) {
+            m = MessageBuilder.fromMessage(m)
+                    .setHeader(DefaultBusMessageProducer.HDR_BINDING, bindingName)
+                    .build();
+        }
+        channels.inbound(bindingName).send(m);
     }
 }

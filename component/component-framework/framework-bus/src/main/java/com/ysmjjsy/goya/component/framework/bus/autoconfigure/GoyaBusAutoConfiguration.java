@@ -3,7 +3,6 @@ package com.ysmjjsy.goya.component.framework.bus.autoconfigure;
 import com.ysmjjsy.goya.component.framework.bus.autoconfigure.properties.BusProperties;
 import com.ysmjjsy.goya.component.framework.bus.binder.BusBinder;
 import com.ysmjjsy.goya.component.framework.bus.binder.LocalBusBinder;
-import com.ysmjjsy.goya.component.framework.bus.binder.StreamBridgeBusBinder;
 import com.ysmjjsy.goya.component.framework.bus.event.BusEventPublisher;
 import com.ysmjjsy.goya.component.framework.bus.event.SpringBusEventPublisher;
 import com.ysmjjsy.goya.component.framework.bus.message.BusListenerRegistry;
@@ -12,20 +11,22 @@ import com.ysmjjsy.goya.component.framework.bus.message.DefaultBusListenerRegist
 import com.ysmjjsy.goya.component.framework.bus.message.DefaultBusMessageProducer;
 import com.ysmjjsy.goya.component.framework.bus.runtime.*;
 import com.ysmjjsy.goya.component.framework.bus.stream.BusStreamInboundAdapter;
+import com.ysmjjsy.goya.component.framework.bus.stream.StreamBridgeBusBinder;
+import com.ysmjjsy.goya.component.framework.core.constants.PropertyConst;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.task.TaskExecutionAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.task.TaskExecutor;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -44,158 +45,121 @@ public class GoyaBusAutoConfiguration {
     public void init() {
         log.debug("[Goya] |- component [framework] GoyaBusAutoConfiguration auto configure.");
     }
-    // -------- Event --------
-    @Bean
-    @ConditionalOnMissingBean
-    public BusEventPublisher busEventPublisher(ApplicationEventPublisher publisher) {
-        return new SpringBusEventPublisher(publisher);
-    }
 
-    // -------- Runtime core --------
     @Bean
     @ConditionalOnMissingBean
-    public BusChannels busChannels(TaskExecutor taskExecutor) {
-        DefaultBusChannels defaultBusChannels = new DefaultBusChannels(taskExecutor);
+    public BusChannels busChannels(@Qualifier(TaskExecutionAutoConfiguration.APPLICATION_TASK_EXECUTOR_BEAN_NAME)
+                                       TaskExecutor applicationTaskExecutor) {
+        DefaultBusChannels defaultBusChannels = new DefaultBusChannels(applicationTaskExecutor);
+        log.trace("[Goya] |- component [framework] GoyaBusAutoConfiguration |- bean [busChannels] register.");
         return defaultBusChannels;
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public BusErrorLogger busErrorLogger() {
-        return new BusErrorLogger();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public BindingResolver bindingResolver(BusProperties props) {
-        return new BindingResolver(props);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public BusBinderRegistry busBinderRegistry(ObjectProvider<List<BusBinder>> bindersProvider,
-                                               ObjectProvider<StreamBridgeBusBinder> streamBinderProvider,
-                                               BusProperties props) {
-        List<BusBinder> binders = new ArrayList<>();
-        List<BusBinder> provided = bindersProvider.getIfAvailable();
-        if (provided != null) binders.addAll(provided);
-
-        // Always ensure local binder exists
-        boolean hasLocal = binders.stream().anyMatch(b -> "local".equalsIgnoreCase(b.name()));
-        if (!hasLocal) binders.add(new LocalBusBinder());
-
-        // Optionally add StreamBridge binder if present AND preferStreamBridge=true
-        StreamBridgeBusBinder stream = streamBinderProvider.getIfAvailable();
-        if (stream != null && props.preferStreamBridge()) {
-            boolean hasStream = binders.stream().anyMatch(b -> "stream".equalsIgnoreCase(b.name()));
-            if (!hasStream) binders.add(stream);
-        }
-
-        return new BusBinderRegistry(binders);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public BinderSelector binderSelector(BusProperties props, BusBinderRegistry registry) {
-        return new BinderSelector(props, registry);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public BusBindingLifecycle busBindingLifecycle(BusProperties props, BindingResolver resolver, BusChannels channels, BusBinderRegistry registry) {
-        return new BusBindingLifecycle(props, resolver, channels, registry);
-    }
-
-    // -------- Messaging --------
-    @Bean
-    @ConditionalOnMissingBean
     public BusMessageProducer busMessageProducer(BusChannels channels) {
-        return new DefaultBusMessageProducer(channels);
+        DefaultBusMessageProducer defaultBusMessageProducer = new DefaultBusMessageProducer(channels);
+        log.trace("[Goya] |- component [framework] GoyaBusAutoConfiguration |- bean [busMessageProducer] register.");
+        return defaultBusMessageProducer;
     }
 
     @Bean
     @ConditionalOnMissingBean
     public BusListenerRegistry busListenerRegistry(ApplicationContext applicationContext) {
-        return new DefaultBusListenerRegistry(applicationContext);
+        DefaultBusListenerRegistry defaultBusListenerRegistry = new DefaultBusListenerRegistry(applicationContext);
+        log.trace("[Goya] |- component [framework] GoyaBusAutoConfiguration |- bean [busListenerRegistry] register.");
+        return defaultBusListenerRegistry;
     }
 
     @Bean
     @ConditionalOnMissingBean
     public BusMessageDispatcher busMessageDispatcher(BusListenerRegistry registry, BusChannels channels) {
-        return new BusMessageDispatcher(registry, channels);
+        BusMessageDispatcher busMessageDispatcher = new BusMessageDispatcher(registry, channels);
+        log.trace("[Goya] |- component [framework] GoyaBusAutoConfiguration |- bean [busMessageDispatcher] register.");
+        return busMessageDispatcher;
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public BusMessageListenerRegistrar busMessageListenerRegistrar(BusMessageDispatcher dispatcher) {
-        return new BusMessageListenerRegistrar(dispatcher);
+    public BindingResolver bindingResolver(BusProperties props) {
+        DefaultBindingResolver bindingResolver = new DefaultBindingResolver(props);
+        log.trace("[Goya] |- component [framework] GoyaBusAutoConfiguration |- bean [bindingResolver] register.");
+        return bindingResolver;
     }
 
     @Bean
-    public SmartInitializer busDispatcherInitializer(BusMessageDispatcher dispatcher) {
-        return new SmartInitializer(dispatcher);
-    }
-
-    /**
-     * 在容器启动完成后，将 inbound 通道与监听器方法建立订阅关系。
-     */
-    public static final class SmartInitializer implements org.springframework.beans.factory.SmartInitializingSingleton {
-        private final BusMessageDispatcher dispatcher;
-        public SmartInitializer(BusMessageDispatcher dispatcher) {
-            this.dispatcher = dispatcher;
-        }
-        @Override
-        public void afterSingletonsInstantiated() {
-            dispatcher.subscribeAll();
-        }
-    }
-
-    // -------- StreamBridge optional --------
-    @Bean
-    @ConditionalOnClass(StreamBridge.class)
     @ConditionalOnMissingBean
-    public StreamBridgeBusBinder streamBridgeBusBinder(StreamBridge streamBridge, BusProperties props) {
-        return new StreamBridgeBusBinder(streamBridge, props);
+    public LocalBusBinder localBusBinder() {
+        LocalBusBinder localBusBinder = new LocalBusBinder();
+        log.trace("[Goya] |- component [framework] GoyaBusAutoConfiguration |- bean [localBusBinder] register.");
+        return localBusBinder;
     }
 
     @Bean
-    @ConditionalOnClass(StreamBridge.class)
     @ConditionalOnMissingBean
-    public BusStreamInboundAdapter busStreamInboundAdapter(BusChannels channels) {
-        return new BusStreamInboundAdapter(channels);
+    public BusBinderRegistry busBinderRegistry(List<BusBinder> binders) {
+        BusBinderRegistry busBinderRegistry = new BusBinderRegistry(binders);
+        log.trace("[Goya] |- component [framework] GoyaBusAutoConfiguration |- bean [busBinderRegistry] register.");
+        return busBinderRegistry;
     }
 
-    /**
-     * 把 dispatcher 订阅到 inbound 通道。
-     */
     @Bean
-    public BusInboundWiring busInboundWiring(BusChannels channels, BusMessageDispatcher dispatcher) {
-        return new BusInboundWiring(channels, dispatcher);
+    public BusBindingLifecycle busBindingLifecycle(BusProperties props,
+                                                   BindingResolver resolver,
+                                                   BusChannels channels,
+                                                   BusBinderRegistry registry) {
+        BusBindingLifecycle busBindingLifecycle = new BusBindingLifecycle(props, resolver, channels, registry);
+        log.trace("[Goya] |- component [framework] GoyaBusAutoConfiguration |- bean [busBindingLifecycle] register.");
+        return busBindingLifecycle;
     }
 
-    /**
-     * 把默认错误日志订阅者订阅到 error 通道。
-     */
     @Bean
-    public BusErrorWiring busErrorWiring(BusChannels channels, BusErrorLogger logger) {
-        return new BusErrorWiring(channels, logger);
+    @ConditionalOnMissingBean
+    public BusErrorLogger busErrorLogger() {
+        BusErrorLogger busErrorLogger = new BusErrorLogger();
+        log.trace("[Goya] |- component [framework] GoyaBusAutoConfiguration |- bean [busErrorLogger] register.");
+        return busErrorLogger;
     }
 
-    /**
-     * inbound wiring：独立成 bean，便于未来扩展（比如增加拦截器/过滤器）。
-     */
-    public static final class BusInboundWiring {
-        public BusInboundWiring(BusChannels channels, BusMessageDispatcher dispatcher) {
-            channels.inbound().subscribe(dispatcher);
-        }
+    @Bean
+    public BusErrorSubscriber busErrorSubscriber(BusChannels channels, BusErrorLogger logger) {
+        BusErrorSubscriber busErrorSubscriber = new BusErrorSubscriber(channels, logger);
+        log.trace("[Goya] |- component [framework] GoyaBusAutoConfiguration |- bean [busErrorSubscriber] register.");
+        return busErrorSubscriber;
     }
 
-    /**
-     * error wiring：独立成 bean，便于未来扩展（比如多个订阅者、按 stage 分流等）。
-     */
-    public static final class BusErrorWiring {
-        public BusErrorWiring(BusChannels channels, BusErrorLogger logger) {
+    public static final class BusErrorSubscriber {
+        public BusErrorSubscriber(BusChannels channels, BusErrorLogger logger) {
             channels.error().subscribe(logger);
         }
+    }
+
+    // ---------------- Event 默认实现（Spring Event） ----------------
+
+    @Bean
+    @ConditionalOnMissingBean
+    public BusEventPublisher springBusEventPublisher(ApplicationEventPublisher publisher) {
+        SpringBusEventPublisher springBusEventPublisher = new SpringBusEventPublisher(publisher);
+        log.trace("[Goya] |- component [framework] GoyaBusAutoConfiguration |- bean [springBusEventPublisher] register.");
+        return springBusEventPublisher;
+    }
+
+    // ---------------- Cloud Stream：可选 StreamBridge binder ----------------
+
+    @Bean
+    @ConditionalOnClass(name = "org.springframework.cloud.stream.function.StreamBridge")
+    @ConditionalOnProperty(prefix = PropertyConst.PROPERTY_BUS, name = "prefer-stream-bridge", havingValue = "true")
+    public BusBinder streamBridgeBusBinder(Object streamBridge, BusChannels channels) {
+        StreamBridgeBusBinder streamBridgeBusBinder = new StreamBridgeBusBinder(streamBridge, channels);
+        log.trace("[Goya] |- component [framework] GoyaBusAutoConfiguration |- bean [streamBridgeBusBinder] register.");
+        return streamBridgeBusBinder;
+    }
+
+    @Bean
+    @ConditionalOnClass(name = "org.springframework.cloud.stream.function.StreamBridge")
+    public BusStreamInboundAdapter busStreamInboundAdapter(BusChannels channels) {
+        BusStreamInboundAdapter busStreamInboundAdapter = new BusStreamInboundAdapter(channels);
+        log.trace("[Goya] |- component [framework] GoyaBusAutoConfiguration |- bean [busStreamInboundAdapter] register.");
+        return busStreamInboundAdapter;
     }
 }

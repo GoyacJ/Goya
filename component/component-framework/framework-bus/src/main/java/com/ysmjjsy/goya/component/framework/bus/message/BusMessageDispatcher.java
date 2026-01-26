@@ -43,10 +43,7 @@ public final class BusMessageDispatcher implements MessageHandler {
 
             channels.error().send(new ErrorMessage(ex, headers));
 
-            // 继续抛出，保证容器能感知失败（从而触发官方重试/DLQ/回滚等语义）
-            if (ex instanceof MessagingException me) {
-                throw me;
-            }
+            if (ex instanceof MessagingException me) throw me;
             throw new MessagingException(message, ex);
         }
     }

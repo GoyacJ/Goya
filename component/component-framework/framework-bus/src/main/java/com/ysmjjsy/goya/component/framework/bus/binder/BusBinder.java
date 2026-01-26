@@ -3,7 +3,11 @@ package com.ysmjjsy.goya.component.framework.bus.binder;
 import org.springframework.messaging.SubscribableChannel;
 
 /**
- * <p>Binder plugs transport implementations into the Integration skeleton</p>
+ * <p>Binder SPI：不同实现（local/kafka/rabbit/stream）通过它接入 Bus</p>
+ * <p>
+ * 约定：
+ * - bindOutbound：把 outboundChannel 的消息发送到外部系统（或本地）
+ * - bindInbound：把外部系统的消息投递到 inboundChannel
  *
  * @author goya
  * @since 2026/1/26 23:43
