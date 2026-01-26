@@ -33,7 +33,7 @@ import java.util.Arrays;
  *
  * @author goya
  * @see CodeEnum
- * @see EnumResolverUtils
+ * @see EnumKit
  * @since 2025/12/20
  */
 @Slf4j
@@ -51,10 +51,6 @@ public class StringToEnumConverterFactory implements ConverterFactory<String, En
      */
     private record StringToEnumConverter<T extends Enum<T> & CodeEnum<C>, C extends Serializable>(Class<T> enumType)
             implements Converter<String, T> {
-
-        private StringToEnumConverter(Class<T> enumType) {
-            this.enumType = enumType;
-        }
 
         @Override
         public T convert(String source) {

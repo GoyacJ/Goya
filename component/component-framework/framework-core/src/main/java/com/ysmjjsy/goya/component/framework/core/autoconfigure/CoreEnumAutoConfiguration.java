@@ -6,12 +6,12 @@ import com.ysmjjsy.goya.component.framework.core.enums.dict.CodeEnumClasspathSca
 import com.ysmjjsy.goya.component.framework.core.enums.dict.DefaultEnumDictionaryService;
 import com.ysmjjsy.goya.component.framework.core.enums.dict.EnumDictionaryRegistry;
 import com.ysmjjsy.goya.component.framework.core.enums.dict.EnumDictionaryService;
+import com.ysmjjsy.goya.component.framework.core.i18n.I18nResolver;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 
 import java.util.Set;
@@ -76,17 +76,15 @@ public class CoreEnumAutoConfiguration {
     /**
      * 枚举字典服务（i18n + 缓存）。
      *
-     * @param registry registry
-     * @param messageSource MessageSource
-     * @param localeProvider LocaleProvider
+     * @param registry     registry
+     * @param i18nResolver i18nResolver
      * @return service
      */
     @Bean
     @ConditionalOnMissingBean
     public EnumDictionaryService enumDictionaryService(EnumDictionaryRegistry registry,
-                                                       MessageSource messageSource,
-                                                       LocaleProvider localeProvider) {
-        DefaultEnumDictionaryService service = new DefaultEnumDictionaryService(registry, messageSource, localeProvider);
+                                                       I18nResolver i18nResolver) {
+        DefaultEnumDictionaryService service = new DefaultEnumDictionaryService(registry, i18nResolver);
         log.trace("[Goya] |- component [framework] CoreI18nAutoConfiguration |- bean [enumDictionaryService] register.");
         return service;
     }
