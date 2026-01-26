@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.function.Supplier;
 
 /**
- * <p></p>
+ * <p>抽象响应处理器</p>
  *
  * @author goya
  * @since 2025/12/29 18:59
