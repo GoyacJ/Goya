@@ -1,4 +1,3 @@
----
 spring:
   sql:
     init:
@@ -41,25 +40,94 @@ spring:
       password: goya123
       port: 14240
       timeout: 10000
-      repositories:
-        enabled: false
-      lettuce:
-        pool:
-          max-active: 10
-          max-wait: 10000
-          max-idle: 10
-          min-idle: 5
-    redisson:
-      enabled: false
-      single-server-config:
-        address: redis://${spring.data.redis.host}:${spring.data.redis.port}
-        password: ${spring.data.redis.password}
-
+---
+# Spring Cloud Stream Kafka 配置
+spring:
+  # Kafka 连接配置
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:39.105.2.5:14270}  # Kafka 服务器地址（可通过环境变量覆盖）
+    # Producer 配置
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all  # 等待所有副本确认（保证可靠性）
+      retries: 3  # 重试次数
+      batch-size: 16384  # 批次大小（字节）
+      linger-ms: 10  # 等待时间（毫秒）
+      buffer-memory: 33554432  # 缓冲区内存（字节，32MB）
+      compression-type: snappy  # 压缩类型
+      properties:
+        enable.idempotence: true  # 启用幂等性（避免重复消息）
+    # Consumer 配置
+    consumer:
+      group-id: ${spring.application.name}  # Consumer group ID
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      auto-offset-reset: earliest  # 从最早的消息开始消费（可选：latest, earliest, none）
+      enable-auto-commit: false  # 禁用自动提交，使用手动 ACK（由 SCS 管理）
+      max-poll-records: 500  # 每次拉取的最大记录数
+      fetch-min-size: 1024  # 最小拉取大小（字节）
+      fetch-max-wait: 500  # 最大等待时间（毫秒）
+      properties:
+        spring.json.trusted.packages: "*"  # 信任所有包（生产环境建议指定具体包名）
+        # 删除 spring.json.type.mapping，不需要类型映射（格式错误会导致反序列化失败）
+  cloud:
+    function:
+      definition: kafkaBusEventConsumer  # 注册函数式 Consumer
+    stream:
+      # Kafka Binder 配置
+      kafka:
+        binder:
+          brokers: ${spring.kafka.bootstrap-servers}  # Kafka brokers（继承自 spring.kafka.bootstrap-servers）
+          # zk-nodes: localhost:2181  # ZooKeeper 地址（Kafka 2.8+ 不需要）
+          auto-create-topics: true  # 自动创建 topic（生产环境建议设为 false）
+          auto-add-partitions: false  # 不自动增加分区
+          replication-factor: 1  # 副本因子（生产环境建议 3）
+          min-partition-count: 1  # 最小分区数
+          # Consumer 连接配置（通过 consumer-properties）
+          consumer-properties:
+            socket.connection.setup.timeout.ms: 10000  # 连接超时（毫秒）
+            request.timeout.ms: 30000  # 请求超时（毫秒）
+            metadata.max.age.ms: 300000  # 元数据最大年龄（毫秒）
+          # Producer 连接配置（通过 producer-properties）
+          producer-properties:
+            socket.connection.setup.timeout.ms: 10000  # 连接超时（毫秒）
+            request.timeout.ms: 30000  # 请求超时（毫秒）
+          # 事务配置
+          transaction:
+            transaction-id-prefix: ${spring.application.name}-tx-  # 事务 ID 前缀
+            producer:
+              enable-idempotence: true  # 启用幂等性
+      bindings:
+        kafkaBusEventConsumer-in-0:  # Consumer binding
+          destination: ${spring.application.name}  # Kafka topic
+          group: ${spring.application.name}  # Consumer group
+          content-type: application/json  # 消息内容类型
+          consumer:
+            use-native-decoding: false
+            max-attempts: 3  # 最大重试次数（SCS 提供）
+            back-off-initial-interval: 1000  # 初始退避间隔（毫秒）
+            back-off-max-interval: 10000  # 最大退避间隔（毫秒）
+            back-off-multiplier: 2.0  # 退避乘数
+            concurrency: 1  # 并发消费者数量（可根据分区数调整）
+          producer:
+            partition-key-expression: headers['x-goya-partition-key']  # 分区键表达式（SCS 提供）
+            partition-count: 3  # 分区数量
 ---
 logging:
-  config: classpath:logback-plus.xml
-  file:
-    name: logs/${spring.application.name}.log
   level:
-    root: info
-    com.ysmjjsy.goya: info
+    com.ysmjjsy.goya: debug
+
+---
+goya:
+  crypto:
+    strategy: standard
+  cache:
+    cache:
+      maximum-size: 100000
+      default-ttl: PT5M
+  bus:
+    stream:
+      destination:
+        default-template: ${spring.application.name}
+      default-remote-bus: REMOTE_KAFKA

@@ -1,18 +1,11 @@
 server:
   port: 8101
-  error:
-    whitelabel:
-      enabled: false
-    include-exception: true
-    include-message: always
-    include-stacktrace: always
-    include-binding-errors: always
 
 ---
 # spring
 spring:
   application:
-    name:  @artifactId@
+    name: @artifactId@
   profiles:
     active: @profile@
   thymeleaf:
@@ -112,22 +105,6 @@ spring:
         prepStmtCacheSize: 250
         prepStmtCacheSqlLimit: 2048
         cachePrepStmts: true
----
-jetcache:
-  remote:
-    default:
-      type: redis.lettuce
-      keyConvertor: fastjson2
-      broadcastChannel: none
-      valueEncoder: java
-      valueDecoder: java
-      poolConfig:
-        minIdle: ${spring.data.redis.lettuce.pool.min-idle}
-        maxIdle: ${spring.data.redis.lettuce.pool.max-idle}
-        maxTotal: ${spring.data.redis.lettuce.pool.max-active}
-        maxWait: ${spring.data.redis.lettuce.pool.max-wait}
-      uri:
-        - redis://${spring.data.redis.password}@${spring.data.redis.host}:${spring.data.redis.port}/${spring.data.redis.database}
 
 ---
 springdoc:

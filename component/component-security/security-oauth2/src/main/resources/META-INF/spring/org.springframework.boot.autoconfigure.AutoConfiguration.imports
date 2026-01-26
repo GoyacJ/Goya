@@ -1,0 +1,2 @@
+com.ysmjjsy.goya.component.security.oauth2.configuration.SecurityOAuth2AutoConfiguration
+com.ysmjjsy.goya.component.security.oauth2.configuration.SecurityAuthorizationServerAutoConfiguration

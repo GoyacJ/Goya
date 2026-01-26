@@ -1,0 +1,103 @@
+# Goya 项目 Cursor 规则
+
+## 项目简介
+Goya 是一个企业级开发框架，采用前后端分离架构：
+- **Goya/**: Java 后端框架（Spring Boot 4.0.1 + Java 25）
+- **Goya-Web/**: Vue 3 前端管理系统（TypeScript + Vite + pnpm Monorepo）
+
+## 核心技术栈
+
+### 后端 (Goya/)
+- Java 25 + Spring Boot 4.0.1 + Spring Cloud 2025.1.0
+- MyBatis Plus 3.5.15 + MySQL/PostgreSQL
+- Spring AI 2.0.0-M1 + LangChain4j 1.9.1
+- Nacos 3.1.1 + Redisson 4.0.0
+- MapStruct 1.6.3 + Lombok 1.18.42
+
+### 前端 (Goya-Web/)
+- Vue 3.5.24 + TypeScript + Vite
+- pnpm 10.x + Turborepo (Monorepo)
+- 多UI框架：Ant Design Vue / Element Plus / Naive UI
+- Pinia + VueRouter + Tailwind CSS
+
+## 代码规范
+
+### Java 命名
+- 包名：`com.ysmjjsy.goya.{module}.{layer}`
+- 属性：**camelCase**（禁止下划线）
+- 常量接口：`I*Constants`
+- 枚举：`*Enum`
+- 异常：`*Exception`
+- 配置类：`*AutoConfiguration`
+
+### Java 必须使用的注解
+```java
+@Slf4j                          // 日志（必须）
+@RequiredArgsConstructor        // 构造器注入
+@Transactional(rollbackFor = Exception.class)  // 事务
+```
+
+### Java 日志格式
+```java
+log.debug("[Goya] |- component [xxx] XxxAutoConfiguration auto configure.");
+log.trace("[Goya] |- component [xxx] |- bean [xxxService] register.");
+```
+
+### Java 注释规范
+- 所有注释使用**中文**
+- 类注释：功能描述 + 使用示例 + @author goya + @since 日期 + @see
+- 方法注释：功能描述 + @param + @return + @throws
+- 参考官方文档时注明链接
+
+### TypeScript/Vue 规范
+- 优先使用 `<script setup>` 语法
+- Store 使用 Setup 风格 (`defineStore('name', () => { ... })`)
+- API 函数命名：`xxxApi()` (如 `loginApi`, `getUserInfoApi`)
+- Store 命名：`use*Store` (如 `useAuthStore`)
+
+## 项目结构
+
+### 后端模块
+```
+Goya/
+├── dependencies/    # 版本管理BOM
+├── component/       # 公共组件（common, web, auth, cache, database...）
+├── security/        # 安全模块（core, authentication, resource）
+├── ai/              # AI模块（mcp, model, rag, spring, video）
+├── platform/        # 平台（monolith单体, distributed分布式）
+├── oss/             # 对象存储（aliyun, minio, s3）
+└── starter/         # 自动配置启动器
+```
+
+### 前端结构
+```
+Goya-Web/
+├── apps/            # 应用（web-antd, web-ele, web-naive, backend-mock）
+├── packages/        # 共享包（@core, effects, stores, types, utils...）
+└── internal/        # 内部工具（lint-configs, vite-config, tsconfig...）
+```
+
+## 设计模式
+- **Builder 模式**：复杂对象构建（Response, SecurityUser）
+- **策略模式**：IStrategy + StrategyChoose
+- **责任链模式**：IChainHandler + ChainContext
+
+## 响应格式
+```json
+{
+  "code": "0200",
+  "message": "操作成功",
+  "isSuccess": true,
+  "timestamp": "2025-12-21 00:00:00",
+  "data": {},
+  "traceId": "xxx",
+  "path": "/api/xxx"
+}
+```
+
+## MCP 工具使用
+- **context7**: 查询官方框架文档（Spring Boot, Vue, TypeScript等）
+
+## 详细规范
+完整规范请参考：`.cursor/rules/project-rules.mdc`
+

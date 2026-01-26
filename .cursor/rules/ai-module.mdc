@@ -1,0 +1,334 @@
+---
+alwaysApply: false
+globs:
+  - "**/ai/**/*.java"
+---
+
+# AI 模块专项规则
+
+## 适用范围
+本规则适用于所有 AI 相关的代码开发，包括 Spring AI、LangChain4j、RAG 等。
+
+## 核心原则
+
+1. **统一接口**：提供统一的 AI 调用接口
+2. **模型无关**：业务代码不依赖特定模型
+3. **错误处理**：AI 调用失败不影响核心业务
+4. **成本控制**：合理控制 Token 使用
+
+## Prompt 编写规范
+
+### Prompt 模板
+
+```java
+/**
+ * Prompt 模板
+ * <p>
+ * - 使用清晰的指令
+ * - 提供上下文信息
+ * - 指定输出格式
+ */
+public String buildPrompt(String query, List<Document> context) {
+    return """
+        你是一个专业的技术助手。请根据以下上下文信息回答用户问题。
+        
+        上下文信息：
+        {context}
+        
+        用户问题：
+        {query}
+        
+        请用中文回答，保持专业和准确。如果上下文中没有相关信息，请明确说明。
+        """.replace("{context}", formatContext(context))
+           .replace("{query}", query);
+}
+```
+
+### Few-Shot 示例
+
+```java
+/**
+ * Few-Shot Prompt
+ * <p>
+ * 提供示例帮助模型理解任务
+ */
+public String buildFewShotPrompt() {
+    return """
+        将以下文本分类为正面、负面或中性。
+        
+        示例：
+        输入：这个产品非常好用
+        输出：正面
+        
+        输入：质量太差了
+        输出：负面
+        
+        输入：今天天气不错
+        输出：中性
+        
+        现在请分类：{input}
+        """;
+}
+```
+
+## RAG 开发规范
+
+### 文档加载
+
+```java
+/**
+ * 加载文档
+ * <p>
+ * 支持多种格式：PDF、Word、Markdown、TXT
+ */
+@Service
+public class DocumentLoaderService {
+    
+    public List<Document> loadDocuments(String filePath) {
+        String extension = FilenameUtils.getExtension(filePath);
+        
+        return switch (extension.toLowerCase()) {
+            case "pdf" -> loadPdf(filePath);
+            case "docx" -> loadWord(filePath);
+            case "md" -> loadMarkdown(filePath);
+            case "txt" -> loadText(filePath);
+            default -> throw new UnsupportedFormatException("不支持的文件格式: " + extension);
+        };
+    }
+}
+```
+
+### 文档分块
+
+```java
+/**
+ * 文档分块
+ * <p>
+ * - 块大小：500-1000 tokens
+ * - 重叠：50-100 tokens
+ * - 保持语义完整性
+ */
+@Service
+public class TextSplitterService {
+    
+    private static final int CHUNK_SIZE = 800;
+    private static final int CHUNK_OVERLAP = 100;
+    
+    public List<String> split(String text) {
+        TextSplitter splitter = new RecursiveCharacterTextSplitter(
+            CHUNK_SIZE,
+            CHUNK_OVERLAP
+        );
+        return splitter.split(text);
+    }
+}
+```
+
+### 向量存储
+
+```java
+/**
+ * 向量存储
+ * <p>
+ * - 使用高质量 Embedding 模型
+ * - 添加元数据（标题、来源、时间等）
+ * - 定期更新索引
+ */
+@Service
+public class VectorStoreService {
+    
+    @Autowired
+    private EmbeddingClient embeddingClient;
+    
+    @Autowired
+    private VectorStore vectorStore;
+    
+    public void addDocuments(List<Document> documents) {
+        // 1. 生成向量
+        List<float[]> embeddings = documents.stream()
+            .map(doc -> embeddingClient.embed(doc.getContent()))
+            .toList();
+        
+        // 2. 存储
+        for (int i = 0; i < documents.size(); i++) {
+            Document doc = documents.get(i);
+            float[] embedding = embeddings.get(i);
+            
+            vectorStore.add(VectorDocument.builder()
+                .id(UUID.randomUUID().toString())
+                .content(doc.getContent())
+                .embedding(embedding)
+                .metadata(doc.getMetadata())
+                .build());
+        }
+        
+        log.info("[Goya] |- Added {} documents to vector store", documents.size());
+    }
+}
+```
+
+### RAG 查询
+
+```java
+/**
+ * RAG 查询
+ * <p>
+ * 流程：查询 -> 检索 -> 重排序 -> 生成
+ */
+@Service
+public class RagService {
+    
+    @Autowired
+    private VectorStoreService vectorStoreService;
+    
+    @Autowired
+    private ChatClient chatClient;
+    
+    public String query(String question) {
+        // 1. 检索相关文档（Top-K）
+        List<Document> relevantDocs = vectorStoreService.search(question, 5);
+        
+        // 2. 重排序（可选）
+        relevantDocs = rerank(question, relevantDocs);
+        
+        // 3. 构建 Prompt
+        String prompt = buildRagPrompt(question, relevantDocs);
+        
+        // 4. 生成答案
+        String answer = chatClient.call(prompt);
+        
+        log.info("[Goya] |- RAG query completed: question={}", question);
+        
+        return answer;
+    }
+    
+    private String buildRagPrompt(String question, List<Document> docs) {
+        String context = docs.stream()
+            .map(Document::getContent)
+            .collect(Collectors.joining("\n\n"));
+        
+        return """
+            基于以下上下文信息回答问题：
+            
+            上下文：
+            %s
+            
+            问题：%s
+            
+            请提供准确、详细的答案。
+            """.formatted(context, question);
+    }
+}
+```
+
+## 成本控制
+
+### Token 计数
+
+```java
+/**
+ * Token 计数
+ * <p>
+ * 在调用前估算 Token 数量，避免超出限制
+ */
+public int estimateTokens(String text) {
+    // 粗略估算：1 token ≈ 4 字符（英文）或 1 字符（中文）
+    int chineseChars = text.replaceAll("[^\\u4e00-\\u9fa5]", "").length();
+    int otherChars = text.length() - chineseChars;
+    return chineseChars + otherChars / 4;
+}
+```
+
+### 请求限流
+
+```java
+/**
+ * AI 请求限流
+ * <p>
+ * 防止成本失控
+ */
+@Service
+public class AiRateLimiter {
+    
+    private final RateLimiter rateLimiter = RateLimiter.create(10.0);  // 10 requests/second
+    
+    public <T> T callWithLimit(Supplier<T> supplier) {
+        if (!rateLimiter.tryAcquire(Duration.ofSeconds(5))) {
+            throw new RateLimitExceededException("AI 请求频率超限");
+        }
+        return supplier.get();
+    }
+}
+```
+
+## 错误处理
+
+### 重试机制
+
+```java
+/**
+ * AI 调用重试
+ * <p>
+ * 网络错误、超时等可重试
+ * API 错误、无效参数等不重试
+ */
+@Service
+public class AiService {
+    
+    @Retryable(
+        value = {RestClientException.class, TimeoutException.class},
+        maxAttempts = 3,
+        backoff = @Backoff(delay = 1000, multiplier = 2)
+    )
+    public String chatWithRetry(String message) {
+        return chatClient.call(message);
+    }
+}
+```
+
+### 降级策略
+
+```java
+/**
+ * AI 调用降级
+ * <p>
+ * AI 失败时使用规则引擎或默认回复
+ */
+@Service
+public class AiServiceWithFallback {
+    
+    public String chat(String message) {
+        try {
+            return chatClient.call(message);
+        } catch (Exception e) {
+            log.error("[Goya] |- AI call failed, using fallback", e);
+            return fallbackResponse(message);
+        }
+    }
+    
+    private String fallbackResponse(String message) {
+        return "抱歉，AI 服务暂时不可用，请稍后再试。";
+    }
+}
+```
+
+## 最佳实践
+
+1. ✅ **缓存结果**：相同问题复用答案
+2. ✅ **流式输出**：提升用户体验
+3. ✅ **异步处理**：长时间任务异步执行
+4. ✅ **监控告警**：监控 Token 使用和成本
+5. ✅ **A/B 测试**：对比不同 Prompt 效果
+
+## 禁止事项
+
+1. ❌ **禁止在 Prompt 中包含敏感信息**（密码、密钥）
+2. ❌ **禁止无限制调用 AI**（必须限流）
+3. ❌ **禁止忽略 AI 调用失败**（必须有降级方案）
+4. ❌ **禁止硬编码 API Key**（使用配置）
+
+## 参考资料
+
+- [Spring AI 文档](https://docs.spring.io/spring-ai/)
+- [LangChain4j 文档](https://docs.langchain4j.dev/)
+- [OpenAI Best Practices](https://platform.openai.com/docs/guides/prompt-engineering)

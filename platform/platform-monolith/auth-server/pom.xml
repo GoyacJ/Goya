@@ -10,9 +10,25 @@
     </parent>
 
     <artifactId>auth-server</artifactId>
+    <description>认证中心</description>
 
     <dependencies>
-
+        <dependency>
+            <groupId>com.ysmjjsy.goya</groupId>
+            <artifactId>framework-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.ysmjjsy.goya</groupId>
+            <artifactId>bus-kafka-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.ysmjjsy.goya</groupId>
+            <artifactId>cache-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.ysmjjsy.goya</groupId>
+            <artifactId>security-authentication</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

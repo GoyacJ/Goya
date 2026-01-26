@@ -24,14 +24,13 @@ spring:
 ---
 # MyBatisPlus配置
 # https://baomidou.com/config/
-mybatis-plus:
-  # 多包名使用 例如 com.hzzhg.sewage.iam,com.hzzhg.sewage.iam
-  mapperPackage: com.ysmjjsy.goya.module.user.mapper
-  # 对应的 XML 文件位置
-  mapperLocations: classpath*:mapper/**/*Mapper.xml
-  # 实体扫描，多个package用逗号或者分号分隔
-  typeAliasesPackage: com.ysmjjsy.goya.module.user.domain
-
+#mybatis-plus:
+# 多包名使用 例如 com.hzzhg.sewage.iam,com.hzzhg.sewage.iam
+#  mapperPackage: com.ysmjjsy.goya.module.upms.**.repository
+# 对应的 XML 文件位置
+#  mapperLocations: classpath*:mapper/**/*Mapper.xml
+# 实体扫描，多个package用逗号或者分号分隔
+#  typeAliasesPackage: com.ysmjjsy.goya.module.upms.**.domain
 ---
 # Redis配置
 spring:
@@ -58,16 +57,9 @@ spring:
 
 ---
 logging:
-  config: classpath:logback-plus.xml
-  file:
-    name: logs/${spring.application.name}.log
   level:
-    root: warn
-    com.ysmjjsy.goya: warn
+    com.ysmjjsy.goya: info
 
 ---
-springdoc:
-  api-docs:
-    enabled: false
-  swagger-ui:
-    enabled: false
+platform:
+  locale: zh_cn
