@@ -1,7 +1,5 @@
 package com.ysmjjsy.goya.component.framework.cache.support;
 
-import java.util.concurrent.CompletableFuture;
-
 /**
  * <p>缓存布隆过滤器接口</p>
  * <p>用于缓存穿透防护，预判 key 是否可能存在</p>
@@ -22,21 +20,21 @@ import java.util.concurrent.CompletableFuture;
 public interface CacheBloomFilter {
 
     /**
-     * 检查 key 是否可能存在
+     * 判断元素是否可能存在。
      *
-     * @param cacheName 缓存名称
-     * @param key       缓存键
-     * @param <K>       键类型
-     * @return true 如果可能存在，false 如果肯定不存在
+     * @param name  过滤器名
+     * @param value 值
+     * @return true 表示“可能存在”；false 表示“一定不存在”
      */
-    <K> boolean mightContain(String cacheName, K key);
+    boolean contains(String name, Object value);
+
 
     /**
-     * 将 key 添加到布隆过滤器
+     * 添加元素。
      *
-     * @param cacheName 缓存名称
-     * @param key       缓存键
-     * @param <K>       键类型
+     * @param name  过滤器名
+     * @param value 值
+     * @return 是否添加成功（Redisson 语义：可能返回 true/false，通常用于表示位是否发生变化）
      */
-    <K> CompletableFuture<Void> putAsync(String cacheName, K key);
+    boolean add(String name, Object value);
 }

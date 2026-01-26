@@ -34,13 +34,13 @@
     <properties>
         <revision>1.0.0</revision>
         <!-- ======================== Spring & Cloud ======================== -->
-        <spring-boot-dependencies.version>4.0.1</spring-boot-dependencies.version>
+        <spring-boot-dependencies.version>4.0.2</spring-boot-dependencies.version>
         <spring-cloud-dependencies.version>2025.1.0</spring-cloud-dependencies.version>
         <springdoc.version>3.0.0</springdoc.version>
         <spring-boot-starter-aop.version>4.0.0-M2</spring-boot-starter-aop.version>
 
         <!-- ======================== ORM ======================== -->
-        <mybatis-plus.version>3.5.15</mybatis-plus.version>
+        <mybatis-plus.version>3.5.16</mybatis-plus.version>
         <mybatis.version>3.5.19</mybatis.version>
         <dynamic-ds.version>4.5.0</dynamic-ds.version>
         <opengauss-jdbc.version>6.0.2-og</opengauss-jdbc.version>
@@ -51,10 +51,10 @@
         <taos-jdbcdriver.version>3.7.9</taos-jdbcdriver.version>
 
         <!-- ======================== cache ======================== -->
-        <nacos.version>3.1.1</nacos.version>
-        <redisson.version>4.0.0</redisson.version>
+        <redisson.version>4.1.0</redisson.version>
 
         <!-- ======================== SDK ======================== -->
+        <nacos.version>3.1.1</nacos.version>
         <minio.version>8.6.0</minio.version>
         <software.amazon.awssdk.version>2.41.10</software.amazon.awssdk.version>
         <aws.lambda.java.version>1.4.0</aws.lambda.java.version>
@@ -215,6 +215,16 @@
             <dependency>
                 <groupId>org.redisson</groupId>
                 <artifactId>redisson-spring-boot-starter</artifactId>
+                <version>${redisson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.redisson</groupId>
+                <artifactId>redisson-spring-cache</artifactId>
+                <version>${redisson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.redisson</groupId>
+                <artifactId>redisson-spring-transaction</artifactId>
                 <version>${redisson.version}</version>
             </dependency>
 
