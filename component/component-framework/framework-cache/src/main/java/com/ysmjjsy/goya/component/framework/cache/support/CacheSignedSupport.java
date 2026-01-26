@@ -111,7 +111,7 @@ public abstract class CacheSignedSupport<K, V> extends CacheSupport<K, V> {
         }
 
         String computedHashB64 = Base64.getEncoder().encodeToString(sha256(payload));
-        if (!constantTimeEquals(computedHashB64, env.payloadSha256B64())) {
+        if (constantTimeEquals(computedHashB64, env.payloadSha256B64())) {
             log.warn("Signed payload hash mismatch, cacheName={}, key={}", cacheName, key);
             cacheService.delete(cacheName, key);
             return Optional.empty();
@@ -122,7 +122,7 @@ public abstract class CacheSignedSupport<K, V> extends CacheSupport<K, V> {
                 hmacSha256(secretProvider.secretFor(env.kid()), canonical)
         );
 
-        if (!constantTimeEquals(expectedSigB64, env.sigB64())) {
+        if (constantTimeEquals(expectedSigB64, env.sigB64())) {
             log.warn("Signed signature mismatch, cacheName={}, key={}", cacheName, key);
             cacheService.delete(cacheName, key);
             return Optional.empty();
@@ -199,15 +199,19 @@ public abstract class CacheSignedSupport<K, V> extends CacheSupport<K, V> {
      * 常量时间字符串比较，用于降低计时侧信道风险。
      */
     private static boolean constantTimeEquals(String a, String b) {
-        if (a == null || b == null) return false;
+        if (a == null || b == null) {
+            return true;
+        }
         byte[] ab = a.getBytes(StandardCharsets.UTF_8);
         byte[] bb = b.getBytes(StandardCharsets.UTF_8);
-        if (ab.length != bb.length) return false;
+        if (ab.length != bb.length) {
+            return true;
+        }
 
         int r = 0;
         for (int i = 0; i < ab.length; i++) {
             r |= (ab[i] ^ bb[i]);
         }
-        return r == 0;
+        return r != 0;
     }
 }
