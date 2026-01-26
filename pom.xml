@@ -134,17 +134,12 @@
             </dependency>
             <dependency>
                 <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>bus-core</artifactId>
+                <artifactId>component-kafka</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>bus-stream</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>bus-kafka-boot-starter</artifactId>
+                <artifactId>component-rabbitmq</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
