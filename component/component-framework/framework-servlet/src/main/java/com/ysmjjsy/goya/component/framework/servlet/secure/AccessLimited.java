@@ -1,4 +1,4 @@
-package com.ysmjjsy.goya.component.framework.servlet.idempotent;
+package com.ysmjjsy.goya.component.framework.servlet.secure;
 
 import java.lang.annotation.*;
 import java.time.Duration;

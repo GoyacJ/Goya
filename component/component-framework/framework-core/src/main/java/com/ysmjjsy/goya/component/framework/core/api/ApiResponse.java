@@ -3,6 +3,8 @@ package com.ysmjjsy.goya.component.framework.core.api;
 import com.ysmjjsy.goya.component.framework.common.error.CommonErrorCode;
 import com.ysmjjsy.goya.component.framework.common.error.ErrorCode;
 import com.ysmjjsy.goya.component.framework.common.pojo.IResponse;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.io.Serial;
 import java.time.Instant;
@@ -18,6 +20,7 @@ import java.util.*;
  * @param traceId     链路追踪标识（可为空）
  * @param timestamp   响应时间（UTC）
  * @param data        成功数据（失败时通常为空）
+ * @param path        请求地址
  * @param meta        扩展信息（非空，默认空 Map）
  * @param fieldErrors 字段级错误（非空，默认空 List）
  * @param <T>         数据类型
@@ -31,6 +34,7 @@ public record ApiResponse<T>(
         String traceId,
         Instant timestamp,
         T data,
+        String path,
         Map<String, Object> meta,
         List<ApiFieldError> fieldErrors
 ) implements IResponse {
@@ -89,6 +93,7 @@ public record ApiResponse<T>(
                 traceId,
                 this.timestamp,
                 this.data,
+                this.path,
                 this.meta,
                 this.fieldErrors
         );
@@ -108,6 +113,7 @@ public record ApiResponse<T>(
                 this.traceId,
                 this.timestamp,
                 (T) newData,
+                this.path,
                 this.meta,
                 this.fieldErrors);
     }
@@ -165,6 +171,7 @@ public record ApiResponse<T>(
                 traceId,
                 Instant.now(),
                 data,
+                getCurrentRequestPath(),
                 Map.of(),
                 List.of()
         );
@@ -205,6 +212,7 @@ public record ApiResponse<T>(
                 traceId,
                 Instant.now(),
                 data,
+                getCurrentRequestPath(),
                 meta,
                 List.of()
         );
@@ -248,9 +256,27 @@ public record ApiResponse<T>(
                 traceId,
                 Instant.now(),
                 null,
+                getCurrentRequestPath(),
                 Map.of(),
                 List.of()
         );
+    }
+
+    public Map<String, Object> toErrorModel() {
+        Map<String, Object> result = createModel();
+        result.put("fieldErrors", fieldErrors());
+        return result;
+    }
+
+    private Map<String, Object> createModel() {
+        Map<String, Object> result = HashMap.newHashMap(8);
+        result.put("code", code());
+        result.put("message", message());
+        result.put("path", path());
+        result.put("timestamp", timestamp());
+        result.put("traceId", traceId());
+        result.put("meta", meta());
+        return result;
     }
 
     // =========================
@@ -374,6 +400,7 @@ public record ApiResponse<T>(
                     traceId,
                     Instant.now(),
                     data,
+                    getCurrentRequestPath(),
                     meta,
                     List.of()
             );
@@ -505,9 +532,20 @@ public record ApiResponse<T>(
                     traceId,
                     Instant.now(),
                     null,
+                    getCurrentRequestPath(),
                     meta,
                     fieldErrors
             );
+        }
+    }
+
+    private static String getCurrentRequestPath() {
+        try {
+            return Optional.ofNullable(RequestContextHolder.getRequestAttributes())
+                    .map(attr -> ((ServletRequestAttributes) attr).getRequest().getRequestURI())
+                    .orElse(null);
+        } catch (Exception e) {
+            return null;
         }
     }
 }

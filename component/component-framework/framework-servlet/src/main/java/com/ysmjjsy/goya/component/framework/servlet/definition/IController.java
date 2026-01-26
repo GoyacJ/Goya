@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.framework.servlet.definition;
 
-import com.ysmjjsy.goya.component.framework.pojo.PageVO;
-import com.ysmjjsy.goya.component.web.response.Response;
+import com.ysmjjsy.goya.component.framework.core.api.ApiResponse;
+import com.ysmjjsy.goya.component.framework.core.pojo.PageVO;
 
 import java.io.Serializable;
 import java.util.List;
@@ -15,14 +15,13 @@ import java.util.Map;
  */
 public interface IController {
 
-
     /**
      * 数据实体转换为统一响应实体
      *
-     * @return {@link Response} Entity
+     * @return {@link com.ysmjjsy.goya.component.framework.core.api.ApiResponse} Entity
      */
-    default Response<Void> response() {
-        return Response.success();
+    default ApiResponse<Void> response() {
+        return ApiResponse.ok();
     }
 
     /**
@@ -30,10 +29,10 @@ public interface IController {
      *
      * @param domain 数据实体
      * @param <D>    {@link Serializable} 子类型
-     * @return {@link Response} Entity
+     * @return {@link ApiResponse} Entity
      */
-    default <D extends Serializable> Response<D> response(D domain) {
-        return Response.success(domain);
+    default <D extends Serializable> ApiResponse<D> response(D domain) {
+        return ApiResponse.ok(domain);
     }
 
     /**
@@ -41,10 +40,10 @@ public interface IController {
      *
      * @param domains 数据实体 List
      * @param <D>     {@link Serializable} 子类型
-     * @return {@link Response} List
+     * @return {@link ApiResponse} List
      */
-    default <D extends Serializable> Response<List<D>> response(List<D> domains) {
-        return Response.success(domains);
+    default <D extends Serializable> ApiResponse<List<D>> response(List<D> domains) {
+        return ApiResponse.ok(domains);
     }
 
     /**
@@ -52,30 +51,30 @@ public interface IController {
      *
      * @param domains 数组
      * @param <T>     数组类型
-     * @return {@link Response} List
+     * @return {@link ApiResponse} List
      */
-    default <T> Response<T[]> response(T[] domains) {
-        return Response.success(domains);
+    default <T> ApiResponse<T[]> response(T[] domains) {
+        return ApiResponse.ok(domains);
     }
 
     /**
      * 数据 Map 转换为统一响应实体
      *
      * @param map 数据 Map
-     * @return {@link Response} Map
+     * @return {@link ApiResponse} Map
      */
-    default Response<Map<String, Object>> response(Map<String, Object> map) {
-        return Response.success(map);
+    default ApiResponse<Map<String, Object>> response(Map<String, Object> map) {
+        return ApiResponse.ok(map);
     }
 
     /**
      * 数据操作结果转换为统一响应实体
      *
      * @param status 操作状态
-     * @return {@link Response} String
+     * @return {@link ApiResponse} String
      */
-    default Response<Boolean> response(Boolean status) {
-        return Response.success(status);
+    default ApiResponse<Boolean> response(Boolean status) {
+        return ApiResponse.ok(status);
     }
 
     /**
@@ -83,9 +82,9 @@ public interface IController {
      *
      * @param page 数据实体
      * @param <E>  {@link Serializable} 子类型
-     * @return {@link Response} Entity
+     * @return {@link ApiResponse} Entity
      */
-    default <E extends Serializable> Response<PageVO<E>> response(PageVO<E> page) {
-        return Response.success(page);
+    default <E extends Serializable> ApiResponse<PageVO<E>> response(PageVO<E> page) {
+        return ApiResponse.ok(page);
     }
 }

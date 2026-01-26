@@ -1,6 +1,6 @@
-package com.ysmjjsy.goya.component.framework.servlet.secure;
+package com.ysmjjsy.goya.component.framework.servlet.xss;
 
-import com.ysmjjsy.goya.component.web.utils.XssUtils;
+import com.ysmjjsy.goya.component.framework.servlet.utils.XssUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import org.apache.commons.lang3.ArrayUtils;

@@ -1,9 +1,9 @@
 package com.ysmjjsy.goya.component.framework.servlet.scan;
 
-import com.ysmjjsy.goya.component.core.constants.SymbolConst;
-import com.ysmjjsy.goya.component.core.utils.GoyaStringUtils;
-import com.ysmjjsy.goya.component.framework.processor.ApplicationInitializingEvent;
-import com.ysmjjsy.goya.component.web.configuration.properties.WebProperties;
+import com.ysmjjsy.goya.component.framework.common.constants.SymbolConst;
+import com.ysmjjsy.goya.component.framework.common.utils.GoyaStringUtils;
+import com.ysmjjsy.goya.component.framework.core.processor.ApplicationInitializingEvent;
+import com.ysmjjsy.goya.component.framework.servlet.autoconfigure.properties.GoyaWebProperties;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.slf4j.Slf4j;
@@ -27,10 +27,10 @@ import java.util.List;
 @Slf4j
 public abstract class AbstractRestMappingScanner implements ApplicationListener<ApplicationInitializingEvent> {
 
-    private final WebProperties.Scan scan;
+    private final GoyaWebProperties.Scan scan;
     private final IRestMappingHandler iRestMappingHandler;
 
-    protected AbstractRestMappingScanner(WebProperties properties, IRestMappingHandler iRestMappingHandler) {
+    protected AbstractRestMappingScanner(GoyaWebProperties properties, IRestMappingHandler iRestMappingHandler) {
         this.scan = properties.scan();
         this.iRestMappingHandler = iRestMappingHandler;
     }

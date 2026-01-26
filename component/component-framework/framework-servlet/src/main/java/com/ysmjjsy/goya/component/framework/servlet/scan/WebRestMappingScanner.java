@@ -1,12 +1,11 @@
 package com.ysmjjsy.goya.component.framework.servlet.scan;
 
-import com.ysmjjsy.goya.component.core.constants.SymbolConst;
-import com.ysmjjsy.goya.component.core.utils.GoyaMD5Utils;
-import com.ysmjjsy.goya.component.framework.context.GoyaContext;
-import com.ysmjjsy.goya.component.web.annotation.Scan;
-import com.ysmjjsy.goya.component.web.configuration.properties.WebProperties;
-import com.ysmjjsy.goya.component.web.enums.RequestMethodEnum;
-import com.ysmjjsy.goya.component.web.utils.WebUtils;
+import com.ysmjjsy.goya.component.framework.common.constants.SymbolConst;
+import com.ysmjjsy.goya.component.framework.common.utils.GoyaMD5Utils;
+import com.ysmjjsy.goya.component.framework.core.context.GoyaContext;
+import com.ysmjjsy.goya.component.framework.servlet.autoconfigure.properties.GoyaWebProperties;
+import com.ysmjjsy.goya.component.framework.servlet.enums.RequestMethodEnum;
+import com.ysmjjsy.goya.component.framework.servlet.utils.WebUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +33,7 @@ public class WebRestMappingScanner extends AbstractRestMappingScanner {
 
     private final GoyaContext goyaContext;
 
-    public WebRestMappingScanner(WebProperties properties,
+    public WebRestMappingScanner(GoyaWebProperties properties,
                                  ObjectProvider<IRestMappingHandler> iRestMappingHandlerObjectProvider,
                                  GoyaContext goyaContext) {
         super(properties, iRestMappingHandlerObjectProvider.getIfAvailable());

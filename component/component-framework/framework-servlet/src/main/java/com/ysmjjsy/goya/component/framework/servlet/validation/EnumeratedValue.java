@@ -1,6 +1,5 @@
 package com.ysmjjsy.goya.component.framework.servlet.validation;
 
-import com.ysmjjsy.goya.component.web.validation.EnumeratedValueValidator;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 

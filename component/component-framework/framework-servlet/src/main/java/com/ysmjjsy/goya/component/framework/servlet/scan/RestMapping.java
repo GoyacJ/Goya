@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.framework.servlet.scan;
 
-import com.ysmjjsy.goya.component.web.enums.NetworkAccessTypeEnum;
-import com.ysmjjsy.goya.component.web.enums.RequestMethodEnum;
+import com.ysmjjsy.goya.component.framework.servlet.enums.NetworkAccessTypeEnum;
+import com.ysmjjsy.goya.component.framework.servlet.enums.RequestMethodEnum;
 import lombok.Data;
 
 import java.io.Serial;

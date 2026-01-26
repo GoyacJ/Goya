@@ -1,9 +1,8 @@
 package com.ysmjjsy.goya.component.framework.servlet.secure;
 
-import com.ysmjjsy.goya.component.core.exception.CommonException;
-import com.ysmjjsy.goya.component.web.annotation.AccessLimited;
-import com.ysmjjsy.goya.component.web.cache.AccessLimitedCacheManager;
-import com.ysmjjsy.goya.component.web.interceptor.AbstractHandlerInterceptor;
+import com.ysmjjsy.goya.component.framework.common.error.CommonErrorCode;
+import com.ysmjjsy.goya.component.framework.common.exception.Exceptions;
+import com.ysmjjsy.goya.component.framework.servlet.interceptor.AbstractHandlerInterceptor;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -66,7 +65,7 @@ public class AccessLimitedInterceptor extends AbstractHandlerInterceptor {
                 try {
                     expireDuration = Duration.parse(annotationDuration);
                 } catch (DateTimeParseException e) {
-                    log.warn("[Goya] |- AccessLimited duration value is incorrect, on api [{}].", url);
+                    log.warn("[Goya] |- AccessLimited duration value is incorrect, on api [{}].", url, e);
                 }
             }
 
@@ -76,11 +75,11 @@ public class AccessLimitedInterceptor extends AbstractHandlerInterceptor {
             if (ObjectUtils.isEmpty(times) || times == 0L) {
                 if (!expireDuration.isZero()) {
                     // 如果注解上配置了Duration且没有配置错可以正常解析，那么使用注解上的配置值
-                    accessLimitedCacheManager.put(key, expireDuration);
+                    accessLimitedCacheManager.put(key, 1L, expireDuration);
                     accessLimitedCacheManager.put(expireKey, System.currentTimeMillis(), expireDuration);
                 } else {
                     // 如果注解上没有配置Duration或者配置错无法正常解析，那么使用StampProperties的配置值
-                    accessLimitedCacheManager.put(key);
+                    accessLimitedCacheManager.put(key, 1L);
                     accessLimitedCacheManager.put(expireKey, System.currentTimeMillis());
                 }
                 return true;
@@ -95,7 +94,7 @@ public class AccessLimitedInterceptor extends AbstractHandlerInterceptor {
                     accessLimitedCacheManager.put(key, times + 1L, newDuration);
                     return true;
                 } else {
-                    throw new CommonException("Requests are too frequent. Please try again later!");
+                    throw Exceptions.system(CommonErrorCode.SYSTEM_ERROR).userMessage("Requests are too frequent. Please try again later!").build();
                 }
             }
         }

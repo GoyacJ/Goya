@@ -1,9 +1,9 @@
-package com.ysmjjsy.goya.component.framework.servlet.secure;
+package com.ysmjjsy.goya.component.framework.servlet.idempotent;
 
-import com.ysmjjsy.goya.component.core.exception.CommonException;
-import com.ysmjjsy.goya.component.web.annotation.Idempotent;
-import com.ysmjjsy.goya.component.web.cache.IdempotentCacheManager;
-import com.ysmjjsy.goya.component.web.interceptor.AbstractHandlerInterceptor;
+import com.ysmjjsy.goya.component.framework.common.error.CommonErrorCode;
+import com.ysmjjsy.goya.component.framework.common.exception.Exceptions;
+import com.ysmjjsy.goya.component.framework.common.utils.GoyaIdUtils;
+import com.ysmjjsy.goya.component.framework.servlet.interceptor.AbstractHandlerInterceptor;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -64,15 +64,16 @@ public class IdempotentInterceptor extends AbstractHandlerInterceptor {
                     }
                 }
 
+                String uuid = GoyaIdUtils.fastSimpleUUID();
                 if (!configuredDuration.isZero()) {
-                    idempotentCacheManager.put(key, configuredDuration);
+                    idempotentCacheManager.put(key, uuid, configuredDuration);
                 } else {
-                    idempotentCacheManager.put(key);
+                    idempotentCacheManager.put(key, uuid);
                 }
 
                 return true;
             } else {
-                throw new CommonException("Don't Repeat Submission");
+                throw Exceptions.system(CommonErrorCode.SYSTEM_ERROR).userMessage("Don't Repeat Submission!").build();
             }
         }
         return true;

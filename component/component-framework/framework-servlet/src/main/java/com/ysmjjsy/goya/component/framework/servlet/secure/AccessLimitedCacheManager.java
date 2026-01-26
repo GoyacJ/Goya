@@ -1,15 +1,13 @@
 package com.ysmjjsy.goya.component.framework.servlet.secure;
 
-import com.ysmjjsy.goya.component.cache.multilevel.resolver.CacheSpecification;
-import com.ysmjjsy.goya.component.cache.multilevel.template.AbstractCheckTemplate;
-import com.ysmjjsy.goya.component.cache.multilevel.ttl.TtlStrategy;
-import com.ysmjjsy.goya.component.web.configuration.properties.WebProperties;
-import com.ysmjjsy.goya.component.web.constants.IWebConstants;
+import com.ysmjjsy.goya.component.framework.cache.support.CacheSupport;
+import com.ysmjjsy.goya.component.framework.servlet.autoconfigure.properties.GoyaWebProperties;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
+
+import static com.ysmjjsy.goya.component.framework.servlet.constant.WebConst.CACHE_WEB_PREFIX;
 
 /**
  * <p>防刷管理器</p>
@@ -19,11 +17,17 @@ import java.time.Duration;
  * @since 2025/10/9 10:26
  */
 @Slf4j
-@RequiredArgsConstructor
-public class AccessLimitedCacheManager extends AbstractCheckTemplate<String, Long> {
+public class AccessLimitedCacheManager extends CacheSupport<String, Long> {
+
+    public static final String CACHE_ACCESS_LIMITED_PREFIX = CACHE_WEB_PREFIX + "access_limited:";
 
     @Getter
-    private final WebProperties.AccessLimited accessLimited;
+    private final GoyaWebProperties.AccessLimited accessLimited;
+
+    public AccessLimitedCacheManager(GoyaWebProperties.AccessLimited accessLimited) {
+        super(CACHE_ACCESS_LIMITED_PREFIX, accessLimited.expire());
+        this.accessLimited = accessLimited;
+    }
 
     /**
      * 计算剩余过期时间
@@ -50,24 +54,5 @@ public class AccessLimitedCacheManager extends AbstractCheckTemplate<String, Lon
         }
 
         return duration;
-    }
-
-    @Override
-    protected Long nextValue(String key) {
-        return 1L;
-    }
-
-    @Override
-    protected String getCacheName() {
-        return IWebConstants.CACHE_ACCESS_LIMITED_PREFIX;
-    }
-
-    @Override
-    protected CacheSpecification buildCacheSpecification(CacheSpecification defaultSpec) {
-        CacheSpecification.Builder builder = defaultSpec.toBuilder();
-        builder.ttl(accessLimited.expire());
-        TtlStrategy.FixedRatioStrategy fixedRatioStrategy = new TtlStrategy.FixedRatioStrategy(0.8);
-        builder.localTtlStrategy(fixedRatioStrategy);
-        return super.buildCacheSpecification(builder.build());
     }
 }

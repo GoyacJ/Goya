@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.framework.servlet.interceptor;
 
-import com.ysmjjsy.goya.component.core.constants.SymbolConst;
-import com.ysmjjsy.goya.component.core.utils.GoyaMD5Utils;
-import com.ysmjjsy.goya.component.web.utils.WebUtils;
+import com.ysmjjsy.goya.component.framework.common.constants.SymbolConst;
+import com.ysmjjsy.goya.component.framework.common.utils.GoyaMD5Utils;
+import com.ysmjjsy.goya.component.framework.servlet.utils.WebUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
- * <p></p>
+ * <p>抽象拦截器</p>
  *
  * @author goya
  * @since 2025/10/9 16:17

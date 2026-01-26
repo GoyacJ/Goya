@@ -1,9 +1,12 @@
 com.ysmjjsy.goya.component.framework.servlet.autoconfigure.GoyaContextAutoConfiguration
 com.ysmjjsy.goya.component.framework.servlet.autoconfigure.GoyaServletAutoConfiguration
+com.ysmjjsy.goya.component.framework.servlet.autoconfigure.ServletErrorAutoConfiguration
 com.ysmjjsy.goya.component.framework.servlet.autoconfigure.ServletSpringdocAutoConfiguration
 com.ysmjjsy.goya.component.framework.servlet.autoconfigure.ServletCryptoAutoConfiguration
+com.ysmjjsy.goya.component.framework.servlet.autoconfigure.ServletIdempotentAutoConfiguration
+com.ysmjjsy.goya.component.framework.servlet.autoconfigure.ServletScanAutoConfiguration
+com.ysmjjsy.goya.component.framework.servlet.autoconfigure.ServletSecureAutoConfiguration
+com.ysmjjsy.goya.component.framework.servlet.autoconfigure.ServletXssAutoConfiguration
 com.ysmjjsy.goya.component.framework.servlet.autoconfigure.ServletWebMvcAutoConfiguration
-com.ysmjjsy.goya.component.framework.servlet.autoconfigure.ServletErrorAutoConfiguration
-com.ysmjjsy.goya.component.framework.servlet.autoconfigure.ServletI18nAutoConfiguration
 com.ysmjjsy.goya.component.framework.servlet.autoconfigure.ServletEnumAutoConfiguration
 com.ysmjjsy.goya.component.framework.servlet.autoconfigure.ServletTenantAutoConfiguration

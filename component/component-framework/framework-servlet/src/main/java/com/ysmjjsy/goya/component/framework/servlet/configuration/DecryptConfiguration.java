@@ -1,18 +1,15 @@
 package com.ysmjjsy.goya.component.framework.servlet.configuration;
 
-import com.google.common.collect.Lists;
-import com.ysmjjsy.goya.component.framework.servlet.crypto.DecryptRequestParamMapResolver;
-import com.ysmjjsy.goya.component.framework.servlet.crypto.DecryptRequestParamResolver;
+import com.ysmjjsy.goya.component.framework.crypto.processor.AsymmetricCryptoProcessor;
+import com.ysmjjsy.goya.component.framework.crypto.processor.SymmetricCryptoProcessor;
+import com.ysmjjsy.goya.component.framework.servlet.autoconfigure.properties.GoyaWebProperties;
+import com.ysmjjsy.goya.component.framework.servlet.crypto.*;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.method.annotation.RequestParamMapMethodArgumentResolver;
-import org.springframework.web.method.annotation.RequestParamMethodArgumentResolver;
-import org.springframework.web.method.support.HandlerMethodArgumentResolver;
-import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter;
-
-import java.util.List;
 
 /**
  * <p></p>
@@ -24,29 +21,55 @@ import java.util.List;
 @RequiredArgsConstructor
 @Configuration
 public class DecryptConfiguration {
-
-    private final RequestMappingHandlerAdapter requestMappingHandlerAdapter;
-    private final DecryptRequestParamResolver decryptRequestParamResolver;
-    private final DecryptRequestParamMapResolver decryptRequestParamMapResolver;
-
+    
     @PostConstruct
     public void init() {
-        List<HandlerMethodArgumentResolver> unmodifiableList = requestMappingHandlerAdapter.getArgumentResolvers();
-        List<HandlerMethodArgumentResolver> list = Lists.newArrayList();
-        for (HandlerMethodArgumentResolver methodArgumentResolver : unmodifiableList) {
-            //需要在requestParam之前执行自定义逻辑，然后再执行下一个逻辑（责任链模式）
-            if (methodArgumentResolver instanceof RequestParamMapMethodArgumentResolver) {
-                decryptRequestParamMapResolver.setRequestParamMapMethodArgumentResolver((RequestParamMapMethodArgumentResolver) methodArgumentResolver);
-                list.add(decryptRequestParamMapResolver);
-            }
-            if (methodArgumentResolver instanceof RequestParamMethodArgumentResolver) {
-                decryptRequestParamResolver.setRequestParamMethodArgumentResolver((RequestParamMethodArgumentResolver) methodArgumentResolver);
-                list.add(decryptRequestParamResolver);
-            }
-            list.add(methodArgumentResolver);
-        }
-        log.debug("[Goya] |- component [web] DecryptAutoConfiguration auto configure.");
+        log.debug("[Goya] |- component [framework] DecryptConfiguration configure.");
+    }
 
-        requestMappingHandlerAdapter.setArgumentResolvers(list);
+    @Bean
+    public CryptoCacheManager cryptoCacheManager(GoyaWebProperties properties, AsymmetricCryptoProcessor asymmetricCryptoProcessor, SymmetricCryptoProcessor symmetricCryptoProcessor) {
+        CryptoCacheManager cryptoCacheManager = new CryptoCacheManager(
+                properties.crypto(),
+                asymmetricCryptoProcessor,
+                symmetricCryptoProcessor
+        );
+        log.trace("[Goya] |- component [framework] DecryptConfiguration |- bean [cryptoCacheManager] register.");
+        return cryptoCacheManager;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public DecryptRequestBodyAdvice decryptRequestBodyAdvice(CryptoCacheManager cryptoCacheManager) {
+        DecryptRequestBodyAdvice decryptRequestBodyAdvice = new DecryptRequestBodyAdvice();
+        decryptRequestBodyAdvice.setInterfaceCryptoProcessor(cryptoCacheManager);
+        log.trace("[Goya] |- component [framework] DecryptConfiguration |- bean [decryptRequestBodyAdvice] register.");
+        return decryptRequestBodyAdvice;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public EncryptResponseBodyAdvice encryptResponseBodyAdvice(CryptoCacheManager cryptoCacheManager) {
+        EncryptResponseBodyAdvice encryptResponseBodyAdvice = new EncryptResponseBodyAdvice(cryptoCacheManager);
+        log.trace("[Goya] |- component [framework] DecryptConfiguration |- bean [encryptResponseBodyAdvice] register.");
+        return encryptResponseBodyAdvice;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public DecryptRequestParamMapResolver decryptRequestParamStringResolver(CryptoCacheManager cryptoCacheManager) {
+        DecryptRequestParamMapResolver decryptRequestParamMapResolver = new DecryptRequestParamMapResolver();
+        decryptRequestParamMapResolver.setCryptoCacheManager(cryptoCacheManager);
+        log.trace("[Goya] |- component [framework] DecryptConfiguration |- bean [decryptRequestParamStringResolver] register.");
+        return decryptRequestParamMapResolver;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public DecryptRequestParamResolver decryptRequestParamResolver(CryptoCacheManager cryptoCacheManager) {
+        DecryptRequestParamResolver decryptRequestParamResolver = new DecryptRequestParamResolver();
+        decryptRequestParamResolver.setCryptoCacheManager(cryptoCacheManager);
+        log.trace("[Goya] |- component [framework] DecryptConfiguration |- bean [decryptRequestParamResolver] register.");
+        return decryptRequestParamResolver;
     }
 }

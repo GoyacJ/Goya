@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.framework.servlet.tenant;
 
-import com.ysmjjsy.goya.component.core.constants.DefaultConst;
-import com.ysmjjsy.goya.component.framework.tenant.TenantContext;
-import com.ysmjjsy.goya.component.web.utils.WebUtils;
+import com.ysmjjsy.goya.component.framework.common.constants.DefaultConst;
+import com.ysmjjsy.goya.component.framework.core.context.TenantContext;
+import com.ysmjjsy.goya.component.framework.servlet.utils.WebUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;

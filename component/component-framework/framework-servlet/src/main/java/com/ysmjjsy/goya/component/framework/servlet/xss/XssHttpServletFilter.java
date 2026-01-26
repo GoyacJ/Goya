@@ -1,4 +1,4 @@
-package com.ysmjjsy.goya.component.framework.servlet.secure;
+package com.ysmjjsy.goya.component.framework.servlet.xss;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;

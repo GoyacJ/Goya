@@ -20,7 +20,7 @@ public abstract class AbstractResponseHandler {
     @Autowired
     private ThymeleafTemplateHandler templateHandler;
 
-    protected void process(HttpServletRequest request, HttpServletResponse response, Supplier<ApiResponse<Void>> supplier) {
+    protected void process(HttpServletRequest request, HttpServletResponse response, Supplier<ApiResponse<Void>> supplier, int statusCode) {
 
         ApiResponse<Void> voidResponse = supplier.get();
 
@@ -30,13 +30,13 @@ public abstract class AbstractResponseHandler {
                 content = templateHandler.renderToError(request, response, supplier.get());
             }
             if (StringUtils.isNotBlank(content)) {
-                WebUtils.renderHtml(response, voidResponse.httpStatus().value(), content);
+                WebUtils.renderHtml(response, statusCode, content);
             } else {
                 // 主要防止 Thymeleaf 模版转换有异常，做一项保护。
-                WebUtils.renderResult(response, voidResponse);
+                WebUtils.renderResult(response, voidResponse, statusCode);
             }
         } else {
-            WebUtils.renderResult(response, voidResponse);
+            WebUtils.renderResult(response, voidResponse, statusCode);
         }
     }
 }

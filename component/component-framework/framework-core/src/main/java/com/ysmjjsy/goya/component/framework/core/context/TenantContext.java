@@ -4,7 +4,7 @@ import com.ysmjjsy.goya.component.framework.common.constants.DefaultConst;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * <p></p>
+ * <p>租户上下文</p>
  *
  * @author goya
  * @since 2026/1/16 16:21

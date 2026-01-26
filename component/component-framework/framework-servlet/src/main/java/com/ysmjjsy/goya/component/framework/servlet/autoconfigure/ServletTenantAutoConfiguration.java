@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.framework.servlet.autoconfigure;
 
-import com.ysmjjsy.goya.component.web.tenant.MultiTenantInterceptor;
+import com.ysmjjsy.goya.component.framework.servlet.tenant.MultiTenantInterceptor;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -19,14 +19,14 @@ public class ServletTenantAutoConfiguration {
 
     @PostConstruct
     public void init() {
-        log.debug("[Goya] |- component [web] TenantAutoConfiguration auto configure.");
+        log.debug("[Goya] |- component [framework] ServletTenantAutoConfiguration auto configure.");
     }
 
     @Bean
     @ConditionalOnMissingBean
     public MultiTenantInterceptor tenantInterceptor() {
         MultiTenantInterceptor multiTenantInterceptor = new MultiTenantInterceptor();
-        log.trace("[Goya] |- Bean [Idempotent Interceptor] Configure.");
+        log.trace("[Goya] |- component [framework] ServletTenantAutoConfiguration |- bean [tenantInterceptor] register.");
         return multiTenantInterceptor;
     }
 }

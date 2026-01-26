@@ -1,12 +1,11 @@
 package com.ysmjjsy.goya.component.framework.servlet.autoconfigure;
 
 import com.ysmjjsy.goya.component.framework.common.constants.DefaultConst;
-import com.ysmjjsy.goya.component.framework.core.context.GoyaContext;
+import com.ysmjjsy.goya.component.framework.servlet.autoconfigure.properties.GoyaWebProperties;
+import com.ysmjjsy.goya.component.framework.servlet.constant.WebConst;
 import com.ysmjjsy.goya.component.framework.servlet.converter.*;
-import com.ysmjjsy.goya.component.framework.servlet.scan.IRestMappingHandler;
-import com.ysmjjsy.goya.component.framework.servlet.scan.WebRestMappingScanner;
+import com.ysmjjsy.goya.component.framework.servlet.idempotent.IdempotentInterceptor;
 import com.ysmjjsy.goya.component.framework.servlet.secure.AccessLimitedInterceptor;
-import com.ysmjjsy.goya.component.framework.servlet.secure.IdempotentInterceptor;
 import com.ysmjjsy.goya.component.framework.servlet.template.ThymeleafTemplateHandler;
 import com.ysmjjsy.goya.component.framework.servlet.web.GlobalExceptionHandler;
 import com.ysmjjsy.goya.component.framework.servlet.xss.XssJacksonComponent;
@@ -17,7 +16,7 @@ import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.web.WebProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.format.FormatterRegistry;
@@ -40,6 +39,7 @@ import java.time.format.DateTimeFormatter;
 @AutoConfiguration
 @Import({GlobalExceptionHandler.class, XssJacksonComponent.class})
 @RequiredArgsConstructor
+@EnableConfigurationProperties(GoyaWebProperties.class)
 public class ServletWebMvcAutoConfiguration implements WebMvcConfigurer {
 
     private final ObjectProvider<IdempotentInterceptor> idempotentInterceptor;
@@ -95,16 +95,6 @@ public class ServletWebMvcAutoConfiguration implements WebMvcConfigurer {
         return handler;
     }
 
-    @Bean
-    @ConditionalOnMissingBean
-    public WebRestMappingScanner restMappingScanner(WebProperties properties,
-                                                    ObjectProvider<IRestMappingHandler> handlerObjectProvider,
-                                                    GoyaContext goyaContext) {
-        WebRestMappingScanner scanner = new WebRestMappingScanner(properties, handlerObjectProvider, goyaContext);
-        log.trace("[Goya] |- component [web] WebAutoConfiguration |- bean [restMappingScanner] register.");
-        return scanner;
-    }
-
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         accessLimitedInterceptor.ifAvailable(registry::addInterceptor);
@@ -113,8 +103,8 @@ public class ServletWebMvcAutoConfiguration implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler(IWebConstants.MATCHER_STATIC).addResourceLocations("classpath:/static/");
-        registry.addResourceHandler(IWebConstants.MATCHER_WEBJARS)
+        registry.addResourceHandler(WebConst.MATCHER_STATIC).addResourceLocations("classpath:/static/");
+        registry.addResourceHandler(WebConst.MATCHER_WEBJARS)
                 .addResourceLocations("classpath:/META-INF/resources/webjars/")
                 .resourceChain(false)
                 .addResolver(new LiteWebJarsResourceResolver());

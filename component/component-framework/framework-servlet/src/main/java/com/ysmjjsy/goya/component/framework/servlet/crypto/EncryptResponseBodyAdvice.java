@@ -1,10 +1,8 @@
 package com.ysmjjsy.goya.component.framework.servlet.crypto;
 
-import com.ysmjjsy.goya.component.cache.multilevel.crypto.CryptoProcessor;
-import com.ysmjjsy.goya.component.core.exception.CommonException;
-import com.ysmjjsy.goya.component.framework.json.GoyaJson;
-import com.ysmjjsy.goya.component.web.annotation.Crypto;
-import com.ysmjjsy.goya.component.web.utils.WebUtils;
+import com.ysmjjsy.goya.component.framework.common.exception.GoyaException;
+import com.ysmjjsy.goya.component.framework.core.json.GoyaJson;
+import com.ysmjjsy.goya.component.framework.servlet.utils.WebUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
@@ -29,7 +27,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 @RequiredArgsConstructor
 public class EncryptResponseBodyAdvice implements ResponseBodyAdvice<Object> {
 
-    private final CryptoProcessor cryptoProcessor;
+    private final CryptoCacheManager cryptoProcessor;
 
     @Override
     public boolean supports(MethodParameter methodParameter, @NonNull Class<? extends HttpMessageConverter<?>> converterType) {
@@ -64,7 +62,7 @@ public class EncryptResponseBodyAdvice implements ResponseBodyAdvice<Object> {
                 } else {
                     return body;
                 }
-            } catch (CommonException e) {
+            } catch (GoyaException e) {
                 log.error("[Goya] |- Session is expired for encrypt response body for rest method [{}] in [{}], skip encrypt operation.", methodName, className, e);
                 return body;
             }

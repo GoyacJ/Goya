@@ -6,8 +6,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
-import java.time.Duration;
-
 /**
  * <p></p>
  *
@@ -22,12 +20,6 @@ public record CryptoProperties(
           加密策略
          */
         @DefaultValue("STANDARD")
-        CryptoStrategyEnum strategy,
-
-        /*
-          加密过期时间
-         */
-        @DefaultValue("PT5M")
-        Duration expire
+        CryptoStrategyEnum strategy
 ) {
 }

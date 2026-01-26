@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.framework.servlet.autoconfigure.properties;
 
-import com.ysmjjsy.goya.component.web.constants.IWebConstants;
+import com.ysmjjsy.goya.component.framework.servlet.constant.WebConst;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
@@ -15,9 +15,9 @@ import java.util.List;
  * @author goya
  * @since 2025/12/29 19:33
  */
-@ConfigurationProperties(prefix = IWebConstants.PROPERTY_WEB)
+@ConfigurationProperties(prefix = WebConst.PROPERTY_WEB)
 @Schema(description = "web 配置")
-public record WebProperties(
+public record GoyaWebProperties(
 
         @Schema(description = "扫描配置")
         @DefaultValue
@@ -29,8 +29,22 @@ public record WebProperties(
 
         @Schema(description = "扫描配置")
         @DefaultValue
-        AccessLimited accessLimited
+        AccessLimited accessLimited,
+
+        @Schema(description = "加密配置")
+        @DefaultValue
+        Crypto crypto
 ) {
+
+    public record Crypto(
+            /*
+              加密过期时间
+             */
+            @DefaultValue("PT5M")
+            Duration expire
+    ) {
+
+    }
 
     public record Scan(
             /*
