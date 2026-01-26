@@ -1,0 +1,280 @@
+---
+alwaysApply: false
+globs:
+  - "**/*Test.java"
+  - "**/test/**/*.java"
+---
+
+# 测试专项规则
+
+## 适用范围
+本规则适用于所有测试代码，包括单元测试、集成测试等。
+
+## 测试原则
+
+1. **AAA 模式**：Arrange（准备）- Act（执行）- Assert（断言）
+2. **独立性**：测试之间不相互依赖
+3. **可重复**：每次运行结果一致
+4. **快速**：单元测试 < 100ms，集成测试 < 1s
+
+## 单元测试
+
+### 测试结构
+
+```java
+@SpringBootTest
+class UserServiceTest {
+    
+    @Autowired
+    private UserService userService;
+    
+    @MockBean
+    private UserMapper userMapper;
+    
+    @Test
+    @DisplayName("根据ID查询用户 - 成功")
+    void testGetUserById_Success() {
+        // Given（准备测试数据）
+        Long userId = 1L;
+        User mockUser = new User();
+        mockUser.setId(userId);
+        mockUser.setUsername("test");
+        
+        when(userMapper.selectById(userId))
+            .thenReturn(mockUser);
+        
+        // When（执行被测试方法）
+        User result = userService.getById(userId);
+        
+        // Then（断言结果）
+        assertNotNull(result);
+        assertEquals("test", result.getUsername());
+        verify(userMapper, times(1)).selectById(userId);
+    }
+    
+    @Test
+    @DisplayName("根据ID查询用户 - 用户不存在")
+    void testGetUserById_NotFound() {
+        // Given
+        Long userId = 999L;
+        when(userMapper.selectById(userId))
+            .thenReturn(null);
+        
+        // When
+        User result = userService.getById(userId);
+        
+        // Then
+        assertNull(result);
+    }
+}
+```
+
+### 参数化测试
+
+```java
+/**
+ * 参数化测试
+ */
+@ParameterizedTest
+@CsvSource({
+    "admin, true",
+    "user, true",
+    "'', false",
+    "admin@, false"
+})
+@DisplayName("验证用户名格式")
+void testValidateUsername(String username, boolean expected) {
+    boolean result = ValidationUtils.isValidUsername(username);
+    assertEquals(expected, result);
+}
+```
+
+## 集成测试
+
+### Controller 测试
+
+```java
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureMockMvc
+class UserControllerTest {
+    
+    @Autowired
+    private MockMvc mockMvc;
+    
+    @Autowired
+    private ObjectMapper objectMapper;
+    
+    @Test
+    @DisplayName("创建用户 - 成功")
+    void testCreateUser_Success() throws Exception {
+        // Given
+        UserDTO userDTO = new UserDTO();
+        userDTO.setUsername("testuser");
+        userDTO.setPassword("123456");
+        
+        // When & Then
+        mockMvc.perform(post("/api/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(userDTO)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.code").value("0200"))
+            .andExpect(jsonPath("$.data.username").value("testuser"));
+    }
+}
+```
+
+### 数据库测试
+
+```java
+@SpringBootTest
+@Transactional  // 测试后自动回滚
+class UserMapperTest {
+    
+    @Autowired
+    private UserMapper userMapper;
+    
+    @Test
+    @DisplayName("插入用户")
+    void testInsert() {
+        // Given
+        User user = new User();
+        user.setUsername("test");
+        user.setPassword("123456");
+        
+        // When
+        int result = userMapper.insert(user);
+        
+        // Then
+        assertEquals(1, result);
+        assertNotNull(user.getId());
+    }
+}
+```
+
+## Mock 使用
+
+### MockBean
+
+```java
+/**
+ * 使用 @MockBean 模拟依赖
+ */
+@SpringBootTest
+class OrderServiceTest {
+    
+    @Autowired
+    private OrderService orderService;
+    
+    @MockBean
+    private UserService userService;
+    
+    @MockBean
+    private PaymentService paymentService;
+    
+    @Test
+    void testCreateOrder() {
+        // Mock 依赖服务
+        when(userService.getById(1L))
+            .thenReturn(new User());
+        
+        when(paymentService.pay(any()))
+            .thenReturn(true);
+        
+        // 测试业务逻辑
+        Order order = orderService.create(new OrderDTO());
+        
+        assertNotNull(order);
+    }
+}
+```
+
+## 测试数据
+
+### 使用 TestContainers
+
+```java
+/**
+ * 使用 TestContainers 启动真实数据库
+ */
+@SpringBootTest
+@Testcontainers
+class IntegrationTest {
+    
+    @Container
+    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0")
+        .withDatabaseName("test")
+        .withUsername("root")
+        .withPassword("root");
+    
+    @DynamicPropertySource
+    static void properties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", mysql::getJdbcUrl);
+        registry.add("spring.datasource.username", mysql::getUsername);
+        registry.add("spring.datasource.password", mysql::getPassword);
+    }
+    
+    @Test
+    void test() {
+        // 测试代码
+    }
+}
+```
+
+## 断言
+
+### 常用断言
+
+```java
+// 基础断言
+assertEquals(expected, actual);
+assertNotNull(actual);
+assertTrue(condition);
+
+// 集合断言
+assertThat(list).hasSize(3);
+assertThat(list).contains("item1", "item2");
+
+// 异常断言
+assertThrows(IllegalArgumentException.class, () -> {
+    service.invalidOperation();
+});
+
+// 复杂对象断言
+assertThat(user)
+    .extracting("username", "email")
+    .containsExactly("admin", "admin@example.com");
+```
+
+## 测试覆盖率
+
+### 目标
+- **整体覆盖率**：> 80%
+- **核心业务**：> 90%
+- **工具类**：> 95%
+
+### 生成报告
+
+```bash
+mvn clean test jacoco:report
+```
+
+## 最佳实践
+
+1. ✅ **测试命名清晰**：testMethodName_Scenario_ExpectedResult
+2. ✅ **一个测试一个断言**（或相关断言）
+3. ✅ **避免测试私有方法**（测试公开接口）
+4. ✅ **使用 @DisplayName**（中文描述）
+5. ✅ **测试异常情况**（不只测试正常流程）
+
+## 禁止事项
+
+1. ❌ **禁止测试依赖顺序**
+2. ❌ **禁止测试依赖外部服务**（使用 Mock）
+3. ❌ **禁止忽略失败的测试**
+4. ❌ **禁止在测试中使用 Thread.sleep()**
+
+## 参考资料
+
+- [JUnit 5 文档](https://junit.org/junit5/docs/current/user-guide/)
+- [Mockito 文档](https://site.mockito.org/)
+- [TestContainers 文档](https://www.testcontainers.org/)
