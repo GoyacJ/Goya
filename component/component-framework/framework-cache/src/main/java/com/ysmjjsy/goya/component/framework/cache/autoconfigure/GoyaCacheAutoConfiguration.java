@@ -9,6 +9,7 @@ import com.ysmjjsy.goya.component.framework.cache.key.CacheKeySerializer;
 import com.ysmjjsy.goya.component.framework.cache.key.DefaultCacheKeySerializer;
 import com.ysmjjsy.goya.component.framework.cache.metrics.DefaultCacheMetrics;
 import com.ysmjjsy.goya.component.framework.cache.multi.DefaultMultiLevelCacheService;
+import com.ysmjjsy.goya.component.framework.core.context.GoyaContext;
 import com.ysmjjsy.goya.component.framework.core.context.SpringContext;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -44,14 +45,14 @@ public class GoyaCacheAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(CacheKeySerializer.class)
-    public CacheKeySerializer defaultCacheKeySerializer() {
-        DefaultCacheKeySerializer serializer = new DefaultCacheKeySerializer();
+    public CacheKeySerializer defaultCacheKeySerializer(GoyaContext goyaContext) {
+        DefaultCacheKeySerializer serializer = new DefaultCacheKeySerializer(goyaContext);
         log.trace("[Goya] |- component [cache-core] GoyaCacheAutoConfiguration |- bean [defaultCacheKeySerializer] register.");
         return serializer;
     }
 
     @Bean
-    public DefaultCacheMetrics defaultCacheMetrics(){
+    public DefaultCacheMetrics defaultCacheMetrics() {
         DefaultCacheMetrics metrics = new DefaultCacheMetrics();
         log.trace("[Goya] |- component [cache-core] GoyaCacheAutoConfiguration |- bean [defaultCacheMetrics] register.");
         return metrics;
@@ -72,8 +73,8 @@ public class GoyaCacheAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(CaffeineCacheService.class)
-    public CaffeineCacheService caffeineCacheService(CacheManager cacheManager) {
-        CaffeineCacheService caffeineCacheService = new CaffeineCacheService(cacheManager);
+    public CaffeineCacheService caffeineCacheService(CacheManager cacheManager, CacheKeySerializer cacheKeySerializer, GoyaContext goyaContext) {
+        CaffeineCacheService caffeineCacheService = new CaffeineCacheService(cacheManager, cacheKeySerializer, goyaContext);
         log.trace("[Goya] |- component [framework] GoyaCacheAutoConfiguration |- bean [caffeineCacheService] register.");
         return caffeineCacheService;
     }

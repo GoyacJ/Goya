@@ -1,12 +1,12 @@
 package com.ysmjjsy.goya.component.framework.servlet.configuration;
 
 import com.google.common.collect.Lists;
-import com.ysmjjsy.goya.component.web.resolver.DecryptRequestParamMapResolver;
-import com.ysmjjsy.goya.component.web.resolver.DecryptRequestParamResolver;
+import com.ysmjjsy.goya.component.framework.servlet.crypto.DecryptRequestParamMapResolver;
+import com.ysmjjsy.goya.component.framework.servlet.crypto.DecryptRequestParamResolver;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.web.method.annotation.RequestParamMapMethodArgumentResolver;
 import org.springframework.web.method.annotation.RequestParamMethodArgumentResolver;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
@@ -22,8 +22,8 @@ import java.util.List;
  */
 @Slf4j
 @RequiredArgsConstructor
-@AutoConfiguration
-public class DecryptAutoConfiguration {
+@Configuration
+public class DecryptConfiguration {
 
     private final RequestMappingHandlerAdapter requestMappingHandlerAdapter;
     private final DecryptRequestParamResolver decryptRequestParamResolver;

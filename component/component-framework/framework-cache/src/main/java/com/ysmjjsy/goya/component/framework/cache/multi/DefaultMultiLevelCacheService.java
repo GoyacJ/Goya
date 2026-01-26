@@ -34,7 +34,7 @@ public class DefaultMultiLevelCacheService implements MultiLevelCacheService {
 
     @Override
     public boolean evictLocal(String cacheName, Object key) {
-        return local.evict(cacheName, key);
+        return local.delete(cacheName, key);
     }
 
     @Override
@@ -42,7 +42,12 @@ public class DefaultMultiLevelCacheService implements MultiLevelCacheService {
         if (remote == null) {
             return false;
         }
-        return remote.evict(cacheName, key);
+        return remote.delete(cacheName, key);
+    }
+
+    @Override
+    public <T> T get(String cacheName, Object key) {
+        return get(cacheName, key, null);
     }
 
     @Override
@@ -59,6 +64,11 @@ public class DefaultMultiLevelCacheService implements MultiLevelCacheService {
             backfillLocal(cacheName, key, rv, null);
         }
         return rv;
+    }
+
+    @Override
+    public <T> Optional<T> getOptional(String cacheName, Object key) {
+        return Optional.ofNullable(get(cacheName, key, null));
     }
 
     @Override
@@ -83,9 +93,9 @@ public class DefaultMultiLevelCacheService implements MultiLevelCacheService {
     }
 
     @Override
-    public boolean evict(String cacheName, Object key) {
-        boolean l1 = local.evict(cacheName, key);
-        boolean l2 = remote != null && remote.evict(cacheName, key);
+    public boolean delete(String cacheName, Object key) {
+        boolean l1 = local.delete(cacheName, key);
+        boolean l2 = remote != null && remote.delete(cacheName, key);
         return l1 || l2;
     }
 
@@ -95,6 +105,11 @@ public class DefaultMultiLevelCacheService implements MultiLevelCacheService {
         if (remote != null) {
             remote.clear(cacheName);
         }
+    }
+
+    @Override
+    public boolean exists(String cacheName, Object key) {
+        return Objects.nonNull(get(cacheName, key));
     }
 
     @Override
@@ -136,8 +151,18 @@ public class DefaultMultiLevelCacheService implements MultiLevelCacheService {
     }
 
     @Override
+    public <T> T getOrLoad(String cacheName, Object key, Supplier<T> loader) {
+        return getOrLoad(cacheName, key, null, null, loader);
+    }
+
+    @Override
     public <T> T getOrLoad(String cacheName, Object key, Class<T> type, Supplier<T> loader) {
         return getOrLoad(cacheName, key, type, null, loader);
+    }
+
+    @Override
+    public <T> T getOrLoad(String cacheName, Object key, Duration ttl, Supplier<T> loader) {
+        return getOrLoad(cacheName, key, null, null, loader);
     }
 
     @Override
