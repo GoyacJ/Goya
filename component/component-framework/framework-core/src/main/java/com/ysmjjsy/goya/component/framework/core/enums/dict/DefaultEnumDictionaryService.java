@@ -77,7 +77,7 @@ public class DefaultEnumDictionaryService implements EnumDictionaryService {
         for (Enum<?> c : constants) {
             CodeEnum ce = (CodeEnum) c;
 
-            Serializable code = ce.code();
+            Serializable code = ce.getCode();
             String label = resolveLabel(ce, c.name());
 
             list.add(EnumOption.of(code, label));
@@ -101,8 +101,8 @@ public class DefaultEnumDictionaryService implements EnumDictionaryService {
             }
         }
 
-        if (StringUtils.hasText(e.label())) {
-            return e.label();
+        if (StringUtils.hasText(e.getLabel())) {
+            return e.getLabel();
         }
 
         return fallbackName;

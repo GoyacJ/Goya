@@ -2,8 +2,8 @@ package com.ysmjjsy.goya.component.framework.servlet.enums;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.ysmjjsy.goya.component.core.enums.IEnum;
-import com.ysmjjsy.goya.component.framework.enums.NetworkTypeEnum;
+import com.ysmjjsy.goya.component.framework.common.enums.CodeEnum;
+import com.ysmjjsy.goya.component.framework.core.enums.NetworkTypeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -25,7 +25,7 @@ import java.util.Map;
 @Getter
 @AllArgsConstructor
 @Schema(description = "接口网络类型")
-public enum NetworkAccessTypeEnum implements IEnum<String> {
+public enum NetworkAccessTypeEnum implements CodeEnum<String> {
 
     /**
      * 内网访问
@@ -49,7 +49,7 @@ public enum NetworkAccessTypeEnum implements IEnum<String> {
 
     @JsonValue
     private final String code;
-    private final String description;
+    private final String label;
 
     /**
      * 检查 IP 是否符合当前网络类型
@@ -94,7 +94,7 @@ public enum NetworkAccessTypeEnum implements IEnum<String> {
                             "index", anEnum.ordinal(),
                             "code", anEnum.getCode(),
                             "name", anEnum.name(),
-                            "description", anEnum.getDescription()
+                            "label", anEnum.getLabel()
                     ));
         }
     }

@@ -39,7 +39,7 @@ public class CodeEnumMapStructMapper {
      */
     @Named("enumToCode")
     public Serializable enumToCode(CodeEnum<? extends Serializable> e) {
-        return e == null ? null : e.code();
+        return e == null ? null : e.getCode();
     }
 
     /**
@@ -87,7 +87,7 @@ public class CodeEnumMapStructMapper {
             return raw;
         }
         CodeEnum first = (CodeEnum) constants[0];
-        Object code = first.code();
+        Object code = first.getCode();
         if (code == null) {
             return raw;
         }

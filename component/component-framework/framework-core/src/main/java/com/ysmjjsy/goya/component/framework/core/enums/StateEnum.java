@@ -56,14 +56,4 @@ public enum StateEnum implements CodeEnum<String> {
     public static List<Map<String, Object>> getJsonStruct() {
         return JSON_STRUCT;
     }
-
-    @Override
-    public String code() {
-        return code;
-    }
-
-    @Override
-    public String label() {
-        return label;
-    }
 }

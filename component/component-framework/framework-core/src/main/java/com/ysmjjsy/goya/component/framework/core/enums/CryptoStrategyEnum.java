@@ -40,14 +40,4 @@ public enum CryptoStrategyEnum implements PropertyEnum {
     public String getPrefix() {
         return PropertyConst.PROPERTY_CRYPTO + ".strategy";
     }
-
-    @Override
-    public String code() {
-        return code;
-    }
-
-    @Override
-    public String label() {
-        return label;
-    }
 }

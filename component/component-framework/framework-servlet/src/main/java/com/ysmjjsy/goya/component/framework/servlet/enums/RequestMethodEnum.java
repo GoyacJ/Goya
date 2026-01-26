@@ -3,8 +3,8 @@ package com.ysmjjsy.goya.component.framework.servlet.enums;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.collect.Sets;
-import com.ysmjjsy.goya.component.core.constants.SymbolConst;
-import com.ysmjjsy.goya.component.core.enums.IEnum;
+import com.ysmjjsy.goya.component.framework.common.constants.SymbolConst;
+import com.ysmjjsy.goya.component.framework.common.enums.CodeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 @Getter
 @AllArgsConstructor
 @Schema(description = "Http Request Method")
-public enum RequestMethodEnum implements IEnum<String> {
+public enum RequestMethodEnum implements CodeEnum<String> {
 
     GET("GET", "GET"),
     HEAD("HEAD", "HEAD"),
@@ -40,7 +40,7 @@ public enum RequestMethodEnum implements IEnum<String> {
 
     @JsonValue
     private final String code;
-    private final String description;
+    private final String label;
     private static final Map<String, RequestMethodEnum> INDEX_MAP = new HashMap<>();
     private static final List<Map<String, Object>> JSON_STRUCT = new ArrayList<>();
 
@@ -52,7 +52,7 @@ public enum RequestMethodEnum implements IEnum<String> {
                             "index", anEnum.ordinal(),
                             "code", anEnum.getCode(),
                             "name", anEnum.name(),
-                            "description", anEnum.getDescription()
+                            "label", anEnum.getLabel()
                     ));
         }
     }
@@ -93,7 +93,7 @@ public enum RequestMethodEnum implements IEnum<String> {
                 .map(s -> {
                     try {
                         return RequestMethodEnum.resolve(s);
-                    } catch (Exception e) {
+                    } catch (Exception _) {
                         return null;
                     }
                 })

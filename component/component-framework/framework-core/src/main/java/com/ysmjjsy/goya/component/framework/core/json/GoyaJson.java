@@ -586,7 +586,7 @@ public class GoyaJson implements ApplicationContextAware {
         } catch (IllegalArgumentException _) {
             // 如果找不到 name，再尝试按自定义 getValue
             for (E eValue : enumClass.getEnumConstants()) {
-                if (eValue instanceof CodeEnum<?> && ((CodeEnum<?>) eValue).code().equals(text)) {
+                if (eValue instanceof CodeEnum<?> && ((CodeEnum<?>) eValue).getCode().equals(text)) {
                     return eValue;
                 }
 

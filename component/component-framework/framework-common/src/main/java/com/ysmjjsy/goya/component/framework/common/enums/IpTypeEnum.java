@@ -32,14 +32,4 @@ public enum IpTypeEnum implements CodeEnum<Integer> {
     public static IpTypeEnum ipType(String ip) {
         return GoyaNetUtils.ipType(ip);
     }
-
-    @Override
-    public Integer code() {
-        return code;
-    }
-
-    @Override
-    public String label() {
-        return label;
-    }
 }
