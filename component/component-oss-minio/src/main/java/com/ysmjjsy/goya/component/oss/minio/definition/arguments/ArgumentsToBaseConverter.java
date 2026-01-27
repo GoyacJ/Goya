@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.oss.minio.definition.arguments;
 
-import com.ysmjjsy.goya.component.oss.core.arguments.base.BaseArguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.base.BaseArguments;
 import io.minio.BaseArgs;
 import org.apache.commons.collections4.MapUtils;
 

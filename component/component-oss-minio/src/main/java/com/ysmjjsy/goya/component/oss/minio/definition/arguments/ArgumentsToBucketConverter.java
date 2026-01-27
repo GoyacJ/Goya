@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.oss.minio.definition.arguments;
 
-import com.ysmjjsy.goya.component.oss.core.arguments.base.BucketArguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.base.BucketArguments;
 import io.minio.BucketArgs;
 import org.apache.commons.lang3.StringUtils;
 

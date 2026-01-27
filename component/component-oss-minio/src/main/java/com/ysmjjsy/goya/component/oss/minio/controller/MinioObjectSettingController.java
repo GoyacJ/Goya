@@ -1,10 +1,11 @@
 package com.ysmjjsy.goya.component.oss.minio.controller;
 
+import com.ysmjjsy.goya.component.framework.common.constants.DefaultConst;
+import com.ysmjjsy.goya.component.framework.core.api.ApiRes;
+import com.ysmjjsy.goya.component.framework.servlet.definition.IController;
+import com.ysmjjsy.goya.component.framework.servlet.secure.AccessLimited;
 import com.ysmjjsy.goya.component.oss.minio.bo.ObjectSettingBusiness;
 import com.ysmjjsy.goya.component.oss.minio.service.MinioObjectSettingService;
-import com.ysmjjsy.goya.component.web.annotation.AccessLimited;
-import com.ysmjjsy.goya.component.web.definition.IController;
-import com.ysmjjsy.goya.component.web.response.Response;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -23,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @since 2023/6/5 22:31
  */
 @RestController
-@RequestMapping("/oss/minio/object/setting")
+@RequestMapping(DefaultConst.DEFAULT_PROJECT_NAME + "/oss/minio/object/setting")
 @Tag(name = "Minio对象设置")
 public class MinioObjectSettingController implements IController {
 
@@ -45,7 +46,7 @@ public class MinioObjectSettingController implements IController {
     @Parameter(name = "bucketName", required = true, description = "存储桶名称")
     @Parameter(name = "objectName", required = true, description = "对象名称")
     @GetMapping
-    public Response<ObjectSettingBusiness> get(@RequestParam(value = "bucketName") String bucketName, @RequestParam(value = "objectName") String objectName) {
+    public ApiRes<ObjectSettingBusiness> get(@RequestParam(value = "bucketName") String bucketName, @RequestParam(value = "objectName") String objectName) {
         ObjectSettingBusiness entity = settingService.get(bucketName, null, objectName);
         return response(entity);
     }

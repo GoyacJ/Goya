@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.oss.minio.repository;
 
-import com.ysmjjsy.goya.component.oss.core.arguments.multipart.*;
-import com.ysmjjsy.goya.component.oss.core.core.repository.OssMultipartUploadRepository;
-import com.ysmjjsy.goya.component.oss.core.domain.multipart.*;
+import com.ysmjjsy.goya.component.framework.oss.arguments.multipart.*;
+import com.ysmjjsy.goya.component.framework.oss.core.repository.OssMultipartUploadRepository;
+import com.ysmjjsy.goya.component.framework.oss.domain.multipart.*;
 import com.ysmjjsy.goya.component.oss.minio.converter.domain.*;
 import com.ysmjjsy.goya.component.oss.minio.service.MinioMultipartUploadService;
 import io.minio.*;

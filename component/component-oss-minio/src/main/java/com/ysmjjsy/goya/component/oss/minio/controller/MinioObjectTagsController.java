@@ -1,11 +1,12 @@
 package com.ysmjjsy.goya.component.oss.minio.controller;
 
+import com.ysmjjsy.goya.component.framework.common.constants.DefaultConst;
+import com.ysmjjsy.goya.component.framework.core.api.ApiRes;
+import com.ysmjjsy.goya.component.framework.servlet.definition.IController;
+import com.ysmjjsy.goya.component.framework.servlet.idempotent.Idempotent;
 import com.ysmjjsy.goya.component.oss.minio.request.object.DeleteObjectTagsRequest;
 import com.ysmjjsy.goya.component.oss.minio.request.object.SetObjectTagsRequest;
 import com.ysmjjsy.goya.component.oss.minio.service.MinioObjectTagsService;
-import com.ysmjjsy.goya.component.web.annotation.Idempotent;
-import com.ysmjjsy.goya.component.web.definition.IController;
-import com.ysmjjsy.goya.component.web.response.Response;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -26,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @since 2023/6/10 15:13
  */
 @RestController
-@RequestMapping("/oss/minio/object/tags")
+@RequestMapping(DefaultConst.DEFAULT_PROJECT_NAME + "/oss/minio/object/tags")
 @Tag(name = "Minio对象桶标签管理")
 public class MinioObjectTagsController implements IController {
 
@@ -47,7 +48,7 @@ public class MinioObjectTagsController implements IController {
             })
     @Parameter(name = "request", required = true, description = "SetObjectTagsRequest请求参数实体", schema = @Schema(implementation = SetObjectTagsRequest.class))
     @PutMapping
-    public Response<Boolean> set(@Validated @RequestBody SetObjectTagsRequest request) {
+    public ApiRes<Boolean> set(@Validated @RequestBody SetObjectTagsRequest request) {
         minioObjectTagsService.setObjectTags(request.build());
         return response(true);
     }
@@ -63,7 +64,7 @@ public class MinioObjectTagsController implements IController {
             })
     @Parameter(name = "request", required = true, description = "DeleteObjectTagsRequest请求参数实体", schema = @Schema(implementation = DeleteObjectTagsRequest.class))
     @DeleteMapping
-    public Response<Boolean> delete(@Validated @RequestBody DeleteObjectTagsRequest request) {
+    public ApiRes<Boolean> delete(@Validated @RequestBody DeleteObjectTagsRequest request) {
         minioObjectTagsService.deleteObjectTags(request.build());
         return response(true);
     }

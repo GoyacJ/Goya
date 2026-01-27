@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.oss.minio.converter.domain;
 
-import com.ysmjjsy.goya.component.oss.core.arguments.object.ListObjectsArguments;
-import com.ysmjjsy.goya.component.oss.core.domain.object.ListObjectsDomain;
-import com.ysmjjsy.goya.component.oss.core.domain.object.ObjectDomain;
+import com.ysmjjsy.goya.component.framework.oss.arguments.object.ListObjectsArguments;
+import com.ysmjjsy.goya.component.framework.oss.domain.object.ListObjectsDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.object.ObjectDomain;
 import com.ysmjjsy.goya.component.oss.minio.utils.MinioConverterUtils;
 import io.minio.Result;
 import io.minio.messages.Item;

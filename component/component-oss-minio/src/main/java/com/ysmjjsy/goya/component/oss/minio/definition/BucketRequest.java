@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.oss.minio.definition;
 
-import com.ysmjjsy.goya.component.oss.core.constants.OssConstants;
+import com.ysmjjsy.goya.component.framework.oss.constants.OssConstants;
 import io.minio.BucketArgs;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;

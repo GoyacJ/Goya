@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.oss.minio.bo;
 
-import com.ysmjjsy.goya.component.core.pojo.IEntity;
+import com.ysmjjsy.goya.component.framework.common.pojo.IEntity;
 import com.ysmjjsy.goya.component.oss.minio.domain.ObjectLockConfigurationDomain;
 import com.ysmjjsy.goya.component.oss.minio.domain.VersioningConfigurationDomain;
 import com.ysmjjsy.goya.component.oss.minio.enums.PolicyEnums;

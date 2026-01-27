@@ -3,11 +3,11 @@ package com.ysmjjsy.goya.component.oss.minio.service;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
-import com.ysmjjsy.goya.component.core.constants.SymbolConst;
-import com.ysmjjsy.goya.component.core.exception.CommonException;
+import com.ysmjjsy.goya.component.framework.common.constants.SymbolConst;
+import com.ysmjjsy.goya.component.framework.common.exception.GoyaException;
+import com.ysmjjsy.goya.component.oss.minio.definition.pool.MinioAsyncClient;
 import com.ysmjjsy.goya.component.oss.minio.definition.pool.MinioAsyncClientObjectPool;
 import com.ysmjjsy.goya.component.oss.minio.definition.service.BaseMinioAsyncService;
-import com.ysmjjsy.goya.component.oss.minio.definition.pool.MinioAsyncClient;
 import io.minio.*;
 import io.minio.errors.InsufficientDataException;
 import io.minio.errors.InternalException;
@@ -85,28 +85,28 @@ public class MinioMultipartUploadService extends BaseMinioAsyncService {
             return client.createMultipartUploadAsync(bucketName, region, objectName, toMultimap(extraHeaders), toMultimap(extraQueryParams)).get();
         } catch (InsufficientDataException e) {
             log.error("[Goya] |- Minio async catch InsufficientDataException in [{}].", function, e);
-            throw new CommonException("Minio async insufficient data error.");
+            throw new GoyaException("Minio async insufficient data error.");
         } catch (InternalException e) {
             log.error("[Goya] |- Minio async catch InternalException in [{}].", function, e);
-            throw new CommonException("Minio async internal error.");
+            throw new GoyaException("Minio async internal error.");
         } catch (InvalidKeyException e) {
             log.error("[Goya] |- Minio async catch InvalidKeyException in [{}].", function, e);
-            throw new CommonException("Minio async key invalid.");
+            throw new GoyaException("Minio async key invalid.");
         } catch (IOException e) {
             log.error("[Goya] |- Minio catch IOException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (NoSuchAlgorithmException e) {
             log.error("[Goya] |- Minio async catch NoSuchAlgorithmException in [{}].", function, e);
-            throw new CommonException("Minio async no such algorithm.");
+            throw new GoyaException("Minio async no such algorithm.");
         } catch (XmlParserException e) {
             log.error("[Goya] |- Minio async catch XmlParserException in [{}].", function, e);
-            throw new CommonException("Minio async xml parser error.");
+            throw new GoyaException("Minio async xml parser error.");
         } catch (ExecutionException e) {
             log.error("[Goya] |- Minio async catch ExecutionException in [{}].", function, e);
-            throw new CommonException("Minio async execution error.");
+            throw new GoyaException("Minio async execution error.");
         } catch (InterruptedException e) {
             log.error("[Goya] |- Minio async catch InterruptedException in [{}].", function, e);
-            throw new CommonException("Minio async interrupted error.");
+            throw new GoyaException("Minio async interrupted error.");
         } finally {
             close(client);
         }
@@ -166,28 +166,28 @@ public class MinioMultipartUploadService extends BaseMinioAsyncService {
             return client.uploadPartAsync(bucketName, region, objectName, data, length, uploadId, partNumber, toMultimap(extraHeaders), toMultimap(extraQueryParams)).get();
         } catch (InsufficientDataException e) {
             log.error("[Goya] |- Minio async catch InsufficientDataException in [{}].", function, e);
-            throw new CommonException("Minio async insufficient data error.");
+            throw new GoyaException("Minio async insufficient data error.");
         } catch (InternalException e) {
             log.error("[Goya] |- Minio async catch InternalException in [{}].", function, e);
-            throw new CommonException("Minio async internal error.");
+            throw new GoyaException("Minio async internal error.");
         } catch (InvalidKeyException e) {
             log.error("[Goya] |- Minio async catch InvalidKeyException in [{}].", function, e);
-            throw new CommonException("Minio async key invalid.");
+            throw new GoyaException("Minio async key invalid.");
         } catch (IOException e) {
             log.error("[Goya] |- Minio catch IOException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (NoSuchAlgorithmException e) {
             log.error("[Goya] |- Minio async catch NoSuchAlgorithmException in [{}].", function, e);
-            throw new CommonException("Minio async no such algorithm.");
+            throw new GoyaException("Minio async no such algorithm.");
         } catch (XmlParserException e) {
             log.error("[Goya] |- Minio async catch XmlParserException in [{}].", function, e);
-            throw new CommonException("Minio async xml parser error.");
+            throw new GoyaException("Minio async xml parser error.");
         } catch (ExecutionException e) {
             log.error("[Goya] |- Minio async catch ExecutionException in [{}].", function, e);
-            throw new CommonException("Minio async execution error.");
+            throw new GoyaException("Minio async execution error.");
         } catch (InterruptedException e) {
             log.error("[Goya] |- Minio async catch InterruptedException in [{}].", function, e);
-            throw new CommonException("Minio async interrupted error.");
+            throw new GoyaException("Minio async interrupted error.");
         } finally {
             close(client);
         }
@@ -240,28 +240,28 @@ public class MinioMultipartUploadService extends BaseMinioAsyncService {
             return client.uploadPartCopyAsync(bucketName, region, objectName, uploadId, partNumber, toMultimap(extraHeaders), toMultimap(extraQueryParams)).get();
         } catch (InsufficientDataException e) {
             log.error("[Goya] |- Minio async catch InsufficientDataException in [{}].", function, e);
-            throw new CommonException("Minio async insufficient data error.");
+            throw new GoyaException("Minio async insufficient data error.");
         } catch (InternalException e) {
             log.error("[Goya] |- Minio async catch InternalException in [{}].", function, e);
-            throw new CommonException("Minio async internal error.");
+            throw new GoyaException("Minio async internal error.");
         } catch (InvalidKeyException e) {
             log.error("[Goya] |- Minio async catch InvalidKeyException in [{}].", function, e);
-            throw new CommonException("Minio async key invalid.");
+            throw new GoyaException("Minio async key invalid.");
         } catch (IOException e) {
             log.error("[Goya] |- Minio catch IOException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (NoSuchAlgorithmException e) {
             log.error("[Goya] |- Minio async catch NoSuchAlgorithmException in [{}].", function, e);
-            throw new CommonException("Minio async no such algorithm.");
+            throw new GoyaException("Minio async no such algorithm.");
         } catch (XmlParserException e) {
             log.error("[Goya] |- Minio async catch XmlParserException in [{}].", function, e);
-            throw new CommonException("Minio async xml parser error.");
+            throw new GoyaException("Minio async xml parser error.");
         } catch (ExecutionException e) {
             log.error("[Goya] |- Minio async catch ExecutionException in [{}].", function, e);
-            throw new CommonException("Minio async execution error.");
+            throw new GoyaException("Minio async execution error.");
         } catch (InterruptedException e) {
             log.error("[Goya] |- Minio async catch InterruptedException in [{}].", function, e);
-            throw new CommonException("Minio async interrupted error.");
+            throw new GoyaException("Minio async interrupted error.");
         } finally {
             close(client);
         }
@@ -311,28 +311,28 @@ public class MinioMultipartUploadService extends BaseMinioAsyncService {
             return client.abortMultipartUploadAsync(bucketName, region, objectName, uploadId, toMultimap(extraHeaders), toMultimap(extraQueryParams)).get();
         } catch (InsufficientDataException e) {
             log.error("[Goya] |- Minio async catch InsufficientDataException in [{}].", function, e);
-            throw new CommonException("Minio async insufficient data error.");
+            throw new GoyaException("Minio async insufficient data error.");
         } catch (InternalException e) {
             log.error("[Goya] |- Minio async catch InternalException in [{}].", function, e);
-            throw new CommonException("Minio async internal error.");
+            throw new GoyaException("Minio async internal error.");
         } catch (InvalidKeyException e) {
             log.error("[Goya] |- Minio async catch InvalidKeyException in [{}].", function, e);
-            throw new CommonException("Minio async key invalid.");
+            throw new GoyaException("Minio async key invalid.");
         } catch (IOException e) {
             log.error("[Goya] |- Minio catch IOException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (NoSuchAlgorithmException e) {
             log.error("[Goya] |- Minio async catch NoSuchAlgorithmException in [{}].", function, e);
-            throw new CommonException("Minio async no such algorithm.");
+            throw new GoyaException("Minio async no such algorithm.");
         } catch (XmlParserException e) {
             log.error("[Goya] |- Minio async catch XmlParserException in [{}].", function, e);
-            throw new CommonException("Minio async xml parser error.");
+            throw new GoyaException("Minio async xml parser error.");
         } catch (ExecutionException e) {
             log.error("[Goya] |- Minio async catch ExecutionException in [{}].", function, e);
-            throw new CommonException("Minio async execution error.");
+            throw new GoyaException("Minio async execution error.");
         } catch (InterruptedException e) {
             log.error("[Goya] |- Minio async catch InterruptedException in [{}].", function, e);
-            throw new CommonException("Minio async interrupted error.");
+            throw new GoyaException("Minio async interrupted error.");
         } finally {
             close(client);
         }
@@ -385,28 +385,28 @@ public class MinioMultipartUploadService extends BaseMinioAsyncService {
             return client.completeMultipartUploadAsync(bucketName, region, objectName, uploadId, parts, toMultimap(extraHeaders), toMultimap(extraQueryParams)).get();
         } catch (InsufficientDataException e) {
             log.error("[Goya] |- Minio async catch InsufficientDataException in [{}].", function, e);
-            throw new CommonException("Minio async insufficient data error.");
+            throw new GoyaException("Minio async insufficient data error.");
         } catch (InternalException e) {
             log.error("[Goya] |- Minio async catch InternalException in [{}].", function, e);
-            throw new CommonException("Minio async internal error.");
+            throw new GoyaException("Minio async internal error.");
         } catch (InvalidKeyException e) {
             log.error("[Goya] |- Minio async catch InvalidKeyException in [{}].", function, e);
-            throw new CommonException("Minio async key invalid.");
+            throw new GoyaException("Minio async key invalid.");
         } catch (IOException e) {
             log.error("[Goya] |- Minio catch IOException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (NoSuchAlgorithmException e) {
             log.error("[Goya] |- Minio async catch NoSuchAlgorithmException in [{}].", function, e);
-            throw new CommonException("Minio async no such algorithm.");
+            throw new GoyaException("Minio async no such algorithm.");
         } catch (XmlParserException e) {
             log.error("[Goya] |- Minio async catch XmlParserException in [{}].", function, e);
-            throw new CommonException("Minio async xml parser error.");
+            throw new GoyaException("Minio async xml parser error.");
         } catch (ExecutionException e) {
             log.error("[Goya] |- Minio async catch ExecutionException in [{}].", function, e);
-            throw new CommonException("Minio async execution error.");
+            throw new GoyaException("Minio async execution error.");
         } catch (InterruptedException e) {
             log.error("[Goya] |- Minio async catch InterruptedException in [{}].", function, e);
-            throw new CommonException("Minio async interrupted error.");
+            throw new GoyaException("Minio async interrupted error.");
         } finally {
             close(client);
         }
@@ -487,28 +487,28 @@ public class MinioMultipartUploadService extends BaseMinioAsyncService {
             return client.listPartsAsync(bucketName, region, objectName, maxParts, partNumberMarker, uploadId, toMultimap(extraHeaders), toMultimap(extraQueryParams)).get();
         } catch (InsufficientDataException e) {
             log.error("[Goya] |- Minio async catch InsufficientDataException in [{}].", function, e);
-            throw new CommonException("Minio async insufficient data error.");
+            throw new GoyaException("Minio async insufficient data error.");
         } catch (InternalException e) {
             log.error("[Goya] |- Minio async catch InternalException in [{}].", function, e);
-            throw new CommonException("Minio async internal error.");
+            throw new GoyaException("Minio async internal error.");
         } catch (InvalidKeyException e) {
             log.error("[Goya] |- Minio async catch InvalidKeyException in [{}].", function, e);
-            throw new CommonException("Minio async key invalid.");
+            throw new GoyaException("Minio async key invalid.");
         } catch (IOException e) {
             log.error("[Goya] |- Minio catch IOException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (NoSuchAlgorithmException e) {
             log.error("[Goya] |- Minio async catch NoSuchAlgorithmException in [{}].", function, e);
-            throw new CommonException("Minio async no such algorithm.");
+            throw new GoyaException("Minio async no such algorithm.");
         } catch (XmlParserException e) {
             log.error("[Goya] |- Minio async catch XmlParserException in [{}].", function, e);
-            throw new CommonException("Minio async xml parser error.");
+            throw new GoyaException("Minio async xml parser error.");
         } catch (ExecutionException e) {
             log.error("[Goya] |- Minio async catch ExecutionException in [{}].", function, e);
-            throw new CommonException("Minio async execution error.");
+            throw new GoyaException("Minio async execution error.");
         } catch (InterruptedException e) {
             log.error("[Goya] |- Minio async catch InterruptedException in [{}].", function, e);
-            throw new CommonException("Minio async interrupted error.");
+            throw new GoyaException("Minio async interrupted error.");
         } finally {
             close(client);
         }
@@ -631,28 +631,28 @@ public class MinioMultipartUploadService extends BaseMinioAsyncService {
             return client.listMultipartUploadsAsync(bucketName, region, delimiter, encodingType, keyMarker, maxUploads, prefix, uploadIdMarker, toMultimap(extraHeaders), toMultimap(extraQueryParams)).get();
         } catch (InsufficientDataException e) {
             log.error("[Goya] |- Minio async catch InsufficientDataException in [{}].", function, e);
-            throw new CommonException("Minio async insufficient data error.");
+            throw new GoyaException("Minio async insufficient data error.");
         } catch (InternalException e) {
             log.error("[Goya] |- Minio async catch InternalException in [{}].", function, e);
-            throw new CommonException("Minio async internal error.");
+            throw new GoyaException("Minio async internal error.");
         } catch (InvalidKeyException e) {
             log.error("[Goya] |- Minio async catch InvalidKeyException in [{}].", function, e);
-            throw new CommonException("Minio async key invalid.");
+            throw new GoyaException("Minio async key invalid.");
         } catch (IOException e) {
             log.error("[Goya] |- Minio catch IOException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (NoSuchAlgorithmException e) {
             log.error("[Goya] |- Minio async catch NoSuchAlgorithmException in [{}].", function, e);
-            throw new CommonException("Minio async no such algorithm.");
+            throw new GoyaException("Minio async no such algorithm.");
         } catch (XmlParserException e) {
             log.error("[Goya] |- Minio async catch XmlParserException in [{}].", function, e);
-            throw new CommonException("Minio async xml parser error.");
+            throw new GoyaException("Minio async xml parser error.");
         } catch (ExecutionException e) {
             log.error("[Goya] |- Minio async catch ExecutionException in [{}].", function, e);
-            throw new CommonException("Minio async execution error.");
+            throw new GoyaException("Minio async execution error.");
         } catch (InterruptedException e) {
             log.error("[Goya] |- Minio async catch InterruptedException in [{}].", function, e);
-            throw new CommonException("Minio async interrupted error.");
+            throw new GoyaException("Minio async interrupted error.");
         } finally {
             close(client);
         }

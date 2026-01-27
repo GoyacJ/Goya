@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.oss.minio.converter;
 
-import com.ysmjjsy.goya.component.oss.core.domain.base.ObjectWriteDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.base.ObjectWriteDomain;
 import io.minio.ObjectWriteResponse;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.core.convert.converter.Converter;

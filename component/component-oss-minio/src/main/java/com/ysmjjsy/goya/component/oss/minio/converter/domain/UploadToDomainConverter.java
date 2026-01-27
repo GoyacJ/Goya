@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.oss.minio.converter.domain;
 
-import com.ysmjjsy.goya.component.core.utils.GoyaDateUtils;
-import com.ysmjjsy.goya.component.oss.core.domain.base.OwnerDomain;
-import com.ysmjjsy.goya.component.oss.core.domain.multipart.UploadDomain;
+import com.ysmjjsy.goya.component.framework.common.utils.GoyaDateUtils;
+import com.ysmjjsy.goya.component.framework.oss.domain.base.OwnerDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.multipart.UploadDomain;
 import io.minio.messages.Initiator;
 import io.minio.messages.Owner;
 import io.minio.messages.Upload;

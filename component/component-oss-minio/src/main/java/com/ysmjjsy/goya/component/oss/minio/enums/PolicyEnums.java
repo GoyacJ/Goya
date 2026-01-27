@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-import com.ysmjjsy.goya.component.core.enums.IEnum;
+import com.ysmjjsy.goya.component.framework.common.enums.CodeEnum;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -21,7 +21,7 @@ import java.util.Map;
  */
 @Getter
 @AllArgsConstructor
-public enum PolicyEnums implements IEnum<Integer> {
+public enum PolicyEnums implements CodeEnum<Integer> {
 
     PRIVATE(0, "私有"),
     PUBLIC(1, "公开"),
@@ -31,7 +31,7 @@ public enum PolicyEnums implements IEnum<Integer> {
 
     @JsonValue
     private final Integer code;
-    private final String description;
+    private final String label;
 
     private static final Map<Integer, PolicyEnums> INDEX_MAP = Maps.newHashMap();
     private static final List<Map<String, Object>> JSON_STRUCT = new ArrayList<>();
@@ -43,7 +43,7 @@ public enum PolicyEnums implements IEnum<Integer> {
                     ImmutableMap.<String, Object>builder()
                             .put("index", anEnum.ordinal())
                             .put("code", anEnum.getCode())
-                            .put("description", anEnum.getDescription())
+                            .put("label", anEnum.getLabel())
                             .build());
         }
     }

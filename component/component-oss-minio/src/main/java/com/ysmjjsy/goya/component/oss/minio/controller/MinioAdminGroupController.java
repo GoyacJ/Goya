@@ -1,13 +1,14 @@
 package com.ysmjjsy.goya.component.oss.minio.controller;
 
+import com.ysmjjsy.goya.component.framework.common.constants.DefaultConst;
+import com.ysmjjsy.goya.component.framework.core.api.ApiRes;
+import com.ysmjjsy.goya.component.framework.servlet.definition.IController;
+import com.ysmjjsy.goya.component.framework.servlet.idempotent.Idempotent;
+import com.ysmjjsy.goya.component.framework.servlet.secure.AccessLimited;
 import com.ysmjjsy.goya.component.oss.minio.converter.GroupInfoToDomainConverter;
 import com.ysmjjsy.goya.component.oss.minio.domain.GroupDomain;
 import com.ysmjjsy.goya.component.oss.minio.domain.UserDomain;
 import com.ysmjjsy.goya.component.oss.minio.service.MinioAdminGroupService;
-import com.ysmjjsy.goya.component.web.annotation.AccessLimited;
-import com.ysmjjsy.goya.component.web.annotation.Idempotent;
-import com.ysmjjsy.goya.component.web.definition.IController;
-import com.ysmjjsy.goya.component.web.response.Response;
 import io.minio.admin.GroupInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -29,7 +30,7 @@ import java.util.List;
  * @since 2023/6/25 15:18
  */
 @RestController
-@RequestMapping("/oss/minio/admin/group")
+@RequestMapping(DefaultConst.DEFAULT_PROJECT_NAME + "/oss/minio/admin/group")
 @Tag(name = "Minio组管理")
 public class MinioAdminGroupController implements IController {
 
@@ -52,9 +53,9 @@ public class MinioAdminGroupController implements IController {
                     @ApiResponse(responseCode = "503", description = "Minio Server无法访问或未启动")
             })
     @GetMapping("/list")
-    public Response<List<String>> list() {
+    public ApiRes<List<String>> list() {
         List<String> groups = minioAdminGroupService.listGroups();
-        return Response.success("查询成功", groups);
+        return ApiRes.ok(groups, "查询成功");
     }
 
     @AccessLimited
@@ -68,7 +69,7 @@ public class MinioAdminGroupController implements IController {
             })
     @Parameter(name = "accessKey", required = true, description = "用户对应 AccessKey 标识")
     @GetMapping
-    public Response<GroupDomain> get(String group) {
+    public ApiRes<GroupDomain> get(String group) {
         GroupInfo groupInfo = minioAdminGroupService.getGroupInfo(group);
         GroupDomain groupDomain = toDomain.convert(groupInfo);
         return response(groupDomain);
@@ -85,7 +86,7 @@ public class MinioAdminGroupController implements IController {
             })
     @Parameter(name = "domain", required = true, description = "UserDomain实体", schema = @Schema(implementation = UserDomain.class))
     @PostMapping
-    public Response<Boolean> add(@Validated @RequestBody GroupDomain domain) {
+    public ApiRes<Boolean> add(@Validated @RequestBody GroupDomain domain) {
         minioAdminGroupService.addUpdateGroup(domain.getName(), domain.getStatus(), domain.getMembers());
         return response(true);
     }
@@ -101,7 +102,7 @@ public class MinioAdminGroupController implements IController {
             })
     @Parameter(name = "group", required = true, description = "组对应标识")
     @DeleteMapping
-    public Response<Boolean> remove(String group) {
+    public ApiRes<Boolean> remove(String group) {
         minioAdminGroupService.removeGroup(group);
         return response(true);
     }

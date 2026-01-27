@@ -1,11 +1,12 @@
 package com.ysmjjsy.goya.component.oss.minio.controller;
 
+import com.ysmjjsy.goya.component.framework.common.constants.DefaultConst;
+import com.ysmjjsy.goya.component.framework.core.api.ApiRes;
+import com.ysmjjsy.goya.component.framework.servlet.definition.IController;
+import com.ysmjjsy.goya.component.framework.servlet.idempotent.Idempotent;
 import com.ysmjjsy.goya.component.oss.minio.request.bucket.DeleteBucketTagsRequest;
 import com.ysmjjsy.goya.component.oss.minio.request.bucket.SetBucketTagsRequest;
 import com.ysmjjsy.goya.component.oss.minio.service.MinioBucketTagsService;
-import com.ysmjjsy.goya.component.web.annotation.Idempotent;
-import com.ysmjjsy.goya.component.web.definition.IController;
-import com.ysmjjsy.goya.component.web.response.Response;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -26,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @since 2023/6/6 22:56
  */
 @RestController
-@RequestMapping("/oss/minio/bucket/tags")
+@RequestMapping(DefaultConst.DEFAULT_PROJECT_NAME + "/oss/minio/bucket/tags")
 @Tag(name = "Minio存储桶标签管理")
 public class MinioBucketTagsController implements IController {
 
@@ -47,7 +48,7 @@ public class MinioBucketTagsController implements IController {
             })
     @Parameter(name = "request", required = true, description = "SetBucketTagsRequest请求参数实体", schema = @Schema(implementation = SetBucketTagsRequest.class))
     @PutMapping
-    public Response<Boolean> set(@Validated @RequestBody SetBucketTagsRequest request) {
+    public ApiRes<Boolean> set(@Validated @RequestBody SetBucketTagsRequest request) {
         minioBucketTagsService.setBucketTags(request.build());
         return response(true);
     }
@@ -63,7 +64,7 @@ public class MinioBucketTagsController implements IController {
             })
     @Parameter(name = "request", required = true, description = "DeleteBucketPolicyRequest请求参数实体", schema = @Schema(implementation = DeleteBucketTagsRequest.class))
     @DeleteMapping
-    public Response<Boolean> delete(@Validated @RequestBody DeleteBucketTagsRequest request) {
+    public ApiRes<Boolean> delete(@Validated @RequestBody DeleteBucketTagsRequest request) {
         minioBucketTagsService.deleteBucketTags(request.build());
         return response(true);
     }

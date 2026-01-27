@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.oss.minio.converter.domain;
 
-import com.ysmjjsy.goya.component.oss.core.domain.object.UploadObjectDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.object.UploadObjectDomain;
 import com.ysmjjsy.goya.component.oss.minio.definition.domain.ObjectWriteResponseToDomain;
 import io.minio.ObjectWriteResponse;
 

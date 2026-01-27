@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.oss.minio.definition.service;
 
-import com.ysmjjsy.goya.component.core.pool.AbstractObjectPool;
-import com.ysmjjsy.goya.component.oss.core.service.BaseOssService;
+import com.ysmjjsy.goya.component.framework.common.pool.AbstractObjectPool;
+import com.ysmjjsy.goya.component.framework.oss.service.BaseOssService;
 import io.minio.MinioClient;
 
 /**

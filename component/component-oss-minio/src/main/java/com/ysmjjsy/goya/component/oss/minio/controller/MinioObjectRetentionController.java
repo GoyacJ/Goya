@@ -1,10 +1,11 @@
 package com.ysmjjsy.goya.component.oss.minio.controller;
 
+import com.ysmjjsy.goya.component.framework.common.constants.DefaultConst;
+import com.ysmjjsy.goya.component.framework.core.api.ApiRes;
+import com.ysmjjsy.goya.component.framework.servlet.definition.IController;
+import com.ysmjjsy.goya.component.framework.servlet.idempotent.Idempotent;
 import com.ysmjjsy.goya.component.oss.minio.request.object.SetObjectRetentionRequest;
 import com.ysmjjsy.goya.component.oss.minio.service.MinioObjectRetentionService;
-import com.ysmjjsy.goya.component.web.annotation.Idempotent;
-import com.ysmjjsy.goya.component.web.definition.IController;
-import com.ysmjjsy.goya.component.web.response.Response;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -24,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @since 2023/4/16 21:29
  */
 @RestController
-@RequestMapping("/oss/minio/object/retention")
+@RequestMapping(DefaultConst.DEFAULT_PROJECT_NAME + "/oss/minio/object/retention")
 @Tag(name = "Minio Object Retention管理")
 public class MinioObjectRetentionController implements IController {
 
@@ -40,7 +41,7 @@ public class MinioObjectRetentionController implements IController {
             responses = {@ApiResponse(description = "已保存数据", content = @Content(mediaType = "application/json"))})
     @Parameter(name = "request", required = true, description = "设置对象保留配置请求参数实体", schema = @Schema(implementation = SetObjectRetentionRequest.class))
     @PutMapping
-    public Response<Boolean> set(@Validated @RequestBody SetObjectRetentionRequest request) {
+    public ApiRes<Boolean> set(@Validated @RequestBody SetObjectRetentionRequest request) {
         minioObjectRetentionService.setObjectRetention(request.build());
         return response(true);
     }

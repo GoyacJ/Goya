@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.oss.minio.domain;
 
-import com.ysmjjsy.goya.component.core.pojo.IEntity;
+import com.ysmjjsy.goya.component.framework.common.pojo.IEntity;
 import com.ysmjjsy.goya.component.oss.minio.enums.ServerSideEncryptionEnums;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;

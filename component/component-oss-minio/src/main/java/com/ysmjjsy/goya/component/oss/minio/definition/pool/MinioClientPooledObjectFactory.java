@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.oss.minio.definition.pool;
 
-import com.ysmjjsy.goya.component.oss.core.client.AbstractOssClientPooledObjectFactory;
+import com.ysmjjsy.goya.component.framework.oss.client.AbstractOssClientPooledObjectFactory;
 import com.ysmjjsy.goya.component.oss.minio.configuration.properties.MinioProperties;
 import io.minio.MinioClient;
 

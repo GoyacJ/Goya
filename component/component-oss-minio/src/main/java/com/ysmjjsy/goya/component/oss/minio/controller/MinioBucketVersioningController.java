@@ -1,10 +1,11 @@
 package com.ysmjjsy.goya.component.oss.minio.controller;
 
+import com.ysmjjsy.goya.component.framework.common.constants.DefaultConst;
+import com.ysmjjsy.goya.component.framework.core.api.ApiRes;
+import com.ysmjjsy.goya.component.framework.servlet.definition.IController;
+import com.ysmjjsy.goya.component.framework.servlet.idempotent.Idempotent;
 import com.ysmjjsy.goya.component.oss.minio.request.bucket.SetBucketVersioningRequest;
 import com.ysmjjsy.goya.component.oss.minio.service.MinioBucketVersioningService;
-import com.ysmjjsy.goya.component.web.annotation.Idempotent;
-import com.ysmjjsy.goya.component.web.definition.IController;
-import com.ysmjjsy.goya.component.web.response.Response;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -24,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @since 2023/6/28 18:53
  */
 @RestController
-@RequestMapping("/oss/minio/bucket/versioning")
+@RequestMapping(DefaultConst.DEFAULT_PROJECT_NAME + "/oss/minio/bucket/versioning")
 @Tag(name = "Minio存储桶版本设置")
 public class MinioBucketVersioningController implements IController {
 
@@ -45,7 +46,7 @@ public class MinioBucketVersioningController implements IController {
             })
     @Parameter(name = "request", required = true, description = "SetBucketVersioningRequest请求参数实体", schema = @Schema(implementation = SetBucketVersioningRequest.class))
     @PutMapping
-    public Response<Boolean> set(@Validated @RequestBody SetBucketVersioningRequest request) {
+    public ApiRes<Boolean> set(@Validated @RequestBody SetBucketVersioningRequest request) {
         minioBucketVersioningService.setBucketVersioning(request.build());
         return response(true);
     }

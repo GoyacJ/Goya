@@ -1,5 +1,7 @@
 package com.ysmjjsy.goya.component.oss.minio.configuration;
 
+import com.ysmjjsy.goya.component.framework.oss.annotation.ConditionalOnOssStrategy;
+import com.ysmjjsy.goya.component.framework.oss.enums.OssEnum;
 import com.ysmjjsy.goya.component.oss.minio.configuration.properties.MinioProperties;
 import com.ysmjjsy.goya.component.oss.minio.definition.pool.*;
 import jakarta.annotation.PostConstruct;
@@ -23,6 +25,7 @@ import org.springframework.context.annotation.ComponentScan;
         "com.ysmjjsy.goya.component.oss.minio.service",
         "com.ysmjjsy.goya.component.oss.minio.repository",
 })
+@ConditionalOnOssStrategy(OssEnum.MINIO)
 public class OssMinioAutoConfiguration {
     
     @PostConstruct

@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.oss.minio.definition.domain;
 
-import com.ysmjjsy.goya.component.oss.core.domain.base.ObjectWriteDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.base.ObjectWriteDomain;
 import io.minio.ObjectWriteResponse;
 
 /**

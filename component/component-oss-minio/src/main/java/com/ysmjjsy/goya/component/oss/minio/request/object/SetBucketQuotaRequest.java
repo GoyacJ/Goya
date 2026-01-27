@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.oss.minio.request.object;
 
-import com.ysmjjsy.goya.component.core.pojo.IEntity;
+import com.ysmjjsy.goya.component.framework.common.pojo.IEntity;
 import com.ysmjjsy.goya.component.oss.minio.enums.QuotaUnitEnums;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;

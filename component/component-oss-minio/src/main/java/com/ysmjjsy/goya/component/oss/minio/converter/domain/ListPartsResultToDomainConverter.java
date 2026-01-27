@@ -1,9 +1,9 @@
 package com.ysmjjsy.goya.component.oss.minio.converter.domain;
 
-import com.ysmjjsy.goya.component.oss.core.arguments.multipart.ListPartsArguments;
-import com.ysmjjsy.goya.component.oss.core.domain.base.OwnerDomain;
-import com.ysmjjsy.goya.component.oss.core.domain.multipart.ListPartsDomain;
-import com.ysmjjsy.goya.component.oss.core.domain.multipart.PartSummaryDomain;
+import com.ysmjjsy.goya.component.framework.oss.arguments.multipart.ListPartsArguments;
+import com.ysmjjsy.goya.component.framework.oss.domain.base.OwnerDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.multipart.ListPartsDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.multipart.PartSummaryDomain;
 import io.minio.messages.Initiator;
 import io.minio.messages.ListPartsResult;
 import io.minio.messages.Owner;

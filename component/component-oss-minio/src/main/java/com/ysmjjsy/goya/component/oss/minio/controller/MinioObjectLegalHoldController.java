@@ -1,11 +1,12 @@
 package com.ysmjjsy.goya.component.oss.minio.controller;
 
+import com.ysmjjsy.goya.component.framework.common.constants.DefaultConst;
+import com.ysmjjsy.goya.component.framework.core.api.ApiRes;
+import com.ysmjjsy.goya.component.framework.servlet.definition.IController;
+import com.ysmjjsy.goya.component.framework.servlet.idempotent.Idempotent;
 import com.ysmjjsy.goya.component.oss.minio.request.object.DisableObjectLegalHoldRequest;
 import com.ysmjjsy.goya.component.oss.minio.request.object.EnableObjectLegalHoldRequest;
 import com.ysmjjsy.goya.component.oss.minio.service.MinioObjectLegalHoldService;
-import com.ysmjjsy.goya.component.web.annotation.Idempotent;
-import com.ysmjjsy.goya.component.web.definition.IController;
-import com.ysmjjsy.goya.component.web.response.Response;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -25,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @since 2023/6/11 10:14
  */
 @RestController
-@RequestMapping("/oss/minio/object/legal-hold")
+@RequestMapping(DefaultConst.DEFAULT_PROJECT_NAME + "/oss/minio/object/legal-hold")
 @Tag(name = "Minio对象LegalHold管理")
 public class MinioObjectLegalHoldController implements IController {
 
@@ -46,7 +47,7 @@ public class MinioObjectLegalHoldController implements IController {
             })
     @Parameter(name = "request", required = true, description = "EnableObjectLegalHoldRequest请求参数实体", schema = @Schema(implementation = EnableObjectLegalHoldRequest.class))
     @PutMapping("/enable")
-    public Response<Boolean> enable(@Validated @RequestBody EnableObjectLegalHoldRequest request) {
+    public ApiRes<Boolean> enable(@Validated @RequestBody EnableObjectLegalHoldRequest request) {
         minioObjectLegalHoldService.enableObjectLegalHold(request.build());
         return response(true);
     }
@@ -62,7 +63,7 @@ public class MinioObjectLegalHoldController implements IController {
             })
     @Parameter(name = "request", required = true, description = "DisableObjectLegalHoldRequest请求参数实体", schema = @Schema(implementation = DisableObjectLegalHoldRequest.class))
     @PutMapping("/disable")
-    public Response<Boolean> disable(@Validated @RequestBody DisableObjectLegalHoldRequest request) {
+    public ApiRes<Boolean> disable(@Validated @RequestBody DisableObjectLegalHoldRequest request) {
         minioObjectLegalHoldService.disableObjectLegalHold(request.build());
         return response(true);
     }

@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.oss.minio.converter.domain;
 
-import com.ysmjjsy.goya.component.oss.core.domain.bucket.BucketDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.bucket.BucketDomain;
 import io.minio.messages.Bucket;
 import org.springframework.core.convert.converter.Converter;
 

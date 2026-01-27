@@ -1,10 +1,11 @@
 package com.ysmjjsy.goya.component.oss.minio.controller;
 
+import com.ysmjjsy.goya.component.framework.common.constants.DefaultConst;
+import com.ysmjjsy.goya.component.framework.core.api.ApiRes;
+import com.ysmjjsy.goya.component.framework.servlet.definition.IController;
+import com.ysmjjsy.goya.component.framework.servlet.idempotent.Idempotent;
 import com.ysmjjsy.goya.component.oss.minio.request.object.SetBucketQuotaRequest;
 import com.ysmjjsy.goya.component.oss.minio.service.MinioBucketQuotaService;
-import com.ysmjjsy.goya.component.web.annotation.Idempotent;
-import com.ysmjjsy.goya.component.web.definition.IController;
-import com.ysmjjsy.goya.component.web.response.Response;
 import io.minio.admin.QuotaUnit;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -25,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @since 2023/6/28 16:34
  */
 @RestController
-@RequestMapping("/oss/minio/bucket/quota")
+@RequestMapping(DefaultConst.DEFAULT_PROJECT_NAME + "/oss/minio/bucket/quota")
 @Tag(name = "Minio存储桶配额管理")
 public class MinioBucketQuotaController implements IController {
 
@@ -46,7 +47,7 @@ public class MinioBucketQuotaController implements IController {
             })
     @Parameter(name = "request", required = true, description = "SetBucketQuotaRequest请求参数实体", schema = @Schema(implementation = SetBucketQuotaRequest.class))
     @PutMapping
-    public Response<Boolean> set(@Validated @RequestBody SetBucketQuotaRequest request) {
+    public ApiRes<Boolean> set(@Validated @RequestBody SetBucketQuotaRequest request) {
         minioBucketQuotaService.setBucketQuota(request.getBucketName(), request.getSize(), QuotaUnit.valueOf(request.getUnit().name()));
         return response(true);
     }

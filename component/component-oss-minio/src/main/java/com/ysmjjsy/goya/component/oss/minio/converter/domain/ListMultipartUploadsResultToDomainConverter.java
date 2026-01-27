@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.oss.minio.converter.domain;
 
-import com.ysmjjsy.goya.component.oss.core.arguments.multipart.ListMultipartUploadsArguments;
-import com.ysmjjsy.goya.component.oss.core.domain.multipart.ListMultipartUploadsDomain;
-import com.ysmjjsy.goya.component.oss.core.domain.multipart.UploadDomain;
+import com.ysmjjsy.goya.component.framework.oss.arguments.multipart.ListMultipartUploadsArguments;
+import com.ysmjjsy.goya.component.framework.oss.domain.multipart.ListMultipartUploadsDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.multipart.UploadDomain;
 import io.minio.messages.ListMultipartUploadsResult;
 import io.minio.messages.Upload;
 import org.springframework.core.convert.converter.Converter;

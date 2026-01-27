@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.oss.minio.request.bucket;
 
 import com.google.common.collect.Lists;
-import com.ysmjjsy.goya.component.framework.json.GoyaJson;
+import com.ysmjjsy.goya.component.framework.core.json.GoyaJson;
 import com.ysmjjsy.goya.component.oss.minio.definition.BucketRequest;
 import com.ysmjjsy.goya.component.oss.minio.domain.policy.PolicyDomain;
 import com.ysmjjsy.goya.component.oss.minio.domain.policy.StatementDomain;

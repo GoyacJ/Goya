@@ -1,13 +1,14 @@
 package com.ysmjjsy.goya.component.oss.minio.controller;
 
+import com.ysmjjsy.goya.component.framework.common.constants.DefaultConst;
+import com.ysmjjsy.goya.component.framework.core.api.ApiRes;
+import com.ysmjjsy.goya.component.framework.servlet.definition.IController;
+import com.ysmjjsy.goya.component.framework.servlet.idempotent.Idempotent;
+import com.ysmjjsy.goya.component.framework.servlet.secure.AccessLimited;
 import com.ysmjjsy.goya.component.oss.minio.converter.UserInfoToDomainConverter;
 import com.ysmjjsy.goya.component.oss.minio.converter.UsersToDomainsConverter;
 import com.ysmjjsy.goya.component.oss.minio.domain.UserDomain;
 import com.ysmjjsy.goya.component.oss.minio.service.MinioAdminUserService;
-import com.ysmjjsy.goya.component.web.annotation.AccessLimited;
-import com.ysmjjsy.goya.component.web.annotation.Idempotent;
-import com.ysmjjsy.goya.component.web.definition.IController;
-import com.ysmjjsy.goya.component.web.response.Response;
 import io.minio.admin.UserInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -30,7 +31,7 @@ import java.util.Map;
  * @since 2023/6/25 14:06
  */
 @RestController
-@RequestMapping("/oss/minio/admin/user")
+@RequestMapping(DefaultConst.DEFAULT_PROJECT_NAME + "/oss/minio/admin/user")
 @Tag(name = "Minio用户管理")
 public class MinioAdminUserController implements IController {
 
@@ -55,7 +56,7 @@ public class MinioAdminUserController implements IController {
                     @ApiResponse(responseCode = "503", description = "Minio Server无法访问或未启动")
             })
     @GetMapping("/list")
-    public Response<List<UserDomain>> list() {
+    public ApiRes<List<UserDomain>> list() {
         Map<String, UserInfo> users = minioAdminUserService.listUsers();
         List<UserDomain> domains = toDomains.convert(users);
         return response(domains);
@@ -72,7 +73,7 @@ public class MinioAdminUserController implements IController {
             })
     @Parameter(name = "accessKey", required = true, description = "用户对应 AccessKey 标识")
     @GetMapping
-    public Response<UserDomain> get(String accessKey) {
+    public ApiRes<UserDomain> get(String accessKey) {
         UserInfo userInfo = minioAdminUserService.getUserInfo(accessKey);
         UserDomain userDomain = toDomain.convert(userInfo);
         return response(userDomain);
@@ -89,7 +90,7 @@ public class MinioAdminUserController implements IController {
             })
     @Parameter(name = "domain", required = true, description = "UserDomain实体", schema = @Schema(implementation = UserDomain.class))
     @PostMapping
-    public Response<Boolean> add(@Validated @RequestBody UserDomain domain) {
+    public ApiRes<Boolean> add(@Validated @RequestBody UserDomain domain) {
         minioAdminUserService.addUser(domain.getAccessKey(), UserInfo.Status.fromString(domain.getStatus().name()), domain.getSecretKey(), domain.getPolicyName(), domain.getMemberOf());
         return response(true);
     }
@@ -105,7 +106,7 @@ public class MinioAdminUserController implements IController {
             })
     @Parameter(name = "accessKey", required = true, description = "用户对应 AccessKey 标识")
     @DeleteMapping
-    public Response<Boolean> remove(String accessKey) {
+    public ApiRes<Boolean> remove(String accessKey) {
         minioAdminUserService.deleteUser(accessKey);
         return response(true);
     }

@@ -1,11 +1,12 @@
 package com.ysmjjsy.goya.component.oss.minio.controller;
 
+import com.ysmjjsy.goya.component.framework.common.constants.DefaultConst;
+import com.ysmjjsy.goya.component.framework.core.api.ApiRes;
+import com.ysmjjsy.goya.component.framework.servlet.definition.IController;
+import com.ysmjjsy.goya.component.framework.servlet.idempotent.Idempotent;
+import com.ysmjjsy.goya.component.framework.servlet.secure.AccessLimited;
 import com.ysmjjsy.goya.component.oss.minio.domain.UserDomain;
 import com.ysmjjsy.goya.component.oss.minio.service.MinioAdminPolicyService;
-import com.ysmjjsy.goya.component.web.annotation.AccessLimited;
-import com.ysmjjsy.goya.component.web.annotation.Idempotent;
-import com.ysmjjsy.goya.component.web.definition.IController;
-import com.ysmjjsy.goya.component.web.response.Response;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -24,7 +25,7 @@ import java.util.Map;
  * @since 2023/6/25 16:02
  */
 @RestController
-@RequestMapping("/oss/minio/admin/policy")
+@RequestMapping(DefaultConst.DEFAULT_PROJECT_NAME + "/oss/minio/admin/policy")
 @Tag(name = "Minio屏蔽策略管理")
 public class MinioAdminPolicyController implements IController {
 
@@ -45,9 +46,9 @@ public class MinioAdminPolicyController implements IController {
                     @ApiResponse(responseCode = "503", description = "Minio Server无法访问或未启动")
             })
     @GetMapping("/list")
-    public Response<Map<String, String>> list() {
+    public ApiRes<Map<String, String>> list() {
         Map<String, String> policies = minioAdminPolicyService.listCannedPolicies();
-        return Response.success("查询成功", policies);
+        return ApiRes.ok(policies,"查询成功");
     }
 
     @Idempotent
@@ -61,7 +62,7 @@ public class MinioAdminPolicyController implements IController {
             })
     @Parameter(name = "domain", required = true, description = "UserDomain实体", schema = @Schema(implementation = UserDomain.class))
     @PostMapping
-    public Response<Boolean> add(@RequestParam(value = "name") String name, @RequestParam(value = "policy") String policy) {
+    public ApiRes<Boolean> add(@RequestParam(value = "name") String name, @RequestParam(value = "policy") String policy) {
         minioAdminPolicyService.addCannedPolicy(name, policy);
         return response(true);
     }
@@ -77,7 +78,7 @@ public class MinioAdminPolicyController implements IController {
             })
     @Parameter(name = "name", required = true, description = "屏蔽策略名称")
     @DeleteMapping
-    public Response<Boolean> remove(String name) {
+    public ApiRes<Boolean> remove(String name) {
         minioAdminPolicyService.removeCannedPolicy(name);
         return response(true);
     }

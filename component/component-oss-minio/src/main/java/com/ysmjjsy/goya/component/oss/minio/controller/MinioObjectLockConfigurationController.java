@@ -1,11 +1,12 @@
 package com.ysmjjsy.goya.component.oss.minio.controller;
 
+import com.ysmjjsy.goya.component.framework.common.constants.DefaultConst;
+import com.ysmjjsy.goya.component.framework.core.api.ApiRes;
+import com.ysmjjsy.goya.component.framework.servlet.definition.IController;
+import com.ysmjjsy.goya.component.framework.servlet.idempotent.Idempotent;
 import com.ysmjjsy.goya.component.oss.minio.request.bucket.DeleteObjectLockConfigurationRequest;
 import com.ysmjjsy.goya.component.oss.minio.request.bucket.SetObjectLockConfigurationRequest;
 import com.ysmjjsy.goya.component.oss.minio.service.MinioObjectLockConfigurationService;
-import com.ysmjjsy.goya.component.web.annotation.Idempotent;
-import com.ysmjjsy.goya.component.web.definition.IController;
-import com.ysmjjsy.goya.component.web.response.Response;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -26,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @since 2023/6/6 23:37
  */
 @RestController
-@RequestMapping("/oss/minio/bucket/object-lock")
+@RequestMapping(DefaultConst.DEFAULT_PROJECT_NAME + "/oss/minio/bucket/object-lock")
 @Tag(name = "Minio存储桶对象锁定管理")
 public class MinioObjectLockConfigurationController implements IController {
 
@@ -47,7 +48,7 @@ public class MinioObjectLockConfigurationController implements IController {
             })
     @Parameter(name = "request", required = true, description = "SetObjectLockConfigurationRequest请求参数实体", schema = @Schema(implementation = SetObjectLockConfigurationRequest.class))
     @PutMapping
-    public Response<Boolean> set(@Validated @RequestBody SetObjectLockConfigurationRequest request) {
+    public ApiRes<Boolean> set(@Validated @RequestBody SetObjectLockConfigurationRequest request) {
         minioObjectLockConfigurationService.setObjectLockConfiguration(request.build());
         return response(true);
     }
@@ -63,7 +64,7 @@ public class MinioObjectLockConfigurationController implements IController {
             })
     @Parameter(name = "request", required = true, description = "DeleteObjectLockConfigurationRequest请求参数实体", schema = @Schema(implementation = DeleteObjectLockConfigurationRequest.class))
     @DeleteMapping
-    public Response<Boolean> delete(@Validated @RequestBody DeleteObjectLockConfigurationRequest request) {
+    public ApiRes<Boolean> delete(@Validated @RequestBody DeleteObjectLockConfigurationRequest request) {
         minioObjectLockConfigurationService.deleteObjectLockConfiguration(request.build());
         return response(true);
     }

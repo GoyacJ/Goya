@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.oss.minio.service;
 
-import com.ysmjjsy.goya.component.core.exception.CommonException;
+import com.ysmjjsy.goya.component.framework.common.exception.GoyaException;
 import com.ysmjjsy.goya.component.oss.minio.definition.pool.MinioClientObjectPool;
 import com.ysmjjsy.goya.component.oss.minio.definition.service.BaseMinioService;
 import io.minio.*;
@@ -521,31 +521,31 @@ public class MinioObjectService extends BaseMinioService {
             minioClient.removeObject(removeObjectArgs);
         } catch (ErrorResponseException e) {
             log.error("[Goya] |- Minio catch ErrorResponseException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InsufficientDataException e) {
             log.error("[Goya] |- Minio catch InsufficientDataException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InternalException e) {
             log.error("[Goya] |- Minio catch InternalException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidKeyException e) {
             log.error("[Goya] |- Minio catch InvalidKeyException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidResponseException e) {
             log.error("[Goya] |- Minio catch InvalidResponseException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (IOException e) {
             log.error("[Goya] |- Minio catch IOException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (NoSuchAlgorithmException e) {
             log.error("[Goya] |- Minio catch NoSuchAlgorithmException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (ServerException e) {
             log.error("[Goya] |- Minio catch ServerException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (XmlParserException e) {
             log.error("[Goya] |- Minio catch XmlParserException in [{}].", function, e);
-            throw new CommonException(e);
+            throw new GoyaException(e);
         } finally {
             close(minioClient);
         }
@@ -716,31 +716,31 @@ public class MinioObjectService extends BaseMinioService {
             return minioClient.statObject(statObjectArgs);
         } catch (ErrorResponseException e) {
             log.error("[Goya] |- Minio catch ErrorResponseException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InsufficientDataException e) {
             log.error("[Goya] |- Minio catch InsufficientDataException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InternalException e) {
             log.error("[Goya] |- Minio catch InternalException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidKeyException e) {
             log.error("[Goya] |- Minio catch InvalidKeyException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidResponseException e) {
             log.error("[Goya] |- Minio catch InvalidResponseException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (IOException e) {
             log.error("[Goya] |- Minio catch IOException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (NoSuchAlgorithmException e) {
             log.error("[Goya] |- Minio catch NoSuchAlgorithmException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (ServerException e) {
             log.error("[Goya] |- Minio catch ServerException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (XmlParserException e) {
             log.error("[Goya] |- Minio catch XmlParserException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(minioClient);
         }
@@ -760,31 +760,31 @@ public class MinioObjectService extends BaseMinioService {
             return minioClient.composeObject(composeObjectArgs);
         } catch (ErrorResponseException e) {
             log.error("[Goya] |- Minio catch ErrorResponseException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InsufficientDataException e) {
             log.error("[Goya] |- Minio catch InsufficientDataException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InternalException e) {
             log.error("[Goya] |- Minio catch InternalException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidKeyException e) {
             log.error("[Goya] |- Minio catch InvalidKeyException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidResponseException e) {
             log.error("[Goya] |- Minio catch InvalidResponseException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (IOException e) {
             log.error("[Goya] |- Minio catch IOException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (NoSuchAlgorithmException e) {
             log.error("[Goya] |- Minio catch NoSuchAlgorithmException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (ServerException e) {
             log.error("[Goya] |- Minio catch ServerException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (XmlParserException e) {
             log.error("[Goya] |- Minio catch XmlParserException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(minioClient);
         }
@@ -804,31 +804,31 @@ public class MinioObjectService extends BaseMinioService {
             return minioClient.copyObject(copyObjectArgs);
         } catch (ErrorResponseException e) {
             log.error("[Goya] |- Minio catch ErrorResponseException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InsufficientDataException e) {
             log.error("[Goya] |- Minio catch InsufficientDataException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InternalException e) {
             log.error("[Goya] |- Minio catch InternalException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidKeyException e) {
             log.error("[Goya] |- Minio catch InvalidKeyException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidResponseException e) {
             log.error("[Goya] |- Minio catch InvalidResponseException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (IOException e) {
             log.error("[Goya] |- Minio catch IOException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (NoSuchAlgorithmException e) {
             log.error("[Goya] |- Minio catch NoSuchAlgorithmException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (ServerException e) {
             log.error("[Goya] |- Minio catch ServerException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (XmlParserException e) {
             log.error("[Goya] |- Minio catch XmlParserException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(minioClient);
         }
@@ -847,31 +847,31 @@ public class MinioObjectService extends BaseMinioService {
             minioClient.restoreObject(args);
         } catch (ErrorResponseException e) {
             log.error("[Goya] |- Minio catch ErrorResponseException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InsufficientDataException e) {
             log.error("[Goya] |- Minio catch InsufficientDataException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InternalException e) {
             log.error("[Goya] |- Minio catch InternalException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidKeyException e) {
             log.error("[Goya] |- Minio catch InvalidKeyException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidResponseException e) {
             log.error("[Goya] |- Minio catch InvalidResponseException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (IOException e) {
             log.error("[Goya] |- Minio catch IOException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (NoSuchAlgorithmException e) {
             log.error("[Goya] |- Minio catch NoSuchAlgorithmException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (ServerException e) {
             log.error("[Goya] |- Minio catch ServerException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (XmlParserException e) {
             log.error("[Goya] |- Minio catch XmlParserException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(minioClient);
         }
@@ -891,35 +891,35 @@ public class MinioObjectService extends BaseMinioService {
             return minioClient.selectObjectContent(selectObjectContentArgs);
         } catch (ErrorResponseException e) {
             log.error("[Goya] |- Minio catch ErrorResponseException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InsufficientDataException e) {
             log.error("[Goya] |- Minio catch InsufficientDataException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InternalException e) {
             log.error("[Goya] |- Minio catch InternalException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidKeyException e) {
             log.error("[Goya] |- Minio catch InvalidKeyException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidResponseException e) {
             log.error("[Goya] |- Minio catch InvalidResponseException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (IOException e) {
             log.error("[Goya] |- Minio catch IOException in [{}].", function, e);
             if (e instanceof ConnectException) {
-                throw new CommonException(e.getMessage());
+                throw new GoyaException(e.getMessage());
             } else {
-                throw new CommonException(e.getMessage());
+                throw new GoyaException(e.getMessage());
             }
         } catch (NoSuchAlgorithmException e) {
             log.error("[Goya] |- Minio catch NoSuchAlgorithmException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (ServerException e) {
             log.error("[Goya] |- Minio catch ServerException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (XmlParserException e) {
             log.error("[Goya] |- Minio catch XmlParserException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(minioClient);
         }
@@ -941,31 +941,31 @@ public class MinioObjectService extends BaseMinioService {
             return minioClient.getPresignedPostFormData(postPolicy);
         } catch (ErrorResponseException e) {
             log.error("[Goya] |- Minio catch ErrorResponseException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InsufficientDataException e) {
             log.error("[Goya] |- Minio catch InsufficientDataException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InternalException e) {
             log.error("[Goya] |- Minio catch InternalException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidKeyException e) {
             log.error("[Goya] |- Minio catch InvalidKeyException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidResponseException e) {
             log.error("[Goya] |- Minio catch InvalidResponseException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (IOException e) {
             log.error("[Goya] |- Minio catch IOException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (NoSuchAlgorithmException e) {
             log.error("[Goya] |- Minio catch NoSuchAlgorithmException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (ServerException e) {
             log.error("[Goya] |- Minio catch ServerException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (XmlParserException e) {
             log.error("[Goya] |- Minio catch XmlParserException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(minioClient);
         }
@@ -1065,31 +1065,31 @@ public class MinioObjectService extends BaseMinioService {
             return minioClient.getPresignedObjectUrl(args);
         } catch (ErrorResponseException e) {
             log.error("[Goya] |- Minio catch ErrorResponseException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InsufficientDataException e) {
             log.error("[Goya] |- Minio catch InsufficientDataException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InternalException e) {
             log.error("[Goya] |- Minio catch InternalException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidKeyException e) {
             log.error("[Goya] |- Minio catch InvalidKeyException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidResponseException e) {
             log.error("[Goya] |- Minio catch InvalidResponseException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (IOException e) {
             log.error("[Goya] |- Minio catch IOException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (NoSuchAlgorithmException e) {
             log.error("[Goya] |- Minio catch NoSuchAlgorithmException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (ServerException e) {
             log.error("[Goya] |- Minio catch ServerException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (XmlParserException e) {
             log.error("[Goya] |- Minio catch XmlParserException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(minioClient);
         }
@@ -1181,31 +1181,31 @@ public class MinioObjectService extends BaseMinioService {
             minioClient.downloadObject(downloadObjectArgs);
         } catch (ErrorResponseException e) {
             log.error("[Goya] |- Minio catch ErrorResponseException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InsufficientDataException e) {
             log.error("[Goya] |- Minio catch InsufficientDataException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InternalException e) {
             log.error("[Goya] |- Minio catch InternalException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidKeyException e) {
             log.error("[Goya] |- Minio catch InvalidKeyException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidResponseException e) {
             log.error("[Goya] |- Minio catch InvalidResponseException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (IOException e) {
             log.error("[Goya] |- Minio catch IOException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (NoSuchAlgorithmException e) {
             log.error("[Goya] |- Minio catch NoSuchAlgorithmException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (ServerException e) {
             log.error("[Goya] |- Minio catch ServerException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (XmlParserException e) {
             log.error("[Goya] |- Minio catch XmlParserException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(minioClient);
         }
@@ -1347,31 +1347,31 @@ public class MinioObjectService extends BaseMinioService {
             return minioClient.uploadObject(uploadObjectArgs);
         } catch (ErrorResponseException e) {
             log.error("[Goya] |- Minio catch ErrorResponseException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InsufficientDataException e) {
             log.error("[Goya] |- Minio catch InsufficientDataException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InternalException e) {
             log.error("[Goya] |- Minio catch InternalException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidKeyException e) {
             log.error("[Goya] |- Minio catch InvalidKeyException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidResponseException e) {
             log.error("[Goya] |- Minio catch InvalidResponseException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (IOException e) {
             log.error("[Goya] |- Minio catch IOException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (NoSuchAlgorithmException e) {
             log.error("[Goya] |- Minio catch NoSuchAlgorithmException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (ServerException e) {
             log.error("[Goya] |- Minio catch ServerException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (XmlParserException e) {
             log.error("[Goya] |- Minio catch XmlParserException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(minioClient);
         }
@@ -1562,31 +1562,31 @@ public class MinioObjectService extends BaseMinioService {
             return minioClient.getObject(getObjectArgs);
         } catch (ErrorResponseException e) {
             log.error("[Goya] |- Minio catch ErrorResponseException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InsufficientDataException e) {
             log.error("[Goya] |- Minio catch InsufficientDataException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InternalException e) {
             log.error("[Goya] |- Minio catch InternalException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidKeyException e) {
             log.error("[Goya] |- Minio catch InvalidKeyException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidResponseException e) {
             log.error("[Goya] |- Minio catch InvalidResponseException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (IOException e) {
             log.error("[Goya] |- Minio catch IOException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (NoSuchAlgorithmException e) {
             log.error("[Goya] |- Minio catch NoSuchAlgorithmException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (ServerException e) {
             log.error("[Goya] |- Minio catch ServerException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (XmlParserException e) {
             log.error("[Goya] |- Minio catch XmlParserException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(minioClient);
         }
@@ -1767,31 +1767,31 @@ public class MinioObjectService extends BaseMinioService {
             return minioClient.putObject(putObjectArgs);
         } catch (ErrorResponseException e) {
             log.error("[Goya] |- Minio catch ErrorResponseException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InsufficientDataException e) {
             log.error("[Goya] |- Minio catch InsufficientDataException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InternalException e) {
             log.error("[Goya] |- Minio catch InternalException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidKeyException e) {
             log.error("[Goya] |- Minio catch InvalidKeyException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidResponseException e) {
             log.error("[Goya] |- Minio catch InvalidResponseException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (IOException e) {
             log.error("[Goya] |- Minio catch IOException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (NoSuchAlgorithmException e) {
             log.error("[Goya] |- Minio catch NoSuchAlgorithmException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (ServerException e) {
             log.error("[Goya] |- Minio catch ServerException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (XmlParserException e) {
             log.error("[Goya] |- Minio catch XmlParserException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(minioClient);
         }

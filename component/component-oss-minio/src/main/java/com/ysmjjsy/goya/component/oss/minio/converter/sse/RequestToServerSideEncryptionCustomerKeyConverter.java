@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.oss.minio.converter.sse;
 
-import com.ysmjjsy.goya.component.core.exception.CommonException;
-import com.ysmjjsy.goya.component.core.utils.GoyaCryptoUtils;
+import com.ysmjjsy.goya.component.framework.common.exception.GoyaException;
+import com.ysmjjsy.goya.component.framework.crypto.utils.GoyaCryptoUtils;
 import io.minio.ServerSideEncryptionCustomerKey;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -29,10 +29,10 @@ public class RequestToServerSideEncryptionCustomerKeyConverter implements Conver
                 return new ServerSideEncryptionCustomerKey(secretKey);
             } catch (InvalidKeyException e) {
                 log.error("[Goya] |- Minio catch InvalidKeyException in ObjectReadRequest prepare.", e);
-                throw new CommonException(e.getMessage());
+                throw new GoyaException(e.getMessage());
             } catch (NoSuchAlgorithmException e) {
                 log.error("[Goya] |- Minio catch NoSuchAlgorithmException in ObjectReadRequest prepare.", e);
-                throw new CommonException(e.getMessage());
+                throw new GoyaException(e.getMessage());
             }
         }
 

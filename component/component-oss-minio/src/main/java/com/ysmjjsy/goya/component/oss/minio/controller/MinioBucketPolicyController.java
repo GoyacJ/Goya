@@ -1,11 +1,12 @@
 package com.ysmjjsy.goya.component.oss.minio.controller;
 
+import com.ysmjjsy.goya.component.framework.common.constants.DefaultConst;
+import com.ysmjjsy.goya.component.framework.core.api.ApiRes;
+import com.ysmjjsy.goya.component.framework.servlet.definition.IController;
+import com.ysmjjsy.goya.component.framework.servlet.idempotent.Idempotent;
 import com.ysmjjsy.goya.component.oss.minio.request.bucket.DeleteBucketPolicyRequest;
 import com.ysmjjsy.goya.component.oss.minio.request.bucket.SetBucketPolicyRequest;
 import com.ysmjjsy.goya.component.oss.minio.service.MinioBucketPolicyService;
-import com.ysmjjsy.goya.component.web.annotation.Idempotent;
-import com.ysmjjsy.goya.component.web.definition.IController;
-import com.ysmjjsy.goya.component.web.response.Response;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -26,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @since 2023/6/6 21:45
  */
 @RestController
-@RequestMapping("/oss/minio/bucket/policy")
+@RequestMapping(DefaultConst.DEFAULT_PROJECT_NAME + "/oss/minio/bucket/policy")
 @Tag(name = "Minio存储桶访问策略管理")
 public class MinioBucketPolicyController implements IController {
 
@@ -47,7 +48,7 @@ public class MinioBucketPolicyController implements IController {
             })
     @Parameter(name = "request", required = true, description = "SetBucketPolicyRequest请求参数实体", schema = @Schema(implementation = SetBucketPolicyRequest.class))
     @PutMapping
-    public Response<Boolean> set(@Validated @RequestBody SetBucketPolicyRequest request) {
+    public ApiRes<Boolean> set(@Validated @RequestBody SetBucketPolicyRequest request) {
         minioBucketPolicyService.setBucketPolicy(request.build());
         return response(true);
     }
@@ -63,7 +64,7 @@ public class MinioBucketPolicyController implements IController {
             })
     @Parameter(name = "request", required = true, description = "DeleteBucketPolicyRequest请求参数实体", schema = @Schema(implementation = DeleteBucketPolicyRequest.class))
     @DeleteMapping
-    public Response<Boolean> delete(@Validated @RequestBody DeleteBucketPolicyRequest request) {
+    public ApiRes<Boolean> delete(@Validated @RequestBody DeleteBucketPolicyRequest request) {
         minioBucketPolicyService.deleteBucketPolicy(request.build());
         return response(true);
     }

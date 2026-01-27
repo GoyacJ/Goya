@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.oss.minio.converter.domain;
 
-import com.ysmjjsy.goya.component.oss.core.domain.object.GetObjectDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.object.GetObjectDomain;
 import io.minio.GetObjectResponse;
 import org.springframework.core.convert.converter.Converter;
 

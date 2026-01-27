@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.oss.minio.definition.domain;
 
-import com.ysmjjsy.goya.component.oss.core.core.converter.OssConverter;
-import com.ysmjjsy.goya.component.oss.core.domain.base.BaseDomain;
+import com.ysmjjsy.goya.component.framework.oss.core.converter.OssConverter;
+import com.ysmjjsy.goya.component.framework.oss.domain.base.BaseDomain;
 import io.minio.GenericResponse;
 
 /**

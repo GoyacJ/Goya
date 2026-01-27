@@ -1,11 +1,12 @@
 package com.ysmjjsy.goya.component.oss.minio.controller;
 
+import com.ysmjjsy.goya.component.framework.common.constants.DefaultConst;
+import com.ysmjjsy.goya.component.framework.core.api.ApiRes;
+import com.ysmjjsy.goya.component.framework.servlet.definition.IController;
+import com.ysmjjsy.goya.component.framework.servlet.idempotent.Idempotent;
 import com.ysmjjsy.goya.component.oss.minio.request.bucket.DeleteBucketEncryptionRequest;
 import com.ysmjjsy.goya.component.oss.minio.request.bucket.SetBucketEncryptionRequest;
 import com.ysmjjsy.goya.component.oss.minio.service.MinioBucketEncryptionService;
-import com.ysmjjsy.goya.component.web.annotation.Idempotent;
-import com.ysmjjsy.goya.component.web.definition.IController;
-import com.ysmjjsy.goya.component.web.response.Response;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -26,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @since 2023/6/6 22:00
  */
 @RestController
-@RequestMapping("/oss/minio/bucket/encryption")
+@RequestMapping(DefaultConst.DEFAULT_PROJECT_NAME + "/oss/minio/bucket/encryption")
 @Tag(name = "Minio存储桶加密方式管理")
 public class MinioBucketEncryptionController implements IController {
 
@@ -47,7 +48,7 @@ public class MinioBucketEncryptionController implements IController {
             })
     @Parameter(name = "request", required = true, description = "SetBucketEncryptionRequest请求参数实体", schema = @Schema(implementation = SetBucketEncryptionRequest.class))
     @PutMapping
-    public Response<Boolean> set(@Validated @RequestBody SetBucketEncryptionRequest request) {
+    public ApiRes<Boolean> set(@Validated @RequestBody SetBucketEncryptionRequest request) {
         minioBucketEncryptionService.setBucketEncryption(request.build());
         return response(true);
     }
@@ -63,7 +64,7 @@ public class MinioBucketEncryptionController implements IController {
             })
     @Parameter(name = "request", required = true, description = "DeleteBucketEncryptionRequest请求参数实体", schema = @Schema(implementation = DeleteBucketEncryptionRequest.class))
     @DeleteMapping
-    public Response<Boolean> delete(@Validated @RequestBody DeleteBucketEncryptionRequest request) {
+    public ApiRes<Boolean> delete(@Validated @RequestBody DeleteBucketEncryptionRequest request) {
         minioBucketEncryptionService.deleteBucketEncryption(request.build());
         return response(true);
     }

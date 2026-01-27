@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.oss.minio.converter.domain;
 
-import com.ysmjjsy.goya.component.oss.core.domain.multipart.UploadPartDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.multipart.UploadPartDomain;
 import io.minio.UploadPartResponse;
 import org.springframework.core.convert.converter.Converter;
 

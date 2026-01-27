@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.oss.minio.domain.policy;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.ysmjjsy.goya.component.core.pojo.IEntity;
+import com.ysmjjsy.goya.component.framework.common.pojo.IEntity;
 import lombok.Data;
 
 import java.io.Serial;

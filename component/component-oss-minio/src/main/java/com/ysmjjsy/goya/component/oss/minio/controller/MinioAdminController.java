@@ -1,8 +1,9 @@
 package com.ysmjjsy.goya.component.oss.minio.controller;
 
+import com.ysmjjsy.goya.component.framework.common.constants.DefaultConst;
+import com.ysmjjsy.goya.component.framework.core.api.ApiRes;
+import com.ysmjjsy.goya.component.framework.servlet.secure.AccessLimited;
 import com.ysmjjsy.goya.component.oss.minio.service.MinioAdminService;
-import com.ysmjjsy.goya.component.web.annotation.AccessLimited;
-import com.ysmjjsy.goya.component.web.response.Response;
 import io.minio.admin.messages.DataUsageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -20,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @since 2023/6/28 14:58
  */
 @RestController
-@RequestMapping("/oss/minio/admin")
+@RequestMapping(DefaultConst.DEFAULT_PROJECT_NAME + "/oss/minio/admin")
 @Tag(name = "Minio统计信息")
 public class MinioAdminController {
 
@@ -41,8 +42,8 @@ public class MinioAdminController {
                     @ApiResponse(responseCode = "503", description = "Minio Server无法访问或未启动")
             })
     @GetMapping("/usage")
-    public Response<DataUsageInfo> dataUsageInfo() {
+    public ApiRes<DataUsageInfo> dataUsageInfo() {
         DataUsageInfo info = minioAdminService.getDataUsageInfo();
-        return Response.success("查询成功", info);
+        return ApiRes.ok(info, "查询成功");
     }
 }

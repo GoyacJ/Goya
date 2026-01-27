@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.oss.minio.converter.arguments;
 
-import com.ysmjjsy.goya.component.oss.core.arguments.bucket.DeleteBucketArguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.bucket.DeleteBucketArguments;
 import com.ysmjjsy.goya.component.oss.minio.definition.arguments.ArgumentsToBucketConverter;
 import io.minio.RemoveBucketArgs;
 

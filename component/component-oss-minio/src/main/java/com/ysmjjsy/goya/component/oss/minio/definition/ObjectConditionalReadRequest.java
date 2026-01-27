@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.oss.minio.definition;
 
-import com.ysmjjsy.goya.component.core.utils.GoyaDateUtils;
+import com.ysmjjsy.goya.component.framework.common.utils.GoyaDateUtils;
 import io.minio.ObjectConditionalReadArgs;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMin;

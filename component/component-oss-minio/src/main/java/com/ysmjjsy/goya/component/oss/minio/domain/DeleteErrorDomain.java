@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.oss.minio.domain;
 
-import com.ysmjjsy.goya.component.oss.core.domain.object.DeleteObjectDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.object.DeleteObjectDomain;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

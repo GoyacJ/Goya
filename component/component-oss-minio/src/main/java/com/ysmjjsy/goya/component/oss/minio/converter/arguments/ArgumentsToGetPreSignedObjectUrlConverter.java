@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.oss.minio.converter.arguments;
 
-import com.ysmjjsy.goya.component.oss.core.arguments.object.GeneratePresignedUrlArguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.object.GeneratePresignedUrlArguments;
 import com.ysmjjsy.goya.component.oss.minio.definition.arguments.ArgumentsToObjectVersionConverter;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.http.Method;

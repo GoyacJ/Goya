@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.oss.minio.converter.domain;
 
-import com.ysmjjsy.goya.component.oss.core.domain.base.OwnerDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.base.OwnerDomain;
 import io.minio.messages.Owner;
 import org.springframework.core.convert.converter.Converter;
 

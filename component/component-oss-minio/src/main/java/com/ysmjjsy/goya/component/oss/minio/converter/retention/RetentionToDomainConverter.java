@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.oss.minio.converter.retention;
 
-import com.ysmjjsy.goya.component.core.utils.GoyaDateUtils;
+import com.ysmjjsy.goya.component.framework.common.utils.GoyaDateUtils;
 import com.ysmjjsy.goya.component.oss.minio.domain.RetentionDomain;
 import com.ysmjjsy.goya.component.oss.minio.enums.RetentionModeEnums;
 import io.minio.messages.Retention;

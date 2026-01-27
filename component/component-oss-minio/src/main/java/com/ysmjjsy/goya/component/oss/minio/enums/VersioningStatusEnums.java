@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-import com.ysmjjsy.goya.component.core.enums.IEnum;
+import com.ysmjjsy.goya.component.framework.common.enums.CodeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -24,7 +24,7 @@ import java.util.Map;
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 @Getter
 @AllArgsConstructor
-public enum VersioningStatusEnums implements IEnum<Integer> {
+public enum VersioningStatusEnums implements CodeEnum<Integer> {
 
     OFF(0, "未开启"),
     ENABLED(1, "开启"),
@@ -34,7 +34,7 @@ public enum VersioningStatusEnums implements IEnum<Integer> {
     @JsonValue
     private final Integer code;
     @Schema(name = "文字")
-    private final String description;
+    private final String label;
 
     private static final Map<Integer, VersioningStatusEnums> INDEX_MAP = Maps.newHashMap();
     private static final List<Map<String, Object>> JSON_STRUCT = new ArrayList<>();
@@ -46,7 +46,7 @@ public enum VersioningStatusEnums implements IEnum<Integer> {
                     ImmutableMap.<String, Object>builder()
                             .put("index", anEnum.ordinal())
                             .put("code", anEnum.getCode())
-                            .put("description", anEnum.getDescription())
+                            .put("label", anEnum.getLabel())
                             .build());
         }
     }

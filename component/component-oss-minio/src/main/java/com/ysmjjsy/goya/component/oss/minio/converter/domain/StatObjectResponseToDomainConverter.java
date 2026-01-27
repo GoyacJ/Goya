@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.oss.minio.converter.domain;
 
-import com.ysmjjsy.goya.component.core.utils.GoyaDateUtils;
-import com.ysmjjsy.goya.component.oss.core.domain.object.ObjectMetadataDomain;
+import com.ysmjjsy.goya.component.framework.common.utils.GoyaDateUtils;
+import com.ysmjjsy.goya.component.framework.oss.domain.object.ObjectMetadataDomain;
 import io.minio.StatObjectResponse;
 import org.springframework.core.convert.converter.Converter;
 

@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.oss.minio.service;
 
-import com.ysmjjsy.goya.component.core.exception.CommonException;
+import com.ysmjjsy.goya.component.framework.common.exception.GoyaException;
 import com.ysmjjsy.goya.component.oss.minio.definition.pool.MinioAdminClientObjectPool;
 import com.ysmjjsy.goya.component.oss.minio.definition.service.BaseMinioAdminService;
 import io.minio.admin.GroupInfo;
@@ -42,13 +42,13 @@ public class MinioAdminGroupService extends BaseMinioAdminService {
             return minioAdminClient.listGroups();
         } catch (NoSuchAlgorithmException e) {
             log.error("[Goya] |- Minio catch NoSuchAlgorithmException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidKeyException e) {
             log.error("[Goya] |- Minio catch InvalidKeyException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (IOException e) {
             log.error("[Goya] |- Minio catch IOException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(minioAdminClient);
         }
@@ -69,13 +69,13 @@ public class MinioAdminGroupService extends BaseMinioAdminService {
             return minioAdminClient.getGroupInfo(group);
         } catch (NoSuchAlgorithmException e) {
             log.error("[Goya] |- Minio catch NoSuchAlgorithmException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidKeyException e) {
             log.error("[Goya] |- Minio catch InvalidKeyException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (IOException e) {
             log.error("[Goya] |- Minio catch IOException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(minioAdminClient);
         }
@@ -97,13 +97,13 @@ public class MinioAdminGroupService extends BaseMinioAdminService {
             minioAdminClient.addUpdateGroup(group, groupStatus, members);
         } catch (NoSuchAlgorithmException e) {
             log.error("[Goya] |- Minio catch NoSuchAlgorithmException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidKeyException e) {
             log.error("[Goya] |- Minio catch InvalidKeyException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (IOException e) {
             log.error("[Goya] |- Minio catch IOException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(minioAdminClient);
         }
@@ -123,13 +123,13 @@ public class MinioAdminGroupService extends BaseMinioAdminService {
             minioAdminClient.removeGroup(group);
         } catch (NoSuchAlgorithmException e) {
             log.error("[Goya] |- Minio catch NoSuchAlgorithmException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidKeyException e) {
             log.error("[Goya] |- Minio catch InvalidKeyException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (IOException e) {
             log.error("[Goya] |- Minio catch IOException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(minioAdminClient);
         }

@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.oss.minio.converter.domain;
 
-import com.ysmjjsy.goya.component.core.utils.GoyaDateUtils;
-import com.ysmjjsy.goya.component.oss.core.domain.multipart.UploadPartCopyDomain;
+import com.ysmjjsy.goya.component.framework.common.utils.GoyaDateUtils;
+import com.ysmjjsy.goya.component.framework.oss.domain.multipart.UploadPartCopyDomain;
 import io.minio.UploadPartCopyResponse;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.core.convert.converter.Converter;

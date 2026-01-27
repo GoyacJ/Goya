@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.oss.minio.service;
 
-import com.ysmjjsy.goya.component.core.exception.CommonException;
+import com.ysmjjsy.goya.component.framework.common.exception.GoyaException;
 import com.ysmjjsy.goya.component.oss.minio.definition.pool.MinioAdminClientObjectPool;
 import com.ysmjjsy.goya.component.oss.minio.definition.service.BaseMinioAdminService;
 import com.ysmjjsy.goya.component.oss.minio.domain.policy.PolicyDomain;
@@ -41,13 +41,13 @@ public class MinioAdminPolicyService extends BaseMinioAdminService {
             return minioAdminClient.listCannedPolicies();
         } catch (NoSuchAlgorithmException e) {
             log.error("[Goya] |- Minio catch NoSuchAlgorithmException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidKeyException e) {
             log.error("[Goya] |- Minio catch InvalidKeyException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (IOException e) {
             log.error("[Goya] |- Minio catch IOException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(minioAdminClient);
         }
@@ -68,13 +68,13 @@ public class MinioAdminPolicyService extends BaseMinioAdminService {
             minioAdminClient.addCannedPolicy(name, policy);
         } catch (NoSuchAlgorithmException e) {
             log.error("[Goya] |- Minio catch NoSuchAlgorithmException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidKeyException e) {
             log.error("[Goya] |- Minio catch InvalidKeyException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (IOException e) {
             log.error("[Goya] |- Minio catch IOException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(minioAdminClient);
         }
@@ -94,13 +94,13 @@ public class MinioAdminPolicyService extends BaseMinioAdminService {
             minioAdminClient.removeCannedPolicy(name);
         } catch (NoSuchAlgorithmException e) {
             log.error("[Goya] |- Minio catch NoSuchAlgorithmException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidKeyException e) {
             log.error("[Goya] |- Minio catch InvalidKeyException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (IOException e) {
             log.error("[Goya] |- Minio catch IOException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(minioAdminClient);
         }
@@ -122,13 +122,13 @@ public class MinioAdminPolicyService extends BaseMinioAdminService {
             minioAdminClient.setPolicy(userOrGroupName, isGroup, policyName);
         } catch (NoSuchAlgorithmException e) {
             log.error("[Goya] |- Minio catch NoSuchAlgorithmException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (InvalidKeyException e) {
             log.error("[Goya] |- Minio catch InvalidKeyException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (IOException e) {
             log.error("[Goya] |- Minio catch IOException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(minioAdminClient);
         }

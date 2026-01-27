@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.oss.minio.definition.arguments;
 
-import com.ysmjjsy.goya.component.oss.core.arguments.base.ObjectWriteArguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.base.ObjectWriteArguments;
 import io.minio.ObjectWriteArgs;
 import org.apache.commons.collections4.MapUtils;
 

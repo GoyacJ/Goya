@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.oss.minio.converter.domain;
 
-import com.ysmjjsy.goya.component.oss.core.domain.multipart.PartSummaryDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.multipart.PartSummaryDomain;
 import io.minio.messages.Part;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.core.convert.converter.Converter;

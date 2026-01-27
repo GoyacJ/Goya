@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.oss.minio.definition.arguments;
 
-import com.ysmjjsy.goya.component.core.constants.SymbolConst;
-import com.ysmjjsy.goya.component.core.utils.GoyaDateUtils;
-import com.ysmjjsy.goya.component.oss.core.arguments.base.ObjectConditionalReadArguments;
+import com.ysmjjsy.goya.component.framework.common.constants.SymbolConst;
+import com.ysmjjsy.goya.component.framework.common.utils.GoyaDateUtils;
+import com.ysmjjsy.goya.component.framework.oss.arguments.base.ObjectConditionalReadArguments;
 import io.minio.ObjectConditionalReadArgs;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
