@@ -35,6 +35,18 @@
             <groupId>com.ysmjjsy.goya</groupId>
             <artifactId>component-captcha</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.ysmjjsy.goya</groupId>
+            <artifactId>component-oss-aliyun</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.ysmjjsy.goya</groupId>
+            <artifactId>component-oss-minio</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.ysmjjsy.goya</groupId>
+            <artifactId>component-oss-s3</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
