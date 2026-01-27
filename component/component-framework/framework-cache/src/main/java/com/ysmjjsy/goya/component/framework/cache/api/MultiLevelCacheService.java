@@ -38,7 +38,7 @@ public interface MultiLevelCacheService extends CacheService {
      * @param key 键
      * @return 是否删除成功
      */
-    boolean evictLocal(String cacheName, Object key);
+    <K> boolean evictLocal(String cacheName, K key);
 
     /**
      * 仅清理远程缓存（L2）。
@@ -47,5 +47,5 @@ public interface MultiLevelCacheService extends CacheService {
      * @param key 键
      * @return 是否删除成功（无 L2 时恒为 false）
      */
-    boolean evictRemote(String cacheName, Object key);
+    <K> boolean evictRemote(String cacheName, K key);
 }

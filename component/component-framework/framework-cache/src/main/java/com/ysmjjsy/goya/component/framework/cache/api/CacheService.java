@@ -28,31 +28,23 @@ public interface CacheService {
      *
      * @param cacheName 缓存名
      * @param key       键
-     * @param <T>       泛型
-     * @return 命中返回值，否则返回 null
-     */
-    <T> T get(String cacheName, Object key);
-
-    /**
-     * 获取缓存值。
-     *
-     * @param cacheName 缓存名
-     * @param key       键
      * @param type      期望类型
-     * @param <T>       泛型
+     * @param <K>       泛型
+     * @param <V>       泛型
      * @return 命中返回值，否则返回 null
      */
-    <T> T get(String cacheName, Object key, Class<T> type);
+    <K, V> V get(String cacheName, K key, Class<V> type);
 
     /**
      * 获取缓存值（Optional 形式）。
      *
      * @param cacheName 缓存名
      * @param key       键
-     * @param <T>       泛型
+     * @param <K>       泛型
+     * @param <V>       泛型
      * @return Optional
      */
-    <T> Optional<T> getOptional(String cacheName, Object key);
+    <K, V> Optional<V> getOptional(String cacheName, K key);
 
     /**
      * 获取缓存值（Optional 形式）。
@@ -60,10 +52,11 @@ public interface CacheService {
      * @param cacheName 缓存名
      * @param key       键
      * @param type      期望类型
-     * @param <T>       泛型
+     * @param <K>       泛型
+     * @param <V>       泛型
      * @return Optional
      */
-    <T> Optional<T> getOptional(String cacheName, Object key, Class<T> type);
+    <K, V> Optional<V> getOptional(String cacheName, K key, Class<V> type);
 
     /**
      * 写入缓存（使用该 cacheName 的默认 TTL）。
@@ -71,8 +64,10 @@ public interface CacheService {
      * @param cacheName 缓存名
      * @param key       键
      * @param value     值
+     * @param <K>       泛型
+     * @param <V>       泛型
      */
-    void put(String cacheName, Object key, Object value);
+    <K, V> void put(String cacheName, K key, V value);
 
     /**
      * 写入缓存（为该条记录指定 TTL）。
@@ -81,17 +76,20 @@ public interface CacheService {
      * @param key       键
      * @param value     值
      * @param ttl       过期时间（为空或非正数表示使用默认 TTL；Duration.ZERO 表示立即过期）
+     * @param <K>       泛型
+     * @param <V>       泛型
      */
-    void put(String cacheName, Object key, Object value, Duration ttl);
+    <K, V> void put(String cacheName, K key, V value, Duration ttl);
 
     /**
      * 删除缓存项。
      *
      * @param cacheName 缓存名
      * @param key       键
+     * @param <K>       泛型
      * @return 是否实际删除（命中才为 true）
      */
-    boolean delete(String cacheName, Object key);
+    <K> boolean delete(String cacheName, K key);
 
     /**
      * 清空某个缓存区域。
@@ -105,18 +103,21 @@ public interface CacheService {
      *
      * @param cacheName cacheName
      * @param key       key
+     * @param <K>       泛型
      * @return 是否存在
      */
-    boolean exists(String cacheName, Object key);
+    <K> boolean exists(String cacheName, K key);
 
     /**
      * 批量获取。
      *
      * @param cacheName 缓存名
      * @param keys      键集合
+     * @param <K>       泛型
+     * @param <V>       泛型
      * @return map：key -> value（仅包含命中的项）
      */
-    Map<Object, Object> getAll(String cacheName, Collection<?> keys);
+    <K, V> Map<K, V> getAll(String cacheName, Collection<K> keys);
 
     /**
      * 获取或加载（缓存未命中则调用 loader 计算并写入缓存）。
@@ -126,10 +127,11 @@ public interface CacheService {
      * @param cacheName 缓存名
      * @param key       键
      * @param loader    加载器
-     * @param <T>       泛型
+     * @param <K>       泛型
+     * @param <V>       泛型
      * @return 值
      */
-    <T> T getOrLoad(String cacheName, Object key, Supplier<T> loader);
+    <K, V> V getOrLoad(String cacheName, K key, Supplier<V> loader);
 
     /**
      * 获取或加载（缓存未命中则调用 loader 计算并写入缓存）。
@@ -140,10 +142,11 @@ public interface CacheService {
      * @param key       键
      * @param type      期望类型
      * @param loader    加载器
-     * @param <T>       泛型
+     * @param <K>       泛型
+     * @param <V>       泛型
      * @return 值
      */
-    <T> T getOrLoad(String cacheName, Object key, Class<T> type, Supplier<T> loader);
+    <K, V> V getOrLoad(String cacheName, K key, Class<V> type, Supplier<V> loader);
 
     /**
      * 获取或加载（并为该条记录指定 TTL）。
@@ -152,10 +155,11 @@ public interface CacheService {
      * @param key       键
      * @param ttl       TTL
      * @param loader    加载器
-     * @param <T>       泛型
+     * @param <K>       泛型
+     * @param <V>       泛型
      * @return 值
      */
-    <T> T getOrLoad(String cacheName, Object key, Duration ttl, Supplier<T> loader);
+    <K, V> V getOrLoad(String cacheName, K key, Duration ttl, Supplier<V> loader);
 
     /**
      * 获取或加载（并为该条记录指定 TTL）。
@@ -165,10 +169,11 @@ public interface CacheService {
      * @param type      期望类型
      * @param ttl       TTL
      * @param loader    加载器
-     * @param <T>       泛型
+     * @param <K>       泛型
+     * @param <V>       泛型
      * @return 值
      */
-    <T> T getOrLoad(String cacheName, Object key, Class<T> type, Duration ttl, Supplier<T> loader);
+    <K, V> V getOrLoad(String cacheName, K key, Class<V> type, Duration ttl, Supplier<V> loader);
 
     /**
      * 原子写入：仅当 key 不存在时写入，并设置 TTL。

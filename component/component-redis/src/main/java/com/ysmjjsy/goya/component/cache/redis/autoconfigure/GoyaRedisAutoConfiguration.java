@@ -20,7 +20,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
-import tools.jackson.databind.ObjectMapper;
 
 /**
  * <p>Redis 自动配置类</p>
@@ -47,9 +46,9 @@ public class GoyaRedisAutoConfiguration {
     }
 
     @Bean
-    public RedissonAutoConfigurationCustomizer redissonCustomizer(ObjectMapper objectMapper) {
+    public RedissonAutoConfigurationCustomizer redissonCustomizer() {
         log.trace("[Goya] |- component [redis] GoyaRedisAutoConfiguration |- bean [redissonCustomizer] register.");
-        return config -> config.setCodec(new JsonJackson3Codec(objectMapper));
+        return config -> config.setCodec(new JsonJackson3Codec());
     }
 
     @Bean

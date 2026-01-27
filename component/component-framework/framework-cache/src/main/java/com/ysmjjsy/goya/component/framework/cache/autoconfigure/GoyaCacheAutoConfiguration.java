@@ -19,7 +19,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -59,10 +58,10 @@ public class GoyaCacheAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean(CacheManager.class)
-    public CacheManager cacheManager(GoyaCacheProperties cacheProperties) {
+    @ConditionalOnMissingBean(GoyaCaffeineCacheManager.class)
+    public GoyaCaffeineCacheManager goyaCaffeineCacheManager(GoyaCacheProperties cacheProperties) {
         GoyaCaffeineCacheManager cacheManager = new GoyaCaffeineCacheManager(cacheProperties);
-        log.trace("[Goya] |- component [framework] GoyaCacheAutoConfiguration |- bean [cacheManager] register.");
+        log.trace("[Goya] |- component [framework] GoyaCacheAutoConfiguration |- bean [goyaCaffeineCacheManager] register.");
         return cacheManager;
     }
 
@@ -73,7 +72,7 @@ public class GoyaCacheAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(CaffeineCacheService.class)
-    public CaffeineCacheService caffeineCacheService(CacheManager cacheManager, CacheKeySerializer cacheKeySerializer, GoyaContext goyaContext) {
+    public CaffeineCacheService caffeineCacheService(GoyaCaffeineCacheManager cacheManager, CacheKeySerializer cacheKeySerializer, GoyaContext goyaContext) {
         CaffeineCacheService caffeineCacheService = new CaffeineCacheService(cacheManager, cacheKeySerializer, goyaContext);
         log.trace("[Goya] |- component [framework] GoyaCacheAutoConfiguration |- bean [caffeineCacheService] register.");
         return caffeineCacheService;

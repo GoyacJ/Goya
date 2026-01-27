@@ -87,7 +87,7 @@ public abstract class CacheSignedSupport<K, V> extends CacheSupport<K, V> {
      * @return 验签通过返回业务值；未命中/验签失败返回 Optional.empty()
      */
     public Optional<V> getVerified(K key) {
-        String json = cacheService.get(cacheName, key);
+        String json = cacheService.get(cacheName, key, String.class);
         if (json == null) {
             return Optional.empty();
         }
@@ -158,7 +158,6 @@ public abstract class CacheSignedSupport<K, V> extends CacheSupport<K, V> {
         // value 本身不重要，写入常量即可
         return cacheService.putIfAbsent(cacheName, key, "1", ttl);
     }
-
 
 
     /**

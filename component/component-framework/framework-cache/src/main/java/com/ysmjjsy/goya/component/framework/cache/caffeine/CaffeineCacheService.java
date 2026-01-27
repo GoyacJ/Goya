@@ -6,7 +6,6 @@ import com.ysmjjsy.goya.component.framework.core.context.GoyaContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 import org.springframework.util.StringUtils;
 
 import java.time.Duration;
@@ -36,7 +35,7 @@ public class CaffeineCacheService implements CacheService {
     /**
      * Spring CacheManager（底层为 CaffeineCache / 你的 GoyaCaffeineCache）。
      */
-    private final CacheManager cacheManager;
+    private final GoyaCaffeineCacheManager cacheManager;
 
     /**
      * 缓存 key 序列化器（统一构建最终 key）。
@@ -52,14 +51,13 @@ public class CaffeineCacheService implements CacheService {
      */
     private static final String KEY_PREFIX = "goya";
 
-    @Override
-    public <V> V get(String cacheName, Object key) {
+    public <K,V> V get(String cacheName, K key) {
         return get(cacheName, key, null);
     }
 
     @Override
     @SuppressWarnings("all")
-    public <V> V get(String cacheName, Object key, Class<V> type) {
+    public <K,V> V get(String cacheName, K key, Class<V> type) {
         Cache cache = cacheManager.getCache(cacheName);
         if (cache == null) {
             return null;
@@ -73,22 +71,22 @@ public class CaffeineCacheService implements CacheService {
     }
 
     @Override
-    public <V> Optional<V> getOptional(String cacheName, Object key) {
+    public <K,V> Optional<V> getOptional(String cacheName, K key) {
         return Optional.ofNullable(get(cacheName, key));
     }
 
     @Override
-    public <V> Optional<V> getOptional(String cacheName, Object key, Class<V> type) {
+    public <K,V> Optional<V> getOptional(String cacheName, K key, Class<V> type) {
         return Optional.ofNullable(get(cacheName, key, type));
     }
 
     @Override
-    public void put(String cacheName, Object key, Object value) {
+    public <K,V> void put(String cacheName, K key, V value) {
         put(cacheName, key, value, null);
     }
 
     @Override
-    public void put(String cacheName, Object key, Object value, Duration ttl) {
+    public <K,V> void put(String cacheName, K key, V value, Duration ttl) {
         Cache cache = cacheManager.getCache(cacheName);
         if (cache == null) {
             return;
@@ -103,7 +101,7 @@ public class CaffeineCacheService implements CacheService {
     }
 
     @Override
-    public boolean delete(String cacheName, Object key) {
+    public <K> boolean delete(String cacheName, K key) {
         Cache cache = cacheManager.getCache(cacheName);
         if (cache == null) {
             return false;
@@ -119,19 +117,20 @@ public class CaffeineCacheService implements CacheService {
     }
 
     @Override
-    public boolean exists(String cacheName, Object key) {
+    public <K> boolean exists(String cacheName, K key) {
         return Objects.nonNull(get(cacheName, key));
     }
 
     @Override
-    public Map<Object, Object> getAll(String cacheName, Collection<?> keys) {
+    @SuppressWarnings("unchecked")
+    public <K,V> Map<K, V> getAll(String cacheName, Collection<K> keys) {
         Cache cache = cacheManager.getCache(cacheName);
         if (cache == null || keys == null || keys.isEmpty()) {
             return Map.of();
         }
 
-        Map<Object, Object> out = new LinkedHashMap<>();
-        for (Object k : keys) {
+        Map<K, V> out = new LinkedHashMap<>();
+        for (K k : keys) {
             if (k == null) {
                 continue;
             }
@@ -139,30 +138,30 @@ public class CaffeineCacheService implements CacheService {
             Cache.ValueWrapper vw = cache.get(internalKey);
             if (vw != null) {
                 // 返回给 MultiLevel 的 key 必须是“原始 key”，否则 miss 计算会错误
-                out.put(k, vw.get());
+                out.put(k, (V) vw.get());
             }
         }
         return out;
     }
 
     @Override
-    public <V> V getOrLoad(String cacheName, Object key, Supplier<V> loader) {
+    public <K,V> V getOrLoad(String cacheName, K key, Supplier<V> loader) {
         return getOrLoad(cacheName, key, null, null, loader);
     }
 
     @Override
-    public <V> V getOrLoad(String cacheName, Object key, Class<V> type, Supplier<V> loader) {
+    public <K,V> V getOrLoad(String cacheName, K key, Class<V> type, Supplier<V> loader) {
         return getOrLoad(cacheName, key, type, null, loader);
     }
 
     @Override
-    public <V> V getOrLoad(String cacheName, Object key, Duration ttl, Supplier<V> loader) {
+    public <K,V> V getOrLoad(String cacheName, K key, Duration ttl, Supplier<V> loader) {
         return getOrLoad(cacheName, key, null, ttl, loader);
     }
 
     @Override
     @SuppressWarnings("all")
-    public <V> V getOrLoad(String cacheName, Object key, Class<V> type, Duration ttl, Supplier<V> loader) {
+    public <K,V> V getOrLoad(String cacheName, K key, Class<V> type, Duration ttl, Supplier<V> loader) {
         Objects.requireNonNull(loader, "loader 不能为空");
         Cache cache = cacheManager.getCache(cacheName);
         if (cache == null) {

@@ -27,31 +27,31 @@ public class TestController {
 
     @GetMapping("cache")
     public ApiResponse<String> cache() {
-        Object o = cacheService.get("test", "test1");
+        Object o = cacheService.get("test", "test1", String.class);
         if (o == null) {
             cacheService.put("test", "test1", "test1");
         }
-        String o1 = cacheService.get("test", "test1");
+        String o1 = cacheService.get("test", "test1", String.class);
         return ApiResponse.ok(o1);
     }
 
     @GetMapping("cache1")
     public ApiResponse<TestCacheDTO> cache1() {
-        TestCacheDTO o = cacheService.get("test", "test2");
+        TestCacheDTO o = cacheService.get("test", "test2", TestCacheDTO.class);
         if (o == null) {
             cacheService.put("test", "test2", new TestCacheDTO("111", "1"));
         }
-        TestCacheDTO o1 = cacheService.get("test", "test2");
+        TestCacheDTO o1 = cacheService.get("test", "test2", TestCacheDTO.class);
         return ApiResponse.ok(o1);
     }
 
     @GetMapping("cache2")
     public ApiResponse<TestCacheDTO> cache2() {
-        TestCacheDTO o = multiLevelCacheService.get("test", "test3");
+        TestCacheDTO o = multiLevelCacheService.get("test", "test3", TestCacheDTO.class);
         if (o == null) {
             multiLevelCacheService.put("test", "test3", new TestCacheDTO("111", "1"));
         }
-        TestCacheDTO o1 = multiLevelCacheService.get("test", "test3");
+        TestCacheDTO o1 = multiLevelCacheService.get("test", "test3", TestCacheDTO.class);
         return ApiResponse.ok(o1);
     }
 }

@@ -7,7 +7,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.io.Serial;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.*;
 
 /**
@@ -32,7 +32,7 @@ public record ApiResponse<T>(
         String code,
         String message,
         String traceId,
-        Instant timestamp,
+        LocalDateTime timestamp,
         T data,
         String path,
         Map<String, Object> meta,
@@ -63,7 +63,7 @@ public record ApiResponse<T>(
         }
 
         // 时间戳兜底
-        timestamp = (timestamp != null) ? timestamp : Instant.now();
+        timestamp = (timestamp != null) ? timestamp : LocalDateTime.now();
 
         // meta / fieldErrors 兜底与不可变
         meta = (meta == null) ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(meta));
@@ -169,7 +169,7 @@ public record ApiResponse<T>(
                 CommonErrorCode.OK.code(),
                 message,
                 traceId,
-                Instant.now(),
+                LocalDateTime.now(),
                 data,
                 getCurrentRequestPath(),
                 Map.of(),
@@ -210,7 +210,7 @@ public record ApiResponse<T>(
                 CommonErrorCode.OK.code(),
                 message,
                 traceId,
-                Instant.now(),
+                LocalDateTime.now(),
                 data,
                 getCurrentRequestPath(),
                 meta,
@@ -254,7 +254,7 @@ public record ApiResponse<T>(
                 errorCode.code(),
                 message,
                 traceId,
-                Instant.now(),
+                LocalDateTime.now(),
                 null,
                 getCurrentRequestPath(),
                 Map.of(),
@@ -398,7 +398,7 @@ public record ApiResponse<T>(
                     CommonErrorCode.OK.code(),
                     message,
                     traceId,
-                    Instant.now(),
+                    LocalDateTime.now(),
                     data,
                     getCurrentRequestPath(),
                     meta,
@@ -530,7 +530,7 @@ public record ApiResponse<T>(
                     errorCode.code(),
                     message,
                     traceId,
-                    Instant.now(),
+                    LocalDateTime.now(),
                     null,
                     getCurrentRequestPath(),
                     meta,

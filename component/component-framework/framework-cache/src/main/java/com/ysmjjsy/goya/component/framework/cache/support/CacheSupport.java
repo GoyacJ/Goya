@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.GenericTypeResolver;
 import org.springframework.util.ObjectUtils;
 
 import java.time.Duration;
@@ -38,6 +39,16 @@ public abstract class CacheSupport<K, V> {
         this.expire = expire;
     }
 
+    @SuppressWarnings("unchecked")
+    protected Class<V> getValueType() {
+        Class<?>[] typeArguments = GenericTypeResolver.resolveTypeArguments(getClass(), CacheSupport.class);
+        if (typeArguments == null || typeArguments.length < 2) {
+            throw new IllegalStateException("无法解析泛型类型参数: " + getClass().getName());
+        }
+
+        return (Class<V>) typeArguments[1];
+    }
+
     /**
      * 获取缓存
      *
@@ -45,7 +56,7 @@ public abstract class CacheSupport<K, V> {
      * @return value
      */
     public V get(K key) {
-        return cacheService.get(cacheName, key);
+        return cacheService.get(cacheName, key, getValueType());
     }
 
     /**

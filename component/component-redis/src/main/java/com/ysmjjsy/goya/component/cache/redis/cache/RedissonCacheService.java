@@ -3,10 +3,10 @@ package com.ysmjjsy.goya.component.cache.redis.cache;
 import com.ysmjjsy.goya.component.cache.redis.autoconfigure.properties.GoyaRedisProperties;
 import com.ysmjjsy.goya.component.framework.cache.api.CacheService;
 import com.ysmjjsy.goya.component.framework.cache.key.CacheKeySerializer;
-import com.ysmjjsy.goya.component.framework.core.json.GoyaJson;
 import lombok.RequiredArgsConstructor;
 import org.redisson.api.*;
-import tools.jackson.databind.json.JsonMapper;
+import org.redisson.client.codec.Codec;
+import org.redisson.codec.TypedJsonJackson3Codec;
 
 import java.time.Duration;
 import java.util.*;
@@ -55,34 +55,30 @@ public class RedissonCacheService implements CacheService {
     private final CacheKeySerializer cacheKeySerializer;
 
     @Override
-    public <T> T get(String cacheName, Object key) {
-        return get(cacheName, key, null);
-    }
-
-    @Override
-    public <T> T get(String cacheName, Object key, Class<T> type) {
+    public <K, V> V get(String cacheName, K key, Class<V> type) {
         String redisKey = buildRedisKey(cacheName, key);
-        Object raw = bucket(redisKey).get();
-        return castOrFail(raw, type);
+        Codec codec = new TypedJsonJackson3Codec(type);
+        RBucket<V> bucket = bucket(redisKey, codec);
+        return castOrFail(bucket.get(), type);
     }
 
     @Override
-    public <T> Optional<T> getOptional(String cacheName, Object key) {
+    public <K, V> Optional<V> getOptional(String cacheName, K key) {
         return Optional.ofNullable(get(cacheName, key, null));
     }
 
     @Override
-    public <T> Optional<T> getOptional(String cacheName, Object key, Class<T> type) {
+    public <K, V> Optional<V> getOptional(String cacheName, K key, Class<V> type) {
         return Optional.ofNullable(get(cacheName, key, type));
     }
 
     @Override
-    public void put(String cacheName, Object key, Object value) {
+    public <K, V> void put(String cacheName, K key, V value) {
         put(cacheName, key, value, props.defaultTtl());
     }
 
     @Override
-    public void put(String cacheName, Object key, Object value, Duration ttl) {
+    public <K, V> void put(String cacheName, K key, V value, Duration ttl) {
         if (value == null && !props.allowNullValues()) {
             delete(cacheName, key);
             return;
@@ -100,7 +96,7 @@ public class RedissonCacheService implements CacheService {
 
         // ttl<0：永久
         if (useTtl.isNegative()) {
-            bucket(redisKey).set(value);
+            bucket(redisKey, null).set(value);
             return;
         }
 
@@ -109,13 +105,13 @@ public class RedissonCacheService implements CacheService {
             delete(cacheName, key);
             return;
         }
-        bucket(redisKey).set(value, useTtl);
+        bucket(redisKey, null).set(value, useTtl);
     }
 
     @Override
-    public boolean delete(String cacheName, Object key) {
+    public <K> boolean delete(String cacheName, K key) {
         String redisKey = buildRedisKey(cacheName, key);
-        return bucket(redisKey).delete();
+        return bucket(redisKey, null).delete();
     }
 
     @Override
@@ -124,19 +120,19 @@ public class RedissonCacheService implements CacheService {
     }
 
     @Override
-    public boolean exists(String cacheName, Object key) {
+    public <K> boolean exists(String cacheName, K key) {
         String buildRedisKey = buildRedisKey(cacheName, key);
         return redisson.getBucket(buildRedisKey).isExists();
     }
 
     @Override
-    public Map<Object, Object> getAll(String cacheName, Collection<?> keys) {
+    public <K, V> Map<K, V> getAll(String cacheName, Collection<K> keys) {
         if (keys == null || keys.isEmpty()) {
             return Map.of();
         }
 
-        Map<Object, String> keyToRedisKey = new LinkedHashMap<>();
-        for (Object k : keys) {
+        Map<K, String> keyToRedisKey = new LinkedHashMap<>();
+        for (K k : keys) {
             if (k == null) {
                 continue;
             }
@@ -148,19 +144,20 @@ public class RedissonCacheService implements CacheService {
 
         // RBatch pipeline：一次性发送多个 GET
         RBatch batch = redisson.createBatch();
-        Map<Object, RFuture<Object>> futures = LinkedHashMap.newLinkedHashMap(keyToRedisKey.size());
+        Map<K, RFuture<V>> futures = LinkedHashMap.newLinkedHashMap(keyToRedisKey.size());
 
-        for (Map.Entry<Object, String> e : keyToRedisKey.entrySet()) {
-            RFuture<Object> f = batch.getBucket(e.getValue()).getAsync();
+        for (Map.Entry<K, String> e : keyToRedisKey.entrySet()) {
+            RBucketAsync<V> bucket = batch.getBucket(e.getValue());
+            RFuture<V> f = bucket.getAsync();
             futures.put(e.getKey(), f);
         }
 
         batch.execute();
 
-        Map<Object, Object> out = LinkedHashMap.newLinkedHashMap(futures.size());
-        for (Map.Entry<Object, RFuture<Object>> e : futures.entrySet()) {
+        Map<K, V> out = LinkedHashMap.newLinkedHashMap(futures.size());
+        for (Map.Entry<K, RFuture<V>> e : futures.entrySet()) {
             try {
-                Object raw = e.getValue().toCompletableFuture().join();
+                V raw = e.getValue().toCompletableFuture().join();
                 if (raw != null) {
                     out.put(e.getKey(), raw);
                 }
@@ -172,29 +169,29 @@ public class RedissonCacheService implements CacheService {
     }
 
     @Override
-    public <T> T getOrLoad(String cacheName, Object key, Supplier<T> loader) {
+    public <K, V> V getOrLoad(String cacheName, K key, Supplier<V> loader) {
         return getOrLoad(cacheName, key, null, null, loader);
     }
 
     @Override
-    public <T> T getOrLoad(String cacheName, Object key, Class<T> type, Supplier<T> loader) {
+    public <K, V> V getOrLoad(String cacheName, K key, Class<V> type, Supplier<V> loader) {
         return getOrLoad(cacheName, key, type, null, loader);
     }
 
     @Override
-    public <T> T getOrLoad(String cacheName, Object key, Duration ttl, Supplier<T> loader) {
+    public <K, V> V getOrLoad(String cacheName, K key, Duration ttl, Supplier<V> loader) {
         return getOrLoad(cacheName, key, null, ttl, loader);
     }
 
     @Override
-    public <T> T getOrLoad(String cacheName, Object key, Class<T> type, Duration ttl, Supplier<T> loader) {
-        T existed = get(cacheName, key, type);
+    public <K, V> V getOrLoad(String cacheName, K key, Class<V> type, Duration ttl, Supplier<V> loader) {
+        V existed = get(cacheName, key, type);
         if (existed != null) {
             return existed;
         }
 
         if (!props.stampedeLockEnabled()) {
-            T loaded = loader.get();
+            V loaded = loader.get();
             put(cacheName, key, loaded, ttl);
             return loaded;
         }
@@ -211,27 +208,27 @@ public class RedissonCacheService implements CacheService {
 
             if (!locked) {
                 // 拿不到锁：轻量重试一次
-                T retry = get(cacheName, key, type);
+                V retry = get(cacheName, key, type);
                 if (retry != null) {
                     return retry;
                 }
-                T loaded = loader.get();
+                V loaded = loader.get();
                 put(cacheName, key, loaded, ttl);
                 return loaded;
             }
 
             // 二次检查
-            T again = get(cacheName, key, type);
+            V again = get(cacheName, key, type);
             if (again != null) {
                 return again;
             }
 
-            T loaded = loader.get();
+            V loaded = loader.get();
             put(cacheName, key, loaded, ttl);
             return loaded;
         } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
-            T loaded = loader.get();
+            V loaded = loader.get();
             put(cacheName, key, loaded, ttl);
             return loaded;
         } finally {
@@ -288,8 +285,12 @@ public class RedissonCacheService implements CacheService {
         String buildRedisKey = buildRedisKey(cacheName, key);
         RBucket<Object> bucket = redisson.getBucket(buildRedisKey);
         Object v = bucket.get();
-        if (v == null) return null;
-        if (v instanceof Number n) return n.longValue();
+        if (v == null) {
+            return null;
+        }
+        if (v instanceof Number n) {
+            return n.longValue();
+        }
         // 兼容 Redis string 数值
         return Long.valueOf(String.valueOf(v));
     }
@@ -305,8 +306,11 @@ public class RedissonCacheService implements CacheService {
      * @param redisKey Redis key
      * @return bucket
      */
-    private RBucket<Object> bucket(String redisKey) {
-        return redisson.getBucket(redisKey);
+    private <V> RBucket<V> bucket(String redisKey, Codec codec) {
+        if (Objects.isNull(codec)) {
+            return redisson.getBucket(redisKey);
+        }
+        return redisson.getBucket(redisKey, codec);
     }
 
     /**
@@ -363,26 +367,15 @@ public class RedissonCacheService implements CacheService {
      * @return 目标类型对象
      */
     @SuppressWarnings("all")
-    private <T> T castOrFail(Object raw, Class<T> type) {
+    private <V> V castOrFail(V raw, Class<V> type) {
         if (raw == null) {
             return null;
         }
         if (type == null) {
-            return (T) raw;
+            return (V) raw;
         }
         if (type.isInstance(raw)) {
             return type.cast(raw);
-        }
-
-        if (raw instanceof Map) {
-            try {
-                JsonMapper mapper = GoyaJson.getJsonMapper();
-                if (mapper != null) {
-                    return mapper.convertValue(raw, type);
-                }
-            } catch (IllegalArgumentException e) {
-                // 转换失败，抛出原始异常
-            }
         }
 
         throw new IllegalStateException("缓存值类型不匹配，rawType=" + raw.getClass().getName()

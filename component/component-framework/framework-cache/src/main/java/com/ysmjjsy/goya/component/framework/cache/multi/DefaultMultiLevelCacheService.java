@@ -33,12 +33,12 @@ public class DefaultMultiLevelCacheService implements MultiLevelCacheService {
     }
 
     @Override
-    public boolean evictLocal(String cacheName, Object key) {
+    public <K> boolean evictLocal(String cacheName, K key) {
         return local.delete(cacheName, key);
     }
 
     @Override
-    public boolean evictRemote(String cacheName, Object key) {
+    public <K> boolean evictRemote(String cacheName, K key) {
         if (remote == null) {
             return false;
         }
@@ -46,20 +46,15 @@ public class DefaultMultiLevelCacheService implements MultiLevelCacheService {
     }
 
     @Override
-    public <T> T get(String cacheName, Object key) {
-        return get(cacheName, key, null);
-    }
-
-    @Override
-    public <T> T get(String cacheName, Object key, Class<T> type) {
-        T v = local.get(cacheName, key, type);
+    public <K, V> V get(String cacheName, K key, Class<V> type) {
+        V v = local.get(cacheName, key, type);
         if (v != null) {
             return v;
         }
         if (remote == null) {
             return null;
         }
-        T rv = remote.get(cacheName, key, type);
+        V rv = remote.get(cacheName, key, type);
         if (rv != null) {
             backfillLocal(cacheName, key, rv, null);
         }
@@ -67,22 +62,22 @@ public class DefaultMultiLevelCacheService implements MultiLevelCacheService {
     }
 
     @Override
-    public <T> Optional<T> getOptional(String cacheName, Object key) {
+    public <K, V> Optional<V> getOptional(String cacheName, K key) {
         return Optional.ofNullable(get(cacheName, key, null));
     }
 
     @Override
-    public <T> Optional<T> getOptional(String cacheName, Object key, Class<T> type) {
+    public <K, V> Optional<V> getOptional(String cacheName, K key, Class<V> type) {
         return Optional.ofNullable(get(cacheName, key, type));
     }
 
     @Override
-    public void put(String cacheName, Object key, Object value) {
+    public <K, V> void put(String cacheName, K key, V value) {
         put(cacheName, key, value, null);
     }
 
     @Override
-    public void put(String cacheName, Object key, Object value, Duration ttl) {
+    public <K, V> void put(String cacheName, K key, V value, Duration ttl) {
         if (remote == null) {
             local.put(cacheName, key, value, ttl);
             return;
@@ -93,7 +88,7 @@ public class DefaultMultiLevelCacheService implements MultiLevelCacheService {
     }
 
     @Override
-    public boolean delete(String cacheName, Object key) {
+    public <K> boolean delete(String cacheName, K key) {
         boolean l1 = local.delete(cacheName, key);
         boolean l2 = remote != null && remote.delete(cacheName, key);
         return l1 || l2;
@@ -108,24 +103,31 @@ public class DefaultMultiLevelCacheService implements MultiLevelCacheService {
     }
 
     @Override
-    public boolean exists(String cacheName, Object key) {
-        return Objects.nonNull(get(cacheName, key));
+    public <K> boolean exists(String cacheName, K key) {
+        if (local.exists(cacheName, key)) {
+            return true;
+        }
+
+        if (remote != null) {
+            return remote.exists(cacheName, key);
+        }
+        return false;
     }
 
     @Override
-    public Map<Object, Object> getAll(String cacheName, Collection<?> keys) {
+    public <K, V> Map<K, V> getAll(String cacheName, Collection<K> keys) {
         if (keys == null || keys.isEmpty()) {
             return Map.of();
         }
 
-        Map<Object, Object> l1 = local.getAll(cacheName, keys);
+        Map<K, V> l1 = local.getAll(cacheName, keys);
         if (remote == null) {
             return l1;
         }
 
         // 计算未命中的 key
-        Set<Object> miss = new LinkedHashSet<>();
-        for (Object k : keys) {
+        Set<K> miss = new LinkedHashSet<>();
+        for (K k : keys) {
             if (!l1.containsKey(k)) {
                 miss.add(k);
             }
@@ -134,50 +136,50 @@ public class DefaultMultiLevelCacheService implements MultiLevelCacheService {
             return l1;
         }
 
-        Map<Object, Object> l2 = remote.getAll(cacheName, miss);
+        Map<K, V> l2 = remote.getAll(cacheName, miss);
         if (l2.isEmpty()) {
             return l1;
         }
 
         // 回填 L1
-        for (Map.Entry<Object, Object> e : l2.entrySet()) {
+        for (Map.Entry<K, V> e : l2.entrySet()) {
             backfillLocal(cacheName, e.getKey(), e.getValue(), null);
         }
 
-        Map<Object, Object> out = LinkedHashMap.newLinkedHashMap(l1.size() + l2.size());
+        Map<K, V> out = LinkedHashMap.newLinkedHashMap(l1.size() + l2.size());
         out.putAll(l1);
         out.putAll(l2);
         return out;
     }
 
     @Override
-    public <T> T getOrLoad(String cacheName, Object key, Supplier<T> loader) {
+    public <K, V> V getOrLoad(String cacheName, K key, Supplier<V> loader) {
         return getOrLoad(cacheName, key, null, null, loader);
     }
 
     @Override
-    public <T> T getOrLoad(String cacheName, Object key, Class<T> type, Supplier<T> loader) {
+    public <K, V> V getOrLoad(String cacheName, K key, Class<V> type, Supplier<V> loader) {
         return getOrLoad(cacheName, key, type, null, loader);
     }
 
     @Override
-    public <T> T getOrLoad(String cacheName, Object key, Duration ttl, Supplier<T> loader) {
+    public <K, V> V getOrLoad(String cacheName, K key, Duration ttl, Supplier<V> loader) {
         return getOrLoad(cacheName, key, null, null, loader);
     }
 
     @Override
-    public <T> T getOrLoad(String cacheName, Object key, Class<T> type, Duration ttl, Supplier<T> loader) {
+    public <K, V> V getOrLoad(String cacheName, K key, Class<V> type, Duration ttl, Supplier<V> loader) {
         Objects.requireNonNull(loader, "loader 不能为空");
 
         // 先走多级 get（会回填）
-        T existed = get(cacheName, key, type);
+        V existed = get(cacheName, key, type);
         if (existed != null) {
             return existed;
         }
 
         // 有 L2：优先交给 L2（它可以做分布式防击穿）
         if (remote != null) {
-            T loaded = remote.getOrLoad(cacheName, key, type, ttl, loader);
+            V loaded = remote.getOrLoad(cacheName, key, type, ttl, loader);
             if (loaded != null) {
                 backfillLocal(cacheName, key, loaded, ttl);
             }
