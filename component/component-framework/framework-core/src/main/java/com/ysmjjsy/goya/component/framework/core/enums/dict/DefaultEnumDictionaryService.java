@@ -2,7 +2,8 @@ package com.ysmjjsy.goya.component.framework.core.enums.dict;
 
 import com.ysmjjsy.goya.component.framework.common.enums.CodeEnum;
 import com.ysmjjsy.goya.component.framework.common.enums.EnumOption;
-import org.springframework.context.MessageSource;
+import com.ysmjjsy.goya.component.framework.core.i18n.I18nResolver;
+import lombok.RequiredArgsConstructor;
 import org.springframework.util.StringUtils;
 
 import java.io.Serializable;
@@ -25,31 +26,16 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author goya
  * @since 2026/1/24 16:02
  */
+@RequiredArgsConstructor
 public class DefaultEnumDictionaryService implements EnumDictionaryService {
 
     private final EnumDictionaryRegistry registry;
-    private final MessageSource messageSource;
-    private final LocaleProvider localeProvider;
+    private final I18nResolver i18nResolver;
 
     /**
      * key = enumFullName + "@" + localeTag
      */
     private final Map<String, List<EnumOption>> cache = new ConcurrentHashMap<>();
-
-    /**
-     * 构造服务。
-     *
-     * @param registry 注册表
-     * @param messageSource MessageSource
-     * @param localeProvider LocaleProvider
-     */
-    public DefaultEnumDictionaryService(EnumDictionaryRegistry registry,
-                                        MessageSource messageSource,
-                                        LocaleProvider localeProvider) {
-        this.registry = Objects.requireNonNull(registry, "registry 不能为空");
-        this.messageSource = Objects.requireNonNull(messageSource, "messageSource 不能为空");
-        this.localeProvider = Objects.requireNonNull(localeProvider, "localeProvider 不能为空");
-    }
 
     /** {@inheritDoc} */
     @Override
@@ -65,23 +51,19 @@ public class DefaultEnumDictionaryService implements EnumDictionaryService {
 
     /** {@inheritDoc} */
     @Override
-    public List<EnumOption> options(String enumName, Locale locale) {
+    public List<EnumOption> options(String enumName) {
         Class<? extends Enum<?>> enumClass = registry.resolve(enumName);
-        Locale useLocale = (locale != null) ? locale : localeProvider.currentLocale();
-
-        String key = enumClass.getName() + "@" + useLocale.toLanguageTag();
-        return cache.computeIfAbsent(key, k -> buildOptions(enumClass, useLocale));
+        return cache.computeIfAbsent(enumName, k -> buildOptions(enumClass));
     }
 
     /**
      * 构建 options。
      *
      * @param enumClass 枚举类型
-     * @param locale locale
      * @return options
      */
     @SuppressWarnings({"rawtypes"})
-    private List<EnumOption> buildOptions(Class<? extends Enum<?>> enumClass, Locale locale) {
+    private List<EnumOption> buildOptions(Class<? extends Enum<?>> enumClass) {
         if (!CodeEnum.class.isAssignableFrom(enumClass)) {
             return List.of();
         }
@@ -95,8 +77,8 @@ public class DefaultEnumDictionaryService implements EnumDictionaryService {
         for (Enum<?> c : constants) {
             CodeEnum ce = (CodeEnum) c;
 
-            Serializable code = ce.code();
-            String label = resolveLabel(ce, c.name(), locale);
+            Serializable code = ce.getCode();
+            String label = resolveLabel(ce, c.name());
 
             list.add(EnumOption.of(code, label));
         }
@@ -108,20 +90,19 @@ public class DefaultEnumDictionaryService implements EnumDictionaryService {
      *
      * @param e CodeEnum
      * @param fallbackName name()
-     * @param locale locale
      * @return label
      */
-    private String resolveLabel(CodeEnum<?> e, String fallbackName, Locale locale) {
+    private String resolveLabel(CodeEnum<?> e, String fallbackName) {
         String key = e.i18nKey();
         if (StringUtils.hasText(key)) {
-            String msg = messageSource.getMessage(key, null, key, locale);
+            String msg = i18nResolver.getI18nMessage(key);
             if (StringUtils.hasText(msg)) {
                 return msg;
             }
         }
 
-        if (StringUtils.hasText(e.label())) {
-            return e.label();
+        if (StringUtils.hasText(e.getLabel())) {
+            return e.getLabel();
         }
 
         return fallbackName;
@@ -129,9 +110,7 @@ public class DefaultEnumDictionaryService implements EnumDictionaryService {
 
     /** {@inheritDoc} */
     @Override
-    public Map<String, List<EnumOption>> allOptions(Locale locale) {
-        Locale useLocale = (locale != null) ? locale : localeProvider.currentLocale();
-
+    public Map<String, List<EnumOption>> allOptions() {
         Map<String, String> exportable = registry.listExportableEnums();
         Map<String, List<EnumOption>> out = new TreeMap<>();
 
@@ -140,7 +119,7 @@ public class DefaultEnumDictionaryService implements EnumDictionaryService {
             String fullName = e.getValue();
 
             // 使用 fullName 作为解析入口，确保稳定
-            List<EnumOption> options = options(fullName, useLocale);
+            List<EnumOption> options = options(fullName);
             out.put(simpleName, options);
         }
 

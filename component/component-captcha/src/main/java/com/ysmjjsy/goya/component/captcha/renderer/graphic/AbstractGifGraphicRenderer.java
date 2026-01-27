@@ -1,15 +1,15 @@
 package com.ysmjjsy.goya.component.captcha.renderer.graphic;
 
 import com.madgag.gif.fmsware.AnimatedGifEncoder;
-import com.ysmjjsy.goya.component.captcha.configuration.properties.CaptchaProperties;
 import com.ysmjjsy.goya.component.captcha.definition.Metadata;
 import com.ysmjjsy.goya.component.captcha.provider.ResourceProvider;
-import com.ysmjjsy.goya.component.core.constants.SymbolConst;
-import com.ysmjjsy.goya.component.core.utils.GoyaBase64Utils;
+import com.ysmjjsy.goya.component.framework.common.constants.SymbolConst;
+import com.ysmjjsy.goya.component.framework.common.utils.GoyaBase64Utils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.time.Duration;
 import java.util.stream.IntStream;
 
 /**
@@ -20,8 +20,8 @@ import java.util.stream.IntStream;
  */
 public abstract class AbstractGifGraphicRenderer extends AbstractBaseGraphicRenderer {
 
-    protected AbstractGifGraphicRenderer(ResourceProvider resourceProvider, CaptchaProperties captchaProperties) {
-        super(resourceProvider,captchaProperties);
+    protected AbstractGifGraphicRenderer(ResourceProvider resourceProvider, Duration expire) {
+        super(resourceProvider, expire);
     }
 
     @Override

@@ -40,14 +40,4 @@ public enum ArchitectureEnum implements PropertyEnum {
     public String getPrefix() {
         return PropertyConst.PROPERTY_ARCHITECTURE;
     }
-
-    @Override
-    public String code() {
-        return code;
-    }
-
-    @Override
-    public String label() {
-        return label;
-    }
 }

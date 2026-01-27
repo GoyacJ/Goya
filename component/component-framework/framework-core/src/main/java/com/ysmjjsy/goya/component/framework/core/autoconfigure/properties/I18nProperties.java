@@ -27,7 +27,7 @@ public record I18nProperties(
          * <p>默认值建议为：classpath:i18n/messages</p>
          * <p>注意：basename 不带语言后缀，不带 .properties。</p>
          */
-        @DefaultValue("[\"classpath:i18n/messages\"]")
+        @DefaultValue("classpath:i18n/messages")
         List<String> baseNames,
 
         /*

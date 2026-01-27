@@ -1,12 +1,12 @@
 package com.ysmjjsy.goya.component.captcha.renderer.graphic;
 
-import com.ysmjjsy.goya.component.captcha.configuration.properties.CaptchaProperties;
 import com.ysmjjsy.goya.component.captcha.definition.Metadata;
 import com.ysmjjsy.goya.component.captcha.provider.ResourceProvider;
-import com.ysmjjsy.goya.component.core.constants.SymbolConst;
+import com.ysmjjsy.goya.component.framework.common.constants.SymbolConst;
 import org.apache.commons.lang3.StringUtils;
 
 import java.awt.image.BufferedImage;
+import java.time.Duration;
 
 /**
  * <p>Png 类型图形验证码绘制器 </p>
@@ -16,8 +16,8 @@ import java.awt.image.BufferedImage;
  */
 public abstract class AbstractPngGraphicRenderer extends AbstractBaseGraphicRenderer {
 
-    protected AbstractPngGraphicRenderer(ResourceProvider resourceProvider, CaptchaProperties captchaProperties) {
-        super(resourceProvider,captchaProperties);
+    protected AbstractPngGraphicRenderer(ResourceProvider resourceProvider, Duration expire) {
+        super(resourceProvider, expire);
     }
 
     @Override

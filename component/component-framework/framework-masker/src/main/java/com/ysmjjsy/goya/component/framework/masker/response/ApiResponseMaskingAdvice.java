@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.framework.masker.response;
 
-import com.ysmjjsy.goya.component.framework.core.api.ApiResponse;
+import com.ysmjjsy.goya.component.framework.core.api.ApiRes;
 import com.ysmjjsy.goya.component.framework.masker.annotation.Mask;
 import com.ysmjjsy.goya.component.framework.masker.autoconfigure.properties.MaskerProperties;
 import com.ysmjjsy.goya.component.framework.masker.core.Masker;
@@ -31,7 +31,7 @@ public class ApiResponseMaskingAdvice implements ResponseBodyAdvice<Object> {
     @Override
     @NullMarked
     public boolean supports(MethodParameter returnType, Class<? extends HttpMessageConverter<?>> converterType) {
-        return ApiResponse.class.isAssignableFrom(returnType.getParameterType());
+        return ApiRes.class.isAssignableFrom(returnType.getParameterType());
     }
 
     @Override
@@ -46,7 +46,7 @@ public class ApiResponseMaskingAdvice implements ResponseBodyAdvice<Object> {
         if (!properties.enabled()) {
             return body;
         }
-        if (!(body instanceof ApiResponse<?> api)) {
+        if (!(body instanceof ApiRes<?> api)) {
             return body;
         }
 
@@ -76,7 +76,7 @@ public class ApiResponseMaskingAdvice implements ResponseBodyAdvice<Object> {
      * @param api ApiResponse
      * @return 是否启用
      */
-    private boolean isMaskEnabled(MethodParameter returnType, ApiResponse<?> api) {
+    private boolean isMaskEnabled(MethodParameter returnType, ApiRes<?> api) {
         Method m = returnType.getMethod();
         if (m != null) {
             Mask ann = m.getAnnotation(Mask.class);

@@ -1,12 +1,10 @@
 package com.ysmjjsy.goya.component.framework.servlet.crypto;
 
-import com.ysmjjsy.goya.component.cache.multilevel.crypto.CryptoProcessor;
-import com.ysmjjsy.goya.component.core.exception.CommonException;
-import com.ysmjjsy.goya.component.core.utils.GoyaByteUtils;
-import com.ysmjjsy.goya.component.core.utils.GoyaIoUtils;
-import com.ysmjjsy.goya.component.framework.json.GoyaJson;
-import com.ysmjjsy.goya.component.web.annotation.Crypto;
-import com.ysmjjsy.goya.component.web.utils.WebUtils;
+import com.ysmjjsy.goya.component.framework.common.exception.GoyaException;
+import com.ysmjjsy.goya.component.framework.common.utils.GoyaByteUtils;
+import com.ysmjjsy.goya.component.framework.common.utils.GoyaIoUtils;
+import com.ysmjjsy.goya.component.framework.core.json.GoyaJson;
+import com.ysmjjsy.goya.component.framework.servlet.utils.WebUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
@@ -41,10 +39,10 @@ public class DecryptRequestBodyAdvice implements RequestBodyAdvice {
 
     private static final Logger log = LoggerFactory.getLogger(DecryptRequestBodyAdvice.class);
 
-    private CryptoProcessor cryptoProcessor;
+    private CryptoCacheManager cryptoCacheManager;
 
-    public void setInterfaceCryptoProcessor(CryptoProcessor httpCryptoProcessor) {
-        this.cryptoProcessor = httpCryptoProcessor;
+    public void setInterfaceCryptoProcessor(CryptoCacheManager cryptoCacheManager) {
+        this.cryptoCacheManager = cryptoCacheManager;
     }
 
     @Override
@@ -75,7 +73,7 @@ public class DecryptRequestBodyAdvice implements RequestBodyAdvice {
             String content = GoyaIoUtils.read(httpInputMessage.getBody());
 
             if (StringUtils.isNotBlank(content)) {
-                String data = cryptoProcessor.decrypt(requestId, content);
+                String data = cryptoCacheManager.decrypt(requestId, content);
                 if (Strings.CS.equals(data, content)) {
                     data = decrypt(requestId, content);
                 }
@@ -90,7 +88,7 @@ public class DecryptRequestBodyAdvice implements RequestBodyAdvice {
         }
     }
 
-    private String decrypt(String sessionKey, String content) throws CommonException {
+    private String decrypt(String sessionKey, String content) throws GoyaException {
         JsonNode jsonNode = GoyaJson.toJsonNode(content);
         if (ObjectUtils.isNotEmpty(jsonNode)) {
             decrypt(sessionKey, jsonNode);
@@ -100,7 +98,7 @@ public class DecryptRequestBodyAdvice implements RequestBodyAdvice {
         return content;
     }
 
-    private void decrypt(String sessionKey, JsonNode node) throws CommonException {
+    private void decrypt(String sessionKey, JsonNode node) throws GoyaException {
         if (node == null || node.isMissingNode() || node.isNull()) {
             return;
         }
@@ -118,7 +116,7 @@ public class DecryptRequestBodyAdvice implements RequestBodyAdvice {
 
                     if (child.getNodeType() == JsonNodeType.STRING) {
                         String decrypted =
-                                cryptoProcessor.decrypt(sessionKey, child.stringValue());
+                                cryptoCacheManager.decrypt(sessionKey, child.stringValue());
 
                         objectNode.put(fieldName, decrypted);
                     } else {

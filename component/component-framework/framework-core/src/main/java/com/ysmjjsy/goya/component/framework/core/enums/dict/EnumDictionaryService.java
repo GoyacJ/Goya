@@ -3,7 +3,6 @@ package com.ysmjjsy.goya.component.framework.core.enums.dict;
 import com.ysmjjsy.goya.component.framework.common.enums.EnumOption;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -32,10 +31,9 @@ public interface EnumDictionaryService {
      * 获取指定枚举的选项列表。
      *
      * @param enumName 枚举名（简单名或全限定名）
-     * @param locale locale（可为空）
      * @return options
      */
-    List<EnumOption> options(String enumName, Locale locale);
+    List<EnumOption> options(String enumName);
 
     /**
      * 导出所有可导出枚举的 options（simpleName 唯一者）。
@@ -50,8 +48,7 @@ public interface EnumDictionaryService {
      *
      * <p>注意：simpleName 冲突的枚举不会包含在此结果中，需使用全限定名单独查询。</p>
      *
-     * @param locale locale（可为空）
      * @return map：simpleName -> options
      */
-    Map<String, List<EnumOption>> allOptions(Locale locale);
+    Map<String, List<EnumOption>> allOptions();
 }

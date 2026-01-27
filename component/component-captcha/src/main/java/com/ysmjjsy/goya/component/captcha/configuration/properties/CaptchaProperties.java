@@ -1,6 +1,5 @@
 package com.ysmjjsy.goya.component.captcha.configuration.properties;
 
-import com.ysmjjsy.goya.component.cache.multilevel.enums.CacheLevelEnum;
 import com.ysmjjsy.goya.component.captcha.constants.CaptchaConst;
 import com.ysmjjsy.goya.component.captcha.enums.CaptchaCharacterEnum;
 import com.ysmjjsy.goya.component.captcha.enums.CaptchaFontEnum;
@@ -82,21 +81,9 @@ public record CaptchaProperties(
             @DefaultValue("LEXOGRAPHER")
             CaptchaFontEnum font,
 
-            @DefaultValue("L1_L2")
-            @Schema(description = "缓存类型")
-            CacheLevelEnum level,
-
             @DefaultValue("PT2H")
             @Schema(description = "缓存过期时间")
-            Duration expire,
-
-            @Schema(description = "本地缓存过期时间")
-            @DefaultValue("PT1H")
-            Duration localExpire,
-
-            @Schema(description = "本地缓存数量限制")
-            @DefaultValue("100000")
-            Integer localLimit
+            Duration expire
     ) {
     }
 

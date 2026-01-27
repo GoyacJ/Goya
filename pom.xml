@@ -134,17 +134,12 @@
             </dependency>
             <dependency>
                 <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>bus-core</artifactId>
+                <artifactId>component-kafka</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>bus-stream</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>bus-kafka-boot-starter</artifactId>
+                <artifactId>component-rabbitmq</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
@@ -159,27 +154,22 @@
             </dependency>
             <dependency>
                 <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>component-log</artifactId>
+                <artifactId>component-service</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>oss-core</artifactId>
+                <artifactId>component-oss-aliyun</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>oss-aliyun</artifactId>
+                <artifactId>component-oss-s3</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>oss-s3</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>oss-minio</artifactId>
+                <artifactId>component-oss-minio</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
@@ -209,11 +199,6 @@
                 <version>${revision}</version>
             </dependency>
 
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>auth-server</artifactId>
-                <version>${revision}</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 

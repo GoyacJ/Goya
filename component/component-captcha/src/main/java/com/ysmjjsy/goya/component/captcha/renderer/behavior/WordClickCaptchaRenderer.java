@@ -8,10 +8,10 @@ import com.ysmjjsy.goya.component.captcha.definition.Metadata;
 import com.ysmjjsy.goya.component.captcha.definition.Verification;
 import com.ysmjjsy.goya.component.captcha.enums.CaptchaCategoryEnum;
 import com.ysmjjsy.goya.component.captcha.enums.FontStyleEnum;
+import com.ysmjjsy.goya.component.captcha.exception.CaptchaException;
 import com.ysmjjsy.goya.component.captcha.provider.RandomProvider;
 import com.ysmjjsy.goya.component.captcha.provider.ResourceProvider;
-import com.ysmjjsy.goya.component.core.exception.CommonException;
-import com.ysmjjsy.goya.component.core.utils.GoyaIdUtils;
+import com.ysmjjsy.goya.component.framework.common.utils.GoyaIdUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -32,7 +32,7 @@ import java.util.stream.IntStream;
 public class WordClickCaptchaRenderer extends AbstractBehaviorRenderer<String, List<Coordinate>> {
 
     public WordClickCaptchaRenderer(ResourceProvider resourceProvider, CaptchaProperties captchaProperties) {
-        super(resourceProvider,captchaProperties);
+        super(resourceProvider, CaptchaConst.CACHE_NAME_CAPTCHA_WORD_CLICK, captchaProperties.graphics().expire());
     }
 
     private WordClickCaptcha wordClickCaptcha;
@@ -49,8 +49,7 @@ public class WordClickCaptchaRenderer extends AbstractBehaviorRenderer<String, L
         return CaptchaCategoryEnum.WORD_CLICK;
     }
 
-    @Override
-    public List<Coordinate> nextValue(String key) {
+    public List<Coordinate> generateValue(String key) {
 
         Metadata metadata = draw();
 
@@ -72,7 +71,7 @@ public class WordClickCaptchaRenderer extends AbstractBehaviorRenderer<String, L
             identity = GoyaIdUtils.fastUUID();
         }
 
-        this.put(identity);
+        this.put(identity, generateValue(identity));
         return this.wordClickCaptcha;
     }
 
@@ -80,21 +79,21 @@ public class WordClickCaptchaRenderer extends AbstractBehaviorRenderer<String, L
     public boolean verify(Verification verification) {
 
         if (ObjectUtils.isEmpty(verification) || CollectionUtils.isEmpty(verification.getCoordinates())) {
-            throw new CommonException("Parameter Stamp value is null");
+            throw new CaptchaException("Parameter Stamp value is null");
         }
 
         List<Coordinate> store = this.get(verification.getIdentity());
         if (CollectionUtils.isEmpty(store)) {
-            throw new CommonException("Stamp is invalid!");
+            throw new CaptchaException("Stamp is invalid!");
         }
 
-        this.evict(verification.getIdentity());
+        this.delete(verification.getIdentity());
 
         List<Coordinate> real = verification.getCoordinates();
 
         for (int i = 0; i < store.size(); i++) {
             if (isDeflected(real.get(i).getX(), store.get(i).getX(), this.getFontSize()) || isDeflected(real.get(i).getX(), store.get(i).getX(), this.getFontSize())) {
-                throw new CommonException("Stamp is invalid!");
+                throw new CaptchaException("Stamp is invalid!");
             }
         }
 
@@ -213,8 +212,4 @@ public class WordClickCaptchaRenderer extends AbstractBehaviorRenderer<String, L
         return averageWidth * (wordIndex + 1) - halfWordSize;
     }
 
-    @Override
-    protected String getCacheName() {
-        return CaptchaConst.CACHE_NAME_CAPTCHA_WORD_CLICK;
-    }
 }

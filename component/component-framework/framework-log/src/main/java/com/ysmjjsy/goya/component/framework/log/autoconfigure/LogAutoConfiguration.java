@@ -1,5 +1,6 @@
 package com.ysmjjsy.goya.component.framework.log.autoconfigure;
 
+import com.ysmjjsy.goya.component.framework.core.web.RequestInfoExtractor;
 import com.ysmjjsy.goya.component.framework.log.aop.LogAspect;
 import com.ysmjjsy.goya.component.framework.log.autoconfigure.properties.LogProperties;
 import com.ysmjjsy.goya.component.framework.log.filter.TraceMdcFilter;
@@ -13,7 +14,6 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.EnableAspectJAutoProxy;
 
 /**
  * <p>自动装配</p>
@@ -28,7 +28,6 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
  */
 @Slf4j
 @AutoConfiguration
-@EnableAspectJAutoProxy(proxyTargetClass = true)
 @EnableConfigurationProperties(LogProperties.class)
 public class LogAutoConfiguration {
 
@@ -60,8 +59,8 @@ public class LogAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    public LogAspect logAspect(LogProperties props, Masker masker, MethodArgMasker methodArgMasker) {
-        LogAspect logAspect = new LogAspect(props, masker, methodArgMasker);
+    public LogAspect logAspect(LogProperties props, Masker masker, MethodArgMasker methodArgMasker, RequestInfoExtractor requestInfoExtractor) {
+        LogAspect logAspect = new LogAspect(props, masker, methodArgMasker, requestInfoExtractor);
         log.trace("[Goya] |- component [framework] LogAutoConfiguration |- bean [logAspect] register.");
         return logAspect;
     }

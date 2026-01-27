@@ -1,18 +1,16 @@
 package com.ysmjjsy.goya.component.captcha.definition;
 
-import com.ysmjjsy.goya.component.captcha.configuration.properties.CaptchaProperties;
 import com.ysmjjsy.goya.component.captcha.constants.CaptchaConst;
-import com.ysmjjsy.goya.component.captcha.exception.CaptchaHasExpiredException;
-import com.ysmjjsy.goya.component.captcha.exception.CaptchaIsEmptyException;
-import com.ysmjjsy.goya.component.captcha.exception.CaptchaMismatchException;
-import com.ysmjjsy.goya.component.captcha.exception.CaptchaParameterIllegalException;
+import com.ysmjjsy.goya.component.captcha.exception.CaptchaErrorCode;
+import com.ysmjjsy.goya.component.captcha.exception.CaptchaException;
 import com.ysmjjsy.goya.component.captcha.provider.ResourceProvider;
-import com.ysmjjsy.goya.component.core.utils.GoyaIdUtils;
+import com.ysmjjsy.goya.component.framework.common.utils.GoyaIdUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 
 import java.awt.*;
+import java.time.Duration;
 
 /**
  * <p>抽象的图形验证码</p>
@@ -24,8 +22,8 @@ public abstract class AbstractGraphicRenderer extends AbstractRenderer<String, S
 
     private GraphicCaptcha graphicCaptcha;
 
-    protected AbstractGraphicRenderer(ResourceProvider resourceProvider, CaptchaProperties captchaProperties) {
-        super(resourceProvider,captchaProperties);
+    protected AbstractGraphicRenderer(ResourceProvider resourceProvider, Duration expire) {
+        super(resourceProvider, CaptchaConst.CACHE_NAME_CAPTCHA_GRAPHIC, expire);
     }
 
     protected Font getFont() {
@@ -45,18 +43,13 @@ public abstract class AbstractGraphicRenderer extends AbstractRenderer<String, S
     }
 
     @Override
-    protected String getCacheName() {
-        return CaptchaConst.CACHE_NAME_CAPTCHA_GRAPHIC;
-    }
-
-    @Override
     public AbstractCaptcha getCaptcha(String key) {
         String identity = key;
         if (StringUtils.isBlank(identity)) {
             identity = GoyaIdUtils.fastSimpleUUID();
         }
 
-        this.put(identity);
+        this.put(identity, generateValue(identity));
         return getGraphicCaptcha();
     }
 
@@ -64,24 +57,24 @@ public abstract class AbstractGraphicRenderer extends AbstractRenderer<String, S
     public boolean verify(Verification verification) {
 
         if (ObjectUtils.isEmpty(verification) || StringUtils.isEmpty(verification.getIdentity())) {
-            throw new CaptchaParameterIllegalException("Parameter value is illegal");
+            throw new CaptchaException(CaptchaErrorCode.PARAMETER_ILLEGAL);
         }
 
         if (StringUtils.isEmpty(verification.getCharacters())) {
-            throw new CaptchaIsEmptyException("Captcha is empty");
+            throw new CaptchaException(CaptchaErrorCode.IS_EMPTY);
         }
 
         String store = this.get(verification.getIdentity());
         if (StringUtils.isEmpty(store)) {
-            throw new CaptchaHasExpiredException("Stamp is invalid!");
+            throw new CaptchaException(CaptchaErrorCode.HAS_EXPIRED);
         }
 
-        this.evict(verification.getIdentity());
+        this.delete(verification.getIdentity());
 
         String real = verification.getCharacters();
 
         if (!Strings.CS.equals(store, real)) {
-            throw new CaptchaMismatchException();
+            throw new CaptchaException(CaptchaErrorCode.MISMATCH);
         }
 
         return true;
@@ -95,8 +88,7 @@ public abstract class AbstractGraphicRenderer extends AbstractRenderer<String, S
         this.graphicCaptcha = graphicCaptcha;
     }
 
-    @Override
-    protected String nextValue(String key) {
+    protected String generateValue(String key) {
         Metadata metadata = draw();
 
         GraphicCaptcha graphicCaptcha = new GraphicCaptcha();

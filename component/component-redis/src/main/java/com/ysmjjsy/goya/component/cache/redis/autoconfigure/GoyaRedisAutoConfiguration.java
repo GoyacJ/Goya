@@ -6,7 +6,6 @@ import com.ysmjjsy.goya.component.cache.redis.key.RedisKeySupport;
 import com.ysmjjsy.goya.component.cache.redis.support.*;
 import com.ysmjjsy.goya.component.cache.redis.support.impl.*;
 import com.ysmjjsy.goya.component.framework.cache.api.CacheService;
-import com.ysmjjsy.goya.component.framework.cache.constants.CacheConst;
 import com.ysmjjsy.goya.component.framework.cache.key.CacheKeySerializer;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -16,15 +15,11 @@ import org.redisson.codec.JsonJackson3Codec;
 import org.redisson.spring.cache.RedissonSpringCacheManager;
 import org.redisson.spring.starter.RedissonAutoConfigurationCustomizer;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
-import tools.jackson.databind.ObjectMapper;
 
 /**
  * <p>Redis 自动配置类</p>
@@ -43,9 +38,6 @@ import tools.jackson.databind.ObjectMapper;
 @Slf4j
 @AutoConfiguration
 @EnableConfigurationProperties({GoyaRedisProperties.class})
-@ConditionalOnClass(RedissonClient.class)
-@ConditionalOnBean({RedissonClient.class, CacheKeySerializer.class})
-@ConditionalOnProperty(prefix = CacheConst.PROPERTY_REDIS, name = "enabled", havingValue = "true", matchIfMissing = true)
 public class GoyaRedisAutoConfiguration {
 
     @PostConstruct
@@ -54,8 +46,9 @@ public class GoyaRedisAutoConfiguration {
     }
 
     @Bean
-    public RedissonAutoConfigurationCustomizer redissonCustomizer(ObjectMapper objectMapper) {
-        return config -> config.setCodec(new JsonJackson3Codec(objectMapper));
+    public RedissonAutoConfigurationCustomizer redissonCustomizer() {
+        log.trace("[Goya] |- component [redis] GoyaRedisAutoConfiguration |- bean [redissonCustomizer] register.");
+        return config -> config.setCodec(new JsonJackson3Codec());
     }
 
     @Bean

@@ -1,9 +1,7 @@
 package com.ysmjjsy.goya.component.framework.servlet.crypto;
 
-import com.ysmjjsy.goya.component.cache.multilevel.crypto.CryptoProcessor;
-import com.ysmjjsy.goya.component.core.exception.CommonException;
-import com.ysmjjsy.goya.component.web.annotation.Crypto;
-import com.ysmjjsy.goya.component.web.utils.WebUtils;
+import com.ysmjjsy.goya.component.framework.common.exception.GoyaException;
+import com.ysmjjsy.goya.component.framework.servlet.utils.WebUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +34,7 @@ import java.util.List;
 @Setter
 public class DecryptRequestParamResolver implements HandlerMethodArgumentResolver {
 
-    private CryptoProcessor cryptoProcessor;
+    private CryptoCacheManager cryptoCacheManager;
     private RequestParamMethodArgumentResolver requestParamMethodArgumentResolver;
 
     @Override
@@ -70,10 +68,10 @@ public class DecryptRequestParamResolver implements HandlerMethodArgumentResolve
         return ObjectUtils.isEmpty(multipartRequest);
     }
 
-    private String[] decrypt(String sessionId, String[] paramValues) throws CommonException {
+    private String[] decrypt(String sessionId, String[] paramValues) throws GoyaException {
         List<String> values = new ArrayList<>();
         for (String paramValue : paramValues) {
-            String value = cryptoProcessor.decrypt(sessionId, paramValue);
+            String value = cryptoCacheManager.decrypt(sessionId, paramValue);
             if (StringUtils.isNotBlank(value)) {
                 values.add(value);
             }

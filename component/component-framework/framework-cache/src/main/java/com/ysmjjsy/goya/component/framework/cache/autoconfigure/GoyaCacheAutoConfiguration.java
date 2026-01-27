@@ -9,6 +9,7 @@ import com.ysmjjsy.goya.component.framework.cache.key.CacheKeySerializer;
 import com.ysmjjsy.goya.component.framework.cache.key.DefaultCacheKeySerializer;
 import com.ysmjjsy.goya.component.framework.cache.metrics.DefaultCacheMetrics;
 import com.ysmjjsy.goya.component.framework.cache.multi.DefaultMultiLevelCacheService;
+import com.ysmjjsy.goya.component.framework.core.context.GoyaContext;
 import com.ysmjjsy.goya.component.framework.core.context.SpringContext;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +19,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -44,24 +44,24 @@ public class GoyaCacheAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(CacheKeySerializer.class)
-    public CacheKeySerializer defaultCacheKeySerializer() {
-        DefaultCacheKeySerializer serializer = new DefaultCacheKeySerializer();
-        log.trace("[Goya] |- component [cache-core] GoyaCacheAutoConfiguration |- bean [defaultCacheKeySerializer] register.");
+    public CacheKeySerializer defaultCacheKeySerializer(GoyaContext goyaContext) {
+        DefaultCacheKeySerializer serializer = new DefaultCacheKeySerializer(goyaContext);
+        log.trace("[Goya] |- component [framework] GoyaCacheAutoConfiguration |- bean [defaultCacheKeySerializer] register.");
         return serializer;
     }
 
     @Bean
-    public DefaultCacheMetrics defaultCacheMetrics(){
+    public DefaultCacheMetrics defaultCacheMetrics() {
         DefaultCacheMetrics metrics = new DefaultCacheMetrics();
-        log.trace("[Goya] |- component [cache-core] GoyaCacheAutoConfiguration |- bean [defaultCacheMetrics] register.");
+        log.trace("[Goya] |- component [framework] GoyaCacheAutoConfiguration |- bean [defaultCacheMetrics] register.");
         return metrics;
     }
 
     @Bean
-    @ConditionalOnMissingBean(CacheManager.class)
-    public CacheManager cacheManager(GoyaCacheProperties cacheProperties) {
+    @ConditionalOnMissingBean(GoyaCaffeineCacheManager.class)
+    public GoyaCaffeineCacheManager goyaCaffeineCacheManager(GoyaCacheProperties cacheProperties) {
         GoyaCaffeineCacheManager cacheManager = new GoyaCaffeineCacheManager(cacheProperties);
-        log.trace("[Goya] |- component [framework] GoyaCacheAutoConfiguration |- bean [cacheManager] register.");
+        log.trace("[Goya] |- component [framework] GoyaCacheAutoConfiguration |- bean [goyaCaffeineCacheManager] register.");
         return cacheManager;
     }
 
@@ -72,8 +72,8 @@ public class GoyaCacheAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(CaffeineCacheService.class)
-    public CaffeineCacheService caffeineCacheService(CacheManager cacheManager) {
-        CaffeineCacheService caffeineCacheService = new CaffeineCacheService(cacheManager);
+    public CaffeineCacheService caffeineCacheService(GoyaCaffeineCacheManager cacheManager, CacheKeySerializer cacheKeySerializer, GoyaContext goyaContext) {
+        CaffeineCacheService caffeineCacheService = new CaffeineCacheService(cacheManager, cacheKeySerializer, goyaContext);
         log.trace("[Goya] |- component [framework] GoyaCacheAutoConfiguration |- bean [caffeineCacheService] register.");
         return caffeineCacheService;
     }

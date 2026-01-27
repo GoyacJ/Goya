@@ -3,6 +3,8 @@ package com.ysmjjsy.goya.component.captcha.definition;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.io.Serial;
+
 /**
  * <p>图形验证码</p>
  *
@@ -12,6 +14,9 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class GraphicCaptcha extends AbstractCaptcha {
+
+    @Serial
+    private static final long serialVersionUID = 5037611256028933366L;
 
     /**
      * 图形验证码成的图。

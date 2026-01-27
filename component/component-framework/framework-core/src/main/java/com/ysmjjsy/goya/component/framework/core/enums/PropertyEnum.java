@@ -35,7 +35,7 @@ public interface PropertyEnum extends CodeEnum<String> {
      * @return 常量
      */
     default String getConstant() {
-        return code();
+        return getCode();
     }
 
     /**

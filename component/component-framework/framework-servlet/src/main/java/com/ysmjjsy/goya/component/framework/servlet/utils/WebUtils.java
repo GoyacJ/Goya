@@ -8,6 +8,7 @@ import com.ysmjjsy.goya.component.framework.common.exception.Exceptions;
 import com.ysmjjsy.goya.component.framework.common.utils.GoyaConvertUtils;
 import com.ysmjjsy.goya.component.framework.common.utils.GoyaNetUtils;
 import com.ysmjjsy.goya.component.framework.common.utils.GoyaStringUtils;
+import com.ysmjjsy.goya.component.framework.core.api.ApiRes;
 import com.ysmjjsy.goya.component.framework.core.constants.PropertyConst;
 import com.ysmjjsy.goya.component.framework.core.context.SpringContext;
 import com.ysmjjsy.goya.component.framework.core.enums.ProtocolEnum;
@@ -509,6 +510,16 @@ public class WebUtils {
      */
     public static void renderJson(HttpServletResponse response, int statusCode, Object object) {
         renderJson(response, statusCode, GoyaJson.toJson(object));
+    }
+
+    /**
+     * 将 Result 以 JSON 格式输出到响应。
+     *
+     * @param response 响应 {@link HttpServletResponse}
+     * @param result   待写入的内容 {@link ApiRes}
+     */
+    public static void renderResult(HttpServletResponse response, ApiRes<Void> result, int statusCode) {
+        renderJson(response, statusCode, result);
     }
 
     /**

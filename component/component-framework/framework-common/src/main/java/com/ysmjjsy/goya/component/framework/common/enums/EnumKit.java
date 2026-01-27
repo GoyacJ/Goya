@@ -29,7 +29,7 @@ public class EnumKit {
             return Optional.empty();
         }
         for (E e : enumClass.getEnumConstants()) {
-            if (Objects.equals(e.code(), code)) {
+            if (Objects.equals(e.getCode(), code)) {
                 return Optional.of(e);
             }
         }
@@ -65,7 +65,7 @@ public class EnumKit {
         }
         List<EnumOption> list = new ArrayList<>();
         for (E e : enumClass.getEnumConstants()) {
-            list.add(EnumOption.of(e.code(), e.label()));
+            list.add(EnumOption.of(e.getCode(), e.getLabel()));
         }
         return Collections.unmodifiableList(list);
     }

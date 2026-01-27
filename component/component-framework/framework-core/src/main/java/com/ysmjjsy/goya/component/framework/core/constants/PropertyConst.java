@@ -38,6 +38,7 @@ public interface PropertyConst {
      * PROPERTY_GOYA_FRAMEWORK
      */
     String PROPERTY_CRYPTO = PROPERTY_GOYA_FRAMEWORK + ".crypto";
+    String PROPERTY_BUS = PROPERTY_GOYA_FRAMEWORK + ".bus";
     String PROPERTY_PROTOCOL = PROPERTY_GOYA_FRAMEWORK + ".protocol";
     String PROPERTY_ARCHITECTURE = PROPERTY_GOYA_FRAMEWORK + ".architecture";
     String PROPERTY_LOG = PROPERTY_GOYA_FRAMEWORK + ".log";

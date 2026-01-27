@@ -10,11 +10,8 @@
     </parent>
 
     <artifactId>platform-distributed</artifactId>
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
     <description>分布式微服务</description>
-    <modules>
-        <module>auth-cloud-server</module>
-    </modules>
 
 
 </project>

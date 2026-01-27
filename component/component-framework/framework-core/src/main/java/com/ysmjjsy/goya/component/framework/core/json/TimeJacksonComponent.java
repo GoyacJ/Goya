@@ -7,7 +7,6 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.jackson.JacksonComponent;
-import org.springframework.context.annotation.Import;
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.JsonGenerator;
 import tools.jackson.core.JsonParser;
@@ -31,7 +30,6 @@ import java.time.format.DateTimeParseException;
 @Slf4j
 @JacksonComponent
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-@Import(TimeJacksonComponent.class)
 public class TimeJacksonComponent {
 
     private static final DateTimeFormatter FORMATTER_YYYY_MM_DD_HH_MM_SS =

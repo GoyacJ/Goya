@@ -3,17 +3,16 @@ package com.ysmjjsy.goya.component.framework.core.autoconfigure;
 import com.ysmjjsy.goya.component.framework.common.error.CommonErrorCodeCatalog;
 import com.ysmjjsy.goya.component.framework.common.error.ErrorCodeCatalog;
 import com.ysmjjsy.goya.component.framework.core.autoconfigure.properties.ErrorGovernanceProperties;
-import com.ysmjjsy.goya.component.framework.core.autoconfigure.properties.MaskingProperties;
 import com.ysmjjsy.goya.component.framework.core.error.DefaultErrorMessageResolver;
 import com.ysmjjsy.goya.component.framework.core.error.ErrorMessageResolver;
 import com.ysmjjsy.goya.component.framework.core.error.ValidationExceptionTranslator;
 import com.ysmjjsy.goya.component.framework.core.error.governance.ErrorCodeGovernanceRunner;
+import com.ysmjjsy.goya.component.framework.core.i18n.I18nResolver;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 
 import java.util.List;
@@ -26,7 +25,7 @@ import java.util.List;
  */
 @Slf4j
 @AutoConfiguration
-@EnableConfigurationProperties({ErrorGovernanceProperties.class, MaskingProperties.class})
+@EnableConfigurationProperties({ErrorGovernanceProperties.class})
 public class CoreErrorAutoConfiguration {
 
     @PostConstruct
@@ -37,13 +36,13 @@ public class CoreErrorAutoConfiguration {
     /**
      * 默认错误消息解析器。
      *
-     * @param messageSource MessageSource
+     * @param i18nResolver I18nResolver
      * @return ErrorMessageResolver
      */
     @Bean
     @ConditionalOnMissingBean(ErrorMessageResolver.class)
-    public ErrorMessageResolver errorMessageResolver(MessageSource messageSource) {
-        DefaultErrorMessageResolver resolver = new DefaultErrorMessageResolver(messageSource);
+    public ErrorMessageResolver errorMessageResolver(I18nResolver i18nResolver) {
+        DefaultErrorMessageResolver resolver = new DefaultErrorMessageResolver(i18nResolver);
         log.trace("[Goya] |- component [framework] CoreErrorAutoConfiguration |- bean [errorMessageResolver] register.");
         return resolver;
     }

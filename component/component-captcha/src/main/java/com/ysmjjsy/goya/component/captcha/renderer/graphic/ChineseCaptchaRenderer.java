@@ -15,7 +15,7 @@ import java.awt.*;
 public class ChineseCaptchaRenderer extends AbstractPngGraphicRenderer {
 
     public ChineseCaptchaRenderer(ResourceProvider resourceProvider, CaptchaProperties captchaProperties) {
-        super(resourceProvider,captchaProperties);
+        super(resourceProvider,captchaProperties.graphics().expire());
     }
 
     @Override

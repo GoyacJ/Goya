@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.framework.servlet.template;
 
-import com.ysmjjsy.goya.component.web.response.Response;
+import com.ysmjjsy.goya.component.framework.core.api.ApiRes;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.thymeleaf.context.Context;
@@ -25,8 +25,8 @@ public class ThymeleafTemplateHandler {
         this.springTemplateEngine = springTemplateEngine;
     }
 
-    public String renderToError(HttpServletRequest request, HttpServletResponse response, Response<Void> result) {
-        return render(request, response, "error", result.toErrorModel());
+    public String renderToError(HttpServletRequest request, HttpServletResponse response, ApiRes<Void> apiResponse) {
+        return render(request, response, "error", apiResponse.toErrorModel());
     }
 
     public String render(String template, Map<String, Object> model) {

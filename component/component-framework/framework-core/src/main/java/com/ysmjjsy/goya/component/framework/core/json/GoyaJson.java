@@ -127,6 +127,26 @@ public class GoyaJson implements ApplicationContextAware {
     }
 
     /**
+     * 将 JSON 字符串反序列化为指定类型对象
+     *
+     * @param content content
+     * @param clazz   目标对象类型
+     * @param <T>     泛型类型
+     * @return 反序列化后的对象，如果 content 为空或解析失败返回 null
+     */
+    public static <T> T fromJson(byte[] content, Class<T> clazz) {
+        if (content == null || content.length == 0) {
+            return null;
+        }
+        try {
+            return getJsonMapper().readValue(content, clazz);
+        } catch (JacksonException e) {
+            log.error("[JsonUtils] JSON反序列化错误, class={}: {}", clazz.getName(), e.getMessage(), e);
+            return null;
+        }
+    }
+
+    /**
      * 将 JSON 字符串反序列化为带泛型的对象
      *
      * @param content       JSON 字符串
@@ -143,6 +163,20 @@ public class GoyaJson implements ApplicationContextAware {
         } catch (JacksonException e) {
             log.error("[JsonUtils] JSON反序列化错误, typeReference={}: {}", typeReference, e.getMessage(), e);
             return null;
+        }
+    }
+
+    /**
+     * 序列化对象
+     *
+     * @param value value
+     * @return byte[]
+     */
+    public static byte[] serialize(Object value) {
+        try {
+            return getJsonMapper().writeValueAsBytes(value);
+        } catch (Exception e) {
+            throw new IllegalStateException("serialize failed", e);
         }
     }
 
@@ -552,7 +586,7 @@ public class GoyaJson implements ApplicationContextAware {
         } catch (IllegalArgumentException _) {
             // 如果找不到 name，再尝试按自定义 getValue
             for (E eValue : enumClass.getEnumConstants()) {
-                if (eValue instanceof CodeEnum<?> && ((CodeEnum<?>) eValue).code().equals(text)) {
+                if (eValue instanceof CodeEnum<?> && ((CodeEnum<?>) eValue).getCode().equals(text)) {
                     return eValue;
                 }
 

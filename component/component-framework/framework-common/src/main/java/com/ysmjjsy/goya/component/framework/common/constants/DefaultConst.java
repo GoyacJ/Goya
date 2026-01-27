@@ -8,6 +8,8 @@ package com.ysmjjsy.goya.component.framework.common.constants;
  */
 public interface DefaultConst {
 
+    String DEFAULT_PROJECT_NAME = "goya";
+
     /**
      * CHARSET_UTF8
      */

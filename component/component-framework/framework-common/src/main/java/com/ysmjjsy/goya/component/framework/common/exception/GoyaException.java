@@ -1,5 +1,6 @@
 package com.ysmjjsy.goya.component.framework.common.exception;
 
+import com.ysmjjsy.goya.component.framework.common.error.CommonErrorCode;
 import com.ysmjjsy.goya.component.framework.common.error.ErrorCode;
 
 import java.io.Serial;
@@ -47,6 +48,40 @@ public class GoyaException extends RuntimeException implements Serializable {
      *
      * <p>该构造函数会使用错误码默认文案作为异常 message。</p>
      *
+     * @param userMessage 错误信息
+     */
+    public GoyaException(String userMessage) {
+        this(CommonErrorCode.SYSTEM_ERROR, userMessage, null, null, null, null);
+    }
+
+    /**
+     * 构造一个仅包含错误码的异常。
+     *
+     * <p>该构造函数会使用错误码默认文案作为异常 message。</p>
+     *
+     * @param cause 错误
+     */
+    public GoyaException(Throwable cause) {
+        this(CommonErrorCode.SYSTEM_ERROR, null, null, null, null, cause);
+    }
+
+    /**
+     * 构造一个仅包含错误码的异常。
+     *
+     * <p>该构造函数会使用错误码默认文案作为异常 message。</p>
+     *
+     * @param errorCode   错误码（不能为空）
+     * @param userMessage 错误信息
+     */
+    public GoyaException(ErrorCode errorCode, String userMessage) {
+        this(errorCode, userMessage, null, null, null, null);
+    }
+
+    /**
+     * 构造一个仅包含错误码的异常。
+     *
+     * <p>该构造函数会使用错误码默认文案作为异常 message。</p>
+     *
      * @param errorCode 错误码（不能为空）
      */
     public GoyaException(ErrorCode errorCode) {
@@ -57,7 +92,7 @@ public class GoyaException extends RuntimeException implements Serializable {
      * 构造一个包含错误码与原因异常的异常。
      *
      * @param errorCode 错误码（不能为空）
-     * @param cause 原因异常（可为空）
+     * @param cause     原因异常（可为空）
      */
     public GoyaException(ErrorCode errorCode, Throwable cause) {
         this(errorCode, null, null, null, null, cause);
@@ -66,12 +101,12 @@ public class GoyaException extends RuntimeException implements Serializable {
     /**
      * 全量构造函数。
      *
-     * @param errorCode 错误码（不能为空）
-     * @param userMessage 对外安全文案（可为空）
+     * @param errorCode    错误码（不能为空）
+     * @param userMessage  对外安全文案（可为空）
      * @param debugMessage 诊断文案（可为空）
-     * @param args 消息参数（可为空）
-     * @param metadata 结构化上下文（可为空）
-     * @param cause 原因异常（可为空）
+     * @param args         消息参数（可为空）
+     * @param metadata     结构化上下文（可为空）
+     * @param cause        原因异常（可为空）
      */
     public GoyaException(
             ErrorCode errorCode,
@@ -143,8 +178,8 @@ public class GoyaException extends RuntimeException implements Serializable {
      *
      * <p>优先级：debugMessage &gt; userMessage &gt; errorCode.defaultMessage()</p>
      *
-     * @param errorCode 错误码
-     * @param userMessage 对外文案
+     * @param errorCode    错误码
+     * @param userMessage  对外文案
      * @param debugMessage 诊断文案
      * @return Throwable message
      */

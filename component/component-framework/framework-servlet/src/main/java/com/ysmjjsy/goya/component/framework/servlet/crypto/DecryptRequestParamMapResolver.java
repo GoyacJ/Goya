@@ -1,8 +1,6 @@
 package com.ysmjjsy.goya.component.framework.servlet.crypto;
 
-import com.ysmjjsy.goya.component.cache.multilevel.crypto.CryptoProcessor;
-import com.ysmjjsy.goya.component.web.annotation.Crypto;
-import com.ysmjjsy.goya.component.web.utils.WebUtils;
+import com.ysmjjsy.goya.component.framework.servlet.utils.WebUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.Part;
 import lombok.Getter;
@@ -40,7 +38,7 @@ import java.util.Map;
 @Setter
 public class DecryptRequestParamMapResolver implements HandlerMethodArgumentResolver {
 
-    private CryptoProcessor cryptoProcessor;
+    private CryptoCacheManager cryptoCacheManager;
     private RequestParamMapMethodArgumentResolver requestParamMapMethodArgumentResolver;
 
     @Override
@@ -112,7 +110,7 @@ public class DecryptRequestParamMapResolver implements HandlerMethodArgumentReso
                         String[] values = entry.getValue();
 
                         if (values.length > 0) {
-                            String value = cryptoProcessor.decrypt(requestId, values[0]);
+                            String value = cryptoCacheManager.decrypt(requestId, values[0]);
                             result.put(key, value);
                         }
                     }

@@ -26,8 +26,8 @@ public interface WebConst {
      * 缓存属性前缀
      */
     String CACHE_WEB_PREFIX = CACHE_PREFIX + "web:";
-    String CACHE_ACCESS_LIMITED_PREFIX = CACHE_WEB_PREFIX + "access_limited:";
-    String CACHE_IDEMPOTENT_PREFIX = CACHE_WEB_PREFIX + "idempotent:";
+
+
 
 
     // ====================== Header ======================

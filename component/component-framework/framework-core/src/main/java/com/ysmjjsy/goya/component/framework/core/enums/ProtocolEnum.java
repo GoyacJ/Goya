@@ -58,14 +58,4 @@ public enum ProtocolEnum implements PropertyEnum {
     public static ProtocolEnum getByPrefix(String prefix) {
         return Arrays.stream(values()).filter(e -> e.getPrefix().equals(prefix)).findFirst().orElse(null);
     }
-
-    @Override
-    public String code() {
-        return code;
-    }
-
-    @Override
-    public String label() {
-        return label;
-    }
 }

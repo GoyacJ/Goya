@@ -2,12 +2,13 @@ package com.ysmjjsy.goya.component.framework.core.error;
 
 import com.ysmjjsy.goya.component.framework.common.error.ErrorCode;
 import com.ysmjjsy.goya.component.framework.common.exception.GoyaException;
+import com.ysmjjsy.goya.component.framework.core.i18n.I18nResolver;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.MessageSource;
 import org.springframework.context.NoSuchMessageException;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.util.StringUtils;
 
-import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -20,20 +21,14 @@ import java.util.Objects;
  * @author goya
  * @since 2026/1/24 13:45
  */
+@RequiredArgsConstructor
 public class DefaultErrorMessageResolver implements ErrorMessageResolver {
 
-    private final MessageSource messageSource;
+    private final I18nResolver i18nResolver;
 
     /**
-     * 构造默认错误消息解析器。
-     *
-     * @param messageSource MessageSource（不能为空）
+     * {@inheritDoc}
      */
-    public DefaultErrorMessageResolver(MessageSource messageSource) {
-        this.messageSource = Objects.requireNonNull(messageSource, "messageSource 不能为空");
-    }
-
-    /** {@inheritDoc} */
     @Override
     public String resolve(GoyaException ex) {
         Objects.requireNonNull(ex, "ex 不能为空");
@@ -43,13 +38,14 @@ public class DefaultErrorMessageResolver implements ErrorMessageResolver {
         return resolve(ex.errorCode(), ex.args());
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String resolve(ErrorCode code, Object[] args) {
         Objects.requireNonNull(code, "code 不能为空");
-        Locale locale = LocaleContextHolder.getLocale();
         try {
-            String msg = messageSource.getMessage(code.messageKey(), args, locale);
+            String msg = i18nResolver.getI18nMessage(code.messageKey());
             if (StringUtils.hasText(msg)) {
                 return msg;
             }

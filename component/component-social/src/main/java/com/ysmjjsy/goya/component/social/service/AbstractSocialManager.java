@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.social.service;
 
 import cn.binarywang.wx.miniapp.bean.WxMaUserInfo;
-import com.ysmjjsy.goya.component.core.constants.SymbolConst;
-import com.ysmjjsy.goya.component.core.utils.GoyaStringUtils;
+import com.ysmjjsy.goya.component.framework.common.constants.SymbolConst;
+import com.ysmjjsy.goya.component.framework.common.utils.GoyaStringUtils;
 import com.ysmjjsy.goya.component.social.domain.SocialUser;
 import com.ysmjjsy.goya.component.social.domain.ThirdPrincipal;
 import com.ysmjjsy.goya.component.social.enums.GenderEnum;

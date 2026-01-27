@@ -1,14 +1,17 @@
 package com.ysmjjsy.goya.component.framework.servlet.enums;
 
+import com.ysmjjsy.goya.component.framework.common.constants.DefaultConst;
 import com.ysmjjsy.goya.component.framework.common.enums.EnumOption;
-import com.ysmjjsy.goya.component.framework.core.api.ApiResponse;
+import com.ysmjjsy.goya.component.framework.core.api.ApiRes;
 import com.ysmjjsy.goya.component.framework.core.enums.dict.EnumDictionaryService;
-import org.springframework.web.bind.annotation.*;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * <p>枚举字典接口</p>
@@ -29,23 +32,12 @@ import java.util.Objects;
  * @author goya
  * @since 2026/1/24 16:04
  */
-@RequestMapping("/goya/enums")
+@RequestMapping(DefaultConst.DEFAULT_PROJECT_NAME + "/enums")
 @RestController
+@RequiredArgsConstructor
 public class EnumDictionaryController {
 
     private final EnumDictionaryService service;
-    private final LocaleProvider localeProvider;
-
-    /**
-     * 构造控制器。
-     *
-     * @param service 字典服务
-     * @param localeProvider LocaleProvider
-     */
-    public EnumDictionaryController(EnumDictionaryService service, LocaleProvider localeProvider) {
-        this.service = Objects.requireNonNull(service, "service 不能为空");
-        this.localeProvider = Objects.requireNonNull(localeProvider, "localeProvider 不能为空");
-    }
 
     /**
      * 列出所有可导出枚举（simpleName -> fullName）。
@@ -53,8 +45,8 @@ public class EnumDictionaryController {
      * @return ApiResponse
      */
     @GetMapping
-    public ApiResponse<Map<String, String>> listEnums() {
-        return ApiResponse.ok(service.listEnums());
+    public ApiRes<Map<String, String>> listEnums() {
+        return ApiRes.ok(service.listEnums());
     }
 
     /**
@@ -63,24 +55,19 @@ public class EnumDictionaryController {
      * @return ApiResponse
      */
     @GetMapping("/conflicts")
-    public ApiResponse<Map<String, List<String>>> conflicts() {
-        return ApiResponse.ok(service.conflicts());
+    public ApiRes<Map<String, List<String>>> conflicts() {
+        return ApiRes.ok(service.conflicts());
     }
 
     /**
      * 获取指定枚举的选项列表。
      *
      * @param enumName 枚举名（simpleName 或 fullName）
-     * @param localeTag 语言标签（可为空）
      * @return ApiResponse
      */
     @GetMapping("{enumName}")
-    public ApiResponse<List<EnumOption>> options(@PathVariable String enumName,
-                                                 @RequestParam(value = "locale", required = false) String localeTag) {
-        Locale locale = (localeTag == null || localeTag.isBlank())
-                ? localeProvider.currentLocale()
-                : Locale.forLanguageTag(localeTag);
-        return ApiResponse.ok(service.options(enumName, locale));
+    public ApiRes<List<EnumOption>> options(@PathVariable String enumName) {
+        return ApiRes.ok(service.options(enumName));
     }
 
     /**
@@ -88,15 +75,10 @@ public class EnumDictionaryController {
      *
      * <p>适合前端启动时一次性拉取并缓存。</p>
      *
-     * @param localeTag 语言标签（可为空）
      * @return ApiResponse
      */
     @GetMapping("all")
-    public ApiResponse<Map<String, List<EnumOption>>> all(@RequestParam(value = "locale", required = false) String localeTag) {
-        Locale locale = (localeTag == null || localeTag.isBlank())
-                ? localeProvider.currentLocale()
-                : Locale.forLanguageTag(localeTag);
-
-        return ApiResponse.ok(service.allOptions(locale));
+    public ApiRes<Map<String, List<EnumOption>>> all() {
+        return ApiRes.ok(service.allOptions());
     }
 }

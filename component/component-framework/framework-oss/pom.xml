@@ -11,5 +11,11 @@
 
     <artifactId>framework-oss</artifactId>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.ysmjjsy.goya</groupId>
+            <artifactId>framework-servlet</artifactId>
+        </dependency>
+    </dependencies>
 
 </project>

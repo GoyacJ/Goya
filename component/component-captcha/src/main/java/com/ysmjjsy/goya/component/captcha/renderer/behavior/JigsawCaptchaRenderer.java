@@ -7,11 +7,11 @@ import com.ysmjjsy.goya.component.captcha.definition.Coordinate;
 import com.ysmjjsy.goya.component.captcha.definition.Metadata;
 import com.ysmjjsy.goya.component.captcha.definition.Verification;
 import com.ysmjjsy.goya.component.captcha.enums.CaptchaCategoryEnum;
+import com.ysmjjsy.goya.component.captcha.exception.CaptchaException;
 import com.ysmjjsy.goya.component.captcha.provider.RandomProvider;
 import com.ysmjjsy.goya.component.captcha.provider.ResourceProvider;
-import com.ysmjjsy.goya.component.core.exception.CommonException;
-import com.ysmjjsy.goya.component.core.utils.GoyaIdUtils;
-import com.ysmjjsy.goya.component.core.utils.GoyaImgUtils;
+import com.ysmjjsy.goya.component.framework.common.utils.GoyaIdUtils;
+import com.ysmjjsy.goya.component.framework.common.utils.GoyaImgUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -30,7 +30,7 @@ import java.util.Objects;
 public class JigsawCaptchaRenderer extends AbstractBehaviorRenderer<String, Coordinate> {
 
     public JigsawCaptchaRenderer(ResourceProvider resourceProvider, CaptchaProperties captchaProperties) {
-        super(resourceProvider,captchaProperties);
+        super(resourceProvider,CaptchaConst.CACHE_NAME_CAPTCHA_JIGSAW, captchaProperties.graphics().expire());
     }
 
     private static final int AREA_SIZE = 3;
@@ -52,12 +52,11 @@ public class JigsawCaptchaRenderer extends AbstractBehaviorRenderer<String, Coor
             identity = GoyaIdUtils.fastUUID();
         }
 
-        this.put(identity);
+        this.put(identity, generateValue(identity));
         return this.jigsawCaptcha;
     }
 
-    @Override
-    public Coordinate nextValue(String key) {
+    public Coordinate generateValue(String key) {
 
         Metadata metadata = draw();
 
@@ -75,12 +74,12 @@ public class JigsawCaptchaRenderer extends AbstractBehaviorRenderer<String, Coor
     public boolean verify(Verification verification) {
 
         if (ObjectUtils.isEmpty(verification) || ObjectUtils.isEmpty(verification.getCoordinate())) {
-            throw new CommonException("Parameter Stamp value is null");
+            throw new CaptchaException("Parameter Stamp value is null");
         }
 
         Coordinate store = this.get(verification.getIdentity());
         if (ObjectUtils.isEmpty(store)) {
-            throw new CommonException("Stamp is invalid!");
+            throw new CaptchaException("Stamp is invalid!");
         }
 
         this.exists(verification.getIdentity());
@@ -88,7 +87,7 @@ public class JigsawCaptchaRenderer extends AbstractBehaviorRenderer<String, Coor
         Coordinate real = verification.getCoordinate();
 
         if (this.isDeflected(real.getX(), store.getX(), getCaptchaProperties().jigsaw().deviation()) || real.getY() != store.getY()) {
-            throw new CommonException("Stamp is invalid!");
+            throw new CaptchaException("Stamp is invalid!");
         }
 
         return true;
@@ -363,10 +362,5 @@ public class JigsawCaptchaRenderer extends AbstractBehaviorRenderer<String, Coor
                 }
             }
         }
-    }
-
-    @Override
-    protected String getCacheName() {
-        return CaptchaConst.CACHE_NAME_CAPTCHA_JIGSAW;
     }
 }

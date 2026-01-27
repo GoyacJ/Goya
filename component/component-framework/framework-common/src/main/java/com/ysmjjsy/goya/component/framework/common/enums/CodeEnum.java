@@ -17,7 +17,7 @@ public interface CodeEnum<C extends Serializable> {
      *
      * @return code（非空）
      */
-    C code();
+    C getCode();
 
     /**
      * 获取枚举展示文案（默认语言）。
@@ -26,7 +26,7 @@ public interface CodeEnum<C extends Serializable> {
      *
      * @return label（可为空；如启用 i18n 可通过 key 解析）
      */
-    String label();
+    String getLabel();
 
     /**
      * 获取国际化 key（可选）。
