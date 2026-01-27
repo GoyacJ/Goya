@@ -2,6 +2,7 @@ package com.ysmjjsy.goya.component.framework.servlet.web;
 
 import com.ysmjjsy.goya.component.framework.common.error.CommonErrorCode;
 import com.ysmjjsy.goya.component.framework.common.error.ErrorCode;
+import com.ysmjjsy.goya.component.framework.common.error.Severity;
 import com.ysmjjsy.goya.component.framework.common.exception.GoyaException;
 import com.ysmjjsy.goya.component.framework.core.api.ApiFieldError;
 import com.ysmjjsy.goya.component.framework.core.api.ApiResponse;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -64,7 +66,7 @@ public class GlobalExceptionHandler {
     /**
      * 处理 Goya 结构化异常。
      *
-     * @param ex GoyaException
+     * @param ex      GoyaException
      * @param request 当前请求
      * @return ResponseEntity
      */
@@ -84,7 +86,7 @@ public class GlobalExceptionHandler {
     /**
      * 处理 Spring MVC 参数对象校验异常（@Valid）。
      *
-     * @param ex MethodArgumentNotValidException
+     * @param ex      MethodArgumentNotValidException
      * @param request 当前请求
      * @return ResponseEntity
      */
@@ -114,7 +116,7 @@ public class GlobalExceptionHandler {
     /**
      * 处理 Spring MVC 参数绑定异常。
      *
-     * @param ex BindException
+     * @param ex      BindException
      * @param request 当前请求
      * @return ResponseEntity
      */
@@ -142,7 +144,7 @@ public class GlobalExceptionHandler {
     /**
      * 处理方法参数约束校验异常（@Validated）。
      *
-     * @param ex ConstraintViolationException
+     * @param ex      ConstraintViolationException
      * @param request 当前请求
      * @return ResponseEntity
      */
@@ -171,7 +173,7 @@ public class GlobalExceptionHandler {
     /**
      * 处理请求体解析失败（JSON 格式错误等）。
      *
-     * @param ex HttpMessageNotReadableException
+     * @param ex      HttpMessageNotReadableException
      * @param request 当前请求
      * @return ResponseEntity
      */
@@ -192,7 +194,7 @@ public class GlobalExceptionHandler {
     /**
      * 处理缺少必填请求参数。
      *
-     * @param ex MissingServletRequestParameterException
+     * @param ex      MissingServletRequestParameterException
      * @param request 当前请求
      * @return ResponseEntity
      */
@@ -214,7 +216,7 @@ public class GlobalExceptionHandler {
     /**
      * 处理不支持的媒体类型。
      *
-     * @param ex HttpMediaTypeNotSupportedException
+     * @param ex      HttpMediaTypeNotSupportedException
      * @param request 当前请求
      * @return ResponseEntity
      */
@@ -234,15 +236,34 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 处理静态资源未找到异常
+     * 对于 .well-known 路径的请求，返回 404 而不是 ERROR（这是 Chrome DevTools 等工具的自动请求）
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<?> handleNoResourceFoundException(NoResourceFoundException ex, HttpServletRequest request) {
+        String traceId = traceIdResolver.resolve(request);
+
+        log.warn("资源未找 traceId={}, path={}",
+                traceId, request.getRequestURI());
+
+        ErrorCode code = CommonErrorCode.NOT_FOUND;
+        String message = messageResolver.resolve(code, null);
+
+        HttpStatus status = statusMapper.map(code.category());
+        return respond(status, code, message, traceId);
+    }
+
+
+    /**
      * 统一输出“带字段错误列表”的失败响应。
      *
      * <p>API 模式：写入 ApiResponse.fieldErrors</p>
      * <p>PROBLEM/BOTH 模式：写入 ProblemDetail 扩展属性 errors</p>
      *
-     * @param status HTTP 状态码
-     * @param code 错误码
-     * @param message 对外文案
-     * @param traceId traceId
+     * @param status      HTTP 状态码
+     * @param code        错误码
+     * @param message     对外文案
+     * @param traceId     traceId
      * @param fieldErrors 字段错误列表（可为空）
      * @return ResponseEntity
      */
@@ -279,7 +300,7 @@ public class GlobalExceptionHandler {
     /**
      * 兜底处理所有未知异常。
      *
-     * @param ex Throwable
+     * @param ex      Throwable
      * @param request 当前请求
      * @return ResponseEntity
      */
@@ -299,8 +320,8 @@ public class GlobalExceptionHandler {
     /**
      * 根据配置输出 API 或 ProblemDetail。
      *
-     * @param status HTTP 状态码
-     * @param code 错误码
+     * @param status  HTTP 状态码
+     * @param code    错误码
      * @param message 对外文案
      * @param traceId traceId
      * @return ResponseEntity
@@ -331,12 +352,12 @@ public class GlobalExceptionHandler {
     /**
      * 按严重级别记录日志，并对 metadata 做脱敏。
      *
-     * @param ex 异常
+     * @param ex      异常
      * @param traceId traceId
      * @param request request
      */
     private void logBySeverity(GoyaException ex, String traceId, HttpServletRequest request) {
-        var sev = ex.errorCode().severity();
+        Severity sev = ex.errorCode().severity();
         String uri = request.getRequestURI();
         Object maskedMeta = masker.mask(ex.metadata());
 
