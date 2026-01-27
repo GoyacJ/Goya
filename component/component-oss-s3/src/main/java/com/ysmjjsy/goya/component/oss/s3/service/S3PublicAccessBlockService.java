@@ -38,8 +38,7 @@ public class S3PublicAccessBlockService extends BaseS3Service {
         String function = "deletePublicAccessBlock";
         S3Client client = getClient();
         try {
-            DeletePublicAccessBlockResponse response = client.deletePublicAccessBlock(request);
-            return response;
+            return client.deletePublicAccessBlock(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -59,8 +58,7 @@ public class S3PublicAccessBlockService extends BaseS3Service {
         String function = "getPublicAccessBlock";
         S3Client client = getClient();
         try {
-            GetPublicAccessBlockResponse response = client.getPublicAccessBlock(request);
-            return response;
+            return client.getPublicAccessBlock(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -80,8 +78,7 @@ public class S3PublicAccessBlockService extends BaseS3Service {
         String function = "putPublicAccessBlock";
         S3Client client = getClient();
         try {
-            PutPublicAccessBlockResponse response = client.putPublicAccessBlock(request);
-            return response;
+            return client.putPublicAccessBlock(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;

@@ -38,8 +38,7 @@ public class S3BucketReplicationConfigurationService extends BaseS3Service {
         String function = "deleteBucketReplication";
         S3Client client = getClient();
         try {
-            DeleteBucketReplicationResponse response = client.deleteBucketReplication(request);
-            return response;
+            return client.deleteBucketReplication(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -59,8 +58,7 @@ public class S3BucketReplicationConfigurationService extends BaseS3Service {
         String function = "getBucketReplication";
         S3Client client = getClient();
         try {
-            GetBucketReplicationResponse response = client.getBucketReplication(request);
-            return response;
+            return client.getBucketReplication(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -80,8 +78,7 @@ public class S3BucketReplicationConfigurationService extends BaseS3Service {
         String function = "putBucketReplication";
         S3Client client = getClient();
         try {
-            PutBucketReplicationResponse response = client.putBucketReplication(request);
-            return response;
+            return client.putBucketReplication(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;

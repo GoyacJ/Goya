@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.oss.s3.converter.arguments;
 
-import com.ysmjjsy.goya.component.oss.core.arguments.multipart.ListPartsArguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.multipart.ListPartsArguments;
 import org.springframework.core.convert.converter.Converter;
 import software.amazon.awssdk.services.s3.model.ListPartsRequest;
 

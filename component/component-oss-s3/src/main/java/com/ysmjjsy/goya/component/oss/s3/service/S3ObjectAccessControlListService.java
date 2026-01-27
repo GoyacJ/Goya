@@ -36,8 +36,7 @@ public class S3ObjectAccessControlListService extends BaseS3Service {
         String function = "getObjectAcl";
         S3Client client = getClient();
         try {
-            GetObjectAclResponse response = client.getObjectAcl(request);
-            return response;
+            return client.getObjectAcl(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -57,8 +56,7 @@ public class S3ObjectAccessControlListService extends BaseS3Service {
         String function = "putObjectAcl";
         S3Client client = getClient();
         try {
-            PutObjectAclResponse response = client.putObjectAcl(request);
-            return response;
+            return client.putObjectAcl(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;

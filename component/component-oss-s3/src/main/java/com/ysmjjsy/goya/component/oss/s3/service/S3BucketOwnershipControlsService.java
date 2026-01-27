@@ -38,8 +38,7 @@ public class S3BucketOwnershipControlsService extends BaseS3Service {
         String function = "deleteBucketOwnershipControls";
         S3Client client = getClient();
         try {
-            DeleteBucketOwnershipControlsResponse response = client.deleteBucketOwnershipControls(request);
-            return response;
+            return client.deleteBucketOwnershipControls(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -59,8 +58,7 @@ public class S3BucketOwnershipControlsService extends BaseS3Service {
         String function = "getBucketOwnershipControls";
         S3Client client = getClient();
         try {
-            GetBucketOwnershipControlsResponse response = client.getBucketOwnershipControls(request);
-            return response;
+            return client.getBucketOwnershipControls(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -80,8 +78,7 @@ public class S3BucketOwnershipControlsService extends BaseS3Service {
         String function = "putBucketOwnershipControls";
         S3Client client = getClient();
         try {
-            PutBucketOwnershipControlsResponse response = client.putBucketOwnershipControls(request);
-            return response;
+            return client.putBucketOwnershipControls(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;

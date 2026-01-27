@@ -38,8 +38,7 @@ public class S3BucketEncryptionService extends BaseS3Service {
         String function = "deleteBucketEncryption";
         S3Client client = getClient();
         try {
-            DeleteBucketEncryptionResponse response = client.deleteBucketEncryption(request);
-            return response;
+            return client.deleteBucketEncryption(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -59,8 +58,7 @@ public class S3BucketEncryptionService extends BaseS3Service {
         String function = "getBucketEncryption";
         S3Client client = getClient();
         try {
-            GetBucketEncryptionResponse response = client.getBucketEncryption(request);
-            return response;
+            return client.getBucketEncryption(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -80,8 +78,7 @@ public class S3BucketEncryptionService extends BaseS3Service {
         String function = "putBucketEncryption";
         S3Client client = getClient();
         try {
-            PutBucketEncryptionResponse response = client.putBucketEncryption(request);
-            return response;
+            return client.putBucketEncryption(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;

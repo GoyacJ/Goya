@@ -38,8 +38,7 @@ public class S3BucketCrossOriginConfigurationService extends BaseS3Service {
         String function = "deleteBucketCors";
         S3Client client = getClient();
         try {
-            DeleteBucketCorsResponse response = client.deleteBucketCors(request);
-            return response;
+            return client.deleteBucketCors(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -59,8 +58,7 @@ public class S3BucketCrossOriginConfigurationService extends BaseS3Service {
         String function = "getBucketCors";
         S3Client client = getClient();
         try {
-            GetBucketCorsResponse response = client.getBucketCors(request);
-            return response;
+            return client.getBucketCors(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -80,8 +78,7 @@ public class S3BucketCrossOriginConfigurationService extends BaseS3Service {
         String function = "putBucketCors";
         S3Client client = getClient();
         try {
-            PutBucketCorsResponse response = client.putBucketCors(request);
-            return response;
+            return client.putBucketCors(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;

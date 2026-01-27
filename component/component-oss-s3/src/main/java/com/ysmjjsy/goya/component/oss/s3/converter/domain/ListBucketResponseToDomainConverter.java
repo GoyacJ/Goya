@@ -1,9 +1,9 @@
 package com.ysmjjsy.goya.component.oss.s3.converter.domain;
 
 import com.google.common.collect.Lists;
-import com.ysmjjsy.goya.component.core.utils.GoyaDateUtils;
-import com.ysmjjsy.goya.component.oss.core.domain.base.OwnerDomain;
-import com.ysmjjsy.goya.component.oss.core.domain.bucket.BucketDomain;
+import com.ysmjjsy.goya.component.framework.common.utils.GoyaDateUtils;
+import com.ysmjjsy.goya.component.framework.oss.domain.base.OwnerDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.bucket.BucketDomain;
 import org.springframework.core.convert.converter.Converter;
 import software.amazon.awssdk.services.s3.model.Bucket;
 import software.amazon.awssdk.services.s3.model.ListBucketsResponse;

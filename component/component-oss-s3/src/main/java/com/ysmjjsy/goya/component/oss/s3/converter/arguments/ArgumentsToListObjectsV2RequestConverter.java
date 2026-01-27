@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.oss.s3.converter.arguments;
 
-import com.ysmjjsy.goya.component.oss.core.arguments.object.ListObjectsV2Arguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.object.ListObjectsV2Arguments;
 import com.ysmjjsy.goya.component.oss.s3.definition.arguments.ArgumentsToBucketConverter;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 

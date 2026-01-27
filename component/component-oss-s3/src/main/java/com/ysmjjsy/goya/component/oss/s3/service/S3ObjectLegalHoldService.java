@@ -36,8 +36,7 @@ public class S3ObjectLegalHoldService extends BaseS3Service {
         String function = "getObjectLegalHold";
         S3Client client = getClient();
         try {
-            GetObjectLegalHoldResponse response = client.getObjectLegalHold(request);
-            return response;
+            return client.getObjectLegalHold(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -57,8 +56,7 @@ public class S3ObjectLegalHoldService extends BaseS3Service {
         String function = "putObjectLegalHold";
         S3Client client = getClient();
         try {
-            PutObjectLegalHoldResponse response = client.putObjectLegalHold(request);
-            return response;
+            return client.putObjectLegalHold(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;

@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.oss.s3.definition.service;
 
-import com.ysmjjsy.goya.component.core.pool.AbstractObjectPool;
-import com.ysmjjsy.goya.component.oss.core.service.BaseOssService;
+import com.ysmjjsy.goya.component.framework.common.pool.AbstractObjectPool;
+import com.ysmjjsy.goya.component.framework.oss.service.BaseOssService;
 import software.amazon.awssdk.services.s3.S3Client;
 
 /**

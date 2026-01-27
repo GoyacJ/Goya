@@ -1,6 +1,7 @@
 package com.ysmjjsy.goya.component.oss.s3.service;
 
-import com.ysmjjsy.goya.component.core.pool.AbstractObjectPool;
+import com.ysmjjsy.goya.component.framework.common.pool.AbstractObjectPool;
+import com.ysmjjsy.goya.component.framework.oss.exception.OssException;
 import com.ysmjjsy.goya.component.oss.s3.configuration.properties.S3Properties;
 import com.ysmjjsy.goya.component.oss.s3.definition.service.BaseS3Service;
 import lombok.extern.slf4j.Slf4j;
@@ -65,7 +66,7 @@ public class S3PresignedUrlService extends BaseS3Service {
             throw e;
         } catch (Exception e) {
             log.error("[Goya] |- S3 OSS catch Exception in [{}].", function, e);
-            throw new RuntimeException("生成预签名URL失败", e);
+            throw new OssException("生成预签名URL失败");
         }
     }
 
@@ -86,7 +87,7 @@ public class S3PresignedUrlService extends BaseS3Service {
             throw e;
         } catch (Exception e) {
             log.error("[Goya] |- S3 OSS catch Exception in [{}].", function, e);
-            throw new RuntimeException("生成预签名URL失败", e);
+            throw new OssException("生成预签名URL失败");
         }
     }
 }

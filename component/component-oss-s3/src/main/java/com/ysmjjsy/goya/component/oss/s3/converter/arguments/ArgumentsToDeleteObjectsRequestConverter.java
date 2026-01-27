@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.oss.s3.converter.arguments;
 
-import com.ysmjjsy.goya.component.oss.core.arguments.object.DeleteObjectsArguments;
-import com.ysmjjsy.goya.component.oss.core.arguments.object.DeletedObjectArguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.object.DeleteObjectsArguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.object.DeletedObjectArguments;
 import com.ysmjjsy.goya.component.oss.s3.definition.arguments.ArgumentsToBucketConverter;
 import org.apache.commons.collections4.CollectionUtils;
 import software.amazon.awssdk.services.s3.model.Delete;

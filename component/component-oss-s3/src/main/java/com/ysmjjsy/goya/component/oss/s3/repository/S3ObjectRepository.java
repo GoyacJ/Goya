@@ -1,12 +1,12 @@
 package com.ysmjjsy.goya.component.oss.s3.repository;
 
-import com.ysmjjsy.goya.component.core.pool.AbstractObjectPool;
-import com.ysmjjsy.goya.component.oss.core.arguments.object.*;
-import com.ysmjjsy.goya.component.oss.core.core.repository.OssObjectRepository;
-import com.ysmjjsy.goya.component.oss.core.domain.base.ObjectWriteDomain;
-import com.ysmjjsy.goya.component.oss.core.domain.object.*;
-import com.ysmjjsy.goya.component.oss.core.enums.HttpMethodEnum;
-import com.ysmjjsy.goya.component.oss.core.exception.OssException;
+import com.ysmjjsy.goya.component.framework.common.pool.AbstractObjectPool;
+import com.ysmjjsy.goya.component.framework.oss.arguments.object.*;
+import com.ysmjjsy.goya.component.framework.oss.core.repository.OssObjectRepository;
+import com.ysmjjsy.goya.component.framework.oss.domain.base.ObjectWriteDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.object.*;
+import com.ysmjjsy.goya.component.framework.oss.enums.HttpMethodEnum;
+import com.ysmjjsy.goya.component.framework.oss.exception.OssException;
 import com.ysmjjsy.goya.component.oss.s3.configuration.properties.S3Properties;
 import com.ysmjjsy.goya.component.oss.s3.converter.arguments.*;
 import com.ysmjjsy.goya.component.oss.s3.converter.domain.*;
@@ -158,11 +158,11 @@ public class S3ObjectRepository extends BaseS3Service implements OssObjectReposi
 
             HeadObjectRequest request = toRequest.convert(arguments);
             HeadObjectResponse response = client.headObject(request);
-            
+
             ObjectMetadataDomain domain = toDomain.convert(response);
             domain.setBucketName(arguments.getBucketName());
             domain.setObjectName(arguments.getObjectName());
-            
+
             return domain;
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
@@ -184,11 +184,11 @@ public class S3ObjectRepository extends BaseS3Service implements OssObjectReposi
 
             GetObjectRequest request = toRequest.convert(arguments);
             ResponseInputStream<GetObjectResponse> response = client.getObject(request);
-            
+
             GetObjectDomain domain = toDomain.convert(response);
             domain.setBucketName(arguments.getBucketName());
             domain.setObjectName(arguments.getObjectName());
-            
+
             return domain;
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
@@ -214,11 +214,11 @@ public class S3ObjectRepository extends BaseS3Service implements OssObjectReposi
                     arguments.getObjectSize());
 
             PutObjectResponse response = client.putObject(request, requestBody);
-            
+
             PutObjectDomain domain = toDomain.convert(response);
             domain.setBucketName(arguments.getBucketName());
             domain.setObjectName(arguments.getObjectName());
-            
+
             return domain;
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
@@ -232,8 +232,8 @@ public class S3ObjectRepository extends BaseS3Service implements OssObjectReposi
     public String generatePresignedUrl(GeneratePresignedUrlArguments arguments) {
         String function = "generatePresignedUrl";
         try {
-            Duration expiration = arguments.getExpiration() != null 
-                    ? arguments.getExpiration() 
+            Duration expiration = arguments.getExpiration() != null
+                    ? arguments.getExpiration()
                     : Duration.ofDays(7);
 
             if (arguments.getMethod() == HttpMethodEnum.GET) {
@@ -312,18 +312,18 @@ public class S3ObjectRepository extends BaseS3Service implements OssObjectReposi
                     .build();
 
             HeadObjectResponse headResponse = client.headObject(headRequest);
-            
+
             ObjectMetadataDomain domain = toDomain.convert(headResponse);
             domain.setBucketName(arguments.getBucketName());
             domain.setObjectName(arguments.getObjectName());
-            
+
             return domain;
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
         } catch (Exception e) {
             log.error("[Goya] |- S3 OSS catch Exception in [{}].", function, e);
-            throw new OssException("下载对象失败", e);
+            throw new OssException("下载对象失败");
         } finally {
             close(client);
         }
@@ -357,18 +357,18 @@ public class S3ObjectRepository extends BaseS3Service implements OssObjectReposi
             RequestBody requestBody = RequestBody.fromFile(filePath);
 
             PutObjectResponse response = client.putObject(request, requestBody);
-            
+
             PutObjectDomain domain = toDomain.convert(response);
             domain.setBucketName(arguments.getBucketName());
             domain.setObjectName(arguments.getObjectName());
-            
+
             return domain;
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
         } catch (Exception e) {
             log.error("[Goya] |- S3 OSS catch Exception in [{}].", function, e);
-            throw new OssException("上传对象失败", e);
+            throw new OssException("上传对象失败");
         } finally {
             close(client);
         }

@@ -1,8 +1,7 @@
 package com.ysmjjsy.goya.component.oss.s3.converter.domain;
 
-import com.ysmjjsy.goya.component.oss.core.domain.object.ListObjectsDomain;
-import com.ysmjjsy.goya.component.oss.core.domain.object.ObjectDomain;
-import com.ysmjjsy.goya.component.oss.core.utils.OssConverterUtils;
+import com.ysmjjsy.goya.component.framework.oss.domain.object.ListObjectsDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.object.ObjectDomain;
 import org.springframework.core.convert.converter.Converter;
 import software.amazon.awssdk.services.s3.model.CommonPrefix;
 import software.amazon.awssdk.services.s3.model.ListObjectsResponse;

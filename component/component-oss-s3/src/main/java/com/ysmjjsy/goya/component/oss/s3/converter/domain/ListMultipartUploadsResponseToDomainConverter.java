@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.oss.s3.converter.domain;
 
-import com.ysmjjsy.goya.component.oss.core.domain.multipart.ListMultipartUploadsDomain;
-import com.ysmjjsy.goya.component.oss.core.domain.multipart.UploadDomain;
-import com.ysmjjsy.goya.component.oss.core.utils.OssConverterUtils;
+import com.ysmjjsy.goya.component.framework.oss.domain.multipart.ListMultipartUploadsDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.multipart.UploadDomain;
+import com.ysmjjsy.goya.component.framework.oss.utils.OssConverterUtils;
 import org.springframework.core.convert.converter.Converter;
 import software.amazon.awssdk.services.s3.model.CommonPrefix;
 import software.amazon.awssdk.services.s3.model.ListMultipartUploadsResponse;

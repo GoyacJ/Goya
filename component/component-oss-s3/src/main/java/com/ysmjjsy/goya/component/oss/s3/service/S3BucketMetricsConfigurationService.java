@@ -40,8 +40,7 @@ public class S3BucketMetricsConfigurationService extends BaseS3Service {
         String function = "deleteBucketMetricsConfiguration";
         S3Client client = getClient();
         try {
-            DeleteBucketMetricsConfigurationResponse response = client.deleteBucketMetricsConfiguration(request);
-            return response;
+            return client.deleteBucketMetricsConfiguration(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -61,8 +60,7 @@ public class S3BucketMetricsConfigurationService extends BaseS3Service {
         String function = "getBucketMetricsConfiguration";
         S3Client client = getClient();
         try {
-            GetBucketMetricsConfigurationResponse response = client.getBucketMetricsConfiguration(request);
-            return response;
+            return client.getBucketMetricsConfiguration(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -82,8 +80,7 @@ public class S3BucketMetricsConfigurationService extends BaseS3Service {
         String function = "listBucketMetricsConfigurations";
         S3Client client = getClient();
         try {
-            ListBucketMetricsConfigurationsResponse response = client.listBucketMetricsConfigurations(request);
-            return response;
+            return client.listBucketMetricsConfigurations(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -103,8 +100,7 @@ public class S3BucketMetricsConfigurationService extends BaseS3Service {
         String function = "putBucketMetricsConfiguration";
         S3Client client = getClient();
         try {
-            PutBucketMetricsConfigurationResponse response = client.putBucketMetricsConfiguration(request);
-            return response;
+            return client.putBucketMetricsConfiguration(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;

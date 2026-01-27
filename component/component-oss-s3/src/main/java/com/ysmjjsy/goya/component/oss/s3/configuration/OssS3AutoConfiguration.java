@@ -1,5 +1,7 @@
 package com.ysmjjsy.goya.component.oss.s3.configuration;
 
+import com.ysmjjsy.goya.component.framework.oss.annotation.ConditionalOnOssStrategy;
+import com.ysmjjsy.goya.component.framework.oss.enums.OssEnum;
 import com.ysmjjsy.goya.component.oss.s3.configuration.properties.S3Properties;
 import com.ysmjjsy.goya.component.oss.s3.definition.pool.S3ClientObjectPool;
 import com.ysmjjsy.goya.component.oss.s3.definition.pool.S3ClientPooledObjectFactory;
@@ -24,6 +26,7 @@ import org.springframework.context.annotation.ComponentScan;
         "com.ysmjjsy.goya.component.oss.s3.service",
         "com.ysmjjsy.goya.component.oss.s3.repository",
 })
+@ConditionalOnOssStrategy(OssEnum.S3)
 public class OssS3AutoConfiguration {
 
     @PostConstruct

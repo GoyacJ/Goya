@@ -38,8 +38,7 @@ public class S3ObjectTaggingService extends BaseS3Service {
         String function = "deleteObjectTagging";
         S3Client client = getClient();
         try {
-            DeleteObjectTaggingResponse response = client.deleteObjectTagging(request);
-            return response;
+            return client.deleteObjectTagging(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -59,8 +58,7 @@ public class S3ObjectTaggingService extends BaseS3Service {
         String function = "getObjectTagging";
         S3Client client = getClient();
         try {
-            GetObjectTaggingResponse response = client.getObjectTagging(request);
-            return response;
+            return client.getObjectTagging(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -80,8 +78,7 @@ public class S3ObjectTaggingService extends BaseS3Service {
         String function = "putObjectTagging";
         S3Client client = getClient();
         try {
-            PutObjectTaggingResponse response = client.putObjectTagging(request);
-            return response;
+            return client.putObjectTagging(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;

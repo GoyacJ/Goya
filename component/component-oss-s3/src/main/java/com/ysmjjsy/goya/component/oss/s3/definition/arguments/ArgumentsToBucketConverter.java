@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.oss.s3.definition.arguments;
 
-import com.ysmjjsy.goya.component.oss.core.arguments.base.BucketArguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.base.BucketArguments;
 import software.amazon.awssdk.services.s3.model.S3Request;
 
 /**

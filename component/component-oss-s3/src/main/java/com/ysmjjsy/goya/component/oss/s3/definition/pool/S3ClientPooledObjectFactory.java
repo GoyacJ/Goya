@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.oss.s3.definition.pool;
 
-import com.ysmjjsy.goya.component.oss.core.client.AbstractOssClientPooledObjectFactory;
+import com.ysmjjsy.goya.component.framework.oss.client.AbstractOssClientPooledObjectFactory;
 import com.ysmjjsy.goya.component.oss.s3.configuration.properties.S3Properties;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;

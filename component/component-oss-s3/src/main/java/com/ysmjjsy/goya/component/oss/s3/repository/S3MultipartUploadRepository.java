@@ -1,9 +1,9 @@
 package com.ysmjjsy.goya.component.oss.s3.repository;
 
-import com.ysmjjsy.goya.component.core.pool.AbstractObjectPool;
-import com.ysmjjsy.goya.component.oss.core.arguments.multipart.*;
-import com.ysmjjsy.goya.component.oss.core.core.repository.OssMultipartUploadRepository;
-import com.ysmjjsy.goya.component.oss.core.domain.multipart.*;
+import com.ysmjjsy.goya.component.framework.common.pool.AbstractObjectPool;
+import com.ysmjjsy.goya.component.framework.oss.arguments.multipart.*;
+import com.ysmjjsy.goya.component.framework.oss.core.repository.OssMultipartUploadRepository;
+import com.ysmjjsy.goya.component.framework.oss.domain.multipart.*;
 import com.ysmjjsy.goya.component.oss.s3.converter.arguments.*;
 import com.ysmjjsy.goya.component.oss.s3.converter.domain.*;
 import com.ysmjjsy.goya.component.oss.s3.definition.service.BaseS3Service;

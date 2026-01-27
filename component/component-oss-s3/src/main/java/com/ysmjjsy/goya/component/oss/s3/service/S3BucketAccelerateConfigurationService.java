@@ -36,8 +36,7 @@ public class S3BucketAccelerateConfigurationService extends BaseS3Service {
         String function = "getBucketAccelerateConfiguration";
         S3Client client = getClient();
         try {
-            GetBucketAccelerateConfigurationResponse response = client.getBucketAccelerateConfiguration(request);
-            return response;
+            return client.getBucketAccelerateConfiguration(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -57,8 +56,7 @@ public class S3BucketAccelerateConfigurationService extends BaseS3Service {
         String function = "putBucketAccelerateConfiguration";
         S3Client client = getClient();
         try {
-            PutBucketAccelerateConfigurationResponse response = client.putBucketAccelerateConfiguration(request);
-            return response;
+            return client.putBucketAccelerateConfiguration(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;

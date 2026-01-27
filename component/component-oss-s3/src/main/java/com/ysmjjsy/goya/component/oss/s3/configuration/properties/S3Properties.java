@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.oss.s3.configuration.properties;
 
-import com.ysmjjsy.goya.component.oss.core.constants.OssConstants;
-import com.ysmjjsy.goya.component.oss.core.properties.AbstractOssProperties;
+import com.ysmjjsy.goya.component.framework.oss.constants.OssConstants;
+import com.ysmjjsy.goya.component.framework.oss.properties.AbstractOssProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.io.Serial;

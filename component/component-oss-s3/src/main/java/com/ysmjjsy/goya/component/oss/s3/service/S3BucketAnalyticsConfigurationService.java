@@ -40,8 +40,7 @@ public class S3BucketAnalyticsConfigurationService extends BaseS3Service {
         String function = "deleteBucketAnalyticsConfiguration";
         S3Client client = getClient();
         try {
-            DeleteBucketAnalyticsConfigurationResponse response = client.deleteBucketAnalyticsConfiguration(request);
-            return response;
+            return client.deleteBucketAnalyticsConfiguration(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -61,8 +60,7 @@ public class S3BucketAnalyticsConfigurationService extends BaseS3Service {
         String function = "getBucketAnalyticsConfiguration";
         S3Client client = getClient();
         try {
-            GetBucketAnalyticsConfigurationResponse response = client.getBucketAnalyticsConfiguration(request);
-            return response;
+            return client.getBucketAnalyticsConfiguration(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -82,8 +80,7 @@ public class S3BucketAnalyticsConfigurationService extends BaseS3Service {
         String function = "listBucketAnalyticsConfigurations";
         S3Client client = getClient();
         try {
-            ListBucketAnalyticsConfigurationsResponse response = client.listBucketAnalyticsConfigurations(request);
-            return response;
+            return client.listBucketAnalyticsConfigurations(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -103,8 +100,7 @@ public class S3BucketAnalyticsConfigurationService extends BaseS3Service {
         String function = "putBucketAnalyticsConfiguration";
         S3Client client = getClient();
         try {
-            PutBucketAnalyticsConfigurationResponse response = client.putBucketAnalyticsConfiguration(request);
-            return response;
+            return client.putBucketAnalyticsConfiguration(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;

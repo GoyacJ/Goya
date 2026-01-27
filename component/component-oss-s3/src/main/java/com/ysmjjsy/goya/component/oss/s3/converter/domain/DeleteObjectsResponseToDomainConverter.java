@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.oss.s3.converter.domain;
 
-import com.ysmjjsy.goya.component.oss.core.domain.object.DeleteObjectDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.object.DeleteObjectDomain;
 import org.springframework.core.convert.converter.Converter;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsResponse;
 import software.amazon.awssdk.services.s3.model.DeletedObject;

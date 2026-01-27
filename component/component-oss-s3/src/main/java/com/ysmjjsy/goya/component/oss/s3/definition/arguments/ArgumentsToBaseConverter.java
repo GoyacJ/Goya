@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.oss.s3.definition.arguments;
 
-import com.ysmjjsy.goya.component.oss.core.arguments.base.BaseArguments;
-import com.ysmjjsy.goya.component.oss.core.core.converter.OssConverter;
+import com.ysmjjsy.goya.component.framework.oss.arguments.base.BaseArguments;
+import com.ysmjjsy.goya.component.framework.oss.core.converter.OssConverter;
 import software.amazon.awssdk.services.s3.model.S3Request;
 
 /**

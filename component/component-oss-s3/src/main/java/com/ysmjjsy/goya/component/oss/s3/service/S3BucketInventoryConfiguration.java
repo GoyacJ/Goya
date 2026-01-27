@@ -40,8 +40,7 @@ public class S3BucketInventoryConfiguration extends BaseS3Service {
         String function = "deleteBucketInventoryConfiguration";
         S3Client client = getClient();
         try {
-            DeleteBucketInventoryConfigurationResponse response = client.deleteBucketInventoryConfiguration(request);
-            return response;
+            return client.deleteBucketInventoryConfiguration(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -61,8 +60,7 @@ public class S3BucketInventoryConfiguration extends BaseS3Service {
         String function = "getBucketInventoryConfiguration";
         S3Client client = getClient();
         try {
-            GetBucketInventoryConfigurationResponse response = client.getBucketInventoryConfiguration(request);
-            return response;
+            return client.getBucketInventoryConfiguration(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -82,8 +80,7 @@ public class S3BucketInventoryConfiguration extends BaseS3Service {
         String function = "listBucketInventoryConfigurations";
         S3Client client = getClient();
         try {
-            ListBucketInventoryConfigurationsResponse response = client.listBucketInventoryConfigurations(request);
-            return response;
+            return client.listBucketInventoryConfigurations(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -103,8 +100,7 @@ public class S3BucketInventoryConfiguration extends BaseS3Service {
         String function = "putBucketInventoryConfiguration";
         S3Client client = getClient();
         try {
-            PutBucketInventoryConfigurationResponse response = client.putBucketInventoryConfiguration(request);
-            return response;
+            return client.putBucketInventoryConfiguration(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;

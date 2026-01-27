@@ -40,8 +40,7 @@ public class S3BucketPolicyService extends BaseS3Service {
         String function = "deleteBucketPolicy";
         S3Client client = getClient();
         try {
-            DeleteBucketPolicyResponse response = client.deleteBucketPolicy(request);
-            return response;
+            return client.deleteBucketPolicy(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -61,8 +60,7 @@ public class S3BucketPolicyService extends BaseS3Service {
         String function = "getBucketPolicy";
         S3Client client = getClient();
         try {
-            GetBucketPolicyResponse response = client.getBucketPolicy(request);
-            return response;
+            return client.getBucketPolicy(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -82,8 +80,7 @@ public class S3BucketPolicyService extends BaseS3Service {
         String function = "getBucketPolicyStatus";
         S3Client client = getClient();
         try {
-            GetBucketPolicyStatusResponse response = client.getBucketPolicyStatus(request);
-            return response;
+            return client.getBucketPolicyStatus(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -103,8 +100,7 @@ public class S3BucketPolicyService extends BaseS3Service {
         String function = "putBucketPolicy";
         S3Client client = getClient();
         try {
-            PutBucketPolicyResponse response = client.putBucketPolicy(request);
-            return response;
+            return client.putBucketPolicy(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;

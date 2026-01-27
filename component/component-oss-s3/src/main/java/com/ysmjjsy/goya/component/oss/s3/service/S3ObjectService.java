@@ -33,8 +33,7 @@ public class S3ObjectService extends BaseS3Service {
         String function = "headObject";
         S3Client client = getClient();
         try {
-            HeadObjectResponse response = client.headObject(request);
-            return response;
+            return client.headObject(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -55,8 +54,7 @@ public class S3ObjectService extends BaseS3Service {
         String function = "putObject";
         S3Client client = getClient();
         try {
-            PutObjectResponse response = client.putObject(request, requestBody);
-            return response;
+            return client.putObject(request, requestBody);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -76,8 +74,7 @@ public class S3ObjectService extends BaseS3Service {
         String function = "copyObject";
         S3Client client = getClient();
         try {
-            CopyObjectResponse response = client.copyObject(request);
-            return response;
+            return client.copyObject(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -97,8 +94,7 @@ public class S3ObjectService extends BaseS3Service {
         String function = "deleteObject";
         S3Client client = getClient();
         try {
-            DeleteObjectResponse response = client.deleteObject(request);
-            return response;
+            return client.deleteObject(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -118,8 +114,7 @@ public class S3ObjectService extends BaseS3Service {
         String function = "listObjectsV2";
         S3Client client = getClient();
         try {
-            ListObjectsV2Response response = client.listObjectsV2(request);
-            return response;
+            return client.listObjectsV2(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;

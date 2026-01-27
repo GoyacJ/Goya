@@ -1,11 +1,11 @@
 package com.ysmjjsy.goya.component.oss.s3.repository;
 
-import com.ysmjjsy.goya.component.core.pool.AbstractObjectPool;
-import com.ysmjjsy.goya.component.oss.core.arguments.bucket.CreateBucketArguments;
-import com.ysmjjsy.goya.component.oss.core.arguments.bucket.DeleteBucketArguments;
-import com.ysmjjsy.goya.component.oss.core.core.repository.OssBucketRepository;
-import com.ysmjjsy.goya.component.oss.core.domain.bucket.BucketDomain;
-import com.ysmjjsy.goya.component.oss.core.utils.OssConverterUtils;
+import com.ysmjjsy.goya.component.framework.common.pool.AbstractObjectPool;
+import com.ysmjjsy.goya.component.framework.oss.arguments.bucket.CreateBucketArguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.bucket.DeleteBucketArguments;
+import com.ysmjjsy.goya.component.framework.oss.core.repository.OssBucketRepository;
+import com.ysmjjsy.goya.component.framework.oss.domain.bucket.BucketDomain;
+import com.ysmjjsy.goya.component.framework.oss.utils.OssConverterUtils;
 import com.ysmjjsy.goya.component.oss.s3.converter.domain.ListBucketResponseToDomainConverter;
 import com.ysmjjsy.goya.component.oss.s3.definition.service.BaseS3Service;
 import lombok.extern.slf4j.Slf4j;

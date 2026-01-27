@@ -40,8 +40,7 @@ public class S3BucketIntelligentTieringConfigurationService extends BaseS3Servic
         String function = "deleteBucketIntelligentTieringConfiguration";
         S3Client client = getClient();
         try {
-            DeleteBucketIntelligentTieringConfigurationResponse response = client.deleteBucketIntelligentTieringConfiguration(request);
-            return response;
+            return client.deleteBucketIntelligentTieringConfiguration(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -61,8 +60,7 @@ public class S3BucketIntelligentTieringConfigurationService extends BaseS3Servic
         String function = "getBucketIntelligentTieringConfiguration";
         S3Client client = getClient();
         try {
-            GetBucketIntelligentTieringConfigurationResponse response = client.getBucketIntelligentTieringConfiguration(request);
-            return response;
+            return client.getBucketIntelligentTieringConfiguration(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -82,8 +80,7 @@ public class S3BucketIntelligentTieringConfigurationService extends BaseS3Servic
         String function = "listBucketIntelligentTieringConfigurations";
         S3Client client = getClient();
         try {
-            ListBucketIntelligentTieringConfigurationsResponse response = client.listBucketIntelligentTieringConfigurations(request);
-            return response;
+            return client.listBucketIntelligentTieringConfigurations(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -103,8 +100,7 @@ public class S3BucketIntelligentTieringConfigurationService extends BaseS3Servic
         String function = "putBucketIntelligentTieringConfiguration";
         S3Client client = getClient();
         try {
-            PutBucketIntelligentTieringConfigurationResponse response = client.putBucketIntelligentTieringConfiguration(request);
-            return response;
+            return client.putBucketIntelligentTieringConfiguration(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;

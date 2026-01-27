@@ -36,8 +36,7 @@ public class S3BucketNotificationConfigurationService extends BaseS3Service {
         String function = "getBucketNotificationConfiguration";
         S3Client client = getClient();
         try {
-            GetBucketNotificationConfigurationResponse response = client.getBucketNotificationConfiguration(request);
-            return response;
+            return client.getBucketNotificationConfiguration(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -57,8 +56,7 @@ public class S3BucketNotificationConfigurationService extends BaseS3Service {
         String function = "putBucketNotificationConfiguration";
         S3Client client = getClient();
         try {
-            PutBucketNotificationConfigurationResponse response = client.putBucketNotificationConfiguration(request);
-            return response;
+            return client.putBucketNotificationConfiguration(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;

@@ -38,8 +38,7 @@ public class S3BucketService extends BaseS3Service {
         String function = "listObjectVersions";
         S3Client client = getClient();
         try {
-            ListObjectVersionsResponse response = client.listObjectVersions(request);
-            return response;
+            return client.listObjectVersions(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -59,8 +58,7 @@ public class S3BucketService extends BaseS3Service {
         String function = "headBucket";
         S3Client client = getClient();
         try {
-            HeadBucketResponse response = client.headBucket(request);
-            return response;
+            return client.headBucket(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
@@ -80,8 +78,7 @@ public class S3BucketService extends BaseS3Service {
         String function = "getBucketLocation";
         S3Client client = getClient();
         try {
-            GetBucketLocationResponse response = client.getBucketLocation(request);
-            return response;
+            return client.getBucketLocation(request);
         } catch (S3Exception e) {
             log.error("[Goya] |- S3 OSS catch S3Exception in [{}].", function, e);
             throw e;
