@@ -1,9 +1,9 @@
 package com.ysmjjsy.goya.component.oss.aliyun.converter.domain;
 
 import com.aliyun.oss.model.ObjectListing;
-import com.ysmjjsy.goya.component.oss.core.domain.object.ListObjectsDomain;
-import com.ysmjjsy.goya.component.oss.core.domain.object.ObjectDomain;
-import com.ysmjjsy.goya.component.oss.core.utils.OssConverterUtils;
+import com.ysmjjsy.goya.component.framework.oss.domain.object.ListObjectsDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.object.ObjectDomain;
+import com.ysmjjsy.goya.component.framework.oss.utils.OssConverterUtils;
 import org.springframework.core.convert.converter.Converter;
 
 import java.util.List;

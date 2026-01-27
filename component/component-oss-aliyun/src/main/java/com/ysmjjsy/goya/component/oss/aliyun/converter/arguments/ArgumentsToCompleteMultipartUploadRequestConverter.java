@@ -2,8 +2,8 @@ package com.ysmjjsy.goya.component.oss.aliyun.converter.arguments;
 
 import com.aliyun.oss.model.CompleteMultipartUploadRequest;
 import com.aliyun.oss.model.PartETag;
-import com.ysmjjsy.goya.component.oss.core.arguments.multipart.CompleteMultipartUploadArguments;
-import com.ysmjjsy.goya.component.oss.core.domain.multipart.PartSummaryDomain;
+import com.ysmjjsy.goya.component.framework.oss.arguments.multipart.CompleteMultipartUploadArguments;
+import com.ysmjjsy.goya.component.framework.oss.domain.multipart.PartSummaryDomain;
 import com.ysmjjsy.goya.component.oss.aliyun.definition.arguments.ArgumentsToBucketConverter;
 import org.apache.commons.collections4.CollectionUtils;
 

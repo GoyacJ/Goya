@@ -5,7 +5,7 @@ import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
 import com.aliyun.oss.common.auth.CredentialsProviderFactory;
 import com.aliyun.oss.common.auth.STSAssumeRoleSessionCredentialsProvider;
-import com.ysmjjsy.goya.component.oss.core.client.AbstractOssClientPooledObjectFactory;
+import com.ysmjjsy.goya.component.framework.oss.client.AbstractOssClientPooledObjectFactory;
 import com.ysmjjsy.goya.component.oss.aliyun.configuration.properties.AliyunProperties;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.pool2.PooledObject;

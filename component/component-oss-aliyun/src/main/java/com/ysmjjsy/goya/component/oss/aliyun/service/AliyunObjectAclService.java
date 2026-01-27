@@ -7,8 +7,8 @@ import com.aliyun.oss.model.GenericRequest;
 import com.aliyun.oss.model.ObjectAcl;
 import com.aliyun.oss.model.SetObjectAclRequest;
 import com.aliyun.oss.model.VoidResult;
-import com.ysmjjsy.goya.component.core.exception.CommonException;
-import com.ysmjjsy.goya.component.core.pool.AbstractObjectPool;
+import com.ysmjjsy.goya.component.framework.common.exception.GoyaException;
+import com.ysmjjsy.goya.component.framework.common.pool.AbstractObjectPool;
 import com.ysmjjsy.goya.component.oss.aliyun.definition.service.BaseAliyunService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -36,10 +36,10 @@ public class AliyunObjectAclService extends BaseAliyunService {
             return client.setObjectAcl(request);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -54,10 +54,10 @@ public class AliyunObjectAclService extends BaseAliyunService {
             return client.getObjectAcl(request);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }

@@ -5,8 +5,8 @@ import com.aliyun.oss.model.DownloadFileRequest;
 import com.aliyun.oss.model.DownloadFileResult;
 import com.aliyun.oss.model.UploadFileRequest;
 import com.aliyun.oss.model.UploadFileResult;
-import com.ysmjjsy.goya.component.core.exception.CommonException;
-import com.ysmjjsy.goya.component.core.pool.AbstractObjectPool;
+import com.ysmjjsy.goya.component.framework.common.exception.GoyaException;
+import com.ysmjjsy.goya.component.framework.common.pool.AbstractObjectPool;
 import com.ysmjjsy.goya.component.oss.aliyun.definition.service.BaseAliyunService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -34,7 +34,7 @@ public class AliyunFileService extends BaseAliyunService {
             return client.uploadFile(request);
         } catch (Throwable e) {
             log.error("[Goya] |- Aliyun OSS catch Throwable in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -49,7 +49,7 @@ public class AliyunFileService extends BaseAliyunService {
             return client.downloadFile(request);
         } catch (Throwable e) {
             log.error("[Goya] |- Aliyun OSS catch Throwable in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }

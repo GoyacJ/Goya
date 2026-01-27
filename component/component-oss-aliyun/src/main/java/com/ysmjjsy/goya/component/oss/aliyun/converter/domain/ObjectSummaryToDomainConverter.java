@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.oss.aliyun.converter.domain;
 
 import com.aliyun.oss.model.OSSObjectSummary;
-import com.ysmjjsy.goya.component.oss.core.domain.base.OwnerDomain;
-import com.ysmjjsy.goya.component.oss.core.domain.object.ObjectDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.base.OwnerDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.object.ObjectDomain;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;

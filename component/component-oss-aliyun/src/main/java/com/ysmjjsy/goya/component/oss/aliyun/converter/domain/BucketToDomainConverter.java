@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.oss.aliyun.converter.domain;
 
 import com.aliyun.oss.model.Bucket;
-import com.ysmjjsy.goya.component.oss.core.domain.base.OwnerDomain;
-import com.ysmjjsy.goya.component.oss.core.domain.bucket.BucketDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.base.OwnerDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.bucket.BucketDomain;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.core.convert.converter.Converter;
 

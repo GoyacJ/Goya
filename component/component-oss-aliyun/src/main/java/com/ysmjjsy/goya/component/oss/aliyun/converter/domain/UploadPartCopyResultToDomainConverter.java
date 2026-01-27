@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.oss.aliyun.converter.domain;
 
 import com.aliyun.oss.model.UploadPartCopyResult;
-import com.ysmjjsy.goya.component.oss.core.domain.multipart.UploadPartCopyDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.multipart.UploadPartCopyDomain;
 import org.springframework.core.convert.converter.Converter;
 
 /**

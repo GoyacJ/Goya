@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.oss.aliyun.converter.arguments;
 
 import com.aliyun.oss.model.CreateBucketRequest;
-import com.ysmjjsy.goya.component.oss.core.arguments.bucket.CreateBucketArguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.bucket.CreateBucketArguments;
 import com.ysmjjsy.goya.component.oss.aliyun.definition.arguments.ArgumentsToBucketConverter;
 
 /**

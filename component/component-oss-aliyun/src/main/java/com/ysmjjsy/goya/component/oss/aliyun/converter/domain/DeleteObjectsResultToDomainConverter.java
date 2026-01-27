@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.oss.aliyun.converter.domain;
 
 import com.aliyun.oss.model.DeleteObjectsResult;
-import com.ysmjjsy.goya.component.oss.core.domain.object.DeleteObjectDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.object.DeleteObjectDomain;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.core.convert.converter.Converter;
 

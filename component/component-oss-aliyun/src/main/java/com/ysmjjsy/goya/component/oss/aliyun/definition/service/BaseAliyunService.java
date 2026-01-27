@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.oss.aliyun.definition.service;
 
 import com.aliyun.oss.OSS;
-import com.ysmjjsy.goya.component.core.pool.AbstractObjectPool;
-import com.ysmjjsy.goya.component.oss.core.service.BaseOssService;
+import com.ysmjjsy.goya.component.framework.common.pool.AbstractObjectPool;
+import com.ysmjjsy.goya.component.framework.oss.service.BaseOssService;
 
 /**
  * <p>Aliyun OSS 基础 Service 抽象定义 </p>

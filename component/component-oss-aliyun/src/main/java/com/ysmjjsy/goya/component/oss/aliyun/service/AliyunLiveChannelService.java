@@ -4,8 +4,8 @@ import com.aliyun.oss.ClientException;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSException;
 import com.aliyun.oss.model.*;
-import com.ysmjjsy.goya.component.core.exception.CommonException;
-import com.ysmjjsy.goya.component.core.pool.AbstractObjectPool;
+import com.ysmjjsy.goya.component.framework.common.exception.GoyaException;
+import com.ysmjjsy.goya.component.framework.common.pool.AbstractObjectPool;
 import com.ysmjjsy.goya.component.oss.aliyun.definition.service.BaseAliyunService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -35,10 +35,10 @@ public class AliyunLiveChannelService extends BaseAliyunService {
             return client.createLiveChannel(request);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -53,10 +53,10 @@ public class AliyunLiveChannelService extends BaseAliyunService {
             return client.setLiveChannelStatus(request);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -71,10 +71,10 @@ public class AliyunLiveChannelService extends BaseAliyunService {
             return client.getLiveChannelInfo(request);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -89,10 +89,10 @@ public class AliyunLiveChannelService extends BaseAliyunService {
             return client.getLiveChannelStat(request);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -107,10 +107,10 @@ public class AliyunLiveChannelService extends BaseAliyunService {
             return client.deleteLiveChannel(request);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -125,10 +125,10 @@ public class AliyunLiveChannelService extends BaseAliyunService {
             return client.listLiveChannels(request);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -143,10 +143,10 @@ public class AliyunLiveChannelService extends BaseAliyunService {
             return client.getLiveChannelHistory(request);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }

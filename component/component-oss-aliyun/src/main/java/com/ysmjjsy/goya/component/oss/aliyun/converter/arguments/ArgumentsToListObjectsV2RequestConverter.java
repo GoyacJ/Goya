@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.oss.aliyun.converter.arguments;
 
 import com.aliyun.oss.model.ListObjectsV2Request;
-import com.ysmjjsy.goya.component.oss.core.arguments.object.ListObjectsV2Arguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.object.ListObjectsV2Arguments;
 import com.ysmjjsy.goya.component.oss.aliyun.definition.arguments.ArgumentsToBucketConverter;
 
 /**

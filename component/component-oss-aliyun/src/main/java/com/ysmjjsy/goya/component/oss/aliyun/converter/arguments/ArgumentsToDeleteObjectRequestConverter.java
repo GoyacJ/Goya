@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.oss.aliyun.converter.arguments;
 
-import com.ysmjjsy.goya.component.oss.core.arguments.object.DeleteObjectArguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.object.DeleteObjectArguments;
 import com.ysmjjsy.goya.component.oss.aliyun.definition.arguments.ArgumentsToGenericRequestConverter;
 
 /**

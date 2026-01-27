@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.oss.aliyun.definition.arguments;
 
 import com.aliyun.oss.model.WebServiceRequest;
-import com.ysmjjsy.goya.component.oss.core.arguments.base.BaseArguments;
-import com.ysmjjsy.goya.component.oss.core.core.converter.OssConverter;
+import com.ysmjjsy.goya.component.framework.oss.arguments.base.BaseArguments;
+import com.ysmjjsy.goya.component.framework.oss.core.converter.OssConverter;
 import org.apache.commons.collections4.MapUtils;
 
 /**

@@ -1,5 +1,7 @@
 package com.ysmjjsy.goya.component.oss.aliyun.configuration;
 
+import com.ysmjjsy.goya.component.framework.oss.annotation.ConditionalOnOssStrategy;
+import com.ysmjjsy.goya.component.framework.oss.enums.OssEnum;
 import com.ysmjjsy.goya.component.oss.aliyun.configuration.properties.AliyunProperties;
 import com.ysmjjsy.goya.component.oss.aliyun.definition.pool.AliyunClientObjectPool;
 import com.ysmjjsy.goya.component.oss.aliyun.definition.pool.AliyunClientPooledObjectFactory;
@@ -24,6 +26,7 @@ import org.springframework.context.annotation.ComponentScan;
         "com.ysmjjsy.goya.component.oss.aliyun.service",
         "com.ysmjjsy.goya.component.oss.aliyun.repository",
 })
+@ConditionalOnOssStrategy(OssEnum.ALIYUN)
 public class OssAliyunAutoConfiguration {
 
     @PostConstruct

@@ -4,8 +4,8 @@ import com.aliyun.oss.ClientException;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSException;
 import com.aliyun.oss.model.*;
-import com.ysmjjsy.goya.component.core.exception.CommonException;
-import com.ysmjjsy.goya.component.core.pool.AbstractObjectPool;
+import com.ysmjjsy.goya.component.framework.common.exception.GoyaException;
+import com.ysmjjsy.goya.component.framework.common.pool.AbstractObjectPool;
 import com.ysmjjsy.goya.component.oss.aliyun.definition.service.BaseAliyunService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,10 +33,10 @@ public class AliyunObjectService extends BaseAliyunService {
             return client.listObjects(request);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -51,10 +51,10 @@ public class AliyunObjectService extends BaseAliyunService {
             return client.listObjectsV2(request);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -69,10 +69,10 @@ public class AliyunObjectService extends BaseAliyunService {
             return client.listVersions(request);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -87,10 +87,10 @@ public class AliyunObjectService extends BaseAliyunService {
             return client.putObject(request);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -105,10 +105,10 @@ public class AliyunObjectService extends BaseAliyunService {
             return client.copyObject(request);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -123,10 +123,10 @@ public class AliyunObjectService extends BaseAliyunService {
             return client.getObject(request);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -141,10 +141,10 @@ public class AliyunObjectService extends BaseAliyunService {
             return client.getSimplifiedObjectMeta(request);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -159,10 +159,10 @@ public class AliyunObjectService extends BaseAliyunService {
             return client.getObjectMetadata(request);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -177,10 +177,10 @@ public class AliyunObjectService extends BaseAliyunService {
             return client.headObject(request);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -195,10 +195,10 @@ public class AliyunObjectService extends BaseAliyunService {
             return client.appendObject(request);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -213,10 +213,10 @@ public class AliyunObjectService extends BaseAliyunService {
             return client.deleteVersion(request);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -231,10 +231,10 @@ public class AliyunObjectService extends BaseAliyunService {
             return client.deleteVersions(request);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -249,10 +249,10 @@ public class AliyunObjectService extends BaseAliyunService {
             return client.doesObjectExist(request);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -267,10 +267,10 @@ public class AliyunObjectService extends BaseAliyunService {
             return client.restoreObject(request);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -285,10 +285,10 @@ public class AliyunObjectService extends BaseAliyunService {
             return client.processObject(request);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -303,10 +303,10 @@ public class AliyunObjectService extends BaseAliyunService {
             return client.createDirectory(request);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -321,10 +321,10 @@ public class AliyunObjectService extends BaseAliyunService {
             return client.deleteDirectory(request);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -339,10 +339,10 @@ public class AliyunObjectService extends BaseAliyunService {
             return client.renameObject(request);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }

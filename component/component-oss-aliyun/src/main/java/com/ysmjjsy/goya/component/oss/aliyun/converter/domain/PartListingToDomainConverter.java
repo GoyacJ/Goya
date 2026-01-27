@@ -2,8 +2,8 @@ package com.ysmjjsy.goya.component.oss.aliyun.converter.domain;
 
 import com.aliyun.oss.model.PartListing;
 import com.aliyun.oss.model.PartSummary;
-import com.ysmjjsy.goya.component.oss.core.domain.multipart.ListPartsDomain;
-import com.ysmjjsy.goya.component.oss.core.domain.multipart.PartSummaryDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.multipart.ListPartsDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.multipart.PartSummaryDomain;
 import org.springframework.core.convert.converter.Converter;
 
 import java.util.List;

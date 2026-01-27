@@ -7,8 +7,8 @@ import com.aliyun.oss.model.DoMetaQueryRequest;
 import com.aliyun.oss.model.DoMetaQueryResult;
 import com.aliyun.oss.model.GetMetaQueryStatusResult;
 import com.aliyun.oss.model.VoidResult;
-import com.ysmjjsy.goya.component.core.exception.CommonException;
-import com.ysmjjsy.goya.component.core.pool.AbstractObjectPool;
+import com.ysmjjsy.goya.component.framework.common.exception.GoyaException;
+import com.ysmjjsy.goya.component.framework.common.pool.AbstractObjectPool;
 import com.ysmjjsy.goya.component.oss.aliyun.definition.service.BaseAliyunService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -42,10 +42,10 @@ public class AliyunMetaQueryService extends BaseAliyunService {
             return client.openMetaQuery(bucketName);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -66,10 +66,10 @@ public class AliyunMetaQueryService extends BaseAliyunService {
             return client.getMetaQueryStatus(bucketName);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -90,10 +90,10 @@ public class AliyunMetaQueryService extends BaseAliyunService {
             return client.doMetaQuery(request);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -114,10 +114,10 @@ public class AliyunMetaQueryService extends BaseAliyunService {
             return client.closeMetaQuery(bucketName);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }

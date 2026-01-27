@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.oss.aliyun.converter.domain;
 
 import com.aliyun.oss.model.Owner;
-import com.ysmjjsy.goya.component.oss.core.domain.base.OwnerDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.base.OwnerDomain;
 import org.springframework.core.convert.converter.Converter;
 
 /**

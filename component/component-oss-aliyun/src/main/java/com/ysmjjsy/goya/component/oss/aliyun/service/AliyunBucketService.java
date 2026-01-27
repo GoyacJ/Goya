@@ -5,7 +5,7 @@ import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSException;
 import com.aliyun.oss.model.BucketMetadata;
 import com.aliyun.oss.model.GenericRequest;
-import com.ysmjjsy.goya.component.core.exception.CommonException;
+import com.ysmjjsy.goya.component.framework.common.exception.GoyaException;
 import com.ysmjjsy.goya.component.oss.aliyun.definition.pool.AliyunClientObjectPool;
 import com.ysmjjsy.goya.component.oss.aliyun.definition.service.BaseAliyunService;
 import lombok.extern.slf4j.Slf4j;
@@ -34,10 +34,10 @@ public class AliyunBucketService extends BaseAliyunService {
             return client.getBucketMetadata(request);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -53,10 +53,10 @@ public class AliyunBucketService extends BaseAliyunService {
             return client.getBucketLocation(request);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }

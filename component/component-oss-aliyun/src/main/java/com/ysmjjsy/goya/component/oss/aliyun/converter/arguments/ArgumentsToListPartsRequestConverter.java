@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.oss.aliyun.converter.arguments;
 
 import com.aliyun.oss.model.ListPartsRequest;
-import com.ysmjjsy.goya.component.oss.core.arguments.multipart.ListPartsArguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.multipart.ListPartsArguments;
 import org.springframework.core.convert.converter.Converter;
 
 /**

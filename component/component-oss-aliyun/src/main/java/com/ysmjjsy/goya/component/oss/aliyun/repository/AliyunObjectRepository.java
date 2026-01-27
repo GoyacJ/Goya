@@ -4,12 +4,12 @@ import com.aliyun.oss.ClientException;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSException;
 import com.aliyun.oss.model.*;
-import com.ysmjjsy.goya.component.core.exception.CommonException;
-import com.ysmjjsy.goya.component.core.pool.AbstractObjectPool;
-import com.ysmjjsy.goya.component.oss.core.arguments.object.*;
-import com.ysmjjsy.goya.component.oss.core.core.repository.OssObjectRepository;
-import com.ysmjjsy.goya.component.oss.core.domain.base.ObjectWriteDomain;
-import com.ysmjjsy.goya.component.oss.core.domain.object.*;
+import com.ysmjjsy.goya.component.framework.common.exception.GoyaException;
+import com.ysmjjsy.goya.component.framework.common.pool.AbstractObjectPool;
+import com.ysmjjsy.goya.component.framework.oss.arguments.object.*;
+import com.ysmjjsy.goya.component.framework.oss.core.repository.OssObjectRepository;
+import com.ysmjjsy.goya.component.framework.oss.domain.base.ObjectWriteDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.object.*;
 import com.ysmjjsy.goya.component.oss.aliyun.converter.arguments.ArgumentsToDeleteObjectRequestConverter;
 import com.ysmjjsy.goya.component.oss.aliyun.converter.arguments.ArgumentsToDeleteObjectsRequestConverter;
 import com.ysmjjsy.goya.component.oss.aliyun.converter.arguments.ArgumentsToListObjectsRequestConverter;
@@ -52,10 +52,10 @@ public class AliyunObjectRepository extends BaseAliyunService implements OssObje
             return toDomain.convert(objectListing);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -75,10 +75,10 @@ public class AliyunObjectRepository extends BaseAliyunService implements OssObje
             return toDomain.convert(listObjectsV2Result);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -95,10 +95,10 @@ public class AliyunObjectRepository extends BaseAliyunService implements OssObje
             client.deleteObject(toArgs.convert(arguments));
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -119,10 +119,10 @@ public class AliyunObjectRepository extends BaseAliyunService implements OssObje
             return toDomain.convert(result);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }

@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.oss.aliyun.converter.arguments;
 
 import com.aliyun.oss.model.ListMultipartUploadsRequest;
-import com.ysmjjsy.goya.component.oss.core.arguments.multipart.ListMultipartUploadsArguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.multipart.ListMultipartUploadsArguments;
 import org.springframework.core.convert.converter.Converter;
 
 /**

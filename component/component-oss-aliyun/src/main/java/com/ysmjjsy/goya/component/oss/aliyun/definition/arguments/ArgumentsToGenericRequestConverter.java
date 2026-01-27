@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.oss.aliyun.definition.arguments;
 
 import com.aliyun.oss.model.GenericRequest;
-import com.ysmjjsy.goya.component.oss.core.arguments.base.BucketArguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.base.BucketArguments;
 
 /**
  * <p>统一定义存储桶请求参数转换为 GenericRequest 参数转换器 </p>

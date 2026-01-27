@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.oss.aliyun.converter.domain;
 
 import com.aliyun.oss.model.MultipartUpload;
-import com.ysmjjsy.goya.component.oss.core.domain.multipart.UploadDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.multipart.UploadDomain;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.core.convert.converter.Converter;

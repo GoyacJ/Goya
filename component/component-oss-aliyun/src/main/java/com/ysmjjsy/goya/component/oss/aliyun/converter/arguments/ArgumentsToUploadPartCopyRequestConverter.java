@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.oss.aliyun.converter.arguments;
 
 import com.aliyun.oss.model.UploadPartCopyRequest;
-import com.ysmjjsy.goya.component.oss.core.arguments.multipart.UploadPartCopyArguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.multipart.UploadPartCopyArguments;
 import com.ysmjjsy.goya.component.oss.aliyun.definition.arguments.ArgumentsToBucketConverter;
 
 /**

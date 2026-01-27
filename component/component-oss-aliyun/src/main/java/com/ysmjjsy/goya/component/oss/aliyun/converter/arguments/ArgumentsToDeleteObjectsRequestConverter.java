@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.oss.aliyun.converter.arguments;
 
 import com.aliyun.oss.model.DeleteObjectsRequest;
-import com.ysmjjsy.goya.component.oss.core.arguments.object.DeleteObjectsArguments;
-import com.ysmjjsy.goya.component.oss.core.arguments.object.DeletedObjectArguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.object.DeleteObjectsArguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.object.DeletedObjectArguments;
 import com.ysmjjsy.goya.component.oss.aliyun.definition.arguments.ArgumentsToBucketConverter;
 import org.apache.commons.collections4.CollectionUtils;
 

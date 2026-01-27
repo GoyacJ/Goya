@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.oss.aliyun.definition.arguments;
 
 import com.aliyun.oss.model.GenericRequest;
-import com.ysmjjsy.goya.component.oss.core.arguments.base.ObjectVersionArguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.base.ObjectVersionArguments;
 import org.apache.commons.lang3.StringUtils;
 
 /**

@@ -5,13 +5,13 @@ import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSException;
 import com.aliyun.oss.model.CreateBucketRequest;
 import com.aliyun.oss.model.GenericRequest;
-import com.ysmjjsy.goya.component.core.exception.CommonException;
-import com.ysmjjsy.goya.component.core.pool.AbstractObjectPool;
-import com.ysmjjsy.goya.component.oss.core.arguments.bucket.CreateBucketArguments;
-import com.ysmjjsy.goya.component.oss.core.arguments.bucket.DeleteBucketArguments;
-import com.ysmjjsy.goya.component.oss.core.core.repository.OssBucketRepository;
-import com.ysmjjsy.goya.component.oss.core.domain.bucket.BucketDomain;
-import com.ysmjjsy.goya.component.oss.core.utils.OssConverterUtils;
+import com.ysmjjsy.goya.component.framework.common.exception.GoyaException;
+import com.ysmjjsy.goya.component.framework.common.pool.AbstractObjectPool;
+import com.ysmjjsy.goya.component.framework.oss.arguments.bucket.CreateBucketArguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.bucket.DeleteBucketArguments;
+import com.ysmjjsy.goya.component.framework.oss.core.repository.OssBucketRepository;
+import com.ysmjjsy.goya.component.framework.oss.domain.bucket.BucketDomain;
+import com.ysmjjsy.goya.component.framework.oss.utils.OssConverterUtils;
 import com.ysmjjsy.goya.component.oss.aliyun.converter.arguments.ArgumentsToCreateBucketRequestConverter;
 import com.ysmjjsy.goya.component.oss.aliyun.converter.arguments.ArgumentsToDeleteBucketRequestConverter;
 import com.ysmjjsy.goya.component.oss.aliyun.converter.domain.BucketToDomainConverter;
@@ -46,10 +46,10 @@ public class AliyunBucketRepository extends BaseAliyunService implements OssBuck
             return client.doesBucketExist(bucketName);
         } catch (ClientException e) {
             log.error("[Goya] |- Catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -65,10 +65,10 @@ public class AliyunBucketRepository extends BaseAliyunService implements OssBuck
             return OssConverterUtils.toDomains(client.listBuckets(), new BucketToDomainConverter());
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -84,10 +84,10 @@ public class AliyunBucketRepository extends BaseAliyunService implements OssBuck
             return OssConverterUtils.toDomain(client.createBucket(bucketName), new BucketToDomainConverter());
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -104,10 +104,10 @@ public class AliyunBucketRepository extends BaseAliyunService implements OssBuck
             return OssConverterUtils.toDomain(client.createBucket(toRequest.convert(arguments)), new BucketToDomainConverter());
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -123,10 +123,10 @@ public class AliyunBucketRepository extends BaseAliyunService implements OssBuck
             client.deleteBucket(bucketName);
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
@@ -143,10 +143,10 @@ public class AliyunBucketRepository extends BaseAliyunService implements OssBuck
             client.deleteBucket(toRequest.convert(arguments));
         } catch (ClientException e) {
             log.error("[Goya] |- Aliyun OSS catch ClientException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } catch (OSSException e) {
             log.error("[Goya] |- Aliyun OSS catch OSSException in [{}].", function, e);
-            throw new CommonException(e.getMessage());
+            throw new GoyaException(e.getMessage());
         } finally {
             close(client);
         }
