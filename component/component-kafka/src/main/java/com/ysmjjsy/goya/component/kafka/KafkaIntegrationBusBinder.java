@@ -4,12 +4,14 @@ import com.ysmjjsy.goya.component.framework.bus.binder.BusBinder;
 import com.ysmjjsy.goya.component.framework.bus.binder.BusBinding;
 import com.ysmjjsy.goya.component.framework.bus.message.DefaultBusMessageProducer;
 import com.ysmjjsy.goya.component.framework.bus.runtime.BusChannels;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
 import org.jspecify.annotations.NullMarked;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.expression.common.LiteralExpression;
 import org.springframework.integration.kafka.inbound.KafkaMessageDrivenChannelAdapter;
@@ -28,7 +30,6 @@ import org.springframework.util.StringUtils;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -43,21 +44,15 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @since 2026/1/27 00:08
  */
 @Slf4j
+@RequiredArgsConstructor
 public final class KafkaIntegrationBusBinder implements BusBinder, DisposableBean {
 
     private final KafkaTemplate<Object, Object> kafkaTemplate;
     private final ConcurrentKafkaListenerContainerFactory<Object, Object> factory;
     private final BusChannels channels;
+    private final BeanFactory beanFactory;
 
     private final List<KafkaMessageDrivenChannelAdapter<Object, Object>> inboundAdapters = new CopyOnWriteArrayList<>();
-
-    public KafkaIntegrationBusBinder(KafkaTemplate<Object, Object> kafkaTemplate,
-                                     ConcurrentKafkaListenerContainerFactory<Object, Object> factory,
-                                     BusChannels channels) {
-        this.kafkaTemplate = Objects.requireNonNull(kafkaTemplate);
-        this.factory = Objects.requireNonNull(factory);
-        this.channels = Objects.requireNonNull(channels);
-    }
 
     @Override
     public String name() {
@@ -67,7 +62,7 @@ public final class KafkaIntegrationBusBinder implements BusBinder, DisposableBea
     @Override
     public void bindOutbound(BusBinding binding, SubscribableChannel outboundChannel) {
         KafkaProducerMessageHandler<Object, Object> handler = new KafkaProducerMessageHandler<>(kafkaTemplate);
-
+        handler.setBeanFactory(beanFactory);
         handler.setTopicExpression(new LiteralExpression(binding.destination()));
         handler.afterPropertiesSet();
 
@@ -89,7 +84,6 @@ public final class KafkaIntegrationBusBinder implements BusBinder, DisposableBea
     public void bindInbound(BusBinding binding, SubscribableChannel inboundChannel) {
         ConcurrentMessageListenerContainer<Object, Object> container = factory.createContainer(binding.destination());
 
-        // 如果配置了 group，则覆盖 groupId（仍属官方语义）
         if (StringUtils.hasText(binding.group())) {
             container.getContainerProperties().setGroupId(binding.group());
         }
@@ -98,10 +92,13 @@ public final class KafkaIntegrationBusBinder implements BusBinder, DisposableBea
         container.setCommonErrorHandler(new PublishingCommonErrorHandler(existing, channels, binding));
 
         KafkaMessageDrivenChannelAdapter<Object, Object> adapter = new KafkaMessageDrivenChannelAdapter<>(container);
-        adapter.setOutputChannel(inboundChannel);
 
+        adapter.setBeanFactory(beanFactory);
+
+        adapter.setOutputChannel(inboundChannel);
         adapter.afterPropertiesSet();
         adapter.start();
+
         inboundAdapters.add(adapter);
 
         log.info("Kafka inbound 已绑定: binding='{}', destination='{}', group='{}'",

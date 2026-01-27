@@ -9,7 +9,7 @@ import org.springframework.validation.annotation.Validated;
 import java.util.Map;
 
 /**
- * <p></p>
+ * <p>Bus配置</p>
  *
  * @author goya
  * @since 2026/1/26 23:38

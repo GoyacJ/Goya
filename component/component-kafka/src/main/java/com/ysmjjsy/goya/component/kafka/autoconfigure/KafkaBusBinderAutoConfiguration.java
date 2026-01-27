@@ -5,6 +5,7 @@ import com.ysmjjsy.goya.component.framework.bus.runtime.BusChannels;
 import com.ysmjjsy.goya.component.kafka.KafkaIntegrationBusBinder;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Bean;
@@ -28,10 +29,13 @@ public class KafkaBusBinderAutoConfiguration {
     }
 
     @Bean
-    public BusBinder kafkaBusBinder(KafkaTemplate<Object, Object> kafkaTemplate,
-                                    ConcurrentKafkaListenerContainerFactory<Object, Object> containerFactory,
-                                    BusChannels channels) {
-        return new KafkaIntegrationBusBinder(kafkaTemplate, containerFactory, channels);
+    public BusBinder kafkaIntegrationBusBinder(KafkaTemplate<Object, Object> kafkaTemplate,
+                                    ConcurrentKafkaListenerContainerFactory<Object, Object> factory,
+                                    BusChannels channels,
+                                    BeanFactory beanFactory) {
+        KafkaIntegrationBusBinder kafkaIntegrationBusBinder = new KafkaIntegrationBusBinder(kafkaTemplate, factory, channels, beanFactory);
+        log.trace("[Goya] |- component [kafka] KafkaBusBinderAutoConfiguration |- bean [kafkaIntegrationBusBinder] register.");
+        return kafkaIntegrationBusBinder;
     }
 }
 

@@ -127,8 +127,10 @@ goya:
       bindings:
         orderCreated:
           destination: topic.order.created
-          group: order-service
+          group: monolith-service
           # binder: rabbit            # 可选：指定该 binding 固定走 rabbit
         paymentTimeout:
           destination: queue.payment.timeout
           binder: rabbit
+    crypto:
+      strategy: STANDARD

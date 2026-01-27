@@ -7,6 +7,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Bean;
@@ -28,9 +29,12 @@ public class RabbitBusBinderAutoConfiguration {
     }
 
     @Bean
-    public BusBinder rabbitBusBinder(RabbitTemplate rabbitTemplate,
-                                     ConnectionFactory connectionFactory,
-                                     BusChannels channels) {
-        return new RabbitIntegrationBusBinder(rabbitTemplate, connectionFactory, channels);
+    public BusBinder rabbitIntegrationBusBinder(RabbitTemplate rabbitTemplate,
+                                                ConnectionFactory connectionFactory,
+                                                BusChannels channels,
+                                                BeanFactory beanFactory) {
+        RabbitIntegrationBusBinder rabbitIntegrationBusBinder = new RabbitIntegrationBusBinder(rabbitTemplate, connectionFactory, channels, beanFactory);
+        log.trace("[Goya] |- component [rabbitmq] RabbitBusBinderAutoConfiguration |- bean [rabbitIntegrationBusBinder] register.");
+        return rabbitIntegrationBusBinder;
     }
 }

@@ -26,10 +26,10 @@
             <groupId>com.ysmjjsy.goya</groupId>
             <artifactId>component-kafka</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.ysmjjsy.goya</groupId>
-            <artifactId>component-rabbitmq</artifactId>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>com.ysmjjsy.goya</groupId>-->
+<!--            <artifactId>component-rabbitmq</artifactId>-->
+<!--        </dependency>-->
     </dependencies>
 
     <build>

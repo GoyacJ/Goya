@@ -55,6 +55,7 @@ public class GoyaRedisAutoConfiguration {
 
     @Bean
     public RedissonAutoConfigurationCustomizer redissonCustomizer(ObjectMapper objectMapper) {
+        log.trace("[Goya] |- component [redis] GoyaRedisAutoConfiguration |- bean [redissonCustomizer] register.");
         return config -> config.setCodec(new JsonJackson3Codec(objectMapper));
     }
 

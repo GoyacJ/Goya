@@ -4,11 +4,12 @@ import com.ysmjjsy.goya.component.framework.bus.binder.BusBinder;
 import com.ysmjjsy.goya.component.framework.bus.binder.BusBinding;
 import com.ysmjjsy.goya.component.framework.bus.message.DefaultBusMessageProducer;
 import com.ysmjjsy.goya.component.framework.bus.runtime.BusChannels;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.expression.common.LiteralExpression;
 import org.springframework.integration.amqp.inbound.AmqpInboundChannelAdapter;
@@ -18,7 +19,6 @@ import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.ErrorMessage;
 
 import java.util.HashMap;
-import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -39,23 +39,16 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @author goya
  * @since 2026/1/27 00:13
  */
+@Slf4j
+@RequiredArgsConstructor
 public final class RabbitIntegrationBusBinder implements BusBinder, DisposableBean {
-
-    private static final Logger log = LoggerFactory.getLogger(RabbitIntegrationBusBinder.class);
 
     private final RabbitTemplate rabbitTemplate;
     private final ConnectionFactory connectionFactory;
     private final BusChannels channels;
+    private final BeanFactory beanFactory;
 
     private final CopyOnWriteArrayList<AmqpInboundChannelAdapter> inboundAdapters = new CopyOnWriteArrayList<>();
-
-    public RabbitIntegrationBusBinder(RabbitTemplate rabbitTemplate,
-                                      ConnectionFactory connectionFactory,
-                                      BusChannels channels) {
-        this.rabbitTemplate = Objects.requireNonNull(rabbitTemplate);
-        this.connectionFactory = Objects.requireNonNull(connectionFactory);
-        this.channels = Objects.requireNonNull(channels);
-    }
 
     @Override
     public String name() {
@@ -67,6 +60,7 @@ public final class RabbitIntegrationBusBinder implements BusBinder, DisposableBe
         AmqpOutboundEndpoint endpoint = new AmqpOutboundEndpoint(rabbitTemplate);
         endpoint.setExchangeName("");
         endpoint.setRoutingKeyExpression(new LiteralExpression(binding.destination()));
+        endpoint.setBeanFactory(beanFactory);
         endpoint.afterPropertiesSet();
 
         outboundChannel.subscribe((Message<?> msg) -> {
@@ -102,6 +96,7 @@ public final class RabbitIntegrationBusBinder implements BusBinder, DisposableBe
 
         AmqpInboundChannelAdapter adapter = new AmqpInboundChannelAdapter(container);
         adapter.setOutputChannel(inboundChannel);
+        adapter.setBeanFactory(beanFactory);
 
         adapter.afterPropertiesSet();
         adapter.start();
