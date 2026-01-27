@@ -120,14 +120,15 @@ logging:
 
 ---
 goya:
-  crypto:
-    strategy: standard
-  cache:
-    cache:
-      maximum-size: 100000
-      default-ttl: PT5M
-  bus:
-    stream:
-      destination:
-        default-template: ${spring.application.name}
-      default-remote-bus: REMOTE_KAFKA
+  framework:
+    bus:
+      default-binder: kafka          # 多 binder 并存时的全局默认
+      prefer-stream-bridge: false    # classpath 存在 StreamBridge 时是否优先（默认 false）
+      bindings:
+        orderCreated:
+          destination: topic.order.created
+          group: order-service
+          # binder: rabbit            # 可选：指定该 binding 固定走 rabbit
+        paymentTimeout:
+          destination: queue.payment.timeout
+          binder: rabbit

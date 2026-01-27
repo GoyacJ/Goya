@@ -23,6 +23,7 @@
         <module>component-mybatisplus</module>
         <module>component-kafka</module>
         <module>component-rabbitmq</module>
+        <module>component-service</module>
     </modules>
 
 

@@ -1,6 +1,7 @@
 package com.ysmjjsy.goya.component.framework.common.pool;
 
-import com.ysmjjsy.goya.component.framework.common.exception.CommonException;
+import com.ysmjjsy.goya.component.framework.common.error.CommonErrorCode;
+import com.ysmjjsy.goya.component.framework.common.exception.Exceptions;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.pool2.PooledObjectFactory;
 import org.apache.commons.pool2.impl.GenericObjectPool;
@@ -34,7 +35,7 @@ public abstract class AbstractObjectPool<T> {
         try {
             return genericObjectPool.borrowObject();
         } catch (Exception e) {
-            throw new CommonException("Can not fetch object from pool.", e);
+            throw Exceptions.system(CommonErrorCode.SYSTEM_ERROR).cause(e).userMessage("Can not fetch object from pool.").build();
         }
     }
 

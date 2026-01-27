@@ -10,11 +10,41 @@
     </parent>
 
     <artifactId>platform-monolith</artifactId>
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
     <description>单体版</description>
-    <modules>
-        <module>auth-server</module>
-    </modules>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.ysmjjsy.goya</groupId>
+            <artifactId>component-service</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.ysmjjsy.goya</groupId>
+            <artifactId>component-redis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.ysmjjsy.goya</groupId>
+            <artifactId>component-kafka</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.ysmjjsy.goya</groupId>
+            <artifactId>component-rabbitmq</artifactId>
+        </dependency>
+    </dependencies>
 
+    <build>
+        <plugins>
+            <!-- spring boot 默认插件 -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+
+            <!-- 拷贝插件 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
 </project>

@@ -3,7 +3,6 @@ package com.ysmjjsy.goya.component.framework.core.autoconfigure;
 import com.ysmjjsy.goya.component.framework.common.error.CommonErrorCodeCatalog;
 import com.ysmjjsy.goya.component.framework.common.error.ErrorCodeCatalog;
 import com.ysmjjsy.goya.component.framework.core.autoconfigure.properties.ErrorGovernanceProperties;
-import com.ysmjjsy.goya.component.framework.core.autoconfigure.properties.MaskingProperties;
 import com.ysmjjsy.goya.component.framework.core.error.DefaultErrorMessageResolver;
 import com.ysmjjsy.goya.component.framework.core.error.ErrorMessageResolver;
 import com.ysmjjsy.goya.component.framework.core.error.ValidationExceptionTranslator;
@@ -26,7 +25,7 @@ import java.util.List;
  */
 @Slf4j
 @AutoConfiguration
-@EnableConfigurationProperties({ErrorGovernanceProperties.class, MaskingProperties.class})
+@EnableConfigurationProperties({ErrorGovernanceProperties.class})
 public class CoreErrorAutoConfiguration {
 
     @PostConstruct

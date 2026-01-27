@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.framework.servlet.autoconfigure;
 
 import com.google.common.collect.ImmutableList;
-import com.ysmjjsy.goya.component.framework.context.GoyaContext;
-import com.ysmjjsy.goya.component.web.doc.IOpenApiServerResolver;
+import com.ysmjjsy.goya.component.framework.core.context.GoyaContext;
+import com.ysmjjsy.goya.component.framework.servlet.doc.IOpenApiServerResolver;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.security.*;
 import io.swagger.v3.oas.models.OpenAPI;
