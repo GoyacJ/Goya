@@ -4,8 +4,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-import com.ysmjjsy.goya.component.framework.enums.IPropertyEnum;
-import com.ysmjjsy.goya.component.oss.core.constants.OssConstants;
+import com.ysmjjsy.goya.component.framework.core.enums.PropertyEnum;
+import com.ysmjjsy.goya.component.framework.oss.constants.OssConstants;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -23,7 +23,7 @@ import java.util.Map;
 @Getter
 @AllArgsConstructor
 @Schema(description = "Oss枚举")
-public enum OssEnum implements IPropertyEnum {
+public enum OssEnum implements PropertyEnum {
 
     /**
      * minio
@@ -44,7 +44,7 @@ public enum OssEnum implements IPropertyEnum {
 
     @JsonValue
     private final String code;
-    private final String description;
+    private final String label;
 
     private static final Map<String, OssEnum> INDEX_MAP = Maps.newHashMap();
     private static final List<Map<String, Object>> JSON_STRUCT = new ArrayList<>();
@@ -56,7 +56,7 @@ public enum OssEnum implements IPropertyEnum {
                     ImmutableMap.<String, Object>builder()
                             .put("index", anEnum.ordinal())
                             .put("code", anEnum.getCode())
-                            .put("description", anEnum.getDescription())
+                            .put("label", anEnum.getLabel())
                             .build());
         }
     }

@@ -1,17 +1,18 @@
 package com.ysmjjsy.goya.component.framework.oss.controller;
 
-import com.ysmjjsy.goya.component.oss.core.arguments.object.DeleteObjectArguments;
-import com.ysmjjsy.goya.component.oss.core.arguments.object.DeleteObjectsArguments;
-import com.ysmjjsy.goya.component.oss.core.arguments.object.ListObjectsArguments;
-import com.ysmjjsy.goya.component.oss.core.arguments.object.ListObjectsV2Arguments;
-import com.ysmjjsy.goya.component.oss.core.core.repository.OssObjectRepository;
-import com.ysmjjsy.goya.component.oss.core.domain.object.DeleteObjectDomain;
-import com.ysmjjsy.goya.component.oss.core.domain.object.ListObjectsDomain;
-import com.ysmjjsy.goya.component.oss.core.domain.object.ListObjectsV2Domain;
-import com.ysmjjsy.goya.component.web.annotation.AccessLimited;
-import com.ysmjjsy.goya.component.web.annotation.Idempotent;
-import com.ysmjjsy.goya.component.web.definition.IController;
-import com.ysmjjsy.goya.component.web.response.Response;
+import com.ysmjjsy.goya.component.framework.common.constants.DefaultConst;
+import com.ysmjjsy.goya.component.framework.core.api.ApiRes;
+import com.ysmjjsy.goya.component.framework.oss.arguments.object.DeleteObjectArguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.object.DeleteObjectsArguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.object.ListObjectsArguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.object.ListObjectsV2Arguments;
+import com.ysmjjsy.goya.component.framework.oss.core.repository.OssObjectRepository;
+import com.ysmjjsy.goya.component.framework.oss.domain.object.DeleteObjectDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.object.ListObjectsDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.object.ListObjectsV2Domain;
+import com.ysmjjsy.goya.component.framework.servlet.definition.IController;
+import com.ysmjjsy.goya.component.framework.servlet.idempotent.Idempotent;
+import com.ysmjjsy.goya.component.framework.servlet.secure.AccessLimited;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -34,7 +35,7 @@ import java.util.List;
  * @since 2025/11/3 09:49
  */
 @RestController
-@RequestMapping("/oss/object")
+@RequestMapping(DefaultConst.DEFAULT_PROJECT_NAME + "/oss/object")
 @Tag(name = "Oss-统一对象管理")
 public class OssObjectController implements IController {
 
@@ -56,7 +57,7 @@ public class OssObjectController implements IController {
             })
     @Parameter(name = "arguments", required = true, description = "ListObjectsArguments参数实体", schema = @Schema(implementation = ListObjectsArguments.class))
     @GetMapping("/list")
-    public Response<ListObjectsDomain> list(@Validated ListObjectsArguments arguments) {
+    public ApiRes<ListObjectsDomain> list(@Validated ListObjectsArguments arguments) {
         ListObjectsDomain domain = ossObjectRepository.listObjects(arguments);
         return response(domain);
     }
@@ -73,7 +74,7 @@ public class OssObjectController implements IController {
             })
     @Parameter(name = "arguments", required = true, description = "ListObjectsV2Arguments参数实体", schema = @Schema(implementation = ListObjectsV2Arguments.class))
     @GetMapping("/v2/list")
-    public Response<ListObjectsV2Domain> list(@Validated ListObjectsV2Arguments arguments) {
+    public ApiRes<ListObjectsV2Domain> list(@Validated ListObjectsV2Arguments arguments) {
         ListObjectsV2Domain domain = ossObjectRepository.listObjectsV2(arguments);
         return response(domain);
     }
@@ -89,7 +90,7 @@ public class OssObjectController implements IController {
             })
     @Parameter(name = "arguments", required = true, description = "DeleteObjectArguments参数实体", schema = @Schema(implementation = DeleteObjectArguments.class))
     @DeleteMapping
-    public Response<Boolean> deleteObject(@Validated @RequestBody DeleteObjectArguments arguments) {
+    public ApiRes<Boolean> deleteObject(@Validated @RequestBody DeleteObjectArguments arguments) {
         ossObjectRepository.deleteObject(arguments);
         return response(true);
     }
@@ -106,7 +107,7 @@ public class OssObjectController implements IController {
             })
     @Parameter(name = "arguments", required = true, description = "删除对象请求参数实体", schema = @Schema(implementation = DeleteObjectsArguments.class))
     @DeleteMapping("/multi")
-    public Response<List<DeleteObjectDomain>> removeObjects(@Validated @RequestBody DeleteObjectsArguments arguments) {
+    public ApiRes<List<DeleteObjectDomain>> removeObjects(@Validated @RequestBody DeleteObjectsArguments arguments) {
         List<DeleteObjectDomain> domains = ossObjectRepository.deleteObjects(arguments);
         return response(domains);
     }

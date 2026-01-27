@@ -2,7 +2,7 @@ package com.ysmjjsy.goya.component.framework.servlet.enums;
 
 import com.ysmjjsy.goya.component.framework.common.constants.DefaultConst;
 import com.ysmjjsy.goya.component.framework.common.enums.EnumOption;
-import com.ysmjjsy.goya.component.framework.core.api.ApiResponse;
+import com.ysmjjsy.goya.component.framework.core.api.ApiRes;
 import com.ysmjjsy.goya.component.framework.core.enums.dict.EnumDictionaryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -45,8 +45,8 @@ public class EnumDictionaryController {
      * @return ApiResponse
      */
     @GetMapping
-    public ApiResponse<Map<String, String>> listEnums() {
-        return ApiResponse.ok(service.listEnums());
+    public ApiRes<Map<String, String>> listEnums() {
+        return ApiRes.ok(service.listEnums());
     }
 
     /**
@@ -55,8 +55,8 @@ public class EnumDictionaryController {
      * @return ApiResponse
      */
     @GetMapping("/conflicts")
-    public ApiResponse<Map<String, List<String>>> conflicts() {
-        return ApiResponse.ok(service.conflicts());
+    public ApiRes<Map<String, List<String>>> conflicts() {
+        return ApiRes.ok(service.conflicts());
     }
 
     /**
@@ -66,8 +66,8 @@ public class EnumDictionaryController {
      * @return ApiResponse
      */
     @GetMapping("{enumName}")
-    public ApiResponse<List<EnumOption>> options(@PathVariable String enumName) {
-        return ApiResponse.ok(service.options(enumName));
+    public ApiRes<List<EnumOption>> options(@PathVariable String enumName) {
+        return ApiRes.ok(service.options(enumName));
     }
 
     /**
@@ -78,7 +78,7 @@ public class EnumDictionaryController {
      * @return ApiResponse
      */
     @GetMapping("all")
-    public ApiResponse<Map<String, List<EnumOption>>> all() {
-        return ApiResponse.ok(service.allOptions());
+    public ApiRes<Map<String, List<EnumOption>>> all() {
+        return ApiRes.ok(service.allOptions());
     }
 }

@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.framework.oss.domain.base;
 
-import com.ysmjjsy.goya.component.oss.core.core.domain.OssDomain;
+import com.ysmjjsy.goya.component.framework.oss.core.domain.OssDomain;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;

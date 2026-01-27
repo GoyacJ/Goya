@@ -1,9 +1,9 @@
 package com.ysmjjsy.goya.component.framework.oss.domain.bucket;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.ysmjjsy.goya.component.core.constants.DefaultConst;
-import com.ysmjjsy.goya.component.oss.core.core.domain.OssDomain;
-import com.ysmjjsy.goya.component.oss.core.domain.base.OwnerDomain;
+import com.ysmjjsy.goya.component.framework.common.constants.DefaultConst;
+import com.ysmjjsy.goya.component.framework.oss.core.domain.OssDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.base.OwnerDomain;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 

@@ -2,7 +2,7 @@ package com.ysmjjsy.goya.platform.monolith.controller;
 
 import com.ysmjjsy.goya.component.framework.cache.api.CacheService;
 import com.ysmjjsy.goya.component.framework.cache.api.MultiLevelCacheService;
-import com.ysmjjsy.goya.component.framework.core.api.ApiResponse;
+import com.ysmjjsy.goya.component.framework.core.api.ApiRes;
 import com.ysmjjsy.goya.platform.monolith.controller.dto.TestCacheDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,32 +26,32 @@ public class TestController {
     private final MultiLevelCacheService multiLevelCacheService;
 
     @GetMapping("cache")
-    public ApiResponse<String> cache() {
+    public ApiRes<String> cache() {
         Object o = cacheService.get("test", "test1", String.class);
         if (o == null) {
             cacheService.put("test", "test1", "test1");
         }
         String o1 = cacheService.get("test", "test1", String.class);
-        return ApiResponse.ok(o1);
+        return ApiRes.ok(o1);
     }
 
     @GetMapping("cache1")
-    public ApiResponse<TestCacheDTO> cache1() {
+    public ApiRes<TestCacheDTO> cache1() {
         TestCacheDTO o = cacheService.get("test", "test2", TestCacheDTO.class);
         if (o == null) {
             cacheService.put("test", "test2", new TestCacheDTO("111", "1"));
         }
         TestCacheDTO o1 = cacheService.get("test", "test2", TestCacheDTO.class);
-        return ApiResponse.ok(o1);
+        return ApiRes.ok(o1);
     }
 
     @GetMapping("cache2")
-    public ApiResponse<TestCacheDTO> cache2() {
+    public ApiRes<TestCacheDTO> cache2() {
         TestCacheDTO o = multiLevelCacheService.get("test", "test3", TestCacheDTO.class);
         if (o == null) {
             multiLevelCacheService.put("test", "test3", new TestCacheDTO("111", "1"));
         }
         TestCacheDTO o1 = multiLevelCacheService.get("test", "test3", TestCacheDTO.class);
-        return ApiResponse.ok(o1);
+        return ApiRes.ok(o1);
     }
 }

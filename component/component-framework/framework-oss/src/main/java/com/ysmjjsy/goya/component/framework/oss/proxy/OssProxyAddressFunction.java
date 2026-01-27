@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.framework.oss.proxy;
 
-import com.ysmjjsy.goya.component.core.constants.SymbolConst;
-import com.ysmjjsy.goya.component.oss.configuration.properties.OssProperties;
-import com.ysmjjsy.goya.component.oss.core.constants.OssConstants;
+import com.ysmjjsy.goya.component.framework.common.constants.SymbolConst;
+import com.ysmjjsy.goya.component.framework.oss.configuration.properties.OssProperties;
+import com.ysmjjsy.goya.component.framework.oss.constants.OssConstants;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

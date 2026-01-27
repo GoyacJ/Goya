@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.framework.oss.constants;
 
-
-import com.ysmjjsy.goya.component.core.enums.RegexPoolEnum;
-import com.ysmjjsy.goya.component.framework.constants.PropertyConst;
+import com.ysmjjsy.goya.component.framework.common.constants.DefaultConst;
+import com.ysmjjsy.goya.component.framework.common.enums.RegexPoolEnum;
+import com.ysmjjsy.goya.component.framework.core.constants.PropertyConst;
 
 /**
  * <p></p>
@@ -42,7 +42,7 @@ public interface OssConstants {
 
     String PROPERTY_OSS_PROXY = PROPERTY_PREFIX_OSS + ".proxy";
 
-    String OSS_MULTIPART_UPLOAD_REQUEST_MAPPING = "/oss/multipart-upload";
+    String OSS_MULTIPART_UPLOAD_REQUEST_MAPPING = DefaultConst.DEFAULT_PROJECT_NAME + "/oss/multipart-upload";
     String OSS_PRESIGNED_OBJECT_REQUEST_MAPPING = "/presigned";
     String OSS_PRESIGNED_OBJECT_PROXY_REQUEST_MAPPING = OSS_PRESIGNED_OBJECT_REQUEST_MAPPING + "/*/*";
     String PRESIGNED_OBJECT_URL_PROXY = OSS_MULTIPART_UPLOAD_REQUEST_MAPPING + OSS_PRESIGNED_OBJECT_REQUEST_MAPPING;

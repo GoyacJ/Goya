@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.framework.oss.core.repository;
 
-import com.ysmjjsy.goya.component.oss.core.arguments.bucket.CreateBucketArguments;
-import com.ysmjjsy.goya.component.oss.core.arguments.bucket.DeleteBucketArguments;
-import com.ysmjjsy.goya.component.oss.core.domain.bucket.BucketDomain;
+import com.ysmjjsy.goya.component.framework.oss.arguments.bucket.CreateBucketArguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.bucket.DeleteBucketArguments;
+import com.ysmjjsy.goya.component.framework.oss.domain.bucket.BucketDomain;
 
 import java.util.List;
 

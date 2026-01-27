@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.framework.oss.arguments.object;
 
-import com.ysmjjsy.goya.component.oss.core.arguments.base.BucketArguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.base.BucketArguments;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;

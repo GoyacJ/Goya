@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.framework.oss.core.domain;
 
-import com.ysmjjsy.goya.component.core.pojo.IEntity;
+import com.ysmjjsy.goya.component.framework.common.pojo.IEntity;
 
 /**
  * <p>Oss 域对象基础定义</p>

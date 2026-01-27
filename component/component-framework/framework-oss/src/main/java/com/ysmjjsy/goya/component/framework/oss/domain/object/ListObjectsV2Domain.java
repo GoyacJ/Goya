@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.framework.oss.domain.object;
 
-import com.ysmjjsy.goya.component.oss.core.arguments.object.ListObjectsV2Arguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.object.ListObjectsV2Arguments;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.framework.oss.arguments.multipart;
 
-import com.ysmjjsy.goya.component.oss.core.arguments.base.BasePartArguments;
-import com.ysmjjsy.goya.component.oss.core.domain.multipart.PartSummaryDomain;
+import com.ysmjjsy.goya.component.framework.oss.arguments.base.BasePartArguments;
+import com.ysmjjsy.goya.component.framework.oss.domain.multipart.PartSummaryDomain;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;

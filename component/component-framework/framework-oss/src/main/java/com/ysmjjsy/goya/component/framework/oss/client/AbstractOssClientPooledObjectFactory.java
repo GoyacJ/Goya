@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.framework.oss.client;
 
-import com.ysmjjsy.goya.component.oss.core.properties.AbstractOssProperties;
+import com.ysmjjsy.goya.component.framework.oss.properties.AbstractOssProperties;
 import lombok.Getter;
 import org.apache.commons.pool2.BasePooledObjectFactory;
 import org.apache.commons.pool2.PooledObject;

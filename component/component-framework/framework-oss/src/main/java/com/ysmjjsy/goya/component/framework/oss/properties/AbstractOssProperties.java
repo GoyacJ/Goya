@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.framework.oss.properties;
 
-import com.ysmjjsy.goya.component.core.pool.Pool;
+import com.ysmjjsy.goya.component.framework.common.pool.Pool;
 import lombok.Data;
 
 import java.io.Serial;

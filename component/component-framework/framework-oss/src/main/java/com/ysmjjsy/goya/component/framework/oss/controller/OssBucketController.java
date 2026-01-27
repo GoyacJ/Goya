@@ -1,13 +1,14 @@
 package com.ysmjjsy.goya.component.framework.oss.controller;
 
-import com.ysmjjsy.goya.component.oss.core.arguments.bucket.CreateBucketArguments;
-import com.ysmjjsy.goya.component.oss.core.arguments.bucket.DeleteBucketArguments;
-import com.ysmjjsy.goya.component.oss.core.core.repository.OssBucketRepository;
-import com.ysmjjsy.goya.component.oss.core.domain.bucket.BucketDomain;
-import com.ysmjjsy.goya.component.web.annotation.AccessLimited;
-import com.ysmjjsy.goya.component.web.annotation.Idempotent;
-import com.ysmjjsy.goya.component.web.definition.IController;
-import com.ysmjjsy.goya.component.web.response.Response;
+import com.ysmjjsy.goya.component.framework.common.constants.DefaultConst;
+import com.ysmjjsy.goya.component.framework.core.api.ApiRes;
+import com.ysmjjsy.goya.component.framework.oss.arguments.bucket.CreateBucketArguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.bucket.DeleteBucketArguments;
+import com.ysmjjsy.goya.component.framework.oss.core.repository.OssBucketRepository;
+import com.ysmjjsy.goya.component.framework.oss.domain.bucket.BucketDomain;
+import com.ysmjjsy.goya.component.framework.servlet.definition.IController;
+import com.ysmjjsy.goya.component.framework.servlet.idempotent.Idempotent;
+import com.ysmjjsy.goya.component.framework.servlet.secure.AccessLimited;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -27,7 +28,7 @@ import java.util.List;
  * @since 2025/11/3 09:45
  */
 @RestController
-@RequestMapping("/oss/bucket")
+@RequestMapping(DefaultConst.DEFAULT_PROJECT_NAME + "/oss/bucket")
 @Tag(name = "Oss-统一存储桶管理")
 public class OssBucketController implements IController {
 
@@ -48,7 +49,7 @@ public class OssBucketController implements IController {
             })
     @Parameter(name = "bucketName", required = true, description = "存储桶名称")
     @GetMapping("/exists")
-    public Response<Boolean> doesBucketExist(String bucketName) {
+    public ApiRes<Boolean> doesBucketExist(String bucketName) {
         boolean isExists = ossBucketHandler.doesBucketExist(bucketName);
         return response(isExists);
     }
@@ -64,7 +65,7 @@ public class OssBucketController implements IController {
                     @ApiResponse(responseCode = "503", description = "Minio Server无法访问或未启动")
             })
     @GetMapping("/list")
-    public Response<List<BucketDomain>> listBuckets() {
+    public ApiRes<List<BucketDomain>> listBuckets() {
         List<BucketDomain> domains = ossBucketHandler.listBuckets();
         return response(domains);
     }
@@ -80,7 +81,7 @@ public class OssBucketController implements IController {
             })
     @Parameter(name = "arguments", required = true, description = "CreateBucketArguments请求参数实体", schema = @Schema(implementation = CreateBucketArguments.class))
     @PostMapping
-    public Response<Boolean> createBucket(@Validated @RequestBody CreateBucketArguments arguments) {
+    public ApiRes<Boolean> createBucket(@Validated @RequestBody CreateBucketArguments arguments) {
         // Minio 的 MakeBucket 没有返回值
         ossBucketHandler.createBucket(arguments);
         return response(true);
@@ -97,7 +98,7 @@ public class OssBucketController implements IController {
             })
     @Parameter(name = "arguments", required = true, description = "DeleteBucketArguments请求参数实体", schema = @Schema(implementation = DeleteBucketArguments.class))
     @DeleteMapping
-    public Response<Boolean> deleteBucket(@Validated @RequestBody DeleteBucketArguments arguments) {
+    public ApiRes<Boolean> deleteBucket(@Validated @RequestBody DeleteBucketArguments arguments) {
         ossBucketHandler.deleteBucket(arguments);
         return response(true);
     }

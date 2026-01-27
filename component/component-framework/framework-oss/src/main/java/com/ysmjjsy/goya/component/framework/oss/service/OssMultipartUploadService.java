@@ -1,16 +1,16 @@
 package com.ysmjjsy.goya.component.framework.oss.service;
 
-import com.ysmjjsy.goya.component.oss.business.CreateMultipartUploadBusiness;
-import com.ysmjjsy.goya.component.oss.configuration.properties.OssProperties;
-import com.ysmjjsy.goya.component.oss.core.arguments.object.GeneratePresignedUrlArguments;
-import com.ysmjjsy.goya.component.oss.core.core.repository.OssMultipartUploadRepository;
-import com.ysmjjsy.goya.component.oss.core.core.repository.OssObjectRepository;
-import com.ysmjjsy.goya.component.oss.core.domain.base.ObjectWriteDomain;
-import com.ysmjjsy.goya.component.oss.core.domain.multipart.CompleteMultipartUploadDomain;
-import com.ysmjjsy.goya.component.oss.core.domain.multipart.ListPartsDomain;
-import com.ysmjjsy.goya.component.oss.core.domain.multipart.PartSummaryDomain;
-import com.ysmjjsy.goya.component.oss.core.enums.HttpMethodEnum;
-import com.ysmjjsy.goya.component.oss.proxy.OssProxyAddressConverter;
+import com.ysmjjsy.goya.component.framework.oss.arguments.object.GeneratePresignedUrlArguments;
+import com.ysmjjsy.goya.component.framework.oss.business.CreateMultipartUploadBusiness;
+import com.ysmjjsy.goya.component.framework.oss.configuration.properties.OssProperties;
+import com.ysmjjsy.goya.component.framework.oss.core.repository.OssMultipartUploadRepository;
+import com.ysmjjsy.goya.component.framework.oss.core.repository.OssObjectRepository;
+import com.ysmjjsy.goya.component.framework.oss.domain.base.ObjectWriteDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.multipart.CompleteMultipartUploadDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.multipart.ListPartsDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.multipart.PartSummaryDomain;
+import com.ysmjjsy.goya.component.framework.oss.enums.HttpMethodEnum;
+import com.ysmjjsy.goya.component.framework.oss.proxy.OssProxyAddressConverter;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Service;

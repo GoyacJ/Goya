@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.framework.oss.business;
 
-import com.ysmjjsy.goya.component.oss.definition.OssBusiness;
+import com.ysmjjsy.goya.component.framework.oss.definition.OssBusiness;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 

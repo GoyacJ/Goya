@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.framework.oss.core.repository;
 
-import com.ysmjjsy.goya.component.oss.core.arguments.multipart.*;
-import com.ysmjjsy.goya.component.oss.core.domain.multipart.*;
+import com.ysmjjsy.goya.component.framework.oss.arguments.multipart.*;
+import com.ysmjjsy.goya.component.framework.oss.domain.multipart.*;
 
 import java.util.List;
 

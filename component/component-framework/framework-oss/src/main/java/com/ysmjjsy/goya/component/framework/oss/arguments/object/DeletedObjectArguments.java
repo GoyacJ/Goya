@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.framework.oss.arguments.object;
 
-import com.ysmjjsy.goya.component.oss.core.core.arguments.OssArguments;
+import com.ysmjjsy.goya.component.framework.oss.core.arguments.OssArguments;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;

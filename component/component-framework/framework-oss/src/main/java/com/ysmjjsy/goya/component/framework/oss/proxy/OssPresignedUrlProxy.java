@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.framework.oss.proxy;
 
-import com.ysmjjsy.goya.component.oss.configuration.properties.OssProperties;
+import com.ysmjjsy.goya.component.framework.oss.configuration.properties.OssProperties;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.*;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;

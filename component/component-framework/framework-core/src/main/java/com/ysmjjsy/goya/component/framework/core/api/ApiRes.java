@@ -27,7 +27,7 @@ import java.util.*;
  * @author goya
  * @since 2026/1/24 13:49
  */
-public record ApiResponse<T>(
+public record ApiRes<T>(
         boolean success,
         String code,
         String message,
@@ -54,7 +54,7 @@ public record ApiResponse<T>(
      *
      * <p>同时强制成功码固定 OK。</p>
      */
-    public ApiResponse {
+    public ApiRes {
         Objects.requireNonNull(code, "code 不能为空");
 
         // 成功码强约束
@@ -78,7 +78,7 @@ public record ApiResponse<T>(
      * @param traceId traceId
      * @return 新 ApiResponse
      */
-    public ApiResponse<T> withTraceId(String traceId) {
+    public ApiRes<T> withTraceId(String traceId) {
         if (traceId == null || traceId.isBlank()) {
             return this;
         }
@@ -86,7 +86,7 @@ public record ApiResponse<T>(
             // 已存在则不覆盖
             return this;
         }
-        return new ApiResponse<>(
+        return new ApiRes<>(
                 this.success,
                 this.code,
                 this.message,
@@ -106,8 +106,8 @@ public record ApiResponse<T>(
      * @return 新 ApiResponse
      */
     @SuppressWarnings("unchecked")
-    public ApiResponse<T> withData(Object newData) {
-        return new ApiResponse<>(this.success,
+    public ApiRes<T> withData(Object newData) {
+        return new ApiRes<>(this.success,
                 this.code,
                 this.message,
                 this.traceId,
@@ -127,7 +127,7 @@ public record ApiResponse<T>(
      *
      * @return ApiResponse<Void>
      */
-    public static ApiResponse<Void> ok() {
+    public static ApiRes<Void> ok() {
         return ok(null, null, null);
     }
 
@@ -138,7 +138,7 @@ public record ApiResponse<T>(
      * @param <T>  数据类型
      * @return ApiResponse<T>
      */
-    public static <T> ApiResponse<T> ok(T data) {
+    public static <T> ApiRes<T> ok(T data) {
         return ok(data, null, null);
     }
 
@@ -150,7 +150,7 @@ public record ApiResponse<T>(
      * @param <T>     数据类型
      * @return ApiResponse<T>
      */
-    public static <T> ApiResponse<T> ok(T data, String message) {
+    public static <T> ApiRes<T> ok(T data, String message) {
         return ok(data, message, null);
     }
 
@@ -163,8 +163,8 @@ public record ApiResponse<T>(
      * @param <T>     数据类型
      * @return ApiResponse<T>
      */
-    public static <T> ApiResponse<T> ok(T data, String message, String traceId) {
-        return new ApiResponse<>(
+    public static <T> ApiRes<T> ok(T data, String message, String traceId) {
+        return new ApiRes<>(
                 true,
                 CommonErrorCode.OK.code(),
                 message,
@@ -185,7 +185,7 @@ public record ApiResponse<T>(
      * @param <T>      数据类型
      * @return ApiResponse<List<T>>
      */
-    public static <T> ApiResponse<List<T>> okPage(List<T> data, PageMeta pageMeta) {
+    public static <T> ApiRes<List<T>> okPage(List<T> data, PageMeta pageMeta) {
         return okPage(data, pageMeta, null, null);
     }
 
@@ -199,13 +199,13 @@ public record ApiResponse<T>(
      * @param <T>      数据类型
      * @return ApiResponse<List<T>>
      */
-    public static <T> ApiResponse<List<T>> okPage(List<T> data, PageMeta pageMeta, String message, String traceId) {
+    public static <T> ApiRes<List<T>> okPage(List<T> data, PageMeta pageMeta, String message, String traceId) {
         Objects.requireNonNull(pageMeta, "pageMeta 不能为空");
 
         Map<String, Object> meta = new LinkedHashMap<>();
         meta.put(META_PAGE, pageMeta);
 
-        return new ApiResponse<>(
+        return new ApiRes<>(
                 true,
                 CommonErrorCode.OK.code(),
                 message,
@@ -224,7 +224,7 @@ public record ApiResponse<T>(
      * @param errorCode 错误码（不能为空）
      * @return ApiResponse<Void>
      */
-    public static ApiResponse<Void> fail(ErrorCode errorCode) {
+    public static ApiRes<Void> fail(ErrorCode errorCode) {
         return fail(errorCode, null, null);
     }
 
@@ -235,7 +235,7 @@ public record ApiResponse<T>(
      * @param message   对外安全文案（可为空；为空时建议由上层解析器补齐）
      * @return ApiResponse<Void>
      */
-    public static ApiResponse<Void> fail(ErrorCode errorCode, String message) {
+    public static ApiRes<Void> fail(ErrorCode errorCode, String message) {
         return fail(errorCode, message, null);
     }
 
@@ -247,9 +247,9 @@ public record ApiResponse<T>(
      * @param traceId   traceId（可为空）
      * @return ApiResponse<Void>
      */
-    public static ApiResponse<Void> fail(ErrorCode errorCode, String message, String traceId) {
+    public static ApiRes<Void> fail(ErrorCode errorCode, String message, String traceId) {
         Objects.requireNonNull(errorCode, "errorCode 不能为空");
-        return new ApiResponse<>(
+        return new ApiRes<>(
                 false,
                 errorCode.code(),
                 message,
@@ -392,8 +392,8 @@ public record ApiResponse<T>(
          * @param <T>  数据类型
          * @return ApiResponse<T>
          */
-        public <T> ApiResponse<T> data(T data) {
-            return new ApiResponse<>(
+        public <T> ApiRes<T> data(T data) {
+            return new ApiRes<>(
                     true,
                     CommonErrorCode.OK.code(),
                     message,
@@ -411,7 +411,7 @@ public record ApiResponse<T>(
          *
          * @return ApiResponse<Void>
          */
-        public ApiResponse<Void> build() {
+        public ApiRes<Void> build() {
             return data(null);
         }
     }
@@ -524,8 +524,8 @@ public record ApiResponse<T>(
          *
          * @return ApiResponse<Void>
          */
-        public ApiResponse<Void> build() {
-            return new ApiResponse<>(
+        public ApiRes<Void> build() {
+            return new ApiRes<>(
                     false,
                     errorCode.code(),
                     message,

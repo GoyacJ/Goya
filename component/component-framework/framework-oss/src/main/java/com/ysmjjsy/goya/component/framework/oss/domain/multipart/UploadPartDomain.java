@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.framework.oss.domain.multipart;
 
-import com.ysmjjsy.goya.component.oss.core.domain.base.BasePartDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.base.BasePartDomain;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.io.Serial;

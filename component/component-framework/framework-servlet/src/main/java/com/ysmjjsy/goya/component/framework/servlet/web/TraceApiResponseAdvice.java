@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.framework.servlet.web;
 
 import com.ysmjjsy.goya.component.framework.common.constants.DefaultConst;
-import com.ysmjjsy.goya.component.framework.core.api.ApiResponse;
+import com.ysmjjsy.goya.component.framework.core.api.ApiRes;
 import io.micrometer.tracing.Span;
 import io.micrometer.tracing.Tracer;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +17,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 /**
  * <p>ApiResponse traceId 注入增强器</p>
  *
- * <p>作用：把 {@link TraceMdcFilter} 写入 MDC 的 traceId，同步到响应体 {@link ApiResponse#traceId()}。</p>
+ * <p>作用：把 {@link TraceMdcFilter} 写入 MDC 的 traceId，同步到响应体 {@link ApiRes#traceId()}。</p>
  *
  * <p>规则：</p>
  * <ul>
@@ -35,7 +35,7 @@ public class TraceApiResponseAdvice implements ResponseBodyAdvice<Object> {
 
     @Override
     public boolean supports(MethodParameter returnType, Class<? extends HttpMessageConverter<?>> converterType) {
-        return ApiResponse.class.isAssignableFrom(returnType.getParameterType());
+        return ApiRes.class.isAssignableFrom(returnType.getParameterType());
     }
 
     @Override
@@ -46,7 +46,7 @@ public class TraceApiResponseAdvice implements ResponseBodyAdvice<Object> {
                                   org.springframework.http.server.ServerHttpRequest request,
                                   org.springframework.http.server.ServerHttpResponse response) {
 
-        if (!(body instanceof ApiResponse<?> api)) {
+        if (!(body instanceof ApiRes<?> api)) {
             return body;
         }
 

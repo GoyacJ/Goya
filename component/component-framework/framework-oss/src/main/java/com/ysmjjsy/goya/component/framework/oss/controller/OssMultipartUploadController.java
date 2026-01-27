@@ -1,16 +1,16 @@
 package com.ysmjjsy.goya.component.framework.oss.controller;
 
-import com.ysmjjsy.goya.component.oss.arguments.CompleteMultipartUploadArguments;
-import com.ysmjjsy.goya.component.oss.arguments.CreateMultipartUploadArguments;
-import com.ysmjjsy.goya.component.oss.business.CreateMultipartUploadBusiness;
-import com.ysmjjsy.goya.component.oss.core.constants.OssConstants;
-import com.ysmjjsy.goya.component.oss.core.domain.base.ObjectWriteDomain;
-import com.ysmjjsy.goya.component.oss.core.domain.multipart.CompleteMultipartUploadDomain;
-import com.ysmjjsy.goya.component.oss.proxy.OssPresignedUrlProxy;
-import com.ysmjjsy.goya.component.oss.service.OssMultipartUploadService;
-import com.ysmjjsy.goya.component.web.annotation.Idempotent;
-import com.ysmjjsy.goya.component.web.definition.IController;
-import com.ysmjjsy.goya.component.web.response.Response;
+import com.ysmjjsy.goya.component.framework.core.api.ApiRes;
+import com.ysmjjsy.goya.component.framework.oss.arguments.CompleteMultipartUploadArguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.CreateMultipartUploadArguments;
+import com.ysmjjsy.goya.component.framework.oss.business.CreateMultipartUploadBusiness;
+import com.ysmjjsy.goya.component.framework.oss.constants.OssConstants;
+import com.ysmjjsy.goya.component.framework.oss.domain.base.ObjectWriteDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.multipart.CompleteMultipartUploadDomain;
+import com.ysmjjsy.goya.component.framework.oss.proxy.OssPresignedUrlProxy;
+import com.ysmjjsy.goya.component.framework.oss.service.OssMultipartUploadService;
+import com.ysmjjsy.goya.component.framework.servlet.definition.IController;
+import com.ysmjjsy.goya.component.framework.servlet.idempotent.Idempotent;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -56,7 +56,7 @@ public class OssMultipartUploadController implements IController {
             })
     @Parameter(name = "arguments", required = true, description = "CreateMultipartUploadArguments参数实体", schema = @Schema(implementation = CreateMultipartUploadArguments.class))
     @PostMapping("/create")
-    public Response<CreateMultipartUploadBusiness> createMultipartUpload(@Validated @RequestBody CreateMultipartUploadArguments arguments) {
+    public ApiRes<CreateMultipartUploadBusiness> createMultipartUpload(@Validated @RequestBody CreateMultipartUploadArguments arguments) {
         CreateMultipartUploadBusiness result = ossMultipartUploadService.createMultipartUpload(arguments.getBucketName(), arguments.getObjectName(), arguments.getPartNumber());
         return response(result);
     }
@@ -72,7 +72,7 @@ public class OssMultipartUploadController implements IController {
             })
     @Parameter(name = "arguments", required = true, description = "CompleteMultipartUploadArguments参数实体", schema = @Schema(implementation = CompleteMultipartUploadArguments.class))
     @PostMapping("/complete")
-    public Response<CompleteMultipartUploadDomain> completeMultipartUpload(@Validated @RequestBody CompleteMultipartUploadArguments arguments) {
+    public ApiRes<CompleteMultipartUploadDomain> completeMultipartUpload(@Validated @RequestBody CompleteMultipartUploadArguments arguments) {
         CompleteMultipartUploadDomain entity = ossMultipartUploadService.completeMultipartUpload(arguments.getBucketName(), arguments.getObjectName(), arguments.getUploadId());
         return response(entity);
     }

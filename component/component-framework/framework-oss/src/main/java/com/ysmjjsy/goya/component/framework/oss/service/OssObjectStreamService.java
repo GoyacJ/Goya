@@ -1,11 +1,11 @@
 package com.ysmjjsy.goya.component.framework.oss.service;
 
-import com.ysmjjsy.goya.component.core.exception.CommonException;
-import com.ysmjjsy.goya.component.oss.core.arguments.object.PutObjectArguments;
-import com.ysmjjsy.goya.component.oss.core.core.repository.OssObjectRepository;
-import com.ysmjjsy.goya.component.oss.core.domain.object.GetObjectDomain;
-import com.ysmjjsy.goya.component.oss.core.domain.object.ObjectMetadataDomain;
-import com.ysmjjsy.goya.component.oss.core.domain.object.PutObjectDomain;
+import com.ysmjjsy.goya.component.framework.oss.arguments.object.PutObjectArguments;
+import com.ysmjjsy.goya.component.framework.oss.core.repository.OssObjectRepository;
+import com.ysmjjsy.goya.component.framework.oss.domain.object.GetObjectDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.object.ObjectMetadataDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.object.PutObjectDomain;
+import com.ysmjjsy.goya.component.framework.oss.exception.OssException;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
@@ -102,7 +102,7 @@ public class OssObjectStreamService {
             return ossObjectRepository.putObject(arguments);
         } catch (IOException e) {
             log.error("[Goya] |- Minio upload catch IOException.", e);
-            throw new CommonException(e.getMessage());
+            throw new OssException(e.getMessage());
         }
     }
 }

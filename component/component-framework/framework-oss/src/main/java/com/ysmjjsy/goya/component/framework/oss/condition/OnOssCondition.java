@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.framework.oss.condition;
 
-import com.ysmjjsy.goya.component.framework.condiition.AbstractEnumSpringBootCondition;
-import com.ysmjjsy.goya.component.oss.core.annotation.ConditionalOnOssStrategy;
-import com.ysmjjsy.goya.component.oss.core.enums.OssEnum;
+import com.ysmjjsy.goya.component.framework.core.condition.AbstractEnumSpringBootCondition;
+import com.ysmjjsy.goya.component.framework.oss.annotation.ConditionalOnOssStrategy;
+import com.ysmjjsy.goya.component.framework.oss.enums.OssEnum;
 
 import java.lang.annotation.Annotation;
 

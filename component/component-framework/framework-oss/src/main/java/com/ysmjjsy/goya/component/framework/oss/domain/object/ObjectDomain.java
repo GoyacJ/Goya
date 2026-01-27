@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.framework.oss.domain.object;
 
-import com.ysmjjsy.goya.component.oss.core.domain.bucket.BucketDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.bucket.BucketDomain;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

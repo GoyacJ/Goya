@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.framework.oss.service;
 
-import com.ysmjjsy.goya.component.core.pool.AbstractObjectPool;
+import com.ysmjjsy.goya.component.framework.common.pool.AbstractObjectPool;
 
 /**
  * <p>对象存储 Service 抽象定义</p>

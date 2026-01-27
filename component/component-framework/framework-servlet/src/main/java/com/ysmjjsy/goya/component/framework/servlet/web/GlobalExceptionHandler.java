@@ -5,7 +5,7 @@ import com.ysmjjsy.goya.component.framework.common.error.ErrorCode;
 import com.ysmjjsy.goya.component.framework.common.error.Severity;
 import com.ysmjjsy.goya.component.framework.common.exception.GoyaException;
 import com.ysmjjsy.goya.component.framework.core.api.ApiFieldError;
-import com.ysmjjsy.goya.component.framework.core.api.ApiResponse;
+import com.ysmjjsy.goya.component.framework.core.api.ApiRes;
 import com.ysmjjsy.goya.component.framework.core.error.ErrorMessageResolver;
 import com.ysmjjsy.goya.component.framework.masker.core.Masker;
 import com.ysmjjsy.goya.component.framework.servlet.autoconfigure.properties.ServletErrorProperties;
@@ -33,7 +33,7 @@ import java.util.Map;
 
 /**
  * <p>Servlet Web 全局异常处理器</p>
- * <p>该处理器将系统内抛出的异常统一转换为 {@link ApiResponse} 输出，并根据错误分类映射 HTTP 状态码。</p>
+ * <p>该处理器将系统内抛出的异常统一转换为 {@link ApiRes} 输出，并根据错误分类映射 HTTP 状态码。</p>
  *
  * <h2>处理范围</h2>
  * <ul>
@@ -276,7 +276,7 @@ public class GlobalExceptionHandler {
 
         return switch (props.responseStyle()) {
             case API -> ResponseEntity.status(status).body(
-                    ApiResponse
+                    ApiRes
                             .failBuilder(code)
                             .message(message)
                             .traceId(traceId)
@@ -328,7 +328,7 @@ public class GlobalExceptionHandler {
      */
     private ResponseEntity<?> respond(HttpStatus status, ErrorCode code, String message, String traceId) {
         return switch (props.responseStyle()) {
-            case API -> ResponseEntity.status(status).body(ApiResponse.fail(code, message, traceId));
+            case API -> ResponseEntity.status(status).body(ApiRes.fail(code, message, traceId));
             case PROBLEM, BOTH -> ResponseEntity.status(status).body(problemFactory.fromCode(code, message, traceId));
         };
     }

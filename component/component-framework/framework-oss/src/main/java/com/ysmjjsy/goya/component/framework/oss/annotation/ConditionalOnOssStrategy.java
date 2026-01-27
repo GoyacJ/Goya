@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.framework.oss.annotation;
 
-import com.ysmjjsy.goya.component.oss.core.enums.OssEnum;
-import com.ysmjjsy.goya.component.oss.core.condition.OnOssCondition;
+import com.ysmjjsy.goya.component.framework.oss.condition.OnOssCondition;
+import com.ysmjjsy.goya.component.framework.oss.enums.OssEnum;
 import org.springframework.context.annotation.Conditional;
 
 import java.lang.annotation.*;

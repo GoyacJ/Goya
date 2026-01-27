@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.framework.oss.domain.multipart;
 
-import com.ysmjjsy.goya.component.oss.core.arguments.multipart.ListMultipartUploadsArguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.multipart.ListMultipartUploadsArguments;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.framework.oss.arguments.multipart;
 
-import com.ysmjjsy.goya.component.oss.core.arguments.base.BasePartArguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.base.BasePartArguments;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;

@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.framework.oss.domain.multipart;
 
-import com.ysmjjsy.goya.component.oss.core.domain.base.PartDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.base.PartDomain;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

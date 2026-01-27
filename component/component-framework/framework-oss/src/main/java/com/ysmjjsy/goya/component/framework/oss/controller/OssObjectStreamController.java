@@ -1,10 +1,11 @@
 package com.ysmjjsy.goya.component.framework.oss.controller;
 
-import com.ysmjjsy.goya.component.oss.arguments.ObjectStreamDownloadArguments;
-import com.ysmjjsy.goya.component.oss.core.domain.object.PutObjectDomain;
-import com.ysmjjsy.goya.component.oss.service.OssObjectStreamService;
-import com.ysmjjsy.goya.component.web.annotation.Idempotent;
-import com.ysmjjsy.goya.component.web.definition.IController;
+import com.ysmjjsy.goya.component.framework.common.constants.DefaultConst;
+import com.ysmjjsy.goya.component.framework.oss.arguments.ObjectStreamDownloadArguments;
+import com.ysmjjsy.goya.component.framework.oss.domain.object.PutObjectDomain;
+import com.ysmjjsy.goya.component.framework.oss.service.OssObjectStreamService;
+import com.ysmjjsy.goya.component.framework.servlet.definition.IController;
+import com.ysmjjsy.goya.component.framework.servlet.idempotent.Idempotent;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -28,7 +29,7 @@ import java.io.IOException;
  * @since 2025/11/3 09:49
  */
 @RestController
-@RequestMapping("/oss/object/stream")
+@RequestMapping(DefaultConst.DEFAULT_PROJECT_NAME + "/oss/object/stream")
 @Tag(name = "Oss-统一流式上传下载管理")
 public class OssObjectStreamController implements IController {
 

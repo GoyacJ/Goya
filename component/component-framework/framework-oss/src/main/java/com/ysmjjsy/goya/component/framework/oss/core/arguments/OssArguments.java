@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.framework.oss.core.arguments;
 
-import com.ysmjjsy.goya.component.core.pojo.IEntity;
+import com.ysmjjsy.goya.component.framework.common.pojo.IEntity;
 
 /**
  * <p>对象存储统一定义请求参数</p>

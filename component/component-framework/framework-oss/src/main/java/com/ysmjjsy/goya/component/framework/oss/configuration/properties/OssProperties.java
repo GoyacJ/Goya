@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.framework.oss.configuration.properties;
 
-import com.ysmjjsy.goya.component.oss.core.constants.OssConstants;
-import com.ysmjjsy.goya.component.oss.core.enums.OssEnum;
+import com.ysmjjsy.goya.component.framework.oss.constants.OssConstants;
+import com.ysmjjsy.goya.component.framework.oss.enums.OssEnum;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 

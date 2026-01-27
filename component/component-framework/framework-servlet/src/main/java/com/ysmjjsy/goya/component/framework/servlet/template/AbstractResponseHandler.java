@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.framework.servlet.template;
 
-import com.ysmjjsy.goya.component.framework.core.api.ApiResponse;
+import com.ysmjjsy.goya.component.framework.core.api.ApiRes;
 import com.ysmjjsy.goya.component.framework.servlet.utils.WebUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -20,9 +20,9 @@ public abstract class AbstractResponseHandler {
     @Autowired
     private ThymeleafTemplateHandler templateHandler;
 
-    protected void process(HttpServletRequest request, HttpServletResponse response, Supplier<ApiResponse<Void>> supplier, int statusCode) {
+    protected void process(HttpServletRequest request, HttpServletResponse response, Supplier<ApiRes<Void>> supplier, int statusCode) {
 
-        ApiResponse<Void> voidResponse = supplier.get();
+        ApiRes<Void> voidResponse = supplier.get();
 
         if (WebUtils.isHtml(request)) {
             String content = null;

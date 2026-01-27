@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.framework.oss.arguments.object;
 
-import com.ysmjjsy.goya.component.oss.core.arguments.base.PutObjectBaseArguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.base.PutObjectBaseArguments;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

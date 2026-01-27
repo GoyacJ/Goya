@@ -14,7 +14,7 @@
     <dependencies>
         <dependency>
             <groupId>com.ysmjjsy.goya</groupId>
-            <artifactId>framework-core</artifactId>
+            <artifactId>framework-servlet</artifactId>
         </dependency>
     </dependencies>
 

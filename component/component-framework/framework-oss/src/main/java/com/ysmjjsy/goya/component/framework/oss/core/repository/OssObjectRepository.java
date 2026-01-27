@@ -1,9 +1,9 @@
 package com.ysmjjsy.goya.component.framework.oss.core.repository;
 
-import com.ysmjjsy.goya.component.oss.core.arguments.object.*;
-import com.ysmjjsy.goya.component.oss.core.domain.base.ObjectWriteDomain;
-import com.ysmjjsy.goya.component.oss.core.domain.object.*;
-import com.ysmjjsy.goya.component.oss.core.enums.HttpMethodEnum;
+import com.ysmjjsy.goya.component.framework.oss.arguments.object.*;
+import com.ysmjjsy.goya.component.framework.oss.domain.base.ObjectWriteDomain;
+import com.ysmjjsy.goya.component.framework.oss.domain.object.*;
+import com.ysmjjsy.goya.component.framework.oss.enums.HttpMethodEnum;
 import org.apache.commons.lang3.StringUtils;
 
 import java.time.Duration;

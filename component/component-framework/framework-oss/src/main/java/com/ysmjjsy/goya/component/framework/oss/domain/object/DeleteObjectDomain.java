@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.framework.oss.domain.object;
 
-import com.ysmjjsy.goya.component.oss.core.arguments.object.DeletedObjectArguments;
+import com.ysmjjsy.goya.component.framework.oss.arguments.object.DeletedObjectArguments;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
