@@ -4,8 +4,9 @@ import com.google.common.collect.Maps;
 import com.ysmjjsy.goya.component.captcha.configuration.properties.CaptchaProperties;
 import com.ysmjjsy.goya.component.captcha.enums.CaptchaResourceEnum;
 import com.ysmjjsy.goya.component.captcha.enums.FontStyleEnum;
-import com.ysmjjsy.goya.component.core.exception.CommonException;
-import com.ysmjjsy.goya.component.framework.context.SpringContext;
+import com.ysmjjsy.goya.component.framework.common.exception.GoyaException;
+import com.ysmjjsy.goya.component.framework.common.utils.*;
+import com.ysmjjsy.goya.component.framework.core.context.SpringContext;
 import lombok.Getter;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -77,7 +78,7 @@ public class ResourceProvider implements InitializingBean {
 
         try {
             return GoyaFontUtils.loadFont(resource.getInputStream());
-        } catch (CommonException _) {
+        } catch (GoyaException _) {
             log.warn("[Goya] |- Can not read font in the resources folder, maybe in docker.");
             Font fontInfileSystem = getFontUnderDocker(resource.getFilename());
             if (ObjectUtils.isNotEmpty(fontInfileSystem)) {
@@ -100,9 +101,9 @@ public class ResourceProvider implements InitializingBean {
                     Font font = GoyaFontUtils.loadFont(file);
                     log.debug("[Goya] |- Read font [{}] under the DOCKER.", font.getFontName());
                     return font;
-                } catch (CommonException e) {
+                } catch (GoyaException _) {
                     log.error("[Goya] |- Read font under the DOCKER catch error.");
-                } catch (NullPointerException e) {
+                } catch (NullPointerException _) {
                     log.error("[Goya] |- Read font under the DOCKER catch null error.");
                 }
             }

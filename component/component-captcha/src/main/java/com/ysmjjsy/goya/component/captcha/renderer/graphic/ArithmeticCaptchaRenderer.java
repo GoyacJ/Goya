@@ -28,7 +28,7 @@ public class ArithmeticCaptchaRenderer extends AbstractBaseGraphicRenderer {
     private String computedResult;
 
     public ArithmeticCaptchaRenderer(ResourceProvider resourceProvider, CaptchaProperties captchaProperties) {
-        super(resourceProvider,captchaProperties);
+        super(resourceProvider,captchaProperties.graphics().expire());
         this.complexity = this.getCaptchaProperties().graphics().complexity();
     }
 
@@ -77,10 +77,5 @@ public class ArithmeticCaptchaRenderer extends AbstractBaseGraphicRenderer {
         metadata.setGraphicImageBase64(toBase64(bufferedImage));
         metadata.setCharacters(this.computedResult);
         return metadata;
-    }
-
-    @Override
-    protected String getCacheName() {
-        return "";
     }
 }

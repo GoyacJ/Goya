@@ -2,7 +2,7 @@ package com.ysmjjsy.goya.component.captcha.enums;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.ysmjjsy.goya.component.core.enums.IEnum;
+import com.ysmjjsy.goya.component.framework.common.enums.CodeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -21,7 +21,7 @@ import java.util.Map;
 @Getter
 @Schema(name = "验证码类别")
 @AllArgsConstructor
-public enum CaptchaCategoryEnum implements IEnum<String> {
+public enum CaptchaCategoryEnum implements CodeEnum<String> {
 
     /**
      * 验证码类别
@@ -61,7 +61,7 @@ public enum CaptchaCategoryEnum implements IEnum<String> {
                             "index", anEnum.ordinal(),
                             "code", anEnum.getCode(),
                             "name", anEnum.name(),
-                            "description", anEnum.getDescription()
+                            "label", anEnum.getLabel()
                     ));
         }
     }
@@ -70,7 +70,7 @@ public enum CaptchaCategoryEnum implements IEnum<String> {
     @JsonValue
     private final String code;
     @Schema(name = "文字")
-    private final String description;
+    private final String label;
 
     @JsonCreator
     public static CaptchaCategoryEnum getByCode(String code) {

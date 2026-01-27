@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.captcha.provider;
 
 import com.ysmjjsy.goya.component.captcha.enums.CaptchaCharacterEnum;
-import com.ysmjjsy.goya.component.core.utils.GoyaRandomUtils;
+import com.ysmjjsy.goya.component.framework.common.utils.GoyaRandomUtils;
 
 import java.awt.*;
 import java.util.Arrays;

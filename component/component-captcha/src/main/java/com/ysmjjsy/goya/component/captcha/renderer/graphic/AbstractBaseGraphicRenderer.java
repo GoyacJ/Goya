@@ -1,6 +1,5 @@
 package com.ysmjjsy.goya.component.captcha.renderer.graphic;
 
-import com.ysmjjsy.goya.component.captcha.configuration.properties.CaptchaProperties;
 import com.ysmjjsy.goya.component.captcha.definition.AbstractGraphicRenderer;
 import com.ysmjjsy.goya.component.captcha.enums.CaptchaCharacterEnum;
 import com.ysmjjsy.goya.component.captcha.provider.RandomProvider;
@@ -10,6 +9,7 @@ import java.awt.*;
 import java.awt.geom.CubicCurve2D;
 import java.awt.geom.QuadCurve2D;
 import java.awt.image.BufferedImage;
+import java.time.Duration;
 import java.util.List;
 
 /**
@@ -20,8 +20,8 @@ import java.util.List;
  */
 public abstract class AbstractBaseGraphicRenderer extends AbstractGraphicRenderer {
 
-    protected AbstractBaseGraphicRenderer(ResourceProvider resourceProvider, CaptchaProperties captchaProperties) {
-        super(resourceProvider,captchaProperties);
+    protected AbstractBaseGraphicRenderer(ResourceProvider resourceProvider, Duration expire) {
+        super(resourceProvider, expire);
     }
 
     public static final int BOUND = 2;

@@ -4,7 +4,8 @@ import com.ysmjjsy.goya.component.captcha.definition.AbstractCaptcha;
 import com.ysmjjsy.goya.component.captcha.definition.ICaptchaRenderer;
 import com.ysmjjsy.goya.component.captcha.definition.Verification;
 import com.ysmjjsy.goya.component.captcha.enums.CaptchaCategoryEnum;
-import com.ysmjjsy.goya.component.captcha.exception.CaptchaHandlerNotExistException;
+import com.ysmjjsy.goya.component.captcha.exception.CaptchaErrorCode;
+import com.ysmjjsy.goya.component.captcha.exception.CaptchaException;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -25,7 +26,7 @@ public class CaptchaRendererFactory {
     public ICaptchaRenderer getRenderer(CaptchaCategoryEnum category) {
         ICaptchaRenderer captchaRenderer = handlers.get(category.getCode());
         if (ObjectUtils.isEmpty(captchaRenderer)) {
-            throw new CaptchaHandlerNotExistException();
+            throw new CaptchaException(CaptchaErrorCode.HANDLER_NOT_EXIST);
         }
 
         return captchaRenderer;

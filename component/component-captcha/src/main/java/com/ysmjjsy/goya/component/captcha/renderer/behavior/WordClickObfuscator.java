@@ -1,8 +1,8 @@
 package com.ysmjjsy.goya.component.captcha.renderer.behavior;
 
 import com.ysmjjsy.goya.component.captcha.definition.Coordinate;
-import com.ysmjjsy.goya.component.core.constants.SymbolConst;
-import com.ysmjjsy.goya.component.core.utils.GoyaRandomUtils;
+import com.ysmjjsy.goya.component.framework.common.constants.SymbolConst;
+import com.ysmjjsy.goya.component.framework.common.utils.GoyaRandomUtils;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 

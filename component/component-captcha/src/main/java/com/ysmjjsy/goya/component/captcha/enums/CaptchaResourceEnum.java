@@ -2,7 +2,7 @@ package com.ysmjjsy.goya.component.captcha.enums;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.ysmjjsy.goya.component.core.enums.IEnum;
+import com.ysmjjsy.goya.component.framework.common.enums.CodeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -21,7 +21,7 @@ import java.util.Map;
 @Getter
 @Schema(name = "验证码资源")
 @AllArgsConstructor
-public enum CaptchaResourceEnum implements IEnum<String> {
+public enum CaptchaResourceEnum implements CodeEnum<String> {
 
     /**
      * 验证码资源类型
@@ -41,7 +41,7 @@ public enum CaptchaResourceEnum implements IEnum<String> {
                             "index", anEnum.ordinal(),
                             "code", anEnum.getCode(),
                             "name", anEnum.name(),
-                            "description", anEnum.getDescription()
+                            "label", anEnum.getLabel()
                     ));
         }
     }
@@ -50,7 +50,7 @@ public enum CaptchaResourceEnum implements IEnum<String> {
     @JsonValue
     private final String code;
     @Schema(name = "文字")
-    private final String description;
+    private final String label;
 
     @JsonCreator
     public static CaptchaResourceEnum getByCode(String code) {

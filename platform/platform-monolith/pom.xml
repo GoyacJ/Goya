@@ -30,6 +30,11 @@
 <!--            <groupId>com.ysmjjsy.goya</groupId>-->
 <!--            <artifactId>component-rabbitmq</artifactId>-->
 <!--        </dependency>-->
+
+        <dependency>
+            <groupId>com.ysmjjsy.goya</groupId>
+            <artifactId>component-captcha</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

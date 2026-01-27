@@ -13,7 +13,7 @@ import com.ysmjjsy.goya.component.captcha.provider.ResourceProvider;
 public class SpecGifCaptchaRenderer extends AbstractGifGraphicRenderer {
 
     public SpecGifCaptchaRenderer(ResourceProvider resourceProvider, CaptchaProperties captchaProperties) {
-        super(resourceProvider,captchaProperties);
+        super(resourceProvider,captchaProperties.graphics().expire());
     }
 
     @Override

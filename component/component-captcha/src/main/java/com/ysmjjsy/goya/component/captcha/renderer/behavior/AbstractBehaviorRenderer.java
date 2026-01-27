@@ -1,12 +1,12 @@
 package com.ysmjjsy.goya.component.captcha.renderer.behavior;
 
 
-import com.ysmjjsy.goya.component.captcha.configuration.properties.CaptchaProperties;
 import com.ysmjjsy.goya.component.captcha.definition.AbstractRenderer;
 import com.ysmjjsy.goya.component.captcha.provider.ResourceProvider;
 
 import java.awt.*;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 
 /**
  * <p>验证码通用基础类 </p>
@@ -18,8 +18,8 @@ import java.nio.charset.StandardCharsets;
  */
 public abstract class AbstractBehaviorRenderer<K, V> extends AbstractRenderer<K, V> {
 
-    protected AbstractBehaviorRenderer(ResourceProvider resourceProvider, CaptchaProperties captchaProperties) {
-        super(resourceProvider,captchaProperties);
+    protected AbstractBehaviorRenderer(ResourceProvider resourceProvider, String cacheName, Duration expire) {
+        super(resourceProvider, cacheName, expire);
     }
 
     protected int getEnOrZhLength(String s) {

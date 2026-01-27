@@ -1,9 +1,10 @@
 package com.ysmjjsy.goya.component.captcha.exception;
 
-import com.ysmjjsy.goya.component.core.exception.CommonException;
-import com.ysmjjsy.goya.component.framework.exception.code.HttpErrorCodeEnum;
+import com.ysmjjsy.goya.component.framework.common.error.ErrorCode;
+import com.ysmjjsy.goya.component.framework.common.exception.GoyaException;
 
 import java.io.Serial;
+import java.util.Map;
 
 /**
  * <p>验证码异常</p>
@@ -11,41 +12,32 @@ import java.io.Serial;
  * @author goya
  * @since 2025/12/9 10:22
  */
-public class CaptchaException extends CommonException {
+public class CaptchaException extends GoyaException {
 
     @Serial
     private static final long serialVersionUID = -6924793489392216408L;
 
-    public CaptchaException() {
-        super(HttpErrorCodeEnum.CAPTCHA_ERROR);
-    }
-
-    public CaptchaException(HttpErrorCodeEnum code) {
-        super(code);
-    }
-
-    public CaptchaException(String message) {
-        super(message);
+    public CaptchaException(String userMessage) {
+        super(userMessage);
     }
 
     public CaptchaException(Throwable cause) {
         super(cause);
     }
 
-    public CaptchaException(HttpErrorCodeEnum code, String message) {
-        super(code, message);
+    public CaptchaException(ErrorCode errorCode, String userMessage) {
+        super(errorCode, userMessage);
     }
 
-    public CaptchaException(HttpErrorCodeEnum code, Throwable cause) {
-        super(code, cause);
+    public CaptchaException(ErrorCode errorCode) {
+        super(errorCode);
     }
 
-    public CaptchaException(String message, Throwable cause) {
-        super(message, cause);
+    public CaptchaException(ErrorCode errorCode, Throwable cause) {
+        super(errorCode, cause);
     }
 
-    public CaptchaException(HttpErrorCodeEnum code, String message, Throwable cause) {
-        super(code, message, cause);
+    public CaptchaException(ErrorCode errorCode, String userMessage, String debugMessage, Object[] args, Map<String, Object> metadata, Throwable cause) {
+        super(errorCode, userMessage, debugMessage, args, metadata, cause);
     }
-
 }
