@@ -76,7 +76,7 @@ public class ThirdPartService {
     private Map<String, AuthConfig> getConfigs() {
         Map<String, AuthConfig> configs = thirdPartCheckCacheManager.getThirdPart().configs();
         if (MapUtils.isEmpty(configs)) {
-            throw new SocialException();
+            throw new SocialException("not found auth config");
         }
         return configs;
     }
@@ -89,7 +89,7 @@ public class ThirdPartService {
         AuthConfig authConfig = configs.get(authDefaultSource.name());
         // 找不到对应关系，直接返回空
         if (ObjectUtils.isEmpty(authConfig)) {
-            throw new SocialException();
+            throw new SocialException("not found auth config");
         }
         return authConfig;
     }

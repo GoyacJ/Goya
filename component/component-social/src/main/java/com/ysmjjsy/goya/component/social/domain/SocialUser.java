@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.social.domain;
 
-import com.ysmjjsy.goya.component.framework.context.GoyaUser;
+import com.ysmjjsy.goya.component.framework.core.context.GoyaUser;
 import com.ysmjjsy.goya.component.social.enums.GenderEnum;
 import com.ysmjjsy.goya.component.social.enums.SocialTypeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;

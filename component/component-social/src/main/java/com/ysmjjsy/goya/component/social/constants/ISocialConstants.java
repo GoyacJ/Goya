@@ -1,7 +1,7 @@
 package com.ysmjjsy.goya.component.social.constants;
 
-import com.ysmjjsy.goya.component.cache.core.constants.CacheConst;
-import com.ysmjjsy.goya.component.framework.constants.PropertyConst;
+import com.ysmjjsy.goya.component.framework.cache.constants.CacheConst;
+import com.ysmjjsy.goya.component.framework.core.constants.PropertyConst;
 
 /**
  * <p></p>

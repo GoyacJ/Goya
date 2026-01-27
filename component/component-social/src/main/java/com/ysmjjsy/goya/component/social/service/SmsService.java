@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.social.service;
 
-import com.ysmjjsy.goya.component.core.constants.DefaultConst;
+import com.ysmjjsy.goya.component.framework.common.constants.DefaultConst;
 import com.ysmjjsy.goya.component.social.cache.SmsCheckCacheManager;
 import com.ysmjjsy.goya.component.social.exception.SocialException;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +31,8 @@ public class SmsService {
      * @return 结果
      */
     public boolean sendSms(String phoneNumber) {
-        String code = smsCheckCacheManager.put(phoneNumber);
+        String code = smsCheckCacheManager.generateValue();
+        smsCheckCacheManager.put(phoneNumber, code);
         boolean result;
         if (Boolean.TRUE.equals(smsCheckCacheManager.getSms().sandbox())) {
             result = true;
@@ -59,8 +60,8 @@ public class SmsService {
             throw new SocialException("params is null");
         }
 
-        boolean checked = smsCheckCacheManager.check(phoneNumber, code);
-        smsCheckCacheManager.evict(phoneNumber);
+        boolean checked = smsCheckCacheManager.checkEquals(phoneNumber, code);
+        smsCheckCacheManager.delete(phoneNumber);
         return checked;
     }
 }
