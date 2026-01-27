@@ -15,7 +15,6 @@
 
     <modules>
         <module>component-redis</module>
-        <module>component-oss</module>
         <module>component-captcha</module>
         <module>component-security</module>
         <module>component-social</module>
@@ -24,6 +23,9 @@
         <module>component-kafka</module>
         <module>component-rabbitmq</module>
         <module>component-service</module>
+        <module>component-oss-aliyun</module>
+        <module>component-oss-s3</module>
+        <module>component-oss-minio</module>
     </modules>
 
 

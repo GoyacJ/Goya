@@ -5,17 +5,25 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.ysmjjsy.goya</groupId>
-        <artifactId>component-framework</artifactId>
+        <artifactId>component</artifactId>
         <version>${revision}</version>
     </parent>
 
-    <artifactId>framework-oss</artifactId>
+    <artifactId>component-oss-minio</artifactId>
 
     <dependencies>
         <dependency>
             <groupId>com.ysmjjsy.goya</groupId>
-            <artifactId>framework-core</artifactId>
+            <artifactId>framework-boot-starter</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.minio</groupId>
+            <artifactId>minio</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.minio</groupId>
+            <artifactId>minio-admin</artifactId>
         </dependency>
     </dependencies>
-
 </project>

@@ -159,27 +159,17 @@
             </dependency>
             <dependency>
                 <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>component-log</artifactId>
+                <artifactId>component-oss-aliyun</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>oss-core</artifactId>
+                <artifactId>component-oss-s3</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>oss-aliyun</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>oss-s3</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>oss-minio</artifactId>
+                <artifactId>component-oss-minio</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
