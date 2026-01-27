@@ -3,6 +3,7 @@ package com.ysmjjsy.goya.component.framework.core.context;
 import com.ysmjjsy.goya.component.framework.common.constants.SymbolConst;
 import com.ysmjjsy.goya.component.framework.common.enums.RegexPoolEnum;
 import com.ysmjjsy.goya.component.framework.common.utils.GoyaStringUtils;
+import com.ysmjjsy.goya.component.framework.core.constants.PropertyConst;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Strings;
@@ -1153,7 +1154,7 @@ public class SpringContext implements ApplicationContextInitializer<Configurable
      * @return 名称
      */
     public static String getApplicationName() {
-        return context.getApplicationName();
+        return getProperty(PropertyConst.PROPERTY_SPRING_APPLICATION_NAME);
     }
 
     /**

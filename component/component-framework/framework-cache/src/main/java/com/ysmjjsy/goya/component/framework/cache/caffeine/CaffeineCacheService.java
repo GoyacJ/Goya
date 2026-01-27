@@ -68,7 +68,8 @@ public class CaffeineCacheService implements CacheService {
         if (type != null) {
             return cache.get(internalKey, type);
         }
-        return (V) cache.get(internalKey);
+        Cache.ValueWrapper vw = cache.get(internalKey);
+        return vw != null ? (V) vw.get() : null;
     }
 
     @Override
@@ -170,11 +171,13 @@ public class CaffeineCacheService implements CacheService {
 
         String internalKey = buildInternalKey(cacheName, key);
 
+
         V existed;
         if (type != null) {
             existed = cache.get(internalKey, type);
         } else {
-            existed = (V) cache.get(internalKey);
+            Cache.ValueWrapper vw = cache.get(internalKey);
+            existed = vw != null ? (V) vw.get() : null;
         }
 
         if (existed != null) {

@@ -3,8 +3,10 @@ package com.ysmjjsy.goya.component.cache.redis.cache;
 import com.ysmjjsy.goya.component.cache.redis.autoconfigure.properties.GoyaRedisProperties;
 import com.ysmjjsy.goya.component.framework.cache.api.CacheService;
 import com.ysmjjsy.goya.component.framework.cache.key.CacheKeySerializer;
+import com.ysmjjsy.goya.component.framework.core.json.GoyaJson;
 import lombok.RequiredArgsConstructor;
 import org.redisson.api.*;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.time.Duration;
 import java.util.*;
@@ -371,6 +373,18 @@ public class RedissonCacheService implements CacheService {
         if (type.isInstance(raw)) {
             return type.cast(raw);
         }
+
+        if (raw instanceof Map) {
+            try {
+                JsonMapper mapper = GoyaJson.getJsonMapper();
+                if (mapper != null) {
+                    return mapper.convertValue(raw, type);
+                }
+            } catch (IllegalArgumentException e) {
+                // 转换失败，抛出原始异常
+            }
+        }
+
         throw new IllegalStateException("缓存值类型不匹配，rawType=" + raw.getClass().getName()
                 + " targetType=" + type.getName());
     }
