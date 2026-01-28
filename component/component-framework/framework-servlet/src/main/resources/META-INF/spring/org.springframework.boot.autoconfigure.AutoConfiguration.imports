@@ -9,4 +9,3 @@ com.ysmjjsy.goya.component.framework.servlet.autoconfigure.ServletSecureAutoConf
 com.ysmjjsy.goya.component.framework.servlet.autoconfigure.ServletXssAutoConfiguration
 com.ysmjjsy.goya.component.framework.servlet.autoconfigure.ServletWebMvcAutoConfiguration
 com.ysmjjsy.goya.component.framework.servlet.autoconfigure.ServletEnumAutoConfiguration
-com.ysmjjsy.goya.component.framework.servlet.autoconfigure.ServletTenantAutoConfiguration

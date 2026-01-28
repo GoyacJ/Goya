@@ -65,6 +65,19 @@ public class GoyaException extends RuntimeException implements Serializable {
         this(CommonErrorCode.SYSTEM_ERROR, null, null, null, null, cause);
     }
 
+
+    /**
+     * 构造一个仅包含错误码的异常。
+     *
+     * <p>该构造函数会使用错误码默认文案作为异常 message。</p>
+     *
+     * @param userMessage 错误信息
+     * @param cause       错误
+     */
+    public GoyaException(String userMessage, Throwable cause) {
+        this(CommonErrorCode.SYSTEM_ERROR, userMessage, null, null, null, cause);
+    }
+
     /**
      * 构造一个仅包含错误码的异常。
      *
