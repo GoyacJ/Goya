@@ -1,1 +1,3 @@
+com.ysmjjsy.goya.component.mybatisplus.configuration.MybatisPlusTenantAutoConfiguration
+com.ysmjjsy.goya.component.mybatisplus.configuration.MybatisPlusPermissionAutoConfiguration
 com.ysmjjsy.goya.component.mybatisplus.configuration.GoyaMybatisPlusAutoConfiguration

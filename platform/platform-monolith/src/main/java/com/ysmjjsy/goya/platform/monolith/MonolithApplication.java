@@ -12,7 +12,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class MonolithApplication {
 
-    static void main() {
+   static void main() {
         SpringApplication.run(MonolithApplication.class);
     }
 }
