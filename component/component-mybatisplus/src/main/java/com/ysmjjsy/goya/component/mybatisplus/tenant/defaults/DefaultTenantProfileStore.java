@@ -3,16 +3,23 @@ package com.ysmjjsy.goya.component.mybatisplus.tenant.defaults;
 import com.ysmjjsy.goya.component.mybatisplus.tenant.TenantMode;
 import com.ysmjjsy.goya.component.mybatisplus.tenant.TenantProfile;
 import com.ysmjjsy.goya.component.mybatisplus.tenant.TenantProfileStore;
+import com.ysmjjsy.goya.component.mybatisplus.tenant.entity.TenantProfileEntity;
+import com.ysmjjsy.goya.component.mybatisplus.tenant.mapper.TenantProfileMapper;
+import lombok.RequiredArgsConstructor;
+import org.springframework.util.StringUtils;
 
 /**
  * <p>默认租户配置存储</p>
  *
- * <p>返回共享库 + 启用 tenantLine 的默认配置。</p>
+ * <p>基于 tenant_profile 表读取租户配置。</p>
  *
  * @author goya
  * @since 2026/1/29
  */
+@RequiredArgsConstructor
 public class DefaultTenantProfileStore implements TenantProfileStore {
+
+    private final TenantProfileMapper mapper;
 
     /**
      * 加载租户配置。
@@ -22,7 +29,17 @@ public class DefaultTenantProfileStore implements TenantProfileStore {
      */
     @Override
     public TenantProfile load(String tenantId) {
-        return new TenantProfile(tenantId, TenantMode.CORE_SHARED, "core", true, 0L);
+        if (!StringUtils.hasText(tenantId)) {
+            return null;
+        }
+        TenantProfileEntity entity = mapper.selectById(tenantId);
+        if (entity == null) {
+            return null;
+        }
+        TenantMode mode = entity.getMode();
+        long version = entity.getTenantVersion() == null ? 0L : entity.getTenantVersion();
+        boolean tenantLineEnabled = entity.getTenantLineEnabled() == null || entity.getTenantLineEnabled();
+        return new TenantProfile(entity.getTenantId(), mode, entity.getDsKey(), tenantLineEnabled, version);
     }
 
     /**
@@ -33,6 +50,10 @@ public class DefaultTenantProfileStore implements TenantProfileStore {
      */
     @Override
     public long version(String tenantId) {
-        return 0L;
+        if (!StringUtils.hasText(tenantId)) {
+            return 0L;
+        }
+        TenantProfileEntity entity = mapper.selectById(tenantId);
+        return entity == null || entity.getTenantVersion() == null ? 0L : entity.getTenantVersion();
     }
 }

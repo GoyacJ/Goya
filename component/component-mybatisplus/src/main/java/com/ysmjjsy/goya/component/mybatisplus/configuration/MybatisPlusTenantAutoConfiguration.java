@@ -9,8 +9,11 @@ import com.ysmjjsy.goya.component.mybatisplus.tenant.TenantResolver;
 import com.ysmjjsy.goya.component.mybatisplus.tenant.TenantShardDecider;
 import com.ysmjjsy.goya.component.mybatisplus.tenant.aspect.TenantRoutingAspect;
 import com.ysmjjsy.goya.component.mybatisplus.tenant.defaults.DefaultTenantDataSourceRouter;
+import com.ysmjjsy.goya.component.mybatisplus.tenant.defaults.DefaultTenantProfileStore;
+import com.ysmjjsy.goya.component.mybatisplus.tenant.defaults.DefaultTenantShardDecider;
 import com.ysmjjsy.goya.component.mybatisplus.tenant.filter.GoyaTenantRoutingFilter;
 import com.ysmjjsy.goya.component.mybatisplus.tenant.handler.GoyaTenantLineHandler;
+import com.ysmjjsy.goya.component.mybatisplus.tenant.mapper.TenantProfileMapper;
 import com.ysmjjsy.goya.component.mybatisplus.tenant.web.WebTenantResolver;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +23,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.mybatis.spring.annotation.MapperScan;
 
 /**
  * <p>多租户自动配置</p>
@@ -29,6 +33,7 @@ import org.springframework.context.annotation.Bean;
  */
 @Slf4j
 @AutoConfiguration
+@MapperScan("com.ysmjjsy.goya.component.mybatisplus.tenant.mapper")
 @EnableConfigurationProperties(GoyaMybatisPlusProperties.class)
 @ConditionalOnProperty(prefix = MybatisPlusConst.PROPERTY_MYBATIS_PLUS + ".tenant", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class MybatisPlusTenantAutoConfiguration {
@@ -62,6 +67,35 @@ public class MybatisPlusTenantAutoConfiguration {
         DefaultTenantDataSourceRouter defaultTenantDataSourceRouter = new DefaultTenantDataSourceRouter();
         log.trace("[Goya] |- component [mybatis-plus] MybatisPlusTenantAutoConfiguration |- bean [defaultTenantDataSourceRouter] register.");
         return defaultTenantDataSourceRouter;
+    }
+
+    /**
+     * 默认租户配置存储。
+     *
+     * @param mapper TenantProfileMapper
+     * @return TenantProfileStore
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public TenantProfileStore tenantProfileStore(TenantProfileMapper mapper) {
+        DefaultTenantProfileStore store = new DefaultTenantProfileStore(mapper);
+        log.trace("[Goya] |- component [mybatis-plus] MybatisPlusTenantAutoConfiguration |- bean [tenantProfileStore] register.");
+        return store;
+    }
+
+    /**
+     * 默认租户模式决策器。
+     *
+     * @param profileStore 配置存储
+     * @param properties 配置项
+     * @return TenantShardDecider
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public TenantShardDecider tenantShardDecider(TenantProfileStore profileStore, GoyaMybatisPlusProperties properties) {
+        DefaultTenantShardDecider decider = new DefaultTenantShardDecider(profileStore, properties.tenant());
+        log.trace("[Goya] |- component [mybatis-plus] MybatisPlusTenantAutoConfiguration |- bean [tenantShardDecider] register.");
+        return decider;
     }
 
     /**

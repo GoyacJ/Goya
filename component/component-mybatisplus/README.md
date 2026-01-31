@@ -150,6 +150,15 @@ Goya 需要一个企业级 MyBatis Plus 组件，统一数据访问治理，并�
 补充说明：
 - data_resource 中 `resource_type=FIELD` 的记录用于 DSL 字段白名单校验（父资源为表）。
 
+### 6.1 租户配置表
+默认租户配置读取 `tenant_profile` 表：
+- tenant_id：租户 ID（主键）
+- mode：CORE_SHARED / DEDICATED_DB
+- ds_key：数据源 key
+- tenant_line_enabled：是否启用 tenant 过滤
+- version：配置版本号
+- updated_at：更新时间
+
 #### 4.3 执行策略
 - Deny 优先，默认拒绝
 - 明确拒绝返回 1=0
@@ -175,6 +184,7 @@ Goya 需要一个企业级 MyBatis Plus 组件，统一数据访问治理，并�
 - goya.mybatis-plus.permission.apply-to-write
 - goya.mybatis-plus.safety.block-attack
 - goya.mybatis-plus.observability.enabled
+- goya.mybatis-plus.tenant.default-mode
 
 ### 9. 失败策略
 - tenant 缺失：requireTenant=true 时拒绝

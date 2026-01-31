@@ -1,6 +1,7 @@
 package com.ysmjjsy.goya.component.mybatisplus.configuration.properties;
 
 import com.ysmjjsy.goya.component.mybatisplus.constants.MybatisPlusConst;
+import com.ysmjjsy.goya.component.mybatisplus.tenant.TenantMode;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
@@ -56,7 +57,13 @@ public record GoyaMybatisPlusProperties(
               静态忽略表（不追加 tenant 条件）。
              */
             @DefaultValue
-            String[] ignoreTables
+            String[] ignoreTables,
+
+            /*
+              默认租户模式（CORE_SHARED/DEDICATED_DB）。
+             */
+            @DefaultValue("CORE_SHARED")
+            TenantMode defaultMode
     ) {
     }
 
