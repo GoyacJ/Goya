@@ -34,7 +34,7 @@
         </dependency>
         <dependency>
             <groupId>com.ysmjjsy.goya</groupId>
-            <artifactId>framework-servlet</artifactId>
+            <artifactId>framework-security</artifactId>
         </dependency>
     </dependencies>
 

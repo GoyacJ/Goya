@@ -1,56 +1,50 @@
 package com.ysmjjsy.goya.component.mybatisplus.context;
 
+import lombok.experimental.UtilityClass;
+
 /**
  * <p>租户上下文（线程级）</p>
- * 统一管理当前线程的租户信息与数据源路由结果，避免在系统中散落多个 ThreadLocal。
- *
- * <p><b>使用约束：</b>
- * <ul>
- *   <li>任何数据库操作前必须存在 TenantContext（生产默认 requireTenant=true）</li>
- *   <li>dsKey 必须在事务开始前确定并写入 dynamic-datasource 上下文</li>
- *   <li>请求结束必须在 finally 清理，防止线程复用污染</li>
- * </ul>
- *
- * <p><b>禁止：</b>
- * <ul>
- *   <li>业务层随意 set() / clear()</li>
- *   <li>在 Mapper/Service 内部临时篡改租户</li>
- * </ul>
  *
  * @author goya
- * @since 2026/1/28 21:55
+ * @since 2026/1/29
  */
-public final class TenantContext {
+@UtilityClass
+public class TenantContext {
 
-    private static final ThreadLocal<TenantContextValue> HOLDER = new ThreadLocal<>();
-
-    private TenantContext() {
-    }
+    private static final ThreadLocal<TenantContextValue> CONTEXT = new ThreadLocal<>();
 
     /**
-     * 写入当前线程租户上下文。
+     * 设置租户上下文。
      *
-     * @param value 租户上下文值
+     * @param value 上下文值
      */
-    public static void set(TenantContextValue value) {
-        HOLDER.set(value);
+    public void set(TenantContextValue value) {
+        CONTEXT.set(value);
     }
 
     /**
-     * 获取当前线程租户上下文。
+     * 获取租户上下文。
      *
-     * @return 租户上下文值；若未设置则返回 null
+     * @return 上下文值
      */
-    public static TenantContextValue get() {
-        return HOLDER.get();
+    public TenantContextValue get() {
+        TenantContextValue value = CONTEXT.get();
+        return value == null ? TenantContextValue.empty() : value;
     }
 
     /**
-     * 清理当前线程租户上下文。
-     * <p>
-     * 必须在 finally 调用，防止线程复用时串租户。
+     * 获取租户 ID。
+     *
+     * @return tenantId
      */
-    public static void clear() {
-        HOLDER.remove();
+    public String getTenantId() {
+        return get().tenantId();
+    }
+
+    /**
+     * 清理租户上下文。
+     */
+    public void clear() {
+        CONTEXT.remove();
     }
 }

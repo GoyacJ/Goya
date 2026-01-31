@@ -23,8 +23,8 @@ Goya 是一个基于 **Spring Boot 4.0.1** 和 **Java 25** 构建的企业级微
 
 ### 架构组成
 
-- **Goya/** - Java 后端框架
-- **Goya-Web/** - Vue 3 前端管理系统
+- **Goya/** - Java 后端框架（本目录）
+- **goya-web-ui/** - Vue 3 前端管理系统
 
 ## ✨ 核心特性
 
@@ -44,10 +44,10 @@ Goya 是一个基于 **Spring Boot 4.0.1** 和 **Java 25** 构建的企业级微
 - **多模型支持**：OpenAI、通义千问、本地模型
 
 ### 🚀 微服务组件
-- **缓存**：Caffeine / Redis / 多级缓存
-- **消息总线**：Kafka / Stream 抽象
-- **数据库**：MyBatis Plus / JPA 双引擎
-- **对象存储**：阿里云 OSS / MinIO / S3
+- **缓存**：Redis（分布式锁、布隆过滤器、延迟队列、限流器）
+- **消息总线**：Kafka / RabbitMQ
+- **数据库**：MyBatis Plus 增强
+- **对象存储**：阿里云 OSS / MinIO / AWS S3
 - **验证码**：算术 / 滑块 / 拼图多种类型
 - **社交登录**：微信小程序 / 第三方平台
 - **日志审计**：操作日志 / 审计追踪
@@ -55,8 +55,8 @@ Goya 是一个基于 **Spring Boot 4.0.1** 和 **Java 25** 构建的企业级微
 ### 🏗️ 技术架构
 - **Java 25** + **Spring Boot 4.0.1** + **Spring Cloud 2025.1.0**
 - **Spring Security 7** + **Spring Authorization Server**
-- **MyBatis Plus 3.5.15** / **Spring Data JPA**
-- **Redisson 4.0.0** + **Caffeine**
+- **MyBatis Plus 3.5.15**
+- **Redisson 4.0.0**
 - **MapStruct 1.6.3** + **Lombok 1.18.42**
 - **Nacos 3.1.1** 注册中心 + 配置中心
 
@@ -64,54 +64,62 @@ Goya 是一个基于 **Spring Boot 4.0.1** 和 **Java 25** 构建的企业级微
 
 ```
 Goya/
-├── Goya/                        # 后端框架
-│   ├── bom/                     # 依赖版本管理 BOM
-│   ├── component/               # 公共组件
-│   │   ├── component-core/      # 核心工具类
-│   │   ├── component-framework/ # 框架基础
-│   │   ├── component-web/       # Web 增强
-│   │   ├── component-security/  # 安全模块
-│   │   │   ├── security-core/           # 核心领域模型
-│   │   │   ├── security-authentication/ # 认证
-│   │   │   ├── security-authorization/  # 资源服务器
-│   │   │   └── security-oauth2/         # 授权服务器
-│   │   ├── component-cache/     # 缓存模块
-│   │   ├── component-bus/       # 消息总线
-│   │   ├── component-database/  # 数据库增强
-│   │   ├── component-oss/       # 对象存储
-│   │   ├── component-captcha/   # 验证码
-│   │   ├── component-social/    # 社交登录
-│   │   └── component-log/       # 日志模块
-│   ├── ai/                      # AI 模块
-│   │   ├── ai-spring/           # Spring AI 集成
-│   │   ├── ai-model/            # 模型管理
-│   │   ├── ai-rag/              # RAG 实现
-│   │   ├── ai-mcp/              # MCP 协议
-│   │   └── ai-video/            # 视频处理
-│   ├── platform/                # 平台应用
-│   │   ├── platform-monolith/   # 单体应用
-│   │   └── platform-distributed/# 分布式应用
-│   ├── cloud/                   # 云原生支持
-│   └── doc/                     # 文档
-│       ├── docker/              # Docker 编排
-│       ├── maven/               # Maven 配置
-│       └── security/            # 安全方案文档
-└── Goya-Web/                    # 前端管理系统（Vue 3）
-    ├── apps/                    # 应用
-    │   ├── web-antd/            # Ant Design Vue 版本
-    │   ├── web-ele/             # Element Plus 版本
-    │   ├── web-naive/           # Naive UI 版本
-    │   └── backend-mock/        # Mock 服务
-    ├── packages/                # 共享包
-    │   ├── @core/               # 核心包
-    │   ├── effects/             # 副作用
-    │   ├── stores/              # 状态管理
-    │   ├── types/               # 类型定义
-    │   └── utils/               # 工具函数
-    └── internal/                # 内部工具
-        ├── lint-configs/        # Lint 配置
-        ├── vite-config/         # Vite 配置
-        └── tsconfig/            # TypeScript 配置
+├── bom/                           # 依赖版本管理 BOM
+├── component/                     # 公共组件
+│   ├── component-framework/       # 框架基础（聚合模块）
+│   │   ├── framework-core/        # 核心工具类、基础定义
+│   │   ├── framework-common/      # 公共组件、工具类
+│   │   ├── framework-masker/      # 数据脱敏
+│   │   ├── framework-crypto/      # 加密解密工具
+│   │   ├── framework-cache/       # 缓存抽象层
+│   │   ├── framework-bus/         # 消息总线抽象
+│   │   ├── framework-log/         # 日志增强
+│   │   ├── framework-oss/         # 对象存储抽象
+│   │   ├── framework-servlet/     # Servlet 增强
+│   │   └── framework-boot-starter/# 自动配置启动器
+│   ├── component-redis/           # Redis 实现（Redisson）
+│   │   ├── cache/                 # 缓存服务
+│   │   └── support/               # 分布式锁/布隆过滤器/延迟队列/限流器
+│   ├── component-kafka/           # Kafka 消息总线实现
+│   ├── component-rabbitmq/        # RabbitMQ 消息总线实现
+│   ├── component-mybatisplus/     # MyBatis Plus 增强
+│   ├── component-captcha/         # 验证码
+│   ├── component-security/        # 安全模块
+│   │   ├── security-core/         # 核心领域模型、SPI 接口
+│   │   ├── security-authentication/ # 认证（密码/短信/社交）
+│   │   ├── security-authorization/  # 资源服务器（JWT验证）
+│   │   └── security-oauth2/       # 授权服务器（OAuth2.1）
+│   ├── component-social/          # 社交登录
+│   ├── component-oss-aliyun/      # 阿里云 OSS 实现
+│   ├── component-oss-s3/          # AWS S3 实现
+│   ├── component-oss-minio/       # MinIO 实现
+│   └── component-service/         # 服务抽象
+├── ai/                            # AI 模块
+│   ├── ai-spring/                 # Spring AI 集成
+│   ├── ai-model/                  # 模型管理
+│   ├── ai-rag/                    # RAG 实现
+│   ├── ai-mcp/                    # MCP 协议
+│   └── ai-video/                  # 视频处理
+├── platform/                      # 平台应用
+│   ├── platform-monolith/         # 单体应用
+│   └── platform-distributed/      # 分布式应用
+├── cloud/                         # 云原生支持
+├── deploy/                        # 部署配置
+│   ├── docker/                    # Docker Compose 配置
+│   └── maven/                     # Maven 配置
+├── docs/                          # 项目文档
+│   ├── architecture/              # 架构文档
+│   ├── guides/                    # 开发指南
+│   ├── requirements/              # 需求文档
+│   └── progress/                  # 开发进度
+└── goya-web-ui/                   # Vue 3 前端管理系统
+    ├── apps/                      # 应用
+    │   ├── web-antd/              # Ant Design Vue 版本
+    │   ├── web-ele/               # Element Plus 版本
+    │   ├── web-naive/             # Naive UI 版本
+    │   └── backend-mock/          # Mock 服务
+    ├── packages/                  # 共享包
+    └── internal/                  # 内部工具
 ```
 
 ## 🚀 快速开始
@@ -128,13 +136,11 @@ Goya/
 ### 后端启动
 
 ```bash
-cd Goya
-
 # 安装依赖
 mvn clean install -DskipTests
 
 # 启动认证服务器
-cd platform/platform-monolith/auth-server
+cd platform/platform-monolith
 mvn spring-boot:run
 ```
 
@@ -143,7 +149,7 @@ mvn spring-boot:run
 ### 前端启动
 
 ```bash
-cd Goya-Web
+cd goya-web-ui
 
 # 安装依赖
 pnpm install
@@ -161,7 +167,7 @@ pnpm dev:naive   # Naive UI
 ### Docker 快速启动
 
 ```bash
-cd Goya/doc/docker/docker-compose/basic
+cd deploy/docker/docker-compose/basic
 docker-compose up -d
 ```
 
@@ -169,52 +175,55 @@ docker-compose up -d
 
 ## 🎯 核心模块详解
 
+### 框架基础 (component-framework)
+
+提供框架核心能力，包含 10 个子模块：
+
+| 模块 | 说明 |
+|------|------|
+| framework-core | 核心工具类、基础定义、响应封装 |
+| framework-common | 公共组件、通用工具类 |
+| framework-masker | 数据脱敏（手机号、身份证、邮箱等） |
+| framework-crypto | 加密解密工具（AES、RSA、SM4等） |
+| framework-cache | 缓存抽象层、统一缓存接口 |
+| framework-bus | 消息总线抽象、事件发布订阅 |
+| framework-log | 日志增强、操作日志、审计日志 |
+| framework-oss | 对象存储抽象、统一存储接口 |
+| framework-servlet | Servlet 增强、XSS防护、请求加解密 |
+| framework-boot-starter | 自动配置启动器 |
+
+### Redis 模块 (component-redis)
+
+基于 Redisson 实现的 Redis 增强功能：
+
+- **缓存服务**：统一缓存操作接口
+- **分布式锁**：可重入锁、公平锁、读写锁
+- **布隆过滤器**：防止缓存穿透
+- **延迟队列**：可靠延迟队列实现
+- **限流器**：基于令牌桶的分布式限流
+- **Topic 消息**：发布订阅模式
+
 ### 安全模块 (component-security)
 
-基于 **Spring Security 7** 和 **Spring Authorization Server** 构建的完整认证授权解决方案。
+基于 **Spring Security 7** 和 **Spring Authorization Server** 构建：
 
-**核心能力**：
-- OAuth2.1 授权服务器（Authorization Code + PKCE）
-- OIDC Provider（支持 Discovery）
-- 资源服务器（JWT 验证 + 黑名单）
-- 多种登录方式（密码 / 短信 / 社交）
-- 多租户 Issuer 隔离
-- Token 管理（JWT Access Token + Opaque Refresh Token）
+- **security-core**：核心领域模型（SecurityUser、SPI 接口）
+- **security-authentication**：多种认证方式（密码/短信/社交）
+- **security-authorization**：资源服务器（JWT 验证、黑名单）
+- **security-oauth2**：授权服务器（OAuth2.1 + OIDC）
 
-**详细文档**：[企业级认证授权方案](./Goya/doc/security/enterprise-auth-solution.md)
+**详细文档**：[企业级认证授权方案](./docs/requirements/features/auth-system.md)
 
 ### AI 模块 (ai/)
 
-整合 **Spring AI** 和 **LangChain4j**，提供开箱即用的 AI 能力。
+整合 **Spring AI** 和 **LangChain4j**，提供开箱即用的 AI 能力：
 
-**核心能力**：
 - 多模型统一接口
 - RAG 检索增强生成
 - Prompt 管理
 - Function Calling
 - MCP 协议支持
-- 视频 AI 分析（基于 FFmpeg + OpenCV）
-
-### 缓存模块 (component-cache)
-
-多级缓存解决方案，支持 Caffeine 本地缓存 + Redis 分布式缓存。
-
-**核心能力**：
-- 统一缓存接口
-- 自动缓存同步（Redis Pub/Sub）
-- 缓存预热和失效策略
-- 缓存穿透/击穿/雪崩防护
-
-### 数据库模块 (component-database)
-
-提供 MyBatis Plus 和 JPA 双引擎支持。
-
-**核心能力**：
-- 动态数据源切换
-- 多租户数据隔离
-- 审计字段自动填充
-- SQL 监控（P6Spy）
-- 支持 MySQL、PostgreSQL、OpenGauss、TDengine 等
+- 视频 AI 分析
 
 ## 📚 文档
 
@@ -222,7 +231,6 @@ docker-compose up -d
 - [快速开始](./docs/guides/quick-start.md)
 - [开发指南](./docs/guides/development.md)
 - [部署指南](./docs/guides/deployment.md)
-- [API 文档](./docs/api/rest-api.md)
 - [产品需求](./docs/requirements/product-requirements.md)
 - [技术需求](./docs/requirements/technical-requirements.md)
 - [开发路线图](./docs/progress/roadmap.md)
@@ -231,13 +239,9 @@ docker-compose up -d
 
 我们欢迎所有形式的贡献！请阅读 [贡献指南](./CONTRIBUTING.md) 了解详情。
 
-### 贡献者
-
-感谢所有为 Goya 做出贡献的开发者！
-
 ## 📄 开源协议
 
-本项目采用 [Apache License 2.0](./Goya/LICENSE) 开源协议。
+本项目采用 [Apache License 2.0](./LICENSE) 开源协议。
 
 ## 🔗 相关链接
 

@@ -2,7 +2,7 @@ package com.ysmjjsy.goya.component.framework.oss.service;
 
 import com.ysmjjsy.goya.component.framework.oss.arguments.object.GeneratePresignedUrlArguments;
 import com.ysmjjsy.goya.component.framework.oss.business.CreateMultipartUploadBusiness;
-import com.ysmjjsy.goya.component.framework.oss.configuration.properties.OssProperties;
+import com.ysmjjsy.goya.component.framework.oss.autoconfigure.properties.OssProperties;
 import com.ysmjjsy.goya.component.framework.oss.core.repository.OssMultipartUploadRepository;
 import com.ysmjjsy.goya.component.framework.oss.core.repository.OssObjectRepository;
 import com.ysmjjsy.goya.component.framework.oss.domain.base.ObjectWriteDomain;

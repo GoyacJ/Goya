@@ -1,31 +1,36 @@
 package com.ysmjjsy.goya.component.mybatisplus.configuration;
 
-import com.ysmjjsy.goya.component.framework.cache.api.CacheService;
+import com.baomidou.mybatisplus.extension.plugins.inner.TenantLineInnerInterceptor;
 import com.ysmjjsy.goya.component.mybatisplus.configuration.properties.GoyaMybatisPlusProperties;
 import com.ysmjjsy.goya.component.mybatisplus.constants.MybatisPlusConst;
-import com.ysmjjsy.goya.component.mybatisplus.context.AccessContextResolver;
-import com.ysmjjsy.goya.component.mybatisplus.context.TenantResolver;
-import com.ysmjjsy.goya.component.mybatisplus.tenant.*;
+import com.ysmjjsy.goya.component.mybatisplus.tenant.TenantDataSourceRouter;
+import com.ysmjjsy.goya.component.mybatisplus.tenant.TenantProfileStore;
+import com.ysmjjsy.goya.component.mybatisplus.tenant.TenantResolver;
+import com.ysmjjsy.goya.component.mybatisplus.tenant.TenantShardDecider;
+import com.ysmjjsy.goya.component.mybatisplus.tenant.aspect.TenantRoutingAspect;
+import com.ysmjjsy.goya.component.mybatisplus.tenant.defaults.DefaultTenantDataSourceRouter;
+import com.ysmjjsy.goya.component.mybatisplus.tenant.filter.GoyaTenantRoutingFilter;
+import com.ysmjjsy.goya.component.mybatisplus.tenant.handler.GoyaTenantLineHandler;
+import com.ysmjjsy.goya.component.mybatisplus.tenant.web.WebTenantResolver;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-
-import java.time.Duration;
 
 /**
- * <p></p>
+ * <p>多租户自动配置</p>
  *
  * @author goya
  * @since 2026/1/28 22:22
  */
 @Slf4j
 @AutoConfiguration
+@EnableConfigurationProperties(GoyaMybatisPlusProperties.class)
 @ConditionalOnProperty(prefix = MybatisPlusConst.PROPERTY_MYBATIS_PLUS + ".tenant", name = "enabled", havingValue = "true", matchIfMissing = true)
-@ComponentScan("com.ysmjjsy.goya.component.mybatisplus.tenant.profile")
 public class MybatisPlusTenantAutoConfiguration {
 
     @PostConstruct
@@ -33,73 +38,103 @@ public class MybatisPlusTenantAutoConfiguration {
         log.debug("[Goya] |- component [mybatis-plus] MybatisPlusTenantAutoConfiguration auto configure.");
     }
 
-    @Bean
-    public TenantResolver headerTenantResolver() {
-        HeaderTenantResolver headerTenantResolver = new HeaderTenantResolver();
-        log.trace("[Goya] |- component [mybatis-plus] MybatisPlusTenantAutoConfiguration |- bean [headerTenantResolver] register.");
-        return headerTenantResolver;
-    }
-
+    /**
+     * Web 租户解析器
+     *
+     * @return TenantResolver
+     */
     @Bean
     @ConditionalOnMissingBean
-    public TenantProfileStore cachedTenantProfileStore(CacheService cacheService,
-                                                       TenantProfileRepository repository) {
-        CachedTenantProfileStore cachedTenantProfileStore = new CachedTenantProfileStore(
-                cacheService,
-                repository,
-                Duration.ofMinutes(5),
-                Duration.ofMinutes(10)
-        );
-        log.trace("[Goya] |- component [mybatis-plus] MybatisPlusTenantAutoConfiguration |- bean [cachedTenantProfileStore] register.");
-        return cachedTenantProfileStore;
+    public TenantResolver webTenantResolver() {
+        WebTenantResolver webTenantResolver = new WebTenantResolver();
+        log.trace("[Goya] |- component [mybatis-plus] MybatisPlusTenantAutoConfiguration |- bean [webTenantResolver] register.");
+        return webTenantResolver;
     }
 
+    /**
+     * 默认数据源路由器。
+     *
+     * @return TenantDataSourceRouter
+     */
     @Bean
     @ConditionalOnMissingBean
-    public GoyaTenantLineHandler goyaTenantLineHandler(TenantProfileStore tenantProfileStore) {
-        GoyaTenantLineHandler goyaTenantLineHandler = new GoyaTenantLineHandler(tenantProfileStore);
-        log.trace("[Goya] |- component [mybatis-plus] MybatisPlusTenantAutoConfiguration |- bean [goyaTenantLineHandler] register.");
+    public TenantDataSourceRouter defaultTenantDataSourceRouter() {
+        DefaultTenantDataSourceRouter defaultTenantDataSourceRouter = new DefaultTenantDataSourceRouter();
+        log.trace("[Goya] |- component [mybatis-plus] MybatisPlusTenantAutoConfiguration |- bean [defaultTenantDataSourceRouter] register.");
+        return defaultTenantDataSourceRouter;
+    }
+
+    /**
+     * 租户列处理器。
+     *
+     * @param properties 配置项
+     * @return GoyaTenantLineHandler
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public GoyaTenantLineHandler goyaTenantLineHandler(GoyaMybatisPlusProperties properties) {
+        GoyaTenantLineHandler goyaTenantLineHandler = new GoyaTenantLineHandler(properties.tenant());
+        log.trace("[Goya] |- component [mybatis-plus] MybatisPlusTenantAutoConfiguration |- bean [defaultTenantDataSourceRouter] register.");
         return goyaTenantLineHandler;
     }
 
     /**
-     * Web 场景租户路由过滤器。
-     * <p>
-     * 当 classpath 存在 Servlet API 且启用多租户时生效。
+     * TenantLine 拦截器。
      *
-     * @param tenantResolver     租户解析器
-     * @param tenantProfileStore 租户画像存储
-     * @param props              配置属性
-     * @return 过滤器
+     * @param handler 处理器
+     * @return TenantLineInnerInterceptor
      */
     @Bean
     @ConditionalOnMissingBean
-    public TenantRoutingFilter tenantRoutingFilter(TenantResolver tenantResolver,
-                                                   TenantProfileStore tenantProfileStore,
-                                                   AccessContextResolver accessContextResolver,
-                                                   GoyaMybatisPlusProperties props) {
-        TenantRoutingFilter tenantRoutingFilter = new TenantRoutingFilter(
-                tenantResolver,
-                tenantProfileStore,
-                accessContextResolver,
-                props
-        );
-        log.trace("[Goya] |- component [mybatis-plus] MybatisPlusTenantAutoConfiguration |- bean [tenantRoutingFilter] register.");
-        return tenantRoutingFilter;
+    public TenantLineInnerInterceptor tenantLineInnerInterceptor(GoyaTenantLineHandler handler) {
+        TenantLineInnerInterceptor tenantLineInnerInterceptor = new TenantLineInnerInterceptor(handler);
+        log.trace("[Goya] |- component [mybatis-plus] MybatisPlusTenantAutoConfiguration |- bean [tenantLineInnerInterceptor] register.");
+        return tenantLineInnerInterceptor;
     }
 
+    /**
+     * 租户路由过滤器（Web 环境）。
+     *
+     * @param resolver     解析器
+     * @param profileStore 配置存储
+     * @param decider      决策器
+     * @param router       路由器
+     * @param properties   配置项
+     * @return GoyaTenantRoutingFilter
+     */
     @Bean
     @ConditionalOnMissingBean
-    public TenantRoutingAspect tenantRoutingAspect(TenantResolver tenantResolver,
-                                                   TenantProfileStore tenantProfileStore,
-                                                   AccessContextResolver accessContextResolver,
-                                                   GoyaMybatisPlusProperties props) {
-        return new TenantRoutingAspect(
-                tenantResolver,
-                tenantProfileStore,
-                accessContextResolver,
-                props
-        );
+    @ConditionalOnClass(name = "org.springframework.web.filter.OncePerRequestFilter")
+    public GoyaTenantRoutingFilter goyaTenantRoutingFilter(TenantResolver resolver,
+                                                           TenantProfileStore profileStore,
+                                                           TenantShardDecider decider,
+                                                           TenantDataSourceRouter router,
+                                                           GoyaMybatisPlusProperties properties) {
+        GoyaTenantRoutingFilter goyaTenantRoutingFilter = new GoyaTenantRoutingFilter(resolver, profileStore, decider, router, properties.tenant());
+        log.trace("[Goya] |- component [mybatis-plus] MybatisPlusTenantAutoConfiguration |- bean [goyaTenantRoutingFilter] register.");
+        return goyaTenantRoutingFilter;
     }
 
+    /**
+     * 租户路由切面（非 Web 场景）。
+     *
+     * @param resolver     解析器
+     * @param profileStore 配置存储
+     * @param decider      决策器
+     * @param router       路由器
+     * @param properties   配置项
+     * @return TenantRoutingAspect
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnClass(name = "org.aspectj.lang.annotation.Aspect")
+    public TenantRoutingAspect tenantRoutingAspect(TenantResolver resolver,
+                                                   TenantProfileStore profileStore,
+                                                   TenantShardDecider decider,
+                                                   TenantDataSourceRouter router,
+                                                   GoyaMybatisPlusProperties properties) {
+        TenantRoutingAspect tenantRoutingAspect = new TenantRoutingAspect(resolver, profileStore, decider, router, properties.tenant());
+        log.trace("[Goya] |- component [mybatis-plus] MybatisPlusTenantAutoConfiguration |- bean [tenantRoutingAspect] register.");
+        return tenantRoutingAspect;
+    }
 }

@@ -202,7 +202,7 @@ public class GoyaNetUtils {
             }
 
             return fallback();
-        } catch (Throwable ignore) {
+        } catch (Throwable _) {
             return null;
         }
     }
@@ -210,7 +210,7 @@ public class GoyaNetUtils {
     private static InetAddress fallback() {
         try {
             return InetAddress.getLocalHost();
-        } catch (Throwable ignore) {
+        } catch (Throwable _) {
             return null;
         }
     }

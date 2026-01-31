@@ -7,7 +7,19 @@
 ```
 Goya/
 ├── bom/                       # 依赖版本管理
-├── component/                 # 公共组件（11个子模块）
+├── component/                 # 公共组件（12个模块）
+│   ├── component-framework/   # 框架基础（10个子模块）
+│   ├── component-redis/       # Redis 实现
+│   ├── component-kafka/       # Kafka 消息
+│   ├── component-rabbitmq/    # RabbitMQ 消息
+│   ├── component-mybatisplus/ # MyBatis Plus
+│   ├── component-captcha/     # 验证码
+│   ├── component-security/    # 安全模块（4个子模块）
+│   ├── component-social/      # 社交登录
+│   ├── component-oss-aliyun/  # 阿里云 OSS
+│   ├── component-oss-s3/      # AWS S3
+│   ├── component-oss-minio/   # MinIO
+│   └── component-service/     # 服务抽象
 ├── ai/                        # AI 模块（5个子模块）
 ├── platform/                  # 平台应用（2个子模块）
 └── cloud/                     # 云原生支持
@@ -42,21 +54,30 @@ Goya/
 
 ---
 
-## 二、Component 组件模块
+## 二、Framework 框架基础模块
 
-### 🛠️ component-core
+### 🛠️ component-framework
+
+**职责**：框架基础设施聚合模块，包含 10 个子模块
+
+#### framework-core
 
 **职责**：核心工具类和基础定义
 
 **主要功能**：
 - 常用工具类（日期、字符串、集合等）
 - 业务异常基类
-- 结果响应封装
-- IP 地理位置解析（ip2region）
+- 结果响应封装（Response）
+- 基础接口定义
+
+**核心类**：
+- `Response<T>`：统一响应封装（Builder 模式）
+- `BaseException`：业务异常基类
+- `IStrategy` + `StrategyChoose`：策略模式实现
+- `IChainHandler` + `ChainContext`：责任链模式实现
 
 **使用示例**：
 ```java
-@Slf4j
 @RestController
 public class UserController {
     
@@ -69,46 +90,165 @@ public class UserController {
 
 ---
 
-### 🏗️ component-framework
+#### framework-common
 
-**职责**：框架基础设施
+**职责**：公共组件和通用工具
 
 **主要功能**：
-- 应用上下文工具
-- Bean 工厂增强
-- 事件总线
-- 策略模式支持
+- IP 地理位置解析（ip2region）
+- 常用工具类扩展
+- 通用数据结构
 
-**核心类**：
-- `ApplicationContextHolder`：Spring 上下文持有者
-- `IStrategy` + `StrategyChoose`：策略模式实现
-- `IChainHandler` + `ChainContext`：责任链模式实现
+---
+
+#### framework-masker
+
+**职责**：数据脱敏
+
+**主要功能**：
+- 手机号脱敏（`138****8888`）
+- 身份证脱敏（`110***********1234`）
+- 邮箱脱敏（`a***@example.com`）
+- 银行卡脱敏
+- 自定义脱敏规则
 
 **使用示例**：
 ```java
-// 策略模式
-public interface PaymentStrategy extends IStrategy {
-    void pay(Order order);
+@Data
+public class UserVO {
+    
+    private String username;
+    
+    @Mask(type = MaskType.MOBILE)
+    private String mobile;
+    
+    @Mask(type = MaskType.ID_CARD)
+    private String idCard;
 }
-
-@Component("alipayStrategy")
-public class AlipayStrategy implements PaymentStrategy {
-    @Override
-    public void pay(Order order) {
-        // 支付宝支付逻辑
-    }
-}
-
-// 使用
-PaymentStrategy strategy = StrategyChoose.choose("alipay", PaymentStrategy.class);
-strategy.pay(order);
 ```
 
 ---
 
-### 🌐 component-web
+#### framework-crypto
 
-**职责**：Web 层增强
+**职责**：加密解密工具
+
+**主要功能**：
+- 对称加密（AES、SM4）
+- 非对称加密（RSA、SM2）
+- 摘要算法（MD5、SHA、SM3）
+- 国密算法支持
+
+**使用示例**：
+```java
+@Service
+public class SecurityService {
+    
+    @Autowired
+    private CryptoService cryptoService;
+    
+    public String encrypt(String data) {
+        return cryptoService.aesEncrypt(data, secretKey);
+    }
+}
+```
+
+---
+
+#### framework-cache
+
+**职责**：缓存抽象层
+
+**主要功能**：
+- 统一缓存接口定义
+- 缓存配置抽象
+- 缓存事件
+
+**核心接口**：
+```java
+public interface ICache {
+    <T> T get(String key, Class<T> type);
+    void put(String key, Object value);
+    void put(String key, Object value, Duration ttl);
+    void evict(String key);
+    void clear();
+}
+```
+
+---
+
+#### framework-bus
+
+**职责**：消息总线抽象
+
+**主要功能**：
+- 消息发布订阅抽象
+- 事件总线接口
+- 消息处理器定义
+
+**核心接口**：
+```java
+public interface IMessageBus {
+    void publish(String topic, Object message);
+    void subscribe(String topic, Consumer<Object> handler);
+}
+
+public interface IntegrationBusBinder extends IMessageBus {
+    // Spring Integration 集成
+}
+```
+
+---
+
+#### framework-log
+
+**职责**：日志增强
+
+**主要功能**：
+- 操作日志（`@OperationLog`）
+- 审计日志
+- 慢查询日志
+- 日志脱敏
+
+**使用示例**：
+```java
+@RestController
+public class UserController {
+    
+    @OperationLog(module = "用户管理", operation = "创建用户")
+    @PostMapping("/users")
+    public User createUser(@RequestBody UserDTO dto) {
+        return userService.create(dto);
+    }
+}
+```
+
+---
+
+#### framework-oss
+
+**职责**：对象存储抽象
+
+**主要功能**：
+- 统一存储接口
+- 文件操作抽象
+- 元数据管理
+
+**核心接口**：
+```java
+public interface IOssService {
+    String upload(InputStream inputStream, String fileName);
+    InputStream download(String key);
+    void delete(String key);
+    String getUrl(String key, Duration expiration);
+}
+```
+
+---
+
+#### framework-servlet
+
+**职责**：Servlet 增强
 
 **主要功能**：
 - 统一异常处理（`@ControllerAdvice`）
@@ -125,270 +265,37 @@ strategy.pay(order);
 - `XssFilter`：XSS 过滤器
 - `DecryptRequestParamResolver`：参数解密
 
-**使用示例**：
-```java
-@RestController
-@RequestMapping("/api/users")
-public class UserController {
-    
-    @GetMapping("/{id}")
-    public User getUser(@PathVariable Long id) {
-        // 自动包装为 Response<User>
-        return userService.getById(id);
-    }
-    
-    @PostMapping
-    public User createUser(@Decrypt @RequestBody UserDTO dto) {
-        // 自动解密
-        return userService.create(dto);
-    }
-}
-```
+---
+
+#### framework-boot-starter
+
+**职责**：自动配置启动器
+
+**主要功能**：
+- 框架自动配置
+- Bean 注册
+- 默认配置
 
 ---
 
-### 🔐 component-security
+## 三、Redis 模块
 
-**职责**：安全认证授权体系
+### 💾 component-redis
 
-包含 4 个子模块：
+**职责**：基于 Redisson 的 Redis 增强实现
 
-#### security-core
+**主要功能**：
 
-**职责**：安全核心领域模型和 SPI 定义
-
-**核心类**：
-- `SecurityUser`：安全用户模型（Builder 模式）
-- `SecurityPermission`：权限模型
-- `IUserService`：用户服务 SPI
-- `IConstants`：安全常量
-
-**使用示例**：
-```java
-public interface IUserService {
-    SecurityUser loadUserByUsername(String username);
-    SecurityUser loadUserByMobile(String mobile);
-}
-
-@Service
-public class UserServiceImpl implements IUserService {
-    @Override
-    public SecurityUser loadUserByUsername(String username) {
-        User user = userRepository.findByUsername(username);
-        return SecurityUser.builder()
-            .username(user.getUsername())
-            .password(user.getPassword())
-            .authorities(user.getRoles())
-            .build();
-    }
-}
-```
-
-#### security-authentication
-
-**职责**：认证层，支持多种登录方式
-
-**核心功能**：
-- 用户名密码登录
-- 短信验证码登录
-- 第三方登录（预留接口）
-- 验证码校验
-- 登录失败处理
-
-**核心类**：
-- `LoginAuthenticationConverter`：登录请求转换器
-- `UsernamePasswordAuthenticationProvider`：用户名密码认证
-- `SmsAuthenticationProvider`：短信认证
-- `CaptchaValidator`：验证码校验
-
-**配置**：
-```yaml
-goya:
-  security:
-    authentication:
-      login:
-        allow-password-login: true
-        allow-sms-login: true
-        login-url: /login
-        success-url: /
-        failure-url: /login?error
-```
-
-#### security-authorization
-
-**职责**：资源服务器，JWT 验证和权限控制
-
-**核心功能**：
-- JWT Token 验证
-- Token 黑名单
-- 多租户 Issuer 解析
-- Scope/Role 鉴权
-- DPoP 支持（可选）
-
-**核心类**：
-- `JwtAuthenticationConverter`：JWT 转换
-- `JwtBlacklistValidator`：黑名单校验
-- `MultiTenantJwtDecoder`：多租户 JWT 解码
-
-**配置**：
-```yaml
-goya:
-  security:
-    resource:
-      jwt:
-        issuer-uri: https://auth.example.com
-      token-blacklist:
-        enabled: true
-```
-
-#### security-oauth2
-
-**职责**：OAuth2.1 授权服务器
-
-**核心功能**：
-- OAuth2.1 授权流程（Authorization Code + PKCE）
-- OIDC Provider（Discovery / UserInfo / JWK）
-- Token 定制（自定义 Claims）
-- 多租户 Issuer
-- 授权存储 SPI
-
-**核心类**：
-- `SecurityAuthorizationServerAutoConfiguration`：授权服务器自动配置
-- `OAuth2TokenCustomizer`：Token 定制
-- `MultiTenantIssuerResolver`：多租户 Issuer 解析
-
-**SPI 接口**：
-```java
-public interface IRegisteredClientService {
-    RegisteredClient findByClientId(String clientId);
-}
-
-public interface IOAuth2AuthorizationService {
-    void save(OAuth2Authorization authorization);
-    OAuth2Authorization findByToken(String token, TokenType tokenType);
-}
-```
-
----
-
-### 💾 component-cache
-
-**职责**：多级缓存解决方案
-
-包含 4 个子模块：
-
-#### cache-core
-
-**职责**：缓存抽象层
-
-**核心接口**：
-```java
-public interface ICache {
-    <T> T get(String key, Class<T> type);
-    void put(String key, Object value);
-    void evict(String key);
-    void clear();
-}
-```
-
-#### cache-caffeine
-
-**职责**：Caffeine 本地缓存实现
-
-**特性**：
-- 高性能本地缓存
-- LRU / LFU 淘汰策略
-- 过期时间配置
-- 缓存统计
-
-**配置**：
-```yaml
-goya:
-  cache:
-    caffeine:
-      enabled: true
-      maximum-size: 10000
-      expire-after-write: 10m
-```
-
-#### cache-redis
-
-**职责**：Redis 分布式缓存实现
-
-**特性**：
-- Redisson 客户端
-- 多集群支持
-- Pub/Sub 缓存同步
-- 序列化定制（JSON/Protobuf）
-
-**配置**：
-```yaml
-goya:
-  cache:
-    redis:
-      enabled: true
-      cluster:
-        - redis://localhost:6379
-      codec: json
-```
-
-#### cache-multi-level
-
-**职责**：多级缓存（L1 + L2）
-
-**特性**：
-- L1 (Caffeine) + L2 (Redis)
-- 自动缓存同步（Redis Pub/Sub）
-- 缓存穿透/击穿/雪崩防护
-
-**使用示例**：
-```java
-@Service
-public class UserService {
-    
-    @Autowired
-    private ICache cache;
-    
-    @Cacheable(key = "'user:' + #id")
-    public User getUser(Long id) {
-        // L1 Miss -> L2 -> DB
-        return userRepository.findById(id).orElse(null);
-    }
-}
-```
-
----
-
-### 📮 component-bus
-
-**职责**：消息总线抽象
-
-包含 3 个子模块：
-
-#### bus-core
-
-**职责**：消息总线抽象接口
-
-**核心接口**：
-```java
-public interface IMessageBus {
-    void publish(String topic, Object message);
-    void subscribe(String topic, Consumer<Object> handler);
-}
-```
-
-#### bus-stream
-
-**职责**：Spring Cloud Stream 抽象
-
-**特性**：
-- Binder 抽象（Kafka / RabbitMQ）
-- 消息路由
-- 错误处理
-
-#### bus-kafka-boot-starter
-
-**职责**：Kafka 实现的 Starter
+| 功能 | 类 | 说明 |
+|------|---|------|
+| 缓存服务 | `RedissonCacheService` | 统一缓存操作 |
+| 分布式锁 | `RedissonLockService` | 可重入锁/公平锁/读写锁 |
+| 布隆过滤器 | `RedissonBloomFilterService` | 防止缓存穿透 |
+| 延迟队列 | `RedissonDelayedQueueService` | 延迟任务 |
+| 可靠延迟队列 | `RedissonReliableDelayedQueueService` | 带确认机制 |
+| 限流器 | `RedissonRateLimiterService` | 令牌桶限流 |
+| Topic 消息 | `RedissonTopicService` | 发布订阅 |
+| 原子操作 | `RedissonAtomicService` | 原子计数器 |
 
 **使用示例**：
 ```java
@@ -396,55 +303,79 @@ public interface IMessageBus {
 public class OrderService {
     
     @Autowired
-    private IMessageBus messageBus;
+    private RedisLockService lockService;
     
     public void createOrder(Order order) {
-        orderRepository.save(order);
-        messageBus.publish("order-created", order);
-    }
-}
-
-@Component
-public class OrderEventListener {
-    
-    @PostConstruct
-    public void init() {
-        messageBus.subscribe("order-created", this::handleOrderCreated);
-    }
-    
-    private void handleOrderCreated(Order order) {
-        // 处理订单创建事件
+        String lockKey = "order:create:" + order.getUserId();
+        
+        lockService.tryLock(lockKey, 10, TimeUnit.SECONDS, () -> {
+            // 业务逻辑
+            orderRepository.save(order);
+        });
     }
 }
 ```
 
+**配置**：
+```yaml
+goya:
+  redis:
+    enabled: true
+    address: redis://localhost:6379
+```
+
 ---
 
-### 🗄️ component-database
+## 四、消息总线模块
 
-**职责**：数据库增强
+### 📮 component-kafka
 
-包含 3 个子模块：
+**职责**：Kafka 消息总线实现
 
-#### database-core
+**核心类**：
+- `KafkaIntegrationBusBinder`：Kafka Binder 实现
 
-**职责**：数据库核心抽象
+**配置**：
+```yaml
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+```
 
-**核心功能**：
-- 审计字段自动填充
-- 多租户数据隔离
-- 逻辑删除
-- 乐观锁
+---
 
-#### database-mybatisplus-boot-starter
+### 📮 component-rabbitmq
+
+**职责**：RabbitMQ 消息总线实现
+
+**核心类**：
+- `RabbitIntegrationBusBinder`：RabbitMQ Binder 实现
+
+**配置**：
+```yaml
+spring:
+  rabbitmq:
+    host: localhost
+    port: 5672
+```
+
+---
+
+## 五、数据库模块
+
+### 🗄️ component-mybatisplus
 
 **职责**：MyBatis Plus 增强
 
-**特性**：
+**主要功能**：
 - 动态数据源
 - 分页插件
 - SQL 监控（P6Spy）
 - 字段加密
+- 审计字段自动填充
+- 多租户数据隔离
+- 逻辑删除
+- 乐观锁
 
 **使用示例**：
 ```java
@@ -470,56 +401,167 @@ public interface UserMapper extends BaseMapper<User> {
 }
 ```
 
-#### database-jpa-boot-starter
-
-**职责**：Spring Data JPA 增强
-
-**特性**：
-- QueryDSL 支持
-- Specification 增强
-- 审计字段
-
 ---
 
-### 📦 component-oss
+## 六、安全模块
 
-**职责**：对象存储统一接口
+### 🔐 component-security
+
+**职责**：安全认证授权体系
 
 包含 4 个子模块：
 
-#### oss-core
+#### security-core
 
-**职责**：OSS 抽象接口
+**职责**：安全核心领域模型和 SPI 定义
 
-**核心接口**：
+**核心类**：
+- `SecurityUser`：安全用户模型（Builder 模式）
+- `SecurityPermission`：权限模型
+- `SecurityTenant`：租户模型
+- `SecurityAttribute`：安全属性
+- `GoyaSecurityContext`：安全上下文
+
+**SPI 接口**：
 ```java
-public interface IOssService {
-    String upload(InputStream inputStream, String fileName);
-    InputStream download(String key);
-    void delete(String key);
-    String getUrl(String key, Duration expiration);
+public interface IUserService {
+    SecurityUser loadUserByUsername(String username);
+    SecurityUser loadUserByMobile(String mobile);
 }
-```
 
-#### oss-aliyun / oss-minio / oss-s3
+public interface ITenantService {
+    SecurityTenant getTenant(String tenantId);
+}
 
-**职责**：阿里云 OSS / MinIO / AWS S3 实现
+public interface IRolePermissionService {
+    List<SecurityPermission> getPermissions(String userId);
+}
 
-**使用示例**：
-```java
-@Service
-public class FileService {
-    
-    @Autowired
-    private IOssService ossService;
-    
-    public String uploadFile(MultipartFile file) {
-        return ossService.upload(file.getInputStream(), file.getOriginalFilename());
-    }
+public interface IOtpService {
+    void sendOtp(String mobile);
+    boolean verifyOtp(String mobile, String code);
+}
+
+public interface ISocialUserService {
+    SecurityUser loadUserBySocialId(String socialType, String socialId);
 }
 ```
 
 ---
+
+#### security-authentication
+
+**职责**：认证层，支持多种登录方式
+
+**核心功能**：
+- 用户名密码登录
+- 短信验证码登录
+- 第三方登录
+- 验证码校验
+- 登录失败处理
+- 设备管理
+
+**核心类**：
+- `UsernamePasswordAuthenticationProvider`：用户名密码认证
+- `SmsAuthenticationProvider`：短信认证
+- `SocialAuthenticationProvider`：社交登录认证
+- `CaptchaValidationFilter`：验证码校验过滤器
+- `DeviceManagementFilter`：设备管理过滤器
+- `LoginFailureCacheManger`：登录失败次数管理
+
+**配置**：
+```yaml
+goya:
+  security:
+    authentication:
+      login:
+        allow-password-login: true
+        allow-sms-login: true
+```
+
+---
+
+#### security-authorization
+
+**职责**：资源服务器，JWT 验证和权限控制
+
+**核心功能**：
+- JWT Token 验证
+- Token 黑名单
+- 多租户 Issuer 解析
+- Scope/Role 鉴权
+- DPoP 支持
+
+**核心类**：
+- `JwtAuthenticationFilter`：JWT 认证过滤器
+- `JwtAuthorityConverter`：JWT 权限转换
+- `JwtBlacklistValidator`：黑名单校验
+- `ResourceServerDPoPValidator`：DPoP 验证
+
+**配置**：
+```yaml
+goya:
+  security:
+    resource:
+      jwt:
+        issuer-uri: https://auth.example.com
+      token-blacklist:
+        enabled: true
+```
+
+---
+
+#### security-oauth2
+
+**职责**：OAuth2.1 授权服务器
+
+**核心功能**：
+- OAuth2.1 授权流程（Authorization Code + PKCE）
+- OIDC Provider（Discovery / UserInfo / JWK）
+- Token 定制（自定义 Claims）
+- 多租户 Issuer
+- 授权存储 SPI
+
+---
+
+## 七、OSS 对象存储模块
+
+### 📦 component-oss-aliyun
+
+**职责**：阿里云 OSS 实现
+
+**主要功能**：
+- 文件上传/下载
+- Bucket 管理
+- 访问控制
+- 生命周期管理
+- 图片处理
+- 视频处理
+
+---
+
+### 📦 component-oss-s3
+
+**职责**：AWS S3 实现
+
+**主要功能**：
+- S3 兼容 API
+- 分片上传
+- 预签名 URL
+
+---
+
+### 📦 component-oss-minio
+
+**职责**：MinIO 实现
+
+**主要功能**：
+- MinIO 原生 API
+- 私有化部署支持
+
+---
+
+## 八、其他模块
 
 ### 🔢 component-captcha
 
@@ -530,26 +572,6 @@ public class FileService {
 - 滑块验证码
 - 拼图验证码
 - 文字点选验证码
-
-**使用示例**：
-```java
-@RestController
-public class CaptchaController {
-    
-    @Autowired
-    private CaptchaService captchaService;
-    
-    @GetMapping("/captcha")
-    public CaptchaVO getCaptcha() {
-        return captchaService.generate(CaptchaTypeEnum.SLIDER);
-    }
-    
-    @PostMapping("/captcha/verify")
-    public boolean verifyCaptcha(@RequestBody CaptchaVerifyDTO dto) {
-        return captchaService.verify(dto);
-    }
-}
-```
 
 ---
 
@@ -562,48 +584,19 @@ public class CaptchaController {
 - 微信公众号
 - 第三方平台（基于 JustAuth）
 
-**使用示例**：
-```java
-@Service
-public class SocialLoginService {
-    
-    @Autowired
-    private SocialManager socialManager;
-    
-    public SocialUser wechatLogin(String code) {
-        return socialManager.login(SocialTypeEnum.WECHAT_MINI, code);
-    }
-}
-```
+---
+
+### 📋 component-service
+
+**职责**：服务抽象层
+
+**主要功能**：
+- 服务接口定义
+- 远程调用抽象
 
 ---
 
-### 📝 component-log
-
-**职责**：日志增强和操作审计
-
-**核心功能**：
-- 操作日志（`@OperationLog`）
-- 审计日志
-- 慢查询日志
-- 敏感信息脱敏
-
-**使用示例**：
-```java
-@RestController
-public class UserController {
-    
-    @OperationLog(module = "用户管理", operation = "创建用户")
-    @PostMapping("/users")
-    public User createUser(@RequestBody UserDTO dto) {
-        return userService.create(dto);
-    }
-}
-```
-
----
-
-## 三、AI 模块
+## 九、AI 模块
 
 ### 🤖 ai-spring
 
@@ -614,20 +607,6 @@ public class UserController {
 - ChatClient / EmbeddingClient
 - Prompt 模板管理
 - Function Calling
-
-**使用示例**：
-```java
-@Service
-public class AiService {
-    
-    @Autowired
-    private ChatClient chatClient;
-    
-    public String chat(String userMessage) {
-        return chatClient.call(userMessage);
-    }
-}
-```
 
 ---
 
@@ -648,23 +627,9 @@ public class AiService {
 
 **核心功能**：
 - 文档向量化
-- 向量存储（Milvus / Qdrant）
+- 向量存储
 - 语义检索
 - 答案生成
-
-**使用示例**：
-```java
-@Service
-public class KnowledgeService {
-    
-    @Autowired
-    private RagService ragService;
-    
-    public String query(String question) {
-        return ragService.query(question);
-    }
-}
-```
 
 ---
 
@@ -691,14 +656,11 @@ public class KnowledgeService {
 
 ---
 
-## 四、Platform 平台应用
+## 十、Platform 平台应用
 
 ### 🏢 platform-monolith
 
 **职责**：单体应用
-
-**子模块**：
-- `auth-server`：认证服务器
 
 **适用场景**：
 - 小型项目
@@ -711,26 +673,10 @@ public class KnowledgeService {
 
 **职责**：微服务应用
 
-**子模块**：
-- `auth-cloud-server`：微服务版认证服务
-
 **适用场景**：
 - 大型项目
 - 高并发
 - 云原生部署
-
----
-
-## 五、Cloud 模块
-
-### ☁️ cloud
-
-**职责**：云原生支持
-
-**核心功能**：
-- Kubernetes 部署配置
-- Service Mesh 集成
-- Istio 配置
 
 ---
 
@@ -742,18 +688,19 @@ public class KnowledgeService {
            │ (Application)│
            └──────┬───────┘
                   │
-        ┌─────────┼─────────┐
-        │         │         │
-   ┌────▼────┐ ┌─▼──┐ ┌────▼────┐
-   │Security │ │ AI │ │Component│
-   └────┬────┘ └─┬──┘ └────┬────┘
-        │        │         │
-        └────────┼─────────┘
+    ┌─────────────┼─────────────┐
+    │             │             │
+ ┌──▼───┐    ┌───▼───┐    ┌────▼────┐
+ │ AI   │    │Security│    │Component│
+ └──┬───┘    └───┬───┘    └────┬────┘
+    │            │             │
+    └────────────┼─────────────┘
                  │
-           ┌─────▼─────┐
-           │Framework  │
-           │   Core    │
-           └───────────┘
+        ┌────────▼────────┐
+        │    Framework    │
+        │ (core/common/   │
+        │  servlet/cache) │
+        └─────────────────┘
 ```
 
 ## 下一步阅读
