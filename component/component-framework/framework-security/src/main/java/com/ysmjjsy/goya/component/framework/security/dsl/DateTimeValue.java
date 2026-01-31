@@ -19,7 +19,7 @@ public class DateTimeValue implements Value {
     private LocalDateTime value;
 
     @Override
-    public Object getValue() {
+    public LocalDateTime getValue() {
         return value;
     }
 }

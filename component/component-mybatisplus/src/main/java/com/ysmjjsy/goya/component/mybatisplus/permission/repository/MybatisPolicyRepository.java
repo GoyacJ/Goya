@@ -117,9 +117,15 @@ public class MybatisPolicyRepository implements PolicyRepository {
     private Set<SubjectKey> buildSubjectKeys(Subject subject) {
         Set<SubjectKey> keys = Sets.newHashSet();
         addSubjectKey(keys, subject.getSubjectType(), subject.getSubjectId());
-        subject.getRoleIds().forEach(roleId -> addSubjectKey(keys, SubjectType.ROLE, roleId));
-        subject.getTeamIds().forEach(teamId -> addSubjectKey(keys, SubjectType.TEAM, teamId));
-        subject.getOrgIds().forEach(orgId -> addSubjectKey(keys, SubjectType.ORG, orgId));
+        if (subject.getRoleIds() != null) {
+            subject.getRoleIds().forEach(roleId -> addSubjectKey(keys, SubjectType.ROLE, roleId));
+        }
+        if (subject.getTeamIds() != null) {
+            subject.getTeamIds().forEach(teamId -> addSubjectKey(keys, SubjectType.TEAM, teamId));
+        }
+        if (subject.getOrgIds() != null) {
+            subject.getOrgIds().forEach(orgId -> addSubjectKey(keys, SubjectType.ORG, orgId));
+        }
         return keys;
     }
 

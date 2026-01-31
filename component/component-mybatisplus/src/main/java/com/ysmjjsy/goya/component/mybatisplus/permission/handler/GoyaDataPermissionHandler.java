@@ -15,6 +15,7 @@ import com.ysmjjsy.goya.component.mybatisplus.configuration.properties.GoyaMybat
 import com.ysmjjsy.goya.component.mybatisplus.context.AccessContext;
 import com.ysmjjsy.goya.component.mybatisplus.context.AccessContextValue;
 import com.ysmjjsy.goya.component.mybatisplus.context.TenantContext;
+import com.ysmjjsy.goya.component.mybatisplus.permission.PermissionContextHolder;
 import com.ysmjjsy.goya.component.mybatisplus.permission.SqlRangeFilter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +41,9 @@ import java.util.Map;
 public class GoyaDataPermissionHandler implements MultiDataPermissionHandler {
 
     private static final String ACTION_QUERY = "QUERY";
+    private static final String ACTION_CREATE = "CREATE";
+    private static final String ACTION_UPDATE = "UPDATE";
+    private static final String ACTION_DELETE = "DELETE";
 
     private final AuthorizationService authorizationService;
     private final GoyaMybatisPlusProperties.Permission options;
@@ -68,6 +72,7 @@ public class GoyaDataPermissionHandler implements MultiDataPermissionHandler {
             if (decision == null) {
                 return handleNoContext();
             }
+            PermissionContextHolder.putConstraint(tableName, decision.getColumnConstraint());
             if (decision.getDecisionType() == DecisionType.DENY) {
                 return denyExpression();
             }
@@ -87,7 +92,7 @@ public class GoyaDataPermissionHandler implements MultiDataPermissionHandler {
         request.setTenantCode(TenantContext.get().tenantId());
         request.setSubjectContext(buildSubjectContext(access));
         request.setResourceContext(buildResourceContext(tableName, mappedStatementId));
-        request.setAction(buildQueryAction());
+        request.setAction(buildAction());
         request.setRequestTime(LocalDateTime.now());
         return request;
     }
@@ -113,11 +118,31 @@ public class GoyaDataPermissionHandler implements MultiDataPermissionHandler {
         return context;
     }
 
-    private Action buildQueryAction() {
+    private Action buildAction() {
         Action action = new Action();
-        action.setCode(ACTION_QUERY);
-        action.setName("查询");
+        String actionCode = PermissionContextHolder.getAction();
+        if (!StringUtils.hasText(actionCode)) {
+            actionCode = ACTION_QUERY;
+        }
+        action.setCode(actionCode);
+        action.setName(resolveActionName(actionCode));
         return action;
+    }
+
+    private String resolveActionName(String actionCode) {
+        if (ACTION_QUERY.equalsIgnoreCase(actionCode)) {
+            return "查询";
+        }
+        if (ACTION_CREATE.equalsIgnoreCase(actionCode)) {
+            return "新增";
+        }
+        if (ACTION_UPDATE.equalsIgnoreCase(actionCode)) {
+            return "更新";
+        }
+        if (ACTION_DELETE.equalsIgnoreCase(actionCode)) {
+            return "删除";
+        }
+        return actionCode;
     }
 
     private Expression handleNoContext() {

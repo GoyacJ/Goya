@@ -18,7 +18,7 @@ public class NumberValue implements Value {
     private Number value;
 
     @Override
-    public Object getValue() {
+    public Number getValue() {
         return value;
     }
 }

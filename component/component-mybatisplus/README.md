@@ -48,9 +48,9 @@ Goya 需要一个企业级 MyBatis Plus 组件，统一数据访问治理，并�
 ### 5. 功能需求
 
 #### 5.1 企业级 MyBatis Plus 配置
-- 插件配置：分页、BlockAttack、数据权限拦截、多租户拦截、观测拦截（慢 SQL）。
+- 插件配置：分页、BlockAttack、数据权限拦截、多租户拦截。
 - 审计字段填充：created_by/created_at/updated_by/updated_at + tenant_id 自动填充。
-- 统一日志格式与 traceId 关联（不修改 SQL）。
+- 统一日志格式（不修改 SQL）。
 
 #### 5.2 数据权限执行（核心）
 
@@ -65,8 +65,25 @@ Goya 需要一个企业级 MyBatis Plus 组件，统一数据访问治理，并�
 
 ##### 5.2.2 DSL 规则
 - DSL 为结构化表达式，禁止 raw SQL 直通。
-- 本模块默认使用 JSqlParser 解析 DSL。
+- 本模块默认使用 JSON 结构化 DSL 解析。
 - 语法与 AST 定义以 framework-security 为准。
+
+示例（JSON DSL）：
+```json
+{
+  "type": "AND",
+  "left": {
+    "field": "dept_id",
+    "operator": "IN",
+    "values": [1, 2, 3]
+  },
+  "right": {
+    "field": "created_at",
+    "operator": "GTE",
+    "value": { "type": "datetime", "value": "2026-01-31T00:00:00" }
+  }
+}
+```
 
 ### 6. 多租户混合模式
 
@@ -142,7 +159,7 @@ Goya 需要一个企业级 MyBatis Plus 组件，统一数据访问治理，并�
 #### 4.2 默认实现
 - SubjectResolver：从 AccessContext 构造 Subject
 - ResourceResolver：基于 data_resource 表解析资源与父子关系
-- RangeDslParser：JSqlParser 条件解析
+- RangeDslParser：JSON DSL 解析
 - RangeFilterBuilder：JSqlParser Expression 输出
 - PolicyRepository：默认读取 data_resource_policy 表（可覆盖）
 
@@ -171,7 +188,7 @@ Goya 需要一个企业级 MyBatis Plus 组件，统一数据访问治理，并�
 
 ### 5. 审计字段自动填充
 - MetaObjectHandler 自动填充 created/updated + tenant_id
-- AuditorProvider / TimeProvider 可覆盖
+- AuditorProvider 可覆盖
 
 ### 6. 安全护栏
 - BlockAttackInnerInterceptor 默认开启
@@ -201,8 +218,6 @@ Goya 需要一个企业级 MyBatis Plus 组件，统一数据访问治理，并�
 - RangeDslParser
 - RangeFilterBuilder
 - AuditorProvider
-- TimeProvider
-- SqlTraceProvider
 
 禁止新增：
 - 自定义 ignore 注解（统一使用 MP 官方 @InterceptorIgnore）

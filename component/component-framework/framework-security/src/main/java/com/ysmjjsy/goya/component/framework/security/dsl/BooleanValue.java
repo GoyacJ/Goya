@@ -18,7 +18,7 @@ public class BooleanValue implements Value {
     private Boolean value;
 
     @Override
-    public Object getValue() {
+    public Boolean getValue() {
         return value;
     }
 }

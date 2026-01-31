@@ -12,7 +12,7 @@ import lombok.Getter;
  */
 @Getter
 @AllArgsConstructor
-public enum PolicyScope implements CodeEnum<Subject> {
+public enum PolicyScope implements CodeEnum<String> {
 
     RESOURCE("RESOURCE", "Resource"),
     ROW("ROW", "Row"),

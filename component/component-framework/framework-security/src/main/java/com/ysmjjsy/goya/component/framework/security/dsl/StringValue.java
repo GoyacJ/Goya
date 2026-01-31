@@ -18,7 +18,7 @@ public class StringValue implements Value {
     private String value;
 
     @Override
-    public Object getValue() {
+    public String getValue() {
         return value;
     }
 }

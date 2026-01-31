@@ -124,7 +124,7 @@ public class MybatisPlusPermissionAutoConfiguration {
     @ConditionalOnMissingBean
     public DataPermissionInterceptor goyaDataPermissionInterceptor(GoyaDataPermissionHandler handler,
                                                                    GoyaMybatisPlusProperties properties) {
-        GoyaDataPermissionInterceptor goyaDataPermissionInterceptor = new GoyaDataPermissionInterceptor(handler, properties.permission().applyToWrite());
+        GoyaDataPermissionInterceptor goyaDataPermissionInterceptor = new GoyaDataPermissionInterceptor(handler, properties.permission());
         log.trace("[Goya] |- component [mybatis-plus] MybatisPlusPermissionAutoConfiguration |- bean [goyaDataPermissionInterceptor] register.");
         return goyaDataPermissionInterceptor;
     }
