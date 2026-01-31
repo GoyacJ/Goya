@@ -2,7 +2,11 @@ package com.ysmjjsy.goya.component.mybatisplus.permission.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.ysmjjsy.goya.component.framework.security.domain.*;
+import com.ysmjjsy.goya.component.framework.security.domain.PolicyEffect;
+import com.ysmjjsy.goya.component.framework.security.domain.PolicyScope;
+import com.ysmjjsy.goya.component.framework.security.domain.ResourceRange;
+import com.ysmjjsy.goya.component.framework.security.domain.ResourceType;
+import com.ysmjjsy.goya.component.framework.security.domain.SubjectType;
 import com.ysmjjsy.goya.component.mybatisplus.definition.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -60,7 +64,7 @@ public class DataResourcePolicyEntity extends BaseEntity {
      * 操作编码（QUERY/CREATE/UPDATE/DELETE 等）。
      */
     @TableField("action")
-    private Action action;
+    private String actionCode;
 
     /**
      * 策略效果（ALLOW/DENY）。

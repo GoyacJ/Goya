@@ -109,7 +109,6 @@ Goya 需要一个企业级 MyBatis Plus 组件，统一数据访问治理，并�
    2) TenantLineInnerInterceptor
    3) DataPermissionInterceptor
    4) Pagination（可选）
-   5) Observability interceptor
 3. 请求结束
    - 清理 dynamic-datasource 上下文
    - 清理 TenantContext / AccessContext
@@ -177,11 +176,7 @@ Goya 需要一个企业级 MyBatis Plus 组件，统一数据访问治理，并�
 ### 6. 安全护栏
 - BlockAttackInnerInterceptor 默认开启
 
-### 7. 可观测性
-- 记录耗时、慢 SQL、traceId、mappedStatementId
-- 不改写 SQL
-
-### 8. 自动装配与开关
+### 7. 自动装配与开关
 关键开关：
 - goya.mybatis-plus.tenant.enabled
 - goya.mybatis-plus.tenant.require-tenant
@@ -189,15 +184,14 @@ Goya 需要一个企业级 MyBatis Plus 组件，统一数据访问治理，并�
 - goya.mybatis-plus.permission.fail-closed
 - goya.mybatis-plus.permission.apply-to-write
 - goya.mybatis-plus.safety.block-attack
-- goya.mybatis-plus.observability.enabled
 - goya.mybatis-plus.tenant.default-mode
 
-### 9. 失败策略
+### 8. 失败策略
 - tenant 缺失：requireTenant=true 时拒绝
 - AccessContext 缺失：failClosed=true 时返回 1=0
 - 解析失败：failClosed=true 时返回 1=0
 
-### 9.1 DDL 支持
+### 8.1 DDL 支持
 - `db_init.sql` 已提供 MySQL / PostgreSQL / SQLite 三种版本。
 
 ### 10. 扩展点清单（固定）

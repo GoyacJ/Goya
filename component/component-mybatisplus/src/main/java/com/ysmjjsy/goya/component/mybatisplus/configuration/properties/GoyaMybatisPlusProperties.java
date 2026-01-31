@@ -28,7 +28,11 @@ public record GoyaMybatisPlusProperties(
 
         /* 动态权限相关配置。 */
         @DefaultValue
-        Permission permission
+        Permission permission,
+
+        /* 安全相关配置。 */
+        @DefaultValue
+        Safety safety
 ) {
 
     /**
@@ -88,6 +92,18 @@ public record GoyaMybatisPlusProperties(
              */
             @DefaultValue("false")
             boolean applyToWrite
+    ) {
+    }
+
+    /**
+     * 安全配置。
+     */
+    public record Safety(
+            /*
+              是否启用 BlockAttack。
+             */
+            @DefaultValue("true")
+            boolean blockAttack
     ) {
     }
 }

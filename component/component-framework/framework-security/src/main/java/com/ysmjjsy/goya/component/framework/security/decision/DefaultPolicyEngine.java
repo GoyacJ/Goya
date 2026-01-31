@@ -92,7 +92,8 @@ public class DefaultPolicyEngine implements PolicyEngine {
         if (policy == null) {
             return false;
         }
-        if (GoyaStringUtils.equals(tenantCode, policy.getTenantCode())) {
+        if (StringUtils.isNotBlank(policy.getTenantCode())
+                && !GoyaStringUtils.equals(tenantCode, policy.getTenantCode())) {
             return false;
         }
         if (policy.isNeverExpire()) {
@@ -130,6 +131,11 @@ public class DefaultPolicyEngine implements PolicyEngine {
     private boolean isResourceMatch(Policy policy, Resource resource) {
         if (policy == null || resource == null) {
             return false;
+        }
+        if (policy.getResourceType() != null && resource.getResourceType() != null) {
+            if (!GoyaStringUtils.equalsIgnoreCase(policy.getResourceType().getCode(), resource.getResourceType().getCode())) {
+                return false;
+            }
         }
         String policyCode = policy.getResourceCode();
         String resourceCode = resource.getResourceCode();
@@ -183,6 +189,7 @@ public class DefaultPolicyEngine implements PolicyEngine {
             boolean eligible =
                     policy != null
                             && policy.getPolicyEffect() == PolicyEffect.ALLOW
+                            && resolvePolicyScope(policy) == PolicyScope.ROW
                             && policy.getRangeDsl() != null
                             && !policy.getRangeDsl().isBlank();
             if (eligible) {
@@ -232,7 +239,9 @@ public class DefaultPolicyEngine implements PolicyEngine {
         Set<String> deny = new HashSet<>();
 
         for (Policy p : policies) {
-            boolean eligible = p != null && p.getPolicyEffect() == PolicyEffect.ALLOW;
+            boolean eligible = p != null
+                    && p.getPolicyEffect() == PolicyEffect.ALLOW
+                    && resolvePolicyScope(p) == PolicyScope.COLUMN;
             if (eligible) {
                 List<String> a = p.getAllowColumns();
                 if (CollectionUtils.isNotEmpty(a)) {
@@ -250,6 +259,25 @@ public class DefaultPolicyEngine implements PolicyEngine {
         constraint.setAllowColumns(allow);
         constraint.setDenyColumns(deny);
         return constraint;
+    }
+
+    private PolicyScope resolvePolicyScope(Policy policy) {
+        if (policy == null) {
+            return PolicyScope.RESOURCE;
+        }
+        if (policy.getPolicyScope() != null) {
+            return policy.getPolicyScope();
+        }
+        boolean hasRange = StringUtils.isNotBlank(policy.getRangeDsl());
+        boolean hasColumns = CollectionUtils.isNotEmpty(policy.getAllowColumns())
+                || CollectionUtils.isNotEmpty(policy.getDenyColumns());
+        if (hasRange) {
+            return PolicyScope.ROW;
+        }
+        if (hasColumns) {
+            return PolicyScope.COLUMN;
+        }
+        return PolicyScope.RESOURCE;
     }
 
     private List<String> collectRangeDsl(List<Policy> policies) {

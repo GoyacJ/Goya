@@ -61,7 +61,7 @@ public class MybatisPolicyRepository implements PolicyRepository {
             queryWrapper.eq(DataResourcePolicyEntity::getResourceType, resource.getResourceType().getCode());
         }
         if (StringUtils.hasText(query.getAction().getCode())) {
-            queryWrapper.eq(DataResourcePolicyEntity::getAction, query.getAction().getCode());
+            queryWrapper.eq(DataResourcePolicyEntity::getActionCode, query.getAction().getCode());
         }
 
         queryWrapper.and(group -> {

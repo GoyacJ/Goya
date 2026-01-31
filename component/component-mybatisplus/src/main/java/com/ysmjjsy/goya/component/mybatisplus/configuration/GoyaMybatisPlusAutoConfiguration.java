@@ -11,11 +11,15 @@ import com.ysmjjsy.goya.component.mybatisplus.audit.AuditorProvider;
 import com.ysmjjsy.goya.component.mybatisplus.audit.GoyaMetaObjectHandler;
 import com.ysmjjsy.goya.component.mybatisplus.audit.defaults.DefaultAuditorProvider;
 import com.ysmjjsy.goya.component.mybatisplus.configuration.properties.GoyaMybatisPlusProperties;
+import com.ysmjjsy.goya.component.mybatisplus.context.AccessContextResolver;
+import com.ysmjjsy.goya.component.mybatisplus.context.filter.AccessContextFilter;
+import com.ysmjjsy.goya.component.mybatisplus.context.web.WebAccessContextResolver;
 import com.ysmjjsy.goya.component.mybatisplus.exception.MybatisExceptionHandler;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -60,7 +64,9 @@ public class GoyaMybatisPlusAutoConfiguration {
                                                          OptimisticLockerInnerInterceptor optimisticLockerInnerInterceptor) {
 
         List<InnerInterceptor> chain = new ArrayList<>();
-        chain.add(blockAttackInnerInterceptor);
+        if (props.safety().blockAttack()) {
+            chain.add(blockAttackInnerInterceptor);
+        }
 
         // TenantLine 多租户插件 必须放到第一位
         TenantLineInnerInterceptor tenantLine = tenantLineProvider.getIfAvailable();
@@ -120,6 +126,35 @@ public class GoyaMybatisPlusAutoConfiguration {
     @Bean
     public IdentifierGenerator idGenerator() {
         return new DefaultIdentifierGenerator(GoyaNetUtils.getLocalhost());
+    }
+
+    /**
+     * 默认访问上下文解析器（基于请求头）。
+     *
+     * @return AccessContextResolver
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnClass(name = "org.springframework.web.filter.OncePerRequestFilter")
+    public AccessContextResolver accessContextResolver() {
+        WebAccessContextResolver resolver = new WebAccessContextResolver();
+        log.trace("[Goya] |- component [mybatis-plus] GoyaMybatisPlusAutoConfiguration |- bean [accessContextResolver] register.");
+        return resolver;
+    }
+
+    /**
+     * 访问上下文过滤器（Web 环境）。
+     *
+     * @param resolver 解析器
+     * @return AccessContextFilter
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnClass(name = "org.springframework.web.filter.OncePerRequestFilter")
+    public AccessContextFilter accessContextFilter(AccessContextResolver resolver) {
+        AccessContextFilter filter = new AccessContextFilter(resolver);
+        log.trace("[Goya] |- component [mybatis-plus] GoyaMybatisPlusAutoConfiguration |- bean [accessContextFilter] register.");
+        return filter;
     }
 
     /**
