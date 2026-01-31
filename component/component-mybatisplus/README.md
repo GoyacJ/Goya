@@ -154,10 +154,16 @@ Goya 需要一个企业级 MyBatis Plus 组件，统一数据访问治理，并�
 默认租户配置读取 `tenant_profile` 表：
 - tenant_id：租户 ID（主键）
 - mode：CORE_SHARED / DEDICATED_DB
-- ds_key：数据源 key
+- ds_key：数据源 key（可选）
+- jdbc_url / jdbc_username / jdbc_password / jdbc_driver：数据源配置
+- ds_type：数据源类型（MYSQL/POSTGRESQL/SQLITE）
 - tenant_line_enabled：是否启用 tenant 过滤
-- version：配置版本号
-- updated_at：更新时间
+- tenant_version：配置版本号
+- del_flag / version / created_at / created_by / updated_at / updated_by：审计字段
+
+补充说明：
+- 当 `jdbc_url` 存在时，优先使用数据库配置注册数据源，`ds_key` 仅作为注册 key 提示。
+- 当 `jdbc_url` 缺失时，使用 `ds_key` 或默认路由规则生成数据源 key。
 
 #### 4.3 执行策略
 - Deny 优先，默认拒绝

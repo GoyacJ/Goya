@@ -4,6 +4,7 @@ import com.baomidou.dynamic.datasource.toolkit.DynamicDataSourceContextHolder;
 import com.ysmjjsy.goya.component.mybatisplus.configuration.properties.GoyaMybatisPlusProperties;
 import com.ysmjjsy.goya.component.mybatisplus.context.TenantContext;
 import com.ysmjjsy.goya.component.mybatisplus.context.TenantContextValue;
+import com.ysmjjsy.goya.component.mybatisplus.tenant.TenantDataSourceRegistrar;
 import com.ysmjjsy.goya.component.mybatisplus.tenant.TenantDataSourceRouter;
 import com.ysmjjsy.goya.component.mybatisplus.tenant.TenantMode;
 import com.ysmjjsy.goya.component.mybatisplus.tenant.TenantProfile;
@@ -35,6 +36,7 @@ public class TenantRoutingAspect {
     private final TenantProfileStore profileStore;
     private final TenantShardDecider shardDecider;
     private final TenantDataSourceRouter router;
+    private final TenantDataSourceRegistrar dataSourceRegistrar;
     private final GoyaMybatisPlusProperties.Tenant options;
 
     /**
@@ -55,9 +57,21 @@ public class TenantRoutingAspect {
         }
 
         TenantProfile profile = profileStore.load(tenantId);
-        TenantMode mode = profile == null ? shardDecider.decide(tenantId) : profile.mode();
-        String dsKey = profile == null ? router.route(tenantId, mode) : profile.dsKey();
+        TenantMode mode = profile != null && profile.mode() != null ? profile.mode() : shardDecider.decide(tenantId);
         boolean tenantLineEnabled = profile == null || profile.tenantLineEnabled();
+
+        String dsKey = null;
+        if (profile != null && profile.dataSourceProfile() != null
+                && StringUtils.hasText(profile.dataSourceProfile().jdbcUrl())) {
+            dsKey = dataSourceRegistrar.register(tenantId, profile.dataSourceProfile(), profile.dsKey());
+        }
+        if (!StringUtils.hasText(dsKey)) {
+            if (profile != null && StringUtils.hasText(profile.dsKey())) {
+                dsKey = profile.dsKey();
+            } else {
+                dsKey = router.route(tenantId, mode);
+            }
+        }
 
         TenantContext.set(new TenantContextValue(tenantId, mode, dsKey, tenantLineEnabled));
         if (StringUtils.hasText(dsKey)) {

@@ -56,6 +56,9 @@
 - 2026-01-29：新增多租户/权限/审计/观测基础结构与默认实现，完成拦截器链装配。
 - 2026-01-31：重构数据权限为 framework-security SRA 模型，替换原有规则与标识设计。
 - 2026-01-31：新增 data_resource/data_resource_policy DDL（MySQL/PostgreSQL/SQLite）与 DataResourceResolver 落地资源解析。
+- 2026-01-31：租户配置支持数据库数据源管理（jdbc_url 等字段），并在路由阶段优先注册数据源。
+- 2026-01-31：更新 db_init.sql 以覆盖 MySQL/PostgreSQL/SQLite，并对齐租户/资源表字段与审计字段。
+- 2026-01-31：新增租户数据源类型枚举（TenantDataSourceType），替换 ds_type 字段为枚举模型。
 
 ## 5. framework-security 重构
 

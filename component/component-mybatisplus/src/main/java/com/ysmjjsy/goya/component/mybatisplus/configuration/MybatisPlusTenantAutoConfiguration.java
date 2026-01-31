@@ -1,13 +1,16 @@
 package com.ysmjjsy.goya.component.mybatisplus.configuration;
 
+import com.baomidou.dynamic.datasource.DynamicRoutingDataSource;
 import com.baomidou.mybatisplus.extension.plugins.inner.TenantLineInnerInterceptor;
 import com.ysmjjsy.goya.component.mybatisplus.configuration.properties.GoyaMybatisPlusProperties;
 import com.ysmjjsy.goya.component.mybatisplus.constants.MybatisPlusConst;
+import com.ysmjjsy.goya.component.mybatisplus.tenant.TenantDataSourceRegistrar;
 import com.ysmjjsy.goya.component.mybatisplus.tenant.TenantDataSourceRouter;
 import com.ysmjjsy.goya.component.mybatisplus.tenant.TenantProfileStore;
 import com.ysmjjsy.goya.component.mybatisplus.tenant.TenantResolver;
 import com.ysmjjsy.goya.component.mybatisplus.tenant.TenantShardDecider;
 import com.ysmjjsy.goya.component.mybatisplus.tenant.aspect.TenantRoutingAspect;
+import com.ysmjjsy.goya.component.mybatisplus.tenant.defaults.DefaultTenantDataSourceRegistrar;
 import com.ysmjjsy.goya.component.mybatisplus.tenant.defaults.DefaultTenantDataSourceRouter;
 import com.ysmjjsy.goya.component.mybatisplus.tenant.defaults.DefaultTenantProfileStore;
 import com.ysmjjsy.goya.component.mybatisplus.tenant.defaults.DefaultTenantShardDecider;
@@ -70,6 +73,21 @@ public class MybatisPlusTenantAutoConfiguration {
     }
 
     /**
+     * 默认租户数据源注册器。
+     *
+     * @param routingDataSource 动态数据源
+     * @return TenantDataSourceRegistrar
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnClass(DynamicRoutingDataSource.class)
+    public TenantDataSourceRegistrar tenantDataSourceRegistrar(DynamicRoutingDataSource routingDataSource) {
+        DefaultTenantDataSourceRegistrar registrar = new DefaultTenantDataSourceRegistrar(routingDataSource);
+        log.trace("[Goya] |- component [mybatis-plus] MybatisPlusTenantAutoConfiguration |- bean [tenantDataSourceRegistrar] register.");
+        return registrar;
+    }
+
+    /**
      * 默认租户配置存储。
      *
      * @param mapper TenantProfileMapper
@@ -108,7 +126,7 @@ public class MybatisPlusTenantAutoConfiguration {
     @ConditionalOnMissingBean
     public GoyaTenantLineHandler goyaTenantLineHandler(GoyaMybatisPlusProperties properties) {
         GoyaTenantLineHandler goyaTenantLineHandler = new GoyaTenantLineHandler(properties.tenant());
-        log.trace("[Goya] |- component [mybatis-plus] MybatisPlusTenantAutoConfiguration |- bean [defaultTenantDataSourceRouter] register.");
+        log.trace("[Goya] |- component [mybatis-plus] MybatisPlusTenantAutoConfiguration |- bean [goyaTenantLineHandler] register.");
         return goyaTenantLineHandler;
     }
 
@@ -133,6 +151,7 @@ public class MybatisPlusTenantAutoConfiguration {
      * @param profileStore 配置存储
      * @param decider      决策器
      * @param router       路由器
+     * @param registrar    数据源注册器
      * @param properties   配置项
      * @return GoyaTenantRoutingFilter
      */
@@ -143,8 +162,9 @@ public class MybatisPlusTenantAutoConfiguration {
                                                            TenantProfileStore profileStore,
                                                            TenantShardDecider decider,
                                                            TenantDataSourceRouter router,
+                                                           TenantDataSourceRegistrar registrar,
                                                            GoyaMybatisPlusProperties properties) {
-        GoyaTenantRoutingFilter goyaTenantRoutingFilter = new GoyaTenantRoutingFilter(resolver, profileStore, decider, router, properties.tenant());
+        GoyaTenantRoutingFilter goyaTenantRoutingFilter = new GoyaTenantRoutingFilter(resolver, profileStore, decider, router, registrar, properties.tenant());
         log.trace("[Goya] |- component [mybatis-plus] MybatisPlusTenantAutoConfiguration |- bean [goyaTenantRoutingFilter] register.");
         return goyaTenantRoutingFilter;
     }
@@ -156,6 +176,7 @@ public class MybatisPlusTenantAutoConfiguration {
      * @param profileStore 配置存储
      * @param decider      决策器
      * @param router       路由器
+     * @param registrar    数据源注册器
      * @param properties   配置项
      * @return TenantRoutingAspect
      */
@@ -166,8 +187,9 @@ public class MybatisPlusTenantAutoConfiguration {
                                                    TenantProfileStore profileStore,
                                                    TenantShardDecider decider,
                                                    TenantDataSourceRouter router,
+                                                   TenantDataSourceRegistrar registrar,
                                                    GoyaMybatisPlusProperties properties) {
-        TenantRoutingAspect tenantRoutingAspect = new TenantRoutingAspect(resolver, profileStore, decider, router, properties.tenant());
+        TenantRoutingAspect tenantRoutingAspect = new TenantRoutingAspect(resolver, profileStore, decider, router, registrar, properties.tenant());
         log.trace("[Goya] |- component [mybatis-plus] MybatisPlusTenantAutoConfiguration |- bean [tenantRoutingAspect] register.");
         return tenantRoutingAspect;
     }

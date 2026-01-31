@@ -13,6 +13,7 @@ public record TenantProfile(
         String tenantId,
         TenantMode mode,
         String dsKey,
+        TenantDataSourceProfile dataSourceProfile,
         boolean tenantLineEnabled,
         long version
 ) implements Serializable {

@@ -1,5 +1,6 @@
 package com.ysmjjsy.goya.component.mybatisplus.tenant.defaults;
 
+import com.ysmjjsy.goya.component.mybatisplus.tenant.TenantDataSourceProfile;
 import com.ysmjjsy.goya.component.mybatisplus.tenant.TenantMode;
 import com.ysmjjsy.goya.component.mybatisplus.tenant.TenantProfile;
 import com.ysmjjsy.goya.component.mybatisplus.tenant.TenantProfileStore;
@@ -39,7 +40,8 @@ public class DefaultTenantProfileStore implements TenantProfileStore {
         TenantMode mode = entity.getMode();
         long version = entity.getTenantVersion() == null ? 0L : entity.getTenantVersion();
         boolean tenantLineEnabled = entity.getTenantLineEnabled() == null || entity.getTenantLineEnabled();
-        return new TenantProfile(entity.getTenantId(), mode, entity.getDsKey(), tenantLineEnabled, version);
+        TenantDataSourceProfile dataSourceProfile = resolveDataSourceProfile(entity);
+        return new TenantProfile(entity.getTenantId(), mode, entity.getDsKey(), dataSourceProfile, tenantLineEnabled, version);
     }
 
     /**
@@ -55,5 +57,18 @@ public class DefaultTenantProfileStore implements TenantProfileStore {
         }
         TenantProfileEntity entity = mapper.selectById(tenantId);
         return entity == null || entity.getTenantVersion() == null ? 0L : entity.getTenantVersion();
+    }
+
+    private TenantDataSourceProfile resolveDataSourceProfile(TenantProfileEntity entity) {
+        if (entity == null || !StringUtils.hasText(entity.getJdbcUrl())) {
+            return null;
+        }
+        return new TenantDataSourceProfile(
+                entity.getJdbcUrl(),
+                entity.getJdbcUsername(),
+                entity.getJdbcPassword(),
+                entity.getJdbcDriver(),
+                entity.getDsType()
+        );
     }
 }
