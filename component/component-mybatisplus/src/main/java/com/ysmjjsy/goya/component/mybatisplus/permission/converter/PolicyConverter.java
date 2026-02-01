@@ -8,6 +8,7 @@ import com.ysmjjsy.goya.component.framework.security.domain.Policy;
 import com.ysmjjsy.goya.component.mybatisplus.permission.entity.DataResourcePolicyEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 import org.springframework.util.StringUtils;
 
@@ -15,6 +16,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * <p></p>
@@ -22,7 +24,7 @@ import java.util.List;
  * @author goya
  * @since 2026/1/31 22:07
  */
-@Mapper(config = MapStructConfig.class)
+@Mapper(config = MapStructConfig.class, imports = {HashMap.class})
 public interface PolicyConverter extends MapStructConverter<DataResourcePolicyEntity, Policy> {
 
     @Override
@@ -35,7 +37,15 @@ public interface PolicyConverter extends MapStructConverter<DataResourcePolicyEn
 
     @Override
     @Mapping(target = "actionCode", source = "action", qualifiedByName = "actionToCode")
+    @Mapping(target = "allowColumns", source = "allowColumns", qualifiedByName = "listToCsv")
+    @Mapping(target = "denyColumns", source = "denyColumns", qualifiedByName = "listToCsv")
     DataResourcePolicyEntity toOrigin(Policy target);
+
+    @Override
+    @Mapping(target = "actionCode", source = "action", qualifiedByName = "actionToCode")
+    @Mapping(target = "allowColumns", source = "allowColumns", qualifiedByName = "listToCsv")
+    @Mapping(target = "denyColumns", source = "denyColumns", qualifiedByName = "listToCsv")
+    void updateEntity(Policy target, @MappingTarget DataResourcePolicyEntity origin);
 
     /**
      * CSV -> List<String>
@@ -50,6 +60,25 @@ public interface PolicyConverter extends MapStructConverter<DataResourcePolicyEn
                 .filter(StringUtils::hasText)
                 .distinct()
                 .toList();
+    }
+
+    /**
+     * List<String> -> CSV
+     */
+    @Named("listToCsv")
+    default String listToCsv(List<String> list) {
+        if (list == null || list.isEmpty()) {
+            return null;
+        }
+        List<String> items = list.stream()
+                .filter(StringUtils::hasText)
+                .map(String::trim)
+                .distinct()
+                .collect(Collectors.toList());
+        if (items.isEmpty()) {
+            return null;
+        }
+        return String.join(SymbolConst.COMMA, items);
     }
 
     /**

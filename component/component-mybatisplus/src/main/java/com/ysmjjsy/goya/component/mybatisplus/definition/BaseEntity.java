@@ -1,6 +1,7 @@
 package com.ysmjjsy.goya.component.mybatisplus.definition;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.ysmjjsy.goya.component.mybatisplus.constants.MybatisPlusConst;
 import lombok.Data;
@@ -32,7 +33,7 @@ public abstract class BaseEntity extends AuditEntity {
     /**
      * 租户 ID（主键）。
      */
-    @TableId(value = MybatisPlusConst.FIELD_TENANT_ID, type = IdType.INPUT)
+    @TableField(MybatisPlusConst.FIELD_TENANT_ID)
     private String tenantId;
 
 

@@ -22,6 +22,7 @@ import com.ysmjjsy.goya.component.mybatisplus.permission.mapper.DataResourcePoli
 import com.ysmjjsy.goya.component.mybatisplus.permission.repository.MybatisPolicyRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -108,9 +109,9 @@ public class MybatisPlusPermissionAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    public GoyaDataPermissionHandler goyaDataPermissionHandler(AuthorizationService authorizationService,
+    public GoyaDataPermissionHandler goyaDataPermissionHandler(ObjectProvider<AuthorizationService> authorizationServiceProvider,
                                                                GoyaMybatisPlusProperties properties) {
-        GoyaDataPermissionHandler goyaDataPermissionHandler = new GoyaDataPermissionHandler(authorizationService, properties.permission());
+        GoyaDataPermissionHandler goyaDataPermissionHandler = new GoyaDataPermissionHandler(authorizationServiceProvider, properties.permission());
         log.trace("[Goya] |- component [mybatis-plus] MybatisPlusPermissionAutoConfiguration |- bean [goyaDataPermissionHandler] register.");
         return goyaDataPermissionHandler;
     }

@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.schema.Table;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
@@ -45,7 +46,7 @@ public class GoyaDataPermissionHandler implements MultiDataPermissionHandler {
     private static final String ACTION_UPDATE = "UPDATE";
     private static final String ACTION_DELETE = "DELETE";
 
-    private final AuthorizationService authorizationService;
+    private final ObjectProvider<AuthorizationService> authorizationServiceProvider;
     private final GoyaMybatisPlusProperties.Permission options;
 
     /**
@@ -60,6 +61,10 @@ public class GoyaDataPermissionHandler implements MultiDataPermissionHandler {
     public Expression getSqlSegment(Table table, Expression where, String mappedStatementId) {
         AccessContextValue access = AccessContext.get();
         if (access == null || !StringUtils.hasText(access.subjectId())) {
+            return handleNoContext();
+        }
+        AuthorizationService authorizationService = authorizationServiceProvider.getIfAvailable();
+        if (authorizationService == null) {
             return handleNoContext();
         }
         String tableName = table == null ? null : table.getName();
