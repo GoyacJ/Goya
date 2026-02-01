@@ -10,10 +10,16 @@ import com.ysmjjsy.goya.component.framework.security.decision.DefaultPolicyEngin
 import com.ysmjjsy.goya.component.framework.security.decision.PolicyEngine;
 import com.ysmjjsy.goya.component.framework.security.dsl.RangeDslParser;
 import com.ysmjjsy.goya.component.framework.security.dsl.RangeFilterBuilder;
+import com.ysmjjsy.goya.component.framework.security.event.DefaultPermissionChangePublisher;
+import com.ysmjjsy.goya.component.framework.security.event.PermissionChangeSubscriberDispatcher;
 import com.ysmjjsy.goya.component.framework.security.service.DefaultAuthorizationService;
+import com.ysmjjsy.goya.component.framework.security.spi.PermissionChangePublisher;
+import com.ysmjjsy.goya.component.framework.security.spi.PermissionChangeSubscriber;
 import com.ysmjjsy.goya.component.framework.security.spi.PolicyRepository;
+import com.ysmjjsy.goya.component.framework.bus.event.BusEventPublisher;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -93,5 +99,33 @@ public class FrameworkSecurityAutoConfiguration {
         DefaultAuthorizationService defaultAuthorizationService = new DefaultAuthorizationService(subjectResolver, resourceResolver, policyRepository, policyEngine);
         log.trace("[Goya] |- component [framework] FrameworkSecurityAutoConfiguration |- bean [defaultAuthorizationService] register.");
         return defaultAuthorizationService;
+    }
+
+    /**
+     * 权限变更发布器。
+     *
+     * @param subscribersProvider 订阅器提供器
+     * @return PermissionChangePublisher
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public PermissionChangePublisher permissionChangePublisher(BusEventPublisher busEventPublisher) {
+        DefaultPermissionChangePublisher publisher = new DefaultPermissionChangePublisher(busEventPublisher);
+        log.trace("[Goya] |- component [framework] FrameworkSecurityAutoConfiguration |- bean [permissionChangePublisher] register.");
+        return publisher;
+    }
+
+    /**
+     * 权限变更订阅分发器。
+     *
+     * @param subscribersProvider 订阅器提供器
+     * @return PermissionChangeSubscriberDispatcher
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public PermissionChangeSubscriberDispatcher permissionChangeSubscriberDispatcher(ObjectProvider<PermissionChangeSubscriber> subscribersProvider) {
+        PermissionChangeSubscriberDispatcher dispatcher = new PermissionChangeSubscriberDispatcher(subscribersProvider);
+        log.trace("[Goya] |- component [framework] FrameworkSecurityAutoConfiguration |- bean [permissionChangeSubscriberDispatcher] register.");
+        return dispatcher;
     }
 }

@@ -15,7 +15,9 @@ import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.select.AllColumns;
 import net.sf.jsqlparser.statement.select.AllTableColumns;
 import net.sf.jsqlparser.statement.select.FromItem;
+import net.sf.jsqlparser.statement.select.GroupByElement;
 import net.sf.jsqlparser.statement.select.Join;
+import net.sf.jsqlparser.statement.select.OrderByElement;
 import net.sf.jsqlparser.statement.select.ParenthesedSelect;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
@@ -224,11 +226,67 @@ public class GoyaDataPermissionInterceptor extends DataPermissionInterceptor {
         if (changed) {
             plainSelect.setSelectItems(rebuilt);
         }
+
+        if (violatesConstraint(plainSelect.getWhere(), tableRefs, constraints)
+                || violatesConstraint(plainSelect.getHaving(), tableRefs, constraints)
+                || violatesOrderBy(plainSelect.getOrderByElements(), tableRefs, constraints)
+                || violatesGroupBy(plainSelect.getGroupBy(), tableRefs, constraints)) {
+            if (failClosed) {
+                denySelect(plainSelect);
+            }
+        }
+    }
+
+    private boolean violatesOrderBy(List<OrderByElement> orderByElements,
+                                    List<TableRef> tableRefs,
+                                    Map<String, NormalizedConstraint> constraints) {
+        if (CollectionUtils.isEmpty(orderByElements)) {
+            return false;
+        }
+        for (OrderByElement element : orderByElements) {
+            if (element != null && violatesConstraint(element.getExpression(), tableRefs, constraints)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean violatesGroupBy(GroupByElement groupBy,
+                                    List<TableRef> tableRefs,
+                                    Map<String, NormalizedConstraint> constraints) {
+        if (groupBy == null) {
+            return false;
+        }
+        net.sf.jsqlparser.expression.operators.relational.ExpressionList<?> expressions = groupBy.getGroupByExpressions();
+        if (expressions != null) {
+            for (Object item : expressions) {
+                if (item instanceof Expression expression && violatesConstraint(expression, tableRefs, constraints)) {
+                    return true;
+                }
+            }
+        }
+        List<net.sf.jsqlparser.expression.operators.relational.ExpressionList<Expression>> groupingSets = groupBy.getGroupingSets();
+        if (!CollectionUtils.isEmpty(groupingSets)) {
+            for (net.sf.jsqlparser.expression.operators.relational.ExpressionList<Expression> set : groupingSets) {
+                if (set == null) {
+                    continue;
+                }
+                for (Expression expression : set) {
+                    if (violatesConstraint(expression, tableRefs, constraints)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     private boolean violatesConstraint(Expression expression,
                                        List<TableRef> tableRefs,
                                        Map<String, NormalizedConstraint> constraints) {
+        if (expression == null) {
+            return false;
+        }
         List<Column> columns = new ArrayList<>();
         expression.accept(new ExpressionVisitorAdapter() {
             @Override

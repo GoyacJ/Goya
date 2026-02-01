@@ -5,6 +5,7 @@ import com.ysmjjsy.goya.component.framework.security.api.AuthorizationService;
 import com.ysmjjsy.goya.component.framework.security.context.ResourceResolver;
 import com.ysmjjsy.goya.component.framework.security.dsl.RangeDslParser;
 import com.ysmjjsy.goya.component.framework.security.dsl.RangeFilterBuilder;
+import com.ysmjjsy.goya.component.framework.security.spi.PermissionChangePublisher;
 import com.ysmjjsy.goya.component.framework.security.spi.PolicyRepository;
 import com.ysmjjsy.goya.component.mybatisplus.configuration.properties.GoyaMybatisPlusProperties;
 import com.ysmjjsy.goya.component.mybatisplus.constants.MybatisPlusConst;
@@ -15,6 +16,7 @@ import com.ysmjjsy.goya.component.mybatisplus.permission.converter.PolicyConvert
 import com.ysmjjsy.goya.component.mybatisplus.permission.converter.ResourceConverter;
 import com.ysmjjsy.goya.component.mybatisplus.permission.handler.GoyaDataPermissionHandler;
 import com.ysmjjsy.goya.component.mybatisplus.permission.handler.GoyaDataPermissionInterceptor;
+import com.ysmjjsy.goya.component.mybatisplus.permission.handler.PermissionChangeInnerInterceptor;
 import com.ysmjjsy.goya.component.mybatisplus.permission.mapper.DataResourceMapper;
 import com.ysmjjsy.goya.component.mybatisplus.permission.mapper.DataResourcePolicyMapper;
 import com.ysmjjsy.goya.component.mybatisplus.permission.repository.MybatisPolicyRepository;
@@ -127,5 +129,19 @@ public class MybatisPlusPermissionAutoConfiguration {
         GoyaDataPermissionInterceptor goyaDataPermissionInterceptor = new GoyaDataPermissionInterceptor(handler, properties.permission());
         log.trace("[Goya] |- component [mybatis-plus] MybatisPlusPermissionAutoConfiguration |- bean [goyaDataPermissionInterceptor] register.");
         return goyaDataPermissionInterceptor;
+    }
+
+    /**
+     * 权限变更事件拦截器。
+     *
+     * @param publisher 权限变更发布器
+     * @return PermissionChangeInnerInterceptor
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public PermissionChangeInnerInterceptor permissionChangeInnerInterceptor(PermissionChangePublisher publisher) {
+        PermissionChangeInnerInterceptor interceptor = new PermissionChangeInnerInterceptor(publisher);
+        log.trace("[Goya] |- component [mybatis-plus] MybatisPlusPermissionAutoConfiguration |- bean [permissionChangeInnerInterceptor] register.");
+        return interceptor;
     }
 }

@@ -62,6 +62,7 @@ Goya 需要一个企业级 MyBatis Plus 组件，统一数据访问治理，并�
 3. 通过 AuthorizationService 调用策略引擎完成鉴权。
 4. 若允许且存在 DSL，生成 SQL 条件并追加到 WHERE。
 5. 若拒绝，返回 1=0（安全默认）。
+6. 若存在列级约束，拦截 SELECT/WHERE/ORDER BY/GROUP BY/HAVING 的列引用，违反时按 failClosed 处理。
 
 ##### 5.2.2 DSL 规则
 - DSL 为结构化表达式，禁止 raw SQL 直通。
@@ -84,6 +85,27 @@ Goya 需要一个企业级 MyBatis Plus 组件，统一数据访问治理，并�
   }
 }
 ```
+
+JSON DSL 结构约束（正式 Schema 说明）：
+- **逻辑表达式**
+  - AND/OR：`{ "type": "AND|OR", "left": <expr>, "right": <expr> }`
+  - NOT：`{ "type": "NOT", "expression": <expr> }`（`expression` 也可用 `expr`）
+- **比较表达式**
+  - `COMPARE`：`{ "field": "<column>", "operator": "EQ|NE|GT|GTE|LT|LTE|LIKE", "value": <value> }`
+  - 简写：`{ "field": "<column>", "op": "EQ|NE|GT|GTE|LT|LTE|LIKE", "value": <value> }`
+- **区间**
+  - `BETWEEN`：`{ "type": "BETWEEN", "field": "<column>", "start": <value>, "end": <value> }`
+- **集合**
+  - `IN`：`{ "type": "IN", "field": "<column>", "values": [<value>...], "negated": false }`
+- **空值**
+  - `NULL/IS_NULL`：`{ "type": "NULL|IS_NULL", "field": "<column>", "negated": false }`
+- **值类型**
+  - 直接字面量：`"text" | 123 | true | null`
+  - 或显式类型：`{ "type": "string|number|boolean|datetime|null", "value": "<value>" }`
+
+说明：
+- `operator` 也支持简写字段 `op`；`negated` 可替换为 `not`。
+- 任何非 JSON 结构的 DSL（含原始 SQL）将被拒绝。
 
 ### 6. 多租户混合模式
 
@@ -165,6 +187,7 @@ Goya 需要一个企业级 MyBatis Plus 组件，统一数据访问治理，并�
 
 补充说明：
 - data_resource 中 `resource_type=FIELD` 的记录用于 DSL 字段白名单校验（父资源为表）。
+- 字段白名单默认按请求实时读取，不提供内置缓存/一致性策略；如需缓存，可在 ResourceResolver/PolicyRepository 中自行实现，并通过 PermissionChangePublisher/Subscriber 触发刷新。
 
 ### 6.1 租户配置表
 默认租户配置读取 `tenant_profile` 表：

@@ -52,9 +52,7 @@ public class JSqlRangeFilterBuilder implements RangeFilterBuilder {
             case null -> {
                 return null;
             }
-            case SqlRangeExpression sqlExpression -> {
-                throw new IllegalArgumentException("禁止直接传入 SQL DSL");
-            }
+            case SqlRangeExpression _ -> throw new IllegalArgumentException("禁止直接传入 SQL DSL");
             case BinaryExpression binaryExpression -> {
                 Expression left = toSqlExpression(binaryExpression.getLeft());
                 Expression right = toSqlExpression(binaryExpression.getRight());

@@ -15,6 +15,7 @@ import com.ysmjjsy.goya.component.mybatisplus.context.AccessContextResolver;
 import com.ysmjjsy.goya.component.mybatisplus.context.filter.AccessContextFilter;
 import com.ysmjjsy.goya.component.mybatisplus.context.web.WebAccessContextResolver;
 import com.ysmjjsy.goya.component.mybatisplus.exception.MybatisExceptionHandler;
+import com.ysmjjsy.goya.component.mybatisplus.permission.handler.PermissionChangeInnerInterceptor;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
@@ -59,6 +60,7 @@ public class GoyaMybatisPlusAutoConfiguration {
     public MybatisPlusInterceptor mybatisPlusInterceptor(GoyaMybatisPlusProperties props,
                                                          ObjectProvider<TenantLineInnerInterceptor> tenantLineProvider,
                                                          ObjectProvider<DataPermissionInterceptor> dataPermissionProvider,
+                                                         ObjectProvider<PermissionChangeInnerInterceptor> permissionChangeProvider,
                                                          BlockAttackInnerInterceptor blockAttackInnerInterceptor,
                                                          PaginationInnerInterceptor paginationInnerInterceptor,
                                                          OptimisticLockerInnerInterceptor optimisticLockerInnerInterceptor) {
@@ -74,10 +76,17 @@ public class GoyaMybatisPlusAutoConfiguration {
             chain.add(tenantLine);
         }
 
-        // DataPermission（仅查询）
-        DataPermissionInterceptor dataPermission = dataPermissionProvider.getIfAvailable();
-        if (props.permission().enabled() && dataPermission != null) {
-            chain.add(dataPermission);
+        // DataPermission
+        if (props.permission().enabled()) {
+            DataPermissionInterceptor dataPermission = dataPermissionProvider.getIfAvailable();
+            PermissionChangeInnerInterceptor permissionChange = permissionChangeProvider.getIfAvailable();
+
+            if (dataPermission != null) {
+                chain.add(dataPermission);
+            }
+            if (permissionChange != null) {
+                chain.add(permissionChange);
+            }
         }
 
         // Pagination

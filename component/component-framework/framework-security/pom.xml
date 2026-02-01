@@ -16,6 +16,10 @@
             <groupId>com.ysmjjsy.goya</groupId>
             <artifactId>framework-servlet</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.ysmjjsy.goya</groupId>
+            <artifactId>framework-bus</artifactId>
+        </dependency>
     </dependencies>
 
 </project>
