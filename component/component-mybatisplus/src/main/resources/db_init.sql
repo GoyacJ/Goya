@@ -1,38 +1,222 @@
-CREATE TABLE tenant_profile
-(
-    tenant_id           VARCHAR(64) NOT NULL COMMENT '租户ID',
-    mode                VARCHAR(32) NOT NULL COMMENT '租户模式：CORE_SHARED / DEDICATED_DB',
-    ds_key              VARCHAR(64) NOT NULL COMMENT 'dynamic-datasource 的 dsKey',
-    tenant_line_enabled TINYINT(1)  NOT NULL DEFAULT 1 COMMENT '是否启用 tenant line（独库可关闭）',
-    version             BIGINT      NOT NULL DEFAULT 0 COMMENT '版本号（乐观锁）',
-    updated_at          DATETIME(3) NOT NULL COMMENT '更新时间',
-    updated_by          VARCHAR(64) NULL COMMENT '更新人',
-    created_at          DATETIME(3) NOT NULL COMMENT '创建时间',
-    created_by          VARCHAR(64) NULL COMMENT '创建人',
-    PRIMARY KEY (tenant_id)
-) COMMENT ='租户画像配置（框架内置）';
+-- MySQL 8.x DDL
 
+CREATE TABLE IF NOT EXISTS tenant_profile (
+    tenant_id VARCHAR(64) PRIMARY KEY,
+    mode VARCHAR(32) NOT NULL,
+    ds_key VARCHAR(128) NULL,
+    jdbc_url VARCHAR(512) NULL,
+    jdbc_username VARCHAR(128) NULL,
+    jdbc_password VARCHAR(256) NULL,
+    jdbc_driver VARCHAR(256) NULL,
+    ds_type VARCHAR(256) NULL,
+    tenant_line_enabled TINYINT(1) NOT NULL DEFAULT 1,
+    tenant_version BIGINT NOT NULL DEFAULT 0,
+    del_flag TINYINT(1) NOT NULL DEFAULT 0,
+    version INT NOT NULL DEFAULT 0,
+    created_at DATETIME NULL,
+    created_by VARCHAR(64) NULL,
+    updated_at DATETIME NULL,
+    updated_by VARCHAR(64) NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE permission_rule_set (
-                                     id            BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键',
-                                     tenant_id     VARCHAR(64)  NOT NULL COMMENT '租户ID',
-                                     subject_id    VARCHAR(128) NOT NULL COMMENT '主体ID（userId/roleId/组合主体）',
-                                     resource      VARCHAR(64)  NOT NULL COMMENT '逻辑资源（如 ORDER/CUSTOMER）',
-                                     rule_json     JSON         NOT NULL COMMENT '规则集JSON（结构化，禁止 raw SQL）',
-                                     enabled       TINYINT(1)   NOT NULL DEFAULT 1 COMMENT '是否启用',
-                                     updated_at    DATETIME(3)  NOT NULL COMMENT '更新时间',
-                                     updated_by    VARCHAR(64)  NULL COMMENT '更新人',
-                                     created_at    DATETIME(3)  NOT NULL COMMENT '创建时间',
-                                     created_by    VARCHAR(64)  NULL COMMENT '创建人',
-                                     UNIQUE KEY uk_tenant_subject_resource (tenant_id, subject_id, resource),
-                                     PRIMARY KEY (id)
-) COMMENT='权限规则集（subject+resource）';
+CREATE TABLE IF NOT EXISTS data_resource (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    tenant_id VARCHAR(64) NOT NULL,
+    tenant_code VARCHAR(64) NOT NULL,
+    resource_hashcode VARCHAR(128) NOT NULL,
+    resource_code VARCHAR(128) NOT NULL,
+    resource_parent_code VARCHAR(128) NULL,
+    resource_parent_codes VARCHAR(512) NULL,
+    resource_oper_type VARCHAR(1024) NULL,
+    resource_name VARCHAR(128) NULL,
+    resource_type VARCHAR(64) NOT NULL,
+    resource_desc VARCHAR(512) NULL,
+    resource_owner VARCHAR(256) NULL,
+    del_flag TINYINT(1) NOT NULL DEFAULT 0,
+    version INT NOT NULL DEFAULT 0,
+    created_at DATETIME NULL,
+    created_by VARCHAR(64) NULL,
+    updated_at DATETIME NULL,
+    updated_by VARCHAR(64) NULL,
+    UNIQUE KEY uk_resource_hashcode (resource_hashcode),
+    KEY idx_tenant_resource (tenant_code, resource_code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS data_resource_policy (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    tenant_id VARCHAR(64) NOT NULL,
+    tenant_code VARCHAR(64) NOT NULL,
+    subject_type VARCHAR(32) NOT NULL,
+    subject_id VARCHAR(64) NOT NULL,
+    resource_type VARCHAR(32) NOT NULL,
+    resource_code VARCHAR(128) NOT NULL,
+    action VARCHAR(64) NOT NULL,
+    policy_effect VARCHAR(16) NOT NULL,
+    policy_scope VARCHAR(16) NULL,
+    range_dsl TEXT NULL,
+    allow_columns TEXT NULL,
+    deny_columns TEXT NULL,
+    inherit_flag TINYINT(1) NOT NULL DEFAULT 0,
+    resource_range VARCHAR(32) NULL,
+    never_expire TINYINT(1) NOT NULL DEFAULT 0,
+    expire_time DATETIME NULL,
+    del_flag TINYINT(1) NOT NULL DEFAULT 0,
+    version INT NOT NULL DEFAULT 0,
+    created_at DATETIME NULL,
+    created_by VARCHAR(64) NULL,
+    updated_at DATETIME NULL,
+    updated_by VARCHAR(64) NULL,
+    KEY idx_tenant_subject (tenant_code, subject_type, subject_id),
+    KEY idx_tenant_resource (tenant_code, resource_code),
+    KEY idx_action (action)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE permission_subject_version (
-                                            tenant_id   VARCHAR(64)  NOT NULL COMMENT '租户ID',
-                                            subject_id  VARCHAR(128) NOT NULL COMMENT '主体ID',
-                                            version     BIGINT       NOT NULL DEFAULT 0 COMMENT '主体版本号（任一资源规则变化即递增）',
-                                            updated_at  DATETIME(3)  NOT NULL COMMENT '更新时间',
-                                            PRIMARY KEY (tenant_id, subject_id)
-) COMMENT='权限主体版本（用于快速生效）';
+-- PostgreSQL 13+ DDL
+
+CREATE TABLE IF NOT EXISTS tenant_profile (
+    tenant_id VARCHAR(64) PRIMARY KEY,
+    mode VARCHAR(32) NOT NULL,
+    ds_key VARCHAR(128) NULL,
+    jdbc_url VARCHAR(512) NULL,
+    jdbc_username VARCHAR(128) NULL,
+    jdbc_password VARCHAR(256) NULL,
+    jdbc_driver VARCHAR(256) NULL,
+    ds_type VARCHAR(256) NULL,
+    tenant_line_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    tenant_version BIGINT NOT NULL DEFAULT 0,
+    del_flag BOOLEAN NOT NULL DEFAULT FALSE,
+    version INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NULL,
+    created_by VARCHAR(64) NULL,
+    updated_at TIMESTAMP NULL,
+    updated_by VARCHAR(64) NULL
+);
+
+CREATE TABLE IF NOT EXISTS data_resource (
+    id BIGSERIAL PRIMARY KEY,
+    tenant_id VARCHAR(64) NOT NULL,
+    tenant_code VARCHAR(64) NOT NULL,
+    resource_hashcode VARCHAR(128) NOT NULL,
+    resource_code VARCHAR(128) NOT NULL,
+    resource_parent_code VARCHAR(128) NULL,
+    resource_parent_codes VARCHAR(512) NULL,
+    resource_oper_type VARCHAR(1024) NULL,
+    resource_name VARCHAR(128) NULL,
+    resource_type VARCHAR(64) NOT NULL,
+    resource_desc VARCHAR(512) NULL,
+    resource_owner VARCHAR(256) NULL,
+    del_flag BOOLEAN NOT NULL DEFAULT FALSE,
+    version INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NULL,
+    created_by VARCHAR(64) NULL,
+    updated_at TIMESTAMP NULL,
+    updated_by VARCHAR(64) NULL
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_resource_hashcode ON data_resource(resource_hashcode);
+CREATE INDEX IF NOT EXISTS idx_tenant_resource ON data_resource(tenant_code, resource_code);
+
+CREATE TABLE IF NOT EXISTS data_resource_policy (
+    id BIGSERIAL PRIMARY KEY,
+    tenant_id VARCHAR(64) NOT NULL,
+    tenant_code VARCHAR(64) NOT NULL,
+    subject_type VARCHAR(32) NOT NULL,
+    subject_id VARCHAR(64) NOT NULL,
+    resource_type VARCHAR(32) NOT NULL,
+    resource_code VARCHAR(128) NOT NULL,
+    action VARCHAR(64) NOT NULL,
+    policy_effect VARCHAR(16) NOT NULL,
+    policy_scope VARCHAR(16) NULL,
+    range_dsl TEXT NULL,
+    allow_columns TEXT NULL,
+    deny_columns TEXT NULL,
+    inherit_flag BOOLEAN NOT NULL DEFAULT FALSE,
+    resource_range VARCHAR(32) NULL,
+    never_expire BOOLEAN NOT NULL DEFAULT FALSE,
+    expire_time TIMESTAMP NULL,
+    del_flag BOOLEAN NOT NULL DEFAULT FALSE,
+    version INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NULL,
+    created_by VARCHAR(64) NULL,
+    updated_at TIMESTAMP NULL,
+    updated_by VARCHAR(64) NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_tenant_subject ON data_resource_policy(tenant_code, subject_type, subject_id);
+CREATE INDEX IF NOT EXISTS idx_tenant_resource_policy ON data_resource_policy(tenant_code, resource_code);
+CREATE INDEX IF NOT EXISTS idx_action ON data_resource_policy(action);
+
+-- SQLite 3.x DDL
+
+CREATE TABLE IF NOT EXISTS tenant_profile (
+    tenant_id TEXT PRIMARY KEY,
+    mode TEXT NOT NULL,
+    ds_key TEXT NULL,
+    jdbc_url TEXT NULL,
+    jdbc_username TEXT NULL,
+    jdbc_password TEXT NULL,
+    jdbc_driver TEXT NULL,
+    ds_type TEXT NULL,
+    tenant_line_enabled INTEGER NOT NULL DEFAULT 1,
+    tenant_version INTEGER NOT NULL DEFAULT 0,
+    del_flag INTEGER NOT NULL DEFAULT 0,
+    version INTEGER NOT NULL DEFAULT 0,
+    created_at DATETIME NULL,
+    created_by TEXT NULL,
+    updated_at DATETIME NULL,
+    updated_by TEXT NULL
+);
+
+CREATE TABLE IF NOT EXISTS data_resource (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id TEXT NOT NULL,
+    tenant_code TEXT NOT NULL,
+    resource_hashcode TEXT NOT NULL,
+    resource_code TEXT NOT NULL,
+    resource_parent_code TEXT NULL,
+    resource_parent_codes TEXT NULL,
+    resource_oper_type TEXT NULL,
+    resource_name TEXT NULL,
+    resource_type TEXT NOT NULL,
+    resource_desc TEXT NULL,
+    resource_owner TEXT NULL,
+    del_flag INTEGER NOT NULL DEFAULT 0,
+    version INTEGER NOT NULL DEFAULT 0,
+    created_at DATETIME NULL,
+    created_by TEXT NULL,
+    updated_at DATETIME NULL,
+    updated_by TEXT NULL
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_resource_hashcode ON data_resource(resource_hashcode);
+CREATE INDEX IF NOT EXISTS idx_tenant_resource ON data_resource(tenant_code, resource_code);
+
+CREATE TABLE IF NOT EXISTS data_resource_policy (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id TEXT NOT NULL,
+    tenant_code TEXT NOT NULL,
+    subject_type TEXT NOT NULL,
+    subject_id TEXT NOT NULL,
+    resource_type TEXT NOT NULL,
+    resource_code TEXT NOT NULL,
+    action TEXT NOT NULL,
+    policy_effect TEXT NOT NULL,
+    policy_scope TEXT NULL,
+    range_dsl TEXT NULL,
+    allow_columns TEXT NULL,
+    deny_columns TEXT NULL,
+    inherit_flag INTEGER NOT NULL DEFAULT 0,
+    resource_range TEXT NULL,
+    never_expire INTEGER NOT NULL DEFAULT 0,
+    expire_time DATETIME NULL,
+    del_flag INTEGER NOT NULL DEFAULT 0,
+    version INTEGER NOT NULL DEFAULT 0,
+    created_at DATETIME NULL,
+    created_by TEXT NULL,
+    updated_at DATETIME NULL,
+    updated_by TEXT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_tenant_subject ON data_resource_policy(tenant_code, subject_type, subject_id);
+CREATE INDEX IF NOT EXISTS idx_tenant_resource_policy ON data_resource_policy(tenant_code, resource_code);
+CREATE INDEX IF NOT EXISTS idx_action ON data_resource_policy(action);

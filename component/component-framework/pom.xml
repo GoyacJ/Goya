@@ -22,5 +22,6 @@
         <module>framework-boot-starter</module>
         <module>framework-crypto</module>
         <module>framework-masker</module>
+        <module>framework-security</module>
     </modules>
 </project>

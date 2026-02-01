@@ -1,32 +1,23 @@
 package com.ysmjjsy.goya.component.mybatisplus.tenant;
 
 /**
- * <p>租户画像存储（动态）</p>
- * 用于从数据库/配置中心等加载租户 profile，并提供版本用于缓存一致性校验。
- *
- * <p><b>缓存策略建议：</b>
- * <ul>
- *   <li>L2（Caffeine）：tenantId → TenantProfile（TTL + version 校验）</li>
- *   <li>version 变化时立即重载</li>
- * </ul>
+ * <p>租户配置存储</p>
  *
  * @author goya
- * @since 2026/1/28 21:50
+ * @since 2026/1/29
  */
 public interface TenantProfileStore {
 
     /**
-     * 加载租户画像。
+     * 加载租户配置。
      *
      * @param tenantId 租户 ID
-     * @return 租户画像
+     * @return 租户配置
      */
     TenantProfile load(String tenantId);
 
     /**
-     * 获取租户画像版本号（或更新时间戳）。
-     * <p>
-     * 用于缓存一致性判定；版本变化必须触发重新加载。
+     * 获取租户配置版本。
      *
      * @param tenantId 租户 ID
      * @return 版本号

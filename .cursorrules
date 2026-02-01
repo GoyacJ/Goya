@@ -3,18 +3,18 @@
 ## 项目简介
 Goya 是一个企业级开发框架，采用前后端分离架构：
 - **Goya/**: Java 后端框架（Spring Boot 4.0.1 + Java 25）
-- **Goya-Web/**: Vue 3 前端管理系统（TypeScript + Vite + pnpm Monorepo）
+- **goya-web-ui/**: Vue 3 前端管理系统（TypeScript + Vite + pnpm Monorepo）
 
 ## 核心技术栈
 
-### 后端 (Goya/)
+### 后端
 - Java 25 + Spring Boot 4.0.1 + Spring Cloud 2025.1.0
 - MyBatis Plus 3.5.15 + MySQL/PostgreSQL
 - Spring AI 2.0.0-M1 + LangChain4j 1.9.1
 - Nacos 3.1.1 + Redisson 4.0.0
 - MapStruct 1.6.3 + Lombok 1.18.42
 
-### 前端 (Goya-Web/)
+### 前端 (goya-web-ui/)
 - Vue 3.5.24 + TypeScript + Vite
 - pnpm 10.x + Turborepo (Monorepo)
 - 多UI框架：Ant Design Vue / Element Plus / Naive UI
@@ -57,21 +57,42 @@ log.trace("[Goya] |- component [xxx] |- bean [xxxService] register.");
 
 ## 项目结构
 
-### 后端模块
+### 后端模块（v0.4.0）
 ```
 Goya/
-├── dependencies/    # 版本管理BOM
-├── component/       # 公共组件（common, web, auth, cache, database...）
-├── security/        # 安全模块（core, authentication, resource）
-├── ai/              # AI模块（mcp, model, rag, spring, video）
-├── platform/        # 平台（monolith单体, distributed分布式）
-├── oss/             # 对象存储（aliyun, minio, s3）
-└── starter/         # 自动配置启动器
+├── bom/                       # 版本管理 BOM
+├── component/                 # 公共组件
+│   ├── component-framework/   # 框架基础（聚合模块）
+│   │   ├── framework-core/    # 核心工具类
+│   │   ├── framework-common/  # 公共组件
+│   │   ├── framework-masker/  # 数据脱敏
+│   │   ├── framework-crypto/  # 加密解密
+│   │   ├── framework-cache/   # 缓存抽象
+│   │   ├── framework-bus/     # 消息总线抽象
+│   │   ├── framework-log/     # 日志增强
+│   │   ├── framework-oss/     # OSS 抽象
+│   │   ├── framework-servlet/ # Servlet 增强
+│   │   └── framework-boot-starter/ # 自动配置
+│   ├── component-redis/       # Redis 实现（分布式锁/布隆过滤器/延迟队列）
+│   ├── component-kafka/       # Kafka 消息
+│   ├── component-rabbitmq/    # RabbitMQ 消息
+│   ├── component-mybatisplus/ # MyBatis Plus 增强
+│   ├── component-captcha/     # 验证码
+│   ├── component-security/    # 安全模块（4子模块）
+│   ├── component-social/      # 社交登录
+│   ├── component-oss-aliyun/  # 阿里云 OSS
+│   ├── component-oss-s3/      # AWS S3
+│   └── component-oss-minio/   # MinIO
+├── ai/                        # AI模块（mcp, model, rag, spring, video）
+├── platform/                  # 平台（monolith单体, distributed分布式）
+├── cloud/                     # 云原生支持
+├── deploy/                    # 部署配置（docker, maven）
+└── docs/                      # 项目文档
 ```
 
 ### 前端结构
 ```
-Goya-Web/
+goya-web-ui/
 ├── apps/            # 应用（web-antd, web-ele, web-naive, backend-mock）
 ├── packages/        # 共享包（@core, effects, stores, types, utils...）
 └── internal/        # 内部工具（lint-configs, vite-config, tsconfig...）
@@ -99,5 +120,5 @@ Goya-Web/
 - **context7**: 查询官方框架文档（Spring Boot, Vue, TypeScript等）
 
 ## 详细规范
-完整规范请参考：`.cursor/rules/project-rules.mdc`
+完整规范请参考：`.cursor/rules/` 目录下的规则文件
 

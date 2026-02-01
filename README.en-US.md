@@ -23,8 +23,8 @@ Goya is an enterprise-grade microservices development framework built on **Sprin
 
 ### Architecture Components
 
-- **Goya/** - Java Backend Framework
-- **Goya-Web/** - Vue 3 Admin System
+- **Goya/** - Java Backend Framework (this directory)
+- **goya-web-ui/** - Vue 3 Admin System
 
 ## ✨ Core Features
 
@@ -44,10 +44,10 @@ Goya is an enterprise-grade microservices development framework built on **Sprin
 - **Multi-Model Support**: OpenAI, Qwen, Local Models
 
 ### 🚀 Microservices Components
-- **Cache**: Caffeine / Redis / Multi-Level Cache
-- **Message Bus**: Kafka / Stream Abstraction
-- **Database**: MyBatis Plus / JPA Dual Engine
-- **Object Storage**: Aliyun OSS / MinIO / S3
+- **Cache**: Redis (Distributed Lock / Bloom Filter / Delayed Queue / Rate Limiter)
+- **Message Bus**: Kafka / RabbitMQ
+- **Database**: MyBatis Plus Enhancement
+- **Object Storage**: Aliyun OSS / MinIO / AWS S3
 - **CAPTCHA**: Arithmetic / Slider / Jigsaw Types
 - **Social Login**: WeChat Mini Program / Third-Party Platforms
 - **Audit Logging**: Operation Logs / Audit Trails
@@ -55,8 +55,8 @@ Goya is an enterprise-grade microservices development framework built on **Sprin
 ### 🏗️ Tech Stack
 - **Java 25** + **Spring Boot 4.0.1** + **Spring Cloud 2025.1.0**
 - **Spring Security 7** + **Spring Authorization Server**
-- **MyBatis Plus 3.5.15** / **Spring Data JPA**
-- **Redisson 4.0.0** + **Caffeine**
+- **MyBatis Plus 3.5.15**
+- **Redisson 4.0.0**
 - **MapStruct 1.6.3** + **Lombok 1.18.42**
 - **Nacos 3.1.1** Service Discovery + Config Center
 
@@ -64,54 +64,54 @@ Goya is an enterprise-grade microservices development framework built on **Sprin
 
 ```
 Goya/
-├── Goya/                        # Backend Framework
-│   ├── bom/                     # Dependency Management BOM
-│   ├── component/               # Common Components
-│   │   ├── component-core/      # Core Utilities
-│   │   ├── component-framework/ # Framework Foundation
-│   │   ├── component-web/       # Web Enhancements
-│   │   ├── component-security/  # Security Module
-│   │   │   ├── security-core/           # Core Domain Models
-│   │   │   ├── security-authentication/ # Authentication
-│   │   │   ├── security-authorization/  # Resource Server
-│   │   │   └── security-oauth2/         # Authorization Server
-│   │   ├── component-cache/     # Cache Module
-│   │   ├── component-bus/       # Message Bus
-│   │   ├── component-database/  # Database Enhancement
-│   │   ├── component-oss/       # Object Storage
-│   │   ├── component-captcha/   # CAPTCHA
-│   │   ├── component-social/    # Social Login
-│   │   └── component-log/       # Logging Module
-│   ├── ai/                      # AI Module
-│   │   ├── ai-spring/           # Spring AI Integration
-│   │   ├── ai-model/            # Model Management
-│   │   ├── ai-rag/              # RAG Implementation
-│   │   ├── ai-mcp/              # MCP Protocol
-│   │   └── ai-video/            # Video Processing
-│   ├── platform/                # Platform Applications
-│   │   ├── platform-monolith/   # Monolithic App
-│   │   └── platform-distributed/# Distributed App
-│   ├── cloud/                   # Cloud Native Support
-│   └── doc/                     # Documentation
-│       ├── docker/              # Docker Compose
-│       ├── maven/               # Maven Config
-│       └── security/            # Security Solution Docs
-└── Goya-Web/                    # Frontend Admin System (Vue 3)
-    ├── apps/                    # Applications
-    │   ├── web-antd/            # Ant Design Vue Version
-    │   ├── web-ele/             # Element Plus Version
-    │   ├── web-naive/           # Naive UI Version
-    │   └── backend-mock/        # Mock Service
-    ├── packages/                # Shared Packages
-    │   ├── @core/               # Core Package
-    │   ├── effects/             # Side Effects
-    │   ├── stores/              # State Management
-    │   ├── types/               # Type Definitions
-    │   └── utils/               # Utility Functions
-    └── internal/                # Internal Tools
-        ├── lint-configs/        # Lint Configurations
-        ├── vite-config/         # Vite Config
-        └── tsconfig/            # TypeScript Config
+├── bom/                           # Dependency Management BOM
+├── component/                     # Common Components
+│   ├── component-framework/       # Framework Foundation (Aggregation)
+│   │   ├── framework-core/        # Core Utilities
+│   │   ├── framework-common/      # Common Components
+│   │   ├── framework-masker/      # Data Masking
+│   │   ├── framework-crypto/      # Encryption/Decryption
+│   │   ├── framework-cache/       # Cache Abstraction
+│   │   ├── framework-bus/         # Message Bus Abstraction
+│   │   ├── framework-log/         # Logging Enhancement
+│   │   ├── framework-oss/         # Object Storage Abstraction
+│   │   ├── framework-servlet/     # Servlet Enhancement
+│   │   └── framework-boot-starter/# Auto Configuration Starter
+│   ├── component-redis/           # Redis Implementation (Redisson)
+│   ├── component-kafka/           # Kafka Message Bus
+│   ├── component-rabbitmq/        # RabbitMQ Message Bus
+│   ├── component-mybatisplus/     # MyBatis Plus Enhancement
+│   ├── component-captcha/         # CAPTCHA
+│   ├── component-security/        # Security Module
+│   │   ├── security-core/         # Core Domain Models
+│   │   ├── security-authentication/ # Authentication
+│   │   ├── security-authorization/  # Resource Server
+│   │   └── security-oauth2/       # Authorization Server
+│   ├── component-social/          # Social Login
+│   ├── component-oss-aliyun/      # Aliyun OSS Implementation
+│   ├── component-oss-s3/          # AWS S3 Implementation
+│   └── component-oss-minio/       # MinIO Implementation
+├── ai/                            # AI Module
+│   ├── ai-spring/                 # Spring AI Integration
+│   ├── ai-model/                  # Model Management
+│   ├── ai-rag/                    # RAG Implementation
+│   ├── ai-mcp/                    # MCP Protocol
+│   └── ai-video/                  # Video Processing
+├── platform/                      # Platform Applications
+│   ├── platform-monolith/         # Monolithic App
+│   └── platform-distributed/      # Distributed App
+├── cloud/                         # Cloud Native Support
+├── deploy/                        # Deployment Configs
+│   ├── docker/                    # Docker Compose
+│   └── maven/                     # Maven Config
+├── docs/                          # Documentation
+└── goya-web-ui/                   # Vue 3 Frontend
+    ├── apps/                      # Applications
+    │   ├── web-antd/              # Ant Design Vue
+    │   ├── web-ele/               # Element Plus
+    │   └── web-naive/             # Naive UI
+    ├── packages/                  # Shared Packages
+    └── internal/                  # Internal Tools
 ```
 
 ## 🚀 Quick Start
@@ -128,13 +128,11 @@ Goya/
 ### Backend Setup
 
 ```bash
-cd Goya
-
 # Install dependencies
 mvn clean install -DskipTests
 
 # Start auth server
-cd platform/platform-monolith/auth-server
+cd platform/platform-monolith
 mvn spring-boot:run
 ```
 
@@ -143,17 +141,13 @@ Access: `http://localhost:8080`
 ### Frontend Setup
 
 ```bash
-cd Goya-Web
+cd goya-web-ui
 
 # Install dependencies
 pnpm install
 
 # Start dev server (Ant Design Vue)
 pnpm dev:antd
-
-# Or other versions
-pnpm dev:ele     # Element Plus
-pnpm dev:naive   # Naive UI
 ```
 
 Access: `http://localhost:5555`
@@ -161,60 +155,42 @@ Access: `http://localhost:5555`
 ### Docker Quick Start
 
 ```bash
-cd Goya/doc/docker/docker-compose/basic
+cd deploy/docker/docker-compose/basic
 docker-compose up -d
 ```
 
-Includes: MySQL, Redis, MongoDB, Nacos, and other infrastructure.
-
 ## 🎯 Core Modules
+
+### Framework Foundation (component-framework)
+
+| Module | Description |
+|--------|-------------|
+| framework-core | Core utilities, base definitions, response wrapper |
+| framework-common | Common components, utility classes |
+| framework-masker | Data masking (phone, ID card, email, etc.) |
+| framework-crypto | Encryption/Decryption (AES, RSA, SM4, etc.) |
+| framework-cache | Cache abstraction layer |
+| framework-bus | Message bus abstraction |
+| framework-log | Logging enhancement, audit logs |
+| framework-oss | Object storage abstraction |
+| framework-servlet | Servlet enhancement, XSS protection |
+| framework-boot-starter | Auto configuration starter |
+
+### Redis Module (component-redis)
+
+- **Cache Service**: Unified cache operations
+- **Distributed Lock**: Reentrant, Fair, Read/Write locks
+- **Bloom Filter**: Prevent cache penetration
+- **Delayed Queue**: Reliable delayed queue
+- **Rate Limiter**: Token bucket based rate limiting
+- **Topic Message**: Pub/Sub pattern
 
 ### Security Module (component-security)
 
-Complete authentication and authorization solution built on **Spring Security 7** and **Spring Authorization Server**.
-
-**Key Features**:
-- OAuth2.1 Authorization Server (Authorization Code + PKCE)
-- OIDC Provider (with Discovery)
-- Resource Server (JWT Validation + Blacklist)
-- Multiple Login Methods (Password / SMS / Social)
-- Multi-Tenant Issuer Isolation
-- Token Management (JWT Access Token + Opaque Refresh Token)
-
-**Documentation**: [Enterprise Auth Solution](./Goya/doc/security/enterprise-auth-solution.md)
-
-### AI Module (ai/)
-
-Integrates **Spring AI** and **LangChain4j** for out-of-the-box AI capabilities.
-
-**Key Features**:
-- Unified Multi-Model Interface
-- RAG Retrieval Augmented Generation
-- Prompt Management
-- Function Calling
-- MCP Protocol Support
-- Video AI Analysis (FFmpeg + OpenCV)
-
-### Cache Module (component-cache)
-
-Multi-level caching solution with Caffeine local cache + Redis distributed cache.
-
-**Key Features**:
-- Unified Cache Interface
-- Automatic Cache Sync (Redis Pub/Sub)
-- Cache Warm-up and Invalidation
-- Protection against Cache Penetration/Breakdown/Avalanche
-
-### Database Module (component-database)
-
-Dual-engine support for MyBatis Plus and JPA.
-
-**Key Features**:
-- Dynamic DataSource Switching
-- Multi-Tenant Data Isolation
-- Auto-fill Audit Fields
-- SQL Monitoring (P6Spy)
-- Support for MySQL, PostgreSQL, OpenGauss, TDengine, etc.
+- **security-core**: Core domain models, SPI interfaces
+- **security-authentication**: Multiple auth methods
+- **security-authorization**: Resource server (JWT)
+- **security-oauth2**: Authorization server (OAuth2.1 + OIDC)
 
 ## 📚 Documentation
 
@@ -222,32 +198,21 @@ Dual-engine support for MyBatis Plus and JPA.
 - [Quick Start](./docs/guides/quick-start.md)
 - [Development Guide](./docs/guides/development.md)
 - [Deployment Guide](./docs/guides/deployment.md)
-- [API Documentation](./docs/api/rest-api.md)
-- [Product Requirements](./docs/requirements/product-requirements.md)
-- [Technical Requirements](./docs/requirements/technical-requirements.md)
 - [Roadmap](./docs/progress/roadmap.md)
 
 ## 🤝 Contributing
 
-We welcome all forms of contributions! Please read the [Contributing Guide](./CONTRIBUTING.md) for details.
-
-### Contributors
-
-Thanks to all developers who contributed to Goya!
+We welcome all contributions! Please read the [Contributing Guide](./CONTRIBUTING.md).
 
 ## 📄 License
 
-This project is licensed under the [Apache License 2.0](./Goya/LICENSE).
+This project is licensed under the [Apache License 2.0](./LICENSE).
 
 ## 🔗 Links
 
 - Website: https://www.ysmjjsy.com
 - GitHub: https://github.com/GoyaDo/Goya
 - Issues: https://github.com/GoyaDo/Goya/issues
-
-## ⭐ Star History
-
-If this project helps you, please give it a Star ⭐
 
 ---
 

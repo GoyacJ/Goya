@@ -1,372 +1,252 @@
-component-mybatisplus 最终方案契约
+# component-mybatisplus
 
-0. 目标与非目标
+> 本 README 合并需求定义与最终方案契约，作为后续开发的唯一依据。
+> 当前版本以 **framework-security 的 SRA 设计** 为权威模型。
 
-目标
+---
 
-在 Spring Boot 4.0.2 + JDK 25 环境下，提供单模块 component-mybatisplus，实现企业级数据访问治理：
-1.	多租户混合模式：核心库列隔离 + 大租户独库（dynamic-datasource 路由 + MP TenantLine）。
-2.	动态数据权限：不依赖配置文件定义权限规则；权限完全由“用户配置/规则存储”驱动，运行时可变更且可快速生效（版本 + 缓存）。
-3.	通用字段自动填充：审计字段与租户字段自动填充（MetaObjectHandler）。
-4.	安全护栏：阻断无 WHERE 的 update/delete（BlockAttack）。
-5.	可观测性：慢 SQL、traceId 关联（不改写 SQL）。
+## 需求定义
 
-非目标（明确不做）
-•	不提供完整 IAM/权限管理 UI 与业务授权流程（本模块只消费规则）。
-•	不自研 SQL 改写器：租户、权限的 SQL 注入点均基于 MyBatis-Plus 官方插件（TenantLine/DataPermission）。
-•	不接管 dynamic-datasource 的数据源管理与读写分离；仅提供 tenant→dsKey 的标准化决策与注入点。
+### 1. 背景与目标
 
-⸻
+Goya 需要一个企业级 MyBatis Plus 组件，统一数据访问治理，并具备“多租户混合模式”和“数据权限执行”能力。
 
-1. 依赖约束
+核心目标：
+1. **企业级 MyBatis Plus 配置**：统一插件、拦截器、审计字段、日志、安全护栏等能力。
+2. **数据权限执行**：基于 framework-security 的 SRA 与策略模型，在查询阶段进行行级过滤。
+3. **多租户混合模式**：同时支持租户列隔离与独立数据库（动态路由）。
 
-核心依赖（必须）
-•	com.baomidou:mybatis-plus-spring-boot4-starter
-•	com.baomidou:dynamic-datasource-spring-boot4-starter
+非目标（明确不做）：
+- 不提供完整 IAM/权限管理 UI，本模块仅执行策略。
+- 不自研 SQL 改写器，优先基于 MyBatis Plus 官方机制扩展。
 
-实现原则
-•	只在“必要且稳定”的地方新增依赖。
-•	对 Spring Web / Spring Security 采取 可选集成（classpath 存在才启用自动解析），不强制引入。
+### 2. 范围定义
 
-⸻
+#### 2.1 包含
+- MyBatis Plus 企业级基础配置（分页、审计字段、逻辑删除、安全护栏、日志/慢 SQL）。
+- 基于 framework-security 的数据权限执行（Policy → DSL → SQL 条件）。
+- 多租户混合模式（租户上下文、数据源路由、tenant_id 拦截）。
 
-2. 总体执行管线（固定顺序）
+#### 2.2 不包含
+- 权限策略配置界面与授权流程（由平台应用层完成）。
+- 复杂 BI 级 SQL 的全覆盖（第一期聚焦常见 CRUD + 常见查询）。
 
-2.1 请求生命周期（必须固定）
-1.	进入请求 / 进入业务调用之前
+### 3. 术语与核心概念（SRA）
 
-	•	解析 tenantId
-	•	决策租户落库模式（核心共享 / 独库）
-	•	路由到 dynamic-datasource 的 dsKey 并设置上下文（必须发生在事务开始之前）
-	•	建立 AccessContext（用户画像：userId、subjectId、属性集合等）
+- **主体（Subject）**：用户/角色/团队/组织。
+- **资源（Resource）**：表/字段/API/文件等。
+- **操作（Action）**：QUERY/CREATE/UPDATE/DELETE 等。
+- **策略（Policy）**：主体对资源的操作规则（允许/拒绝、范围、过期、继承）。
+- **DSL**：行级过滤表达式，转换为 SQL 条件。
 
-	2.	MyBatis-Plus 执行阶段（interceptor chain）
-按顺序执行：
+### 4. 使用场景
 
-	1.	BlockAttackInnerInterceptor（安全护栏）
-	2.	TenantLineInnerInterceptor（租户列隔离，按 mode 可开关/忽略策略）
-	3.	DataPermissionInterceptor（动态权限 where 追加）
-	4.	（可选）Pagination（若业务启用）
-	5.	Observability interceptor（仅观测，不改写 SQL）
+1. 业务侧通过权限中心配置策略并下发（framework-security 控制面）。
+2. 业务查询触发 MyBatis Plus 拦截器，解析 Subject/Resource/Action。
+3. 策略引擎输出决策与行级过滤条件，查询结果自动过滤。
 
-	3.	请求结束
+### 5. 功能需求
 
-	•	清理 dynamic-datasource 上下文
-	•	清理 TenantContext / AccessContext（必须 finally）
+#### 5.1 企业级 MyBatis Plus 配置
+- 插件配置：分页、BlockAttack、数据权限拦截、多租户拦截。
+- 审计字段填充：created_by/created_at/updated_by/updated_at + tenant_id 自动填充。
+- 统一日志格式（不修改 SQL）。
 
-⸻
+#### 5.2 数据权限执行（核心）
 
-3. 上下文模型（统一入口，禁止散装 ThreadLocal）
+**适用范围**：仅对查询（SELECT）生效，不负责写入权限。
 
-3.1 TenantContext（必需）
+##### 5.2.1 核心流程
+1. 请求进入后构建 SubjectContext（来自 AccessContext）。
+2. 查询发生时，根据表名与语句 ID 构建 ResourceContext。
+3. 通过 AuthorizationService 调用策略引擎完成鉴权。
+4. 若允许且存在 DSL，生成 SQL 条件并追加到 WHERE。
+5. 若拒绝，返回 1=0（安全默认）。
+6. 若存在列级约束，拦截 SELECT/WHERE/ORDER BY/GROUP BY/HAVING 的列引用，违反时按 failClosed 处理。
 
-职责：提供当前线程的租户信息与路由结果。
+##### 5.2.2 DSL 规则
+- DSL 为结构化表达式，禁止 raw SQL 直通。
+- 本模块默认使用 JSON 结构化 DSL 解析。
+- 语法与 AST 定义以 framework-security 为准。
 
+示例（JSON DSL）：
+```json
+{
+  "type": "AND",
+  "left": {
+    "field": "dept_id",
+    "operator": "IN",
+    "values": [1, 2, 3]
+  },
+  "right": {
+    "field": "created_at",
+    "operator": "GTE",
+    "value": { "type": "datetime", "value": "2026-01-31T00:00:00" }
+  }
+}
+```
+
+JSON DSL 结构约束（正式 Schema 说明）：
+- **逻辑表达式**
+  - AND/OR：`{ "type": "AND|OR", "left": <expr>, "right": <expr> }`
+  - NOT：`{ "type": "NOT", "expression": <expr> }`（`expression` 也可用 `expr`）
+- **比较表达式**
+  - `COMPARE`：`{ "field": "<column>", "operator": "EQ|NE|GT|GTE|LT|LTE|LIKE", "value": <value> }`
+  - 简写：`{ "field": "<column>", "op": "EQ|NE|GT|GTE|LT|LTE|LIKE", "value": <value> }`
+- **区间**
+  - `BETWEEN`：`{ "type": "BETWEEN", "field": "<column>", "start": <value>, "end": <value> }`
+- **集合**
+  - `IN`：`{ "type": "IN", "field": "<column>", "values": [<value>...], "negated": false }`
+- **空值**
+  - `NULL/IS_NULL`：`{ "type": "NULL|IS_NULL", "field": "<column>", "negated": false }`
+- **值类型**
+  - 直接字面量：`"text" | 123 | true | null`
+  - 或显式类型：`{ "type": "string|number|boolean|datetime|null", "value": "<value>" }`
+
+说明：
+- `operator` 也支持简写字段 `op`；`negated` 可替换为 `not`。
+- 任何非 JSON 结构的 DSL（含原始 SQL）将被拒绝。
+
+### 6. 多租户混合模式
+
+#### 6.1 模式
+- **共享库模式**：所有租户共享数据库，通过 tenant_id 列隔离。
+- **独立库模式**：大租户独享数据库，通过动态数据源路由。
+- 支持混合模式：不同租户采用不同模式。
+
+#### 6.2 关键流程
+1. 解析 tenantId（Header / Token / Context）。
+2. 决策租户模式（共享库 / 独立库）。
+3. 路由到指定数据源（dynamic-datasource）。
+4. 若共享库模式，则追加 tenant_id 条件。
+5. 请求结束清理上下文。
+
+---
+
+## 最终方案契约
+
+### 1. 依赖约束
+核心依赖（必须）：
+- com.baomidou:mybatis-plus-spring-boot4-starter
+- com.baomidou:dynamic-datasource-spring-boot4-starter
+- com.ysmjjsy.goya:framework-security
+
+实现原则：
+- 只在必要且稳定的地方新增依赖。
+- 对 Spring Web / Spring Security 采取可选集成。
+
+### 2. 总体执行管线（固定顺序）
+
+**请求生命周期**（必须固定）
+1. 进入请求 / 进入业务调用之前
+   - 解析 tenantId
+   - 决策租户落库模式
+   - 路由 dsKey 并设置上下文（事务开始前）
+   - 建立 AccessContext（subjectId + subjectType + userId + attributes）
+2. MyBatis-Plus 执行阶段（interceptor chain）
+   1) BlockAttackInnerInterceptor
+   2) TenantLineInnerInterceptor
+   3) DataPermissionInterceptor
+   4) Pagination（可选）
+3. 请求结束
+   - 清理 dynamic-datasource 上下文
+   - 清理 TenantContext / AccessContext
+
+### 3. 上下文模型（统一入口）
+
+#### 3.1 TenantContext
 字段：
-•	tenantId: String
-•	mode: TenantMode（枚举：CORE_SHARED, DEDICATED_DB）
-•	dsKey: String（dynamic-datasource 使用）
+- tenantId: String
+- mode: TenantMode（CORE_SHARED, DEDICATED_DB）
+- dsKey: String
 
-行为：
-•	set(TenantContextValue v) / get() / clear()
-
-约束：
-•	任何 DB 操作前必须存在 TenantContext（生产默认 requireTenant=true）。
-•	dsKey 必须在事务开始前确定。
-
-3.2 AccessContext（必需）
-
-职责：提供当前线程的用户画像与授权主体信息（subject）。
-
+#### 3.2 AccessContext
 字段：
-•	subjectId: String（用于加载规则集：可为 userId、roleId、或组合主体）
-•	userId: String（审计与常用变量）
-•	attributes: Map<String, Object>（如 deptIds、regionCodes、roleCodes、projectIds 等）
-
-行为：
-•	set(AccessContextValue v) / get() / clear()
-
-约束：
-•	subjectId 是规则加载与缓存的唯一主键之一。
-•	attributes 的 value 只能是可序列化且可类型校验的结构（String/Number/Collection等）。
-
-⸻
-
-4. 多租户混合模式契约
-
-4.1 租户解析
-
-接口：TenantResolver
-•	String resolveTenantId()
-
-默认策略（可选 web 集成）：
-•	优先从 TenantContext 已设置值读取
-•	若 classpath 存在 Spring Web，则从 Header（默认 X-Tenant-Id）读取
-
-4.2 租户落库模式决策
-
-接口：TenantShardDecider
-•	TenantMode decide(String tenantId)
-
-语义：
-•	决策租户属于核心共享库（列隔离）还是独库。
-
-默认实现策略：
-•	由 RuleStore/租户配置表或缓存加载（见 4.4）
-
-4.3 数据源路由
-
-接口：TenantDataSourceRouter
-•	String route(String tenantId, TenantMode mode)
-
-语义：
-•	输出 dynamic-datasource 的 dsKey。
-•	对 CORE_SHARED 返回核心库 dsKey（例如 core）。
-•	对 DEDICATED_DB 返回专属 dsKey（例如 tenant_10001 或按分组 group_a）。
-
-4.4 租户配置存储（动态）
-
-接口：TenantProfileStore
-•	TenantProfile load(String tenantId)
-•	long version(String tenantId)（或 updatedAt）
-
-TenantProfile 必含：
-•	mode
-•	dsKey
-•	（可选）tenantLineEnabled：独库是否仍追加 tenant_id 条件（推荐默认 true）
-
-缓存策略：
-•	L2（Caffeine）：tenantId → TenantProfile（TTL + version 校验）
-•	version 变化则立即重载
-
-4.5 dynamic-datasource 上下文注入点
-
-组件提供一种注入方式（必须）：
-•	若 classpath 存在 Spring Web：注册 OncePerRequestFilter
-•	若不存在 Web：提供 TenantRoutingAspect（可选，供非 Web 服务使用）
-
-约束：
-•	注入点必须在事务开始前执行。
-•	finally 必须清理 dynamic-datasource 上下文、TenantContext。
-
-4.6 租户列隔离（MyBatis-Plus）
-
-使用 MP 官方：
-•	TenantLineInnerInterceptor
-•	TenantLineHandler
-
-Handler 合约：
-•	getTenantIdColumn() 默认 tenant_id
-•	getTenantId() 从 TenantContext 读取
-•	ignoreTable(table) 支持静态忽略表（公共字典表）与动态忽略：
-•	若当前 mode=DEDICATED_DB 且 tenantLineEnabled=false，则全表忽略（不追加 tenant 条件）
-
-⸻
-
-5. 动态数据权限契约（不依赖配置文件）
-
-5.1 核心原则
-•	权限规则来自用户配置（DB/配置中心），运行时可变更。
-•	用户配置为结构化规则，禁止 raw SQL 直通。
-•	规则必须可编译为安全谓词（Predicate AST），再生成 where 条件片段。
-•	SQL 应用依赖 MP 官方 DataPermissionInterceptor + MultiDataPermissionHandler。
-
-5.2 资源模型（强制引入，保证通用性）
-•	Resource：逻辑资源（如 ORDER/CUSTOMER）
-•	ResourceMapping：
-•	resource → tables（一个资源可对应多表）
-•	resourceField → column（字段映射白名单）
-
-接口：ResourceRegistry
-•	String resolveResource(String tableName, String mappedStatementId)
-•	ColumnRef resolveColumn(String resource, String fieldKey)
-
-ColumnRef：
-•	table: String（可选）
-•	column: String（必须，符合列名白名单正则）
-
-约束：
-•	用户配置只能使用 resource 与 fieldKey，不能直接写 column。
-
-5.3 规则存储与版本
-
-接口：PermissionRuleStore
-•	RuleSet load(String tenantId, String subjectId, String resource)
-•	long version(String tenantId, String subjectId)（或 per resource 版本）
-
-RuleSet 至少包含：
-•	rules: List
-•	updatedAt/version
-
-缓存策略（必须）：
-•	L1（请求内）：同一请求对同一 subject/resource 只编译一次
-•	L2（Caffeine）：(tenantId, subjectId, resource, version) → CompiledPredicate
-•	version 变化 -> 失效并重载
-
-5.4 规则表达（结构化）
-
-Rule 结构（存储层）：
-•	subjectId
-•	resource
-•	effect: ALLOW/DENY（可选，第一版可只做 ALLOW）
-•	predicates: List
-•	combine: AND/OR
-•	priority
-
-PredicateDef 支持（第一版企业常用且安全）：
-•	EQ（string/number）
-•	IN（string/number list）
-•	BETWEEN（number/date）
-•	LIKE（受限：仅前缀/后缀匹配，防全表扫）
-•	EXISTS（可选，若引入则必须受限模板）
-
-变量引用：
-•	${userId}、${deptIds}、${regionCodes} 等，从 AccessContext.attributes 取值
-•	变量类型必须匹配 Predicate 类型，否则规则无效并记录审计日志（failClosed 时整条访问拒绝）
-
-5.5 编译器与生成器
-
-接口：PermissionCompiler
-•	CompiledPredicate compile(RuleSet ruleSet, AccessContextValue access, ResourceRegistry registry)
-
-CompiledPredicate：
-•	String toWhereSql(String tableName)（或直接输出 Expression）
-•	Explain explain()（可选，用于审计与排障）
-
-安全约束：
-•	column 只能来自 ResourceRegistry（白名单）
-•	字面量必须转义/类型校验
-•	编译失败策略：
-•	failClosed=true：返回 1=0
-•	failClosed=false：忽略该规则，但记录告警日志
-
-5.6 SQL 应用（MyBatis-Plus）
-
-使用 MP 官方：
-•	DataPermissionInterceptor
-•	MultiDataPermissionHandler#getSqlSegment(Table table, Expression where, String mappedStatementId)
-
-Handler 行为：
-1.	resolve tenantId/mode from TenantContext
-2.	resolve resource via ResourceRegistry(tableName, msId)
-3.	load compiled predicate via store+cache
-4.	输出 whereSql，并通过 parseCondExpression 解析为 Expression 后与原 where AND
-
-applyToWrite：
-•	开关控制对 UPDATE/DELETE 是否追加权限条件。
-
-忽略机制：
-•	业务侧使用 MP 官方 @InterceptorIgnore(dataPermission="true") 进行语句级绕过。
-
-⸻
-
-6. 审计字段自动填充契约
-
-使用 MP 扩展点：
-•	MetaObjectHandler
-
-字段规范（默认，可配置）：
-•	created_at, created_by, updated_at, updated_by, tenant_id
-
-接口：
-•	AuditorProvider：current user id/name（可选 security 集成）
-•	TimeProvider：统一时间源（Instant）
-
-行为：
-•	insert：填 created/updated + by + tenant_id
-•	update：填 updated + by
-
-⸻
-
-7. 安全护栏契约
-
-使用 MP 官方：
-•	BlockAttackInnerInterceptor（阻断全表 update/delete）
-
-默认开启（可配置）。
-
-⸻
-
-8. 可观测性契约
-
-提供 InnerInterceptor（不改写 SQL）：
-•	记录耗时、慢 SQL、traceId、mappedStatementId
-•	参数日志默认关闭（可配置）
-•	traceId 来源接口：SqlTraceProvider（默认尝试 MDC）
-
-⸻
-
-9. 自动装配与开关策略
-
-9.1 自动装配
-•	Spring Boot 4：AutoConfiguration.imports 注册自动配置类
-•	所有扩展点 Bean 使用 @ConditionalOnMissingBean，允许上层覆盖
-
-9.2 关键开关（最少集）
-•	goya.mybatis-plus.tenant.enabled
-•	goya.mybatis-plus.tenant.require-tenant
-•	goya.mybatis-plus.permission.enabled
-•	goya.mybatis-plus.permission.fail-closed
-•	goya.mybatis-plus.permission.apply-to-write
-•	goya.mybatis-plus.safety.block-attack
-•	goya.mybatis-plus.observability.enabled
-
-注意：权限规则本身不通过配置文件表达，配置文件只控制开关与一些默认策略。
-
-⸻
-
-10. 失败策略（企业默认安全）
-
-默认策略建议：
-•	tenant 缺失：直接拒绝（requireTenant=true）
-•	AccessContext 缺失：
-•	permission.failClosed=true：where = 1=0
-•	规则编译失败：
-•	failClosed=true：1=0
-•	failClosed=false：忽略该规则并告警
-
-⸻
-
-11. 扩展点清单（最终固定，不再扩张）
-
-必须保留：
-•	TenantResolver
-•	TenantShardDecider
-•	TenantDataSourceRouter
-•	TenantProfileStore
-•	ResourceRegistry
-•	PermissionRuleStore
-•	PermissionCompiler
-•	AuditorProvider
-•	TimeProvider
-•	SqlTraceProvider
-
-允许上层覆盖：任意一个。
+- subjectId: String
+- subjectType: SubjectType
+- userId: String
+- attributes: Map<String, Object>
+
+### 4. 动态数据权限（与 framework-security 对齐）
+
+#### 4.1 关键接口
+- SubjectResolver
+- ResourceResolver
+- PolicyRepository
+- RangeDslParser
+- RangeFilterBuilder
+- PolicyEngine
+- AuthorizationService
+
+#### 4.2 默认实现
+- SubjectResolver：从 AccessContext 构造 Subject
+- ResourceResolver：基于 data_resource 表解析资源与父子关系
+- RangeDslParser：JSON DSL 解析
+- RangeFilterBuilder：JSqlParser Expression 输出
+- PolicyRepository：默认读取 data_resource_policy 表（可覆盖）
+
+补充说明：
+- data_resource 中 `resource_type=FIELD` 的记录用于 DSL 字段白名单校验（父资源为表）。
+- 字段白名单默认按请求实时读取，不提供内置缓存/一致性策略；如需缓存，可在 ResourceResolver/PolicyRepository 中自行实现，并通过 PermissionChangePublisher/Subscriber 触发刷新。
+
+### 6.1 租户配置表
+默认租户配置读取 `tenant_profile` 表：
+- tenant_id：租户 ID（主键）
+- mode：CORE_SHARED / DEDICATED_DB
+- ds_key：数据源 key（可选）
+- jdbc_url / jdbc_username / jdbc_password / jdbc_driver：数据源配置
+- ds_type：数据源类型（MYSQL/POSTGRESQL/SQLITE）
+- tenant_line_enabled：是否启用 tenant 过滤
+- tenant_version：配置版本号
+- del_flag / version / created_at / created_by / updated_at / updated_by：审计字段
+
+补充说明：
+- 当 `jdbc_url` 存在时，优先使用数据库配置注册数据源，`ds_key` 仅作为注册 key 提示。
+- 当 `jdbc_url` 缺失时，使用 `ds_key` 或默认路由规则生成数据源 key。
+
+#### 4.3 执行策略
+- Deny 优先，默认拒绝
+- 明确拒绝返回 1=0
+- 解析/执行异常按 failClosed 决策
+
+### 5. 审计字段自动填充
+- MetaObjectHandler 自动填充 created/updated + tenant_id
+- AuditorProvider 可覆盖
+
+### 6. 安全护栏
+- BlockAttackInnerInterceptor 默认开启
+
+### 7. 自动装配与开关
+关键开关：
+- goya.mybatis-plus.tenant.enabled
+- goya.mybatis-plus.tenant.require-tenant
+- goya.mybatis-plus.permission.enabled
+- goya.mybatis-plus.permission.fail-closed
+- goya.mybatis-plus.permission.apply-to-write
+- goya.mybatis-plus.safety.block-attack
+- goya.mybatis-plus.tenant.default-mode
+
+### 8. 失败策略
+- tenant 缺失：requireTenant=true 时拒绝
+- AccessContext 缺失：failClosed=true 时返回 1=0
+- 解析失败：failClosed=true 时返回 1=0
+
+### 8.1 DDL 支持
+- `db_init.sql` 已提供 MySQL / PostgreSQL / SQLite 三种版本。
+
+### 10. 扩展点清单（固定）
+- SubjectResolver
+- ResourceResolver
+- PolicyRepository
+- RangeDslParser
+- RangeFilterBuilder
+- AuditorProvider
 
 禁止新增：
-•	自定义 ignore 注解（统一使用 MP 官方 @InterceptorIgnore）
-•	自研 SQL 改写器
+- 自定义 ignore 注解（统一使用 MP 官方 @InterceptorIgnore）
+- 自研 SQL 改写器
 
-⸻
+---
 
-12. 测试契约（实现必须满足）
-
-必须覆盖：
-•	混合租户：同一请求内 dsKey 与 tenant 条件一致
-•	独库 tenantLineEnabled=false 时不追加 tenant 条件
-•	动态权限：规则变更 version 后在 TTL 内可感知并生效
-•	join / 子查询 / union 的 where 拼接可被解析（parseCondExpression 成功）
-•	applyToWrite=true 时 update/delete 同样受权限限制
-•	BlockAttack 生效
-•	finally 清理上下文（防线程复用污染）
-
-⸻
-
-这份契约如果你认可，我们后续实现阶段会严格按此分工推进：
-1.	上下文与路由（TenantProfileStore + Router + Filter/Aspect）
-2.	租户插件对接（TenantLineHandler）
-3.	动态权限引擎（ResourceRegistry + RuleStore + Compiler + DataPermissionHandler）
-4.	审计填充 + 安全护栏 + 观测
-5.	测试矩阵与回归用例
-
-你不需要再补“想法清单”，因为契约已经把每个想法的归属（做/不做/怎么做）钉死了。
+如需新增适配（JPA、Spring Security 等），应在独立模块实现 framework-security 的 SPI，
+component-mybatisplus 只负责 MyBatis Plus 生态内的执行与拦截。

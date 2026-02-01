@@ -1,26 +1,22 @@
 package com.ysmjjsy.goya.component.mybatisplus.context;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 /**
- * <p>AccessContext 解析器</p>
- * <p>
- * 用于在请求/调用进入时构建 {@link AccessContextValue}（subjectId/userId/attributes）。
+ * <p>访问上下文解析器</p>
  *
- * <p><b>默认实现：</b>
- * 返回最小空上下文（subjectId 为空）。当权限 failClosed=true 时会导致权限追加 1=0（符合安全默认）。
- *
- * <p><b>推荐集成：</b>
- * 在 classpath 存在 Spring Security 时，业务侧提供一个 @Bean 覆盖该接口实现，
- * 从 Authentication / Principal 中解析 userId/roles/deptIds 等并填充 attributes。
+ * <p>用于在请求入口构建 AccessContext。</p>
  *
  * @author goya
- * @since 2026/1/28 23:34
+ * @since 2026/1/31 13:30
  */
 public interface AccessContextResolver {
 
     /**
-     * 解析当前访问上下文。
+     * 解析访问上下文。
      *
-     * @return AccessContextValue；允许返回 null（表示无法解析）
+     * @param request 请求
+     * @return 访问上下文值，若无法解析返回 null
      */
-    AccessContextValue resolve();
+    AccessContextValue resolve(HttpServletRequest request);
 }

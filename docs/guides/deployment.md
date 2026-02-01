@@ -15,8 +15,6 @@
 ### 后端打包
 
 ```bash
-cd Goya
-
 # 跳过测试打包
 mvn clean package -DskipTests -P prod
 
@@ -24,13 +22,13 @@ mvn clean package -DskipTests -P prod
 mvn clean package -P prod
 
 # 输出位置
-# platform/platform-monolith/auth-server/target/auth-server-1.0.0.jar
+# platform/platform-monolith/target/platform-monolith-1.0.0.jar
 ```
 
 ### 前端打包
 
 ```bash
-cd Goya-Web
+cd goya-web-ui
 
 # Ant Design Vue 版本
 pnpm build:antd
@@ -48,12 +46,12 @@ pnpm build:ele
 
 ```bash
 # 启动应用
-java -jar auth-server-1.0.0.jar \
+java -jar platform-monolith-1.0.0.jar \
   --spring.profiles.active=prod \
   --server.port=8080
 
 # 后台运行
-nohup java -jar auth-server-1.0.0.jar \
+nohup java -jar platform-monolith-1.0.0.jar \
   --spring.profiles.active=prod \
   > app.log 2>&1 &
 
@@ -74,7 +72,7 @@ After=network.target
 Type=simple
 User=goya
 WorkingDirectory=/opt/goya
-ExecStart=/usr/bin/java -jar /opt/goya/auth-server.jar --spring.profiles.active=prod
+ExecStart=/usr/bin/java -jar /opt/goya/platform-monolith.jar --spring.profiles.active=prod
 Restart=on-failure
 RestartSec=10
 
@@ -93,16 +91,11 @@ sudo systemctl enable goya-auth
 
 # 查看状态
 sudo systemctl status goya-auth
-
-# 查看日志
-sudo journalctl -u goya-auth -f
 ```
 
 ## Docker 部署
 
 ### Dockerfile
-
-创建 `Dockerfile`：
 
 ```dockerfile
 FROM eclipse-temurin:25-jre-alpine
@@ -111,35 +104,18 @@ LABEL maintainer="goya@ysmjjsy.com"
 
 WORKDIR /app
 
-# 复制 JAR 文件
 COPY target/*.jar app.jar
 
-# 暴露端口
 EXPOSE 8080
 
-# 健康检查
 HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
   CMD wget -q -O- http://localhost:8080/actuator/health || exit 1
 
-# 启动应用
 ENTRYPOINT ["java", "-jar", "app.jar"]
 CMD ["--spring.profiles.active=prod"]
 ```
 
-### 构建镜像
-
-```bash
-# 构建镜像
-docker build -t goya/auth-server:1.0.0 .
-
-# 推送到私有仓库
-docker tag goya/auth-server:1.0.0 registry.example.com/goya/auth-server:1.0.0
-docker push registry.example.com/goya/auth-server:1.0.0
-```
-
 ### Docker Compose
-
-创建 `docker-compose.yml`：
 
 ```yaml
 version: '3.8'
@@ -201,8 +177,6 @@ docker-compose up -d
 
 ### Deployment
 
-创建 `k8s/deployment.yaml`：
-
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -227,11 +201,6 @@ spec:
         env:
         - name: SPRING_PROFILES_ACTIVE
           value: "prod"
-        - name: SPRING_DATASOURCE_URL
-          valueFrom:
-            secretKeyRef:
-              name: goya-secrets
-              key: database-url
         resources:
           requests:
             memory: "512Mi"
@@ -255,8 +224,6 @@ spec:
 
 ### Service
 
-创建 `k8s/service.yaml`：
-
 ```yaml
 apiVersion: v1
 kind: Service
@@ -273,69 +240,24 @@ spec:
   type: ClusterIP
 ```
 
-### Ingress
-
-创建 `k8s/ingress.yaml`：
-
-```yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: goya-ingress
-  namespace: goya
-  annotations:
-    kubernetes.io/ingress.class: "nginx"
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-spec:
-  tls:
-  - hosts:
-    - api.example.com
-    secretName: goya-tls
-  rules:
-  - host: api.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: goya-auth-service
-            port:
-              number: 80
-```
-
 ### 部署
 
 ```bash
 # 创建命名空间
 kubectl create namespace goya
 
-# 创建 Secret
-kubectl create secret generic goya-secrets \
-  --from-literal=database-url=jdbc:mysql://mysql:3306/goya \
-  --from-literal=database-username=root \
-  --from-literal=database-password=root \
-  -n goya
-
 # 应用配置
 kubectl apply -f k8s/deployment.yaml
 kubectl apply -f k8s/service.yaml
-kubectl apply -f k8s/ingress.yaml
 
 # 查看状态
 kubectl get pods -n goya
 kubectl get svc -n goya
-kubectl get ingress -n goya
-
-# 查看日志
-kubectl logs -f deployment/goya-auth -n goya
 ```
 
 ## 前端部署
 
-### Nginx
-
-创建 `nginx.conf`：
+### Nginx 配置
 
 ```nginx
 server {
@@ -345,16 +267,13 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
-    # Gzip 压缩
     gzip on;
     gzip_types text/plain text/css application/json application/javascript;
 
-    # SPA 路由
     location / {
         try_files $uri $uri/ /index.html;
     }
 
-    # API 代理
     location /api/ {
         proxy_pass http://auth-server:8080/api/;
         proxy_set_header Host $host;
@@ -363,44 +282,11 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # 静态资源缓存
     location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
         expires 1y;
         add_header Cache-Control "public, immutable";
     }
 }
-```
-
-### Docker 部署前端
-
-创建 `Dockerfile.frontend`：
-
-```dockerfile
-FROM node:20-alpine as builder
-
-WORKDIR /app
-
-COPY package.json pnpm-lock.yaml ./
-RUN npm install -g pnpm && pnpm install
-
-COPY . .
-RUN pnpm build:antd
-
-FROM nginx:alpine
-
-COPY --from=builder /app/apps/web-antd/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-EXPOSE 80
-
-CMD ["nginx", "-g", "daemon off;"]
-```
-
-构建和运行：
-
-```bash
-docker build -f Dockerfile.frontend -t goya/web:1.0.0 .
-docker run -d -p 80:80 goya/web:1.0.0
 ```
 
 ## 生产优化
@@ -430,19 +316,6 @@ spring:
       max-lifetime: 1800000
 ```
 
-### Redis 优化
-
-```yaml
-spring:
-  data:
-    redis:
-      lettuce:
-        pool:
-          min-idle: 5
-          max-idle: 10
-          max-active: 20
-```
-
 ## 监控
 
 ### Actuator
@@ -457,45 +330,6 @@ management:
     export:
       prometheus:
         enabled: true
-```
-
-### Prometheus
-
-```yaml
-scrape_configs:
-  - job_name: 'goya-auth'
-    metrics_path: '/actuator/prometheus'
-    static_configs:
-      - targets: ['localhost:8080']
-```
-
-### Grafana
-
-导入 Spring Boot Dashboard: ID `11378`
-
-## 故障排查
-
-### 查看日志
-
-```bash
-# Docker
-docker logs -f goya-auth
-
-# Kubernetes
-kubectl logs -f deployment/goya-auth -n goya
-
-# Systemd
-journalctl -u goya-auth -f
-```
-
-### 内存分析
-
-```bash
-# 生成堆转储
-jmap -dump:live,format=b,file=heapdump.hprof <pid>
-
-# 分析堆转储
-jhat heapdump.hprof
 ```
 
 ## 下一步

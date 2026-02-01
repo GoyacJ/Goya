@@ -1,10 +1,9 @@
 package com.ysmjjsy.goya.component.mybatisplus.configuration.properties;
 
 import com.ysmjjsy.goya.component.mybatisplus.constants.MybatisPlusConst;
+import com.ysmjjsy.goya.component.mybatisplus.tenant.TenantMode;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
-
-import java.time.Duration;
 
 /**
  * <p>配置文件</p>
@@ -31,7 +30,7 @@ public record GoyaMybatisPlusProperties(
         @DefaultValue
         Permission permission,
 
-        /* 安全护栏配置。 */
+        /* 安全相关配置。 */
         @DefaultValue
         Safety safety
 ) {
@@ -47,12 +46,28 @@ public record GoyaMybatisPlusProperties(
             boolean enabled,
 
             /*
-              是否强制要求 tenant 存在。
-              <p>
-              生产建议 true：tenant 缺失直接拒绝，避免“默认落核心库”导致串数据。
+              是否要求 tenant 必须存在。
              */
             @DefaultValue("true")
-            boolean requireTenant
+            boolean requireTenant,
+
+            /*
+              租户列默认字段名。
+             */
+            @DefaultValue("tenant_id")
+            String tenantIdColumn,
+
+            /*
+              静态忽略表（不追加 tenant 条件）。
+             */
+            @DefaultValue
+            String[] ignoreTables,
+
+            /*
+              默认租户模式（CORE_SHARED/DEDICATED_DB）。
+             */
+            @DefaultValue("CORE_SHARED")
+            TenantMode defaultMode
     ) {
     }
 
@@ -67,31 +82,25 @@ public record GoyaMybatisPlusProperties(
             boolean enabled,
 
             /*
-              失败是否闭合（Fail Closed）。
-              <p>
-              true：AccessContext 缺失/规则编译失败/类型不匹配 => where 1=0
-              false：忽略该规则并告警（存在放行风险）
+              异常时是否 fail-closed（1=0）。
              */
             @DefaultValue("true")
             boolean failClosed,
 
             /*
-              L2 编译结果缓存 TTL。
-              <p>
-              key 已包含 version，因此 TTL 主要用于淘汰旧版本占用。
-              null/<=0 表示使用 cacheName 默认 TTL。
+              是否将权限应用到写操作（默认 false，不建议开启）。
              */
-            @DefaultValue("PT2M")
-            Duration compiledCacheTtl
+            @DefaultValue("false")
+            boolean applyToWrite
     ) {
     }
 
     /**
-     * 安全护栏配置。
+     * 安全配置。
      */
     public record Safety(
             /*
-              是否启用 BlockAttack（阻断无 WHERE 的 update/delete）。
+              是否启用 BlockAttack。
              */
             @DefaultValue("true")
             boolean blockAttack

@@ -34,16 +34,31 @@ Goya 采用分层架构设计，从上到下分为：
 │  │  - Model / RAG / MCP / Video                         │  │
 │  ├──────────────────────────────────────────────────────┤  │
 │  │  业务域 (Business Domain)                            │  │
-│  │  - OSS / Social / Captcha / Log                      │  │
+│  │  - OSS / Social / Captcha                            │  │
 │  └──────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                   基础设施层 (Infrastructure)                │
+│                    组件层 (Components)                       │
+│  ┌────────────┐ ┌────────────┐ ┌────────────┐             │
+│  │   Redis    │ │   Kafka    │ │  RabbitMQ  │             │
+│  │ (缓存/锁)  │ │  (消息)    │ │  (消息)    │             │
+│  └────────────┘ └────────────┘ └────────────┘             │
+│  ┌────────────┐ ┌────────────┐ ┌────────────┐             │
+│  │ MyBatisPlus│ │  OSS ALi   │ │ OSS MinIO  │             │
+│  │ (数据访问) │ │  (存储)    │ │  (存储)    │             │
+│  └────────────┘ └────────────┘ └────────────┘             │
+└─────────────────────────────────────────────────────────────┘
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                   基础设施层 (Framework)                     │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  │
-│  │  Cache   │  │ Database │  │   Bus    │  │   Web    │  │
-│  │  Redis   │  │ MyBatis+ │  │  Kafka   │  │  Spring  │  │
-│  │ Caffeine │  │   JPA    │  │  Stream  │  │   MVC    │  │
+│  │   Core   │  │  Common  │  │ Servlet  │  │  Cache   │  │
+│  │  (核心)  │  │  (公共)  │  │  (Web)   │  │  (缓存)  │  │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘  │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  │
+│  │   Bus    │  │   Log    │  │  Crypto  │  │  Masker  │  │
+│  │  (消息)  │  │  (日志)  │  │  (加密)  │  │  (脱敏)  │  │
 │  └──────────┘  └──────────┘  └──────────┘  └──────────┘  │
 └─────────────────────────────────────────────────────────────┘
                               ▼
@@ -73,18 +88,18 @@ Goya 采用分层架构设计，从上到下分为：
 
 | 技术 | 版本 | 说明 |
 |------|------|------|
-| MyBatis Plus | 3.5.15 | ORM 框架（主要） |
-| Spring Data JPA | 4.x | ORM 框架（可选） |
+| MyBatis Plus | 3.5.15 | ORM 框架 |
 | Dynamic DataSource | 4.5.0 | 动态数据源 |
 | P6Spy | 3.9.1 | SQL 监控 |
 
-### 缓存
+### 缓存 & 消息
 
 | 技术 | 版本 | 说明 |
 |------|------|------|
-| Caffeine | Latest | 本地缓存 |
 | Redis | 7+ | 分布式缓存 |
 | Redisson | 4.0.0 | Redis 客户端 |
+| Kafka | 最新 | 消息队列 |
+| RabbitMQ | 最新 | 消息队列 |
 
 ### AI 能力
 
@@ -110,6 +125,46 @@ Goya 采用分层架构设计，从上到下分为：
 | Apache Commons | Latest | Apache 工具集 |
 | MapStruct | 1.6.3 | Bean 映射 |
 | Lombok | 1.18.42 | 代码简化 |
+
+## 模块架构
+
+### Component 模块（12个）
+
+```
+component/
+├── component-framework/       # 框架基础（聚合）
+│   ├── framework-core/        # 核心工具
+│   ├── framework-common/      # 公共组件
+│   ├── framework-masker/      # 数据脱敏
+│   ├── framework-crypto/      # 加密解密
+│   ├── framework-cache/       # 缓存抽象
+│   ├── framework-bus/         # 消息总线抽象
+│   ├── framework-log/         # 日志增强
+│   ├── framework-oss/         # OSS 抽象
+│   ├── framework-servlet/     # Servlet 增强
+│   └── framework-boot-starter/# 自动配置
+├── component-redis/           # Redis 实现
+├── component-kafka/           # Kafka 实现
+├── component-rabbitmq/        # RabbitMQ 实现
+├── component-mybatisplus/     # MyBatis Plus
+├── component-captcha/         # 验证码
+├── component-security/        # 安全模块（4子模块）
+├── component-social/          # 社交登录
+├── component-oss-aliyun/      # 阿里云 OSS
+├── component-oss-s3/          # AWS S3
+├── component-oss-minio/       # MinIO
+└── component-service/         # 服务抽象
+```
+
+### Security 模块（4个子模块）
+
+```
+component-security/
+├── security-core/             # 核心领域模型、SPI 接口
+├── security-authentication/   # 认证（密码/短信/社交）
+├── security-authorization/    # 资源服务器（JWT 验证）
+└── security-oauth2/           # 授权服务器（OAuth2.1）
+```
 
 ## 部署架构
 
@@ -175,42 +230,6 @@ Goya 采用分层架构设计，从上到下分为：
     └────────────────────────┘
 ```
 
-### 云原生部署 (Kubernetes)
-
-适用于云平台部署：
-
-```
-┌─────────────────────────────────────────────┐
-│              Kubernetes Cluster             │
-│                                             │
-│  ┌───────────────────────────────────────┐ │
-│  │          Ingress Controller           │ │
-│  └─────────────────┬─────────────────────┘ │
-│                    │                       │
-│  ┌─────────────────┼─────────────────────┐ │
-│  │                 ▼                     │ │
-│  │  ┌──────────┐ ┌──────────┐ ┌────────┐│ │
-│  │  │  Auth    │ │  Admin   │ │  User  ││ │
-│  │  │  Pod     │ │  Pod     │ │  Pod   ││ │
-│  │  │  (x3)    │ │  (x3)    │ │  (x3)  ││ │
-│  │  └────┬─────┘ └────┬─────┘ └────┬───┘│ │
-│  │       │            │            │    │ │
-│  │       └────────────┼────────────┘    │ │
-│  │                    ▼                 │ │
-│  │  ┌──────────────────────────────┐   │ │
-│  │  │   Service Mesh (Istio)       │   │ │
-│  │  └──────────────────────────────┘   │ │
-│  └─────────────────────────────────────┘ │
-│                                          │
-│  ┌─────────────────────────────────────┐ │
-│  │        StatefulSet Services         │ │
-│  │  - MySQL Operator                   │ │
-│  │  - Redis Operator                   │ │
-│  │  - Kafka Operator                   │ │
-│  └─────────────────────────────────────┘ │
-└─────────────────────────────────────────────┘
-```
-
 ## 数据流
 
 ### 认证授权流程
@@ -245,25 +264,24 @@ Goya 采用分层架构设计，从上到下分为：
 └──────────────────────────────────────────────────────────┘
 ```
 
-### 缓存数据流
+### Redis 功能矩阵
 
 ```
-┌─────────┐      ┌──────────┐      ┌─────────┐      ┌──────────┐
-│ Request │─────>│ L1 Cache │─────>│ L2 Cache│─────>│ Database │
-│         │      │(Caffeine)│      │ (Redis) │      │          │
-└─────────┘      └──────────┘      └─────────┘      └──────────┘
-                       │                 │                │
-                       │  Cache Miss     │                │
-                       │<────────────────┤                │
-                       │                 │   DB Query     │
-                       │                 │<───────────────┤
-                       │  Update L1      │                │
-                       │<────────────────┤                │
-                       │                 │                │
-                  ┌────┴─────┐      ┌────┴─────┐         │
-                  │  Evict   │<─────│ Pub/Sub  │         │
-                  │ Listener │      │ Channel  │         │
-                  └──────────┘      └──────────┘         │
+┌─────────────────────────────────────────────────────┐
+│                  component-redis                     │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐│
+│  │  缓存服务   │  │  分布式锁   │  │ 布隆过滤器  ││
+│  │RedissonCache│  │RedissonLock │  │RedissonBloom││
+│  └─────────────┘  └─────────────┘  └─────────────┘│
+│                                                     │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐│
+│  │  延迟队列   │  │   限流器    │  │ Topic消息   ││
+│  │DelayedQueue │  │RateLimiter  │  │RedissonTopic││
+│  └─────────────┘  └─────────────┘  └─────────────┘│
+│                                                     │
+└─────────────────────────────────────────────────────┘
 ```
 
 ## 扩展机制
@@ -275,7 +293,7 @@ Goya 提供多种扩展机制：
 通过定义 SPI 接口，业务系统可以注入自定义实现：
 
 ```java
-// 框架定义 SPI
+// 框架定义 SPI（security-core）
 public interface IUserService {
     SecurityUser loadUserByUsername(String username);
 }
@@ -301,9 +319,9 @@ goya:
       login:
         allow-password-login: true
         allow-sms-login: true
-    resource:
-      jwt:
-        issuer-uri: https://auth.example.com
+  redis:
+    enabled: true
+    address: redis://localhost:6379
 ```
 
 ### 3. 自动配置
@@ -321,7 +339,7 @@ public class GoyaRedisAutoConfiguration {
 
 ## 安全架构
 
-详见 [企业级认证授权方案](../../Goya/doc/security/enterprise-auth-solution.md)
+详见 [企业级认证授权方案](../requirements/features/auth-system.md)
 
 核心要点：
 - **无状态 API**：资源服务器仅验证 JWT，不维护 Session
@@ -329,103 +347,6 @@ public class GoyaRedisAutoConfiguration {
 - **Token 策略**：JWT Access Token (短期) + Opaque Refresh Token (长期)
 - **安全传输**：HTTPS + HSTS + CSP
 - **审计追踪**：所有安全事件记录审计日志
-
-## 性能优化
-
-### 1. 虚拟线程
-
-充分利用 Java 25 的虚拟线程，提升并发能力：
-
-```java
-@Bean
-public AsyncTaskExecutor applicationTaskExecutor() {
-    return new TaskExecutorAdapter(Executors.newVirtualThreadPerTaskExecutor());
-}
-```
-
-### 2. 多级缓存
-
-L1 (Caffeine) + L2 (Redis) 降低数据库压力：
-
-```
-平均响应时间：
-- L1 Cache Hit: < 1ms
-- L2 Cache Hit: < 10ms
-- Database Query: 50-100ms
-```
-
-### 3. 连接池优化
-
-- HikariCP：数据库连接池
-- Lettuce/Redisson：Redis 连接池
-- HTTP Client：连接复用
-
-### 4. 数据库优化
-
-- 读写分离
-- 分库分表（ShardingSphere）
-- 慢查询监控（P6Spy）
-
-## 可观测性
-
-### 1. 日志
-
-- **应用日志**：Logback + MDC（Trace ID / User ID）
-- **访问日志**：Access Log
-- **审计日志**：Security Audit Log
-- **日志聚合**：ELK / Loki
-
-### 2. 指标
-
-- **JVM 指标**：内存、GC、线程
-- **应用指标**：QPS、延迟、错误率
-- **业务指标**：用户活跃度、API 调用量
-- **监控工具**：Micrometer + Prometheus
-
-### 3. 链路追踪
-
-- **Spring Cloud Sleuth**：分布式追踪
-- **Zipkin / Jaeger**：链路可视化
-- **Trace Context**：跨服务传播
-
-### 4. 告警
-
-- **阈值告警**：CPU、内存、QPS
-- **异常告警**：Error 日志、业务异常
-- **SLA 告警**：接口可用性
-- **告警渠道**：钉钉、邮件、短信
-
-## 最佳实践
-
-### 1. 模块划分
-
-- 按业务域划分模块
-- 避免循环依赖
-- 接口与实现分离
-
-### 2. 异常处理
-
-- 统一异常处理（`@ControllerAdvice`）
-- 业务异常与系统异常分离
-- 错误码规范
-
-### 3. 事务管理
-
-- 最小化事务范围
-- 避免长事务
-- 合理使用 `@Transactional` 传播级别
-
-### 4. API 设计
-
-- RESTful 风格
-- 统一响应格式
-- 版本控制（路径或 Header）
-
-### 5. 配置管理
-
-- 敏感信息加密（Jasypt）
-- 配置中心化（Nacos Config）
-- 环境隔离（dev / test / prod）
 
 ## 下一步阅读
 
