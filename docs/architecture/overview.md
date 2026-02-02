@@ -88,7 +88,7 @@ Goya 采用分层架构设计，从上到下分为：
 
 | 技术 | 版本 | 说明 |
 |------|------|------|
-| MyBatis Plus | 3.5.15 | ORM 框架 |
+| MyBatis Plus | 3.5.16 | ORM 框架 |
 | Dynamic DataSource | 4.5.0 | 动态数据源 |
 | P6Spy | 3.9.1 | SQL 监控 |
 
@@ -141,6 +141,7 @@ component/
 │   ├── framework-bus/         # 消息总线抽象
 │   ├── framework-log/         # 日志增强
 │   ├── framework-oss/         # OSS 抽象
+│   ├── framework-security/    # 权限决策内核
 │   ├── framework-servlet/     # Servlet 增强
 │   └── framework-boot-starter/# 自动配置
 ├── component-redis/           # Redis 实现

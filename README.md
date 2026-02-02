@@ -46,7 +46,7 @@ Goya 是一个基于 **Spring Boot 4.0.1** 和 **Java 25** 构建的企业级微
 ### 🚀 微服务组件
 - **缓存**：Redis（分布式锁、布隆过滤器、延迟队列、限流器）
 - **消息总线**：Kafka / RabbitMQ
-- **数据库**：MyBatis Plus 增强
+- **数据库**：MyBatis Plus 增强（多租户 + SRA 数据权限）
 - **对象存储**：阿里云 OSS / MinIO / AWS S3
 - **验证码**：算术 / 滑块 / 拼图多种类型
 - **社交登录**：微信小程序 / 第三方平台
@@ -55,7 +55,7 @@ Goya 是一个基于 **Spring Boot 4.0.1** 和 **Java 25** 构建的企业级微
 ### 🏗️ 技术架构
 - **Java 25** + **Spring Boot 4.0.1** + **Spring Cloud 2025.1.0**
 - **Spring Security 7** + **Spring Authorization Server**
-- **MyBatis Plus 3.5.15**
+- **MyBatis Plus 3.5.16**
 - **Redisson 4.0.0**
 - **MapStruct 1.6.3** + **Lombok 1.18.42**
 - **Nacos 3.1.1** 注册中心 + 配置中心
@@ -75,6 +75,7 @@ Goya/
 │   │   ├── framework-bus/         # 消息总线抽象
 │   │   ├── framework-log/         # 日志增强
 │   │   ├── framework-oss/         # 对象存储抽象
+│   │   ├── framework-security/    # 权限决策内核
 │   │   ├── framework-servlet/     # Servlet 增强
 │   │   └── framework-boot-starter/# 自动配置启动器
 │   ├── component-redis/           # Redis 实现（Redisson）
@@ -177,7 +178,7 @@ docker-compose up -d
 
 ### 框架基础 (component-framework)
 
-提供框架核心能力，包含 10 个子模块：
+提供框架核心能力，包含 11 个子模块：
 
 | 模块 | 说明 |
 |------|------|
@@ -189,6 +190,7 @@ docker-compose up -d
 | framework-bus | 消息总线抽象、事件发布订阅 |
 | framework-log | 日志增强、操作日志、审计日志 |
 | framework-oss | 对象存储抽象、统一存储接口 |
+| framework-security | 权限决策内核、SRA 策略模型 |
 | framework-servlet | Servlet 增强、XSS防护、请求加解密 |
 | framework-boot-starter | 自动配置启动器 |
 

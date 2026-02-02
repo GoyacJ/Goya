@@ -8,7 +8,7 @@
 Goya/
 ├── bom/                       # 依赖版本管理
 ├── component/                 # 公共组件（12个模块）
-│   ├── component-framework/   # 框架基础（10个子模块）
+│   ├── component-framework/   # 框架基础（11个子模块）
 │   ├── component-redis/       # Redis 实现
 │   ├── component-kafka/       # Kafka 消息
 │   ├── component-rabbitmq/    # RabbitMQ 消息
@@ -49,7 +49,7 @@ Goya/
 - Spring Cloud 2025.1.0
 - Spring AI 2.0.0-M1
 - LangChain4j 1.9.1
-- MyBatis Plus 3.5.15
+- MyBatis Plus 3.5.16
 - Redisson 4.0.0
 
 ---
@@ -58,7 +58,7 @@ Goya/
 
 ### 🛠️ component-framework
 
-**职责**：框架基础设施聚合模块，包含 10 个子模块
+**职责**：框架基础设施聚合模块，包含 11 个子模块
 
 #### framework-core
 
@@ -246,6 +246,26 @@ public interface IOssService {
 
 ---
 
+#### framework-security
+
+**职责**：权限决策内核（SRA 策略模型）
+
+**主要功能**：
+- SRA 模型（Subject / Resource / Action）
+- 策略决策（ALLOW / DENY）
+- 行级过滤（JSON DSL → SQL）
+- 列级约束（允许/拒绝字段）
+- 权限变更事件（发布/订阅，基于 framework-bus）
+
+**核心类**：
+- `AuthorizationService`：鉴权入口
+- `PolicyEngine` / `DefaultPolicyEngine`：策略评估
+- `DecisionEvaluator`：决策合并
+- `RangeDslParser` / `RangeFilterBuilder`：DSL 解析与过滤器构建
+- `PermissionChangePublisher` / `PermissionChangeSubscriber`：权限变更事件
+
+---
+
 #### framework-servlet
 
 **职责**：Servlet 增强
@@ -369,11 +389,13 @@ spring:
 
 **主要功能**：
 - 动态数据源
+- 多租户数据隔离（TenantLine）
+- 数据权限执行（SRA 策略 → JSON DSL → SQL）
+- 列级约束（SELECT/WHERE/ORDER/GROUP/HAVING）
+- 权限变更拦截并发布事件（framework-bus）
+- 审计字段自动填充
 - 分页插件
 - SQL 监控（P6Spy）
-- 字段加密
-- 审计字段自动填充
-- 多租户数据隔离
 - 逻辑删除
 - 乐观锁
 
@@ -387,9 +409,6 @@ public class User extends BaseEntity {
     private Long id;
     
     private String username;
-    
-    @FieldEncrypt
-    private String mobile;
     
     @TableLogic
     private Boolean deleted;
