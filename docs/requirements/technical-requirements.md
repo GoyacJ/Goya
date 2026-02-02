@@ -22,7 +22,7 @@
 | Spring MVC | Spring MVC | 7.x | MVC 标准框架 |
 | Spring Security | Spring Security | 7.x | 安全标准 |
 | **数据访问** |
-| MyBatis Plus | MyBatis Plus | 3.5.15 | 增强 MyBatis |
+| MyBatis Plus | MyBatis Plus | 3.5.16 | 增强 MyBatis |
 | Spring Data JPA | Spring Data JPA | 4.x | ORM 标准 |
 | HikariCP | HikariCP | 最新 | 高性能连接池 |
 | **缓存** |
@@ -83,6 +83,7 @@ public class AuthorizationServerConfig {
 - 主要方式：Path 路径（`/t/{tenant}/`）
 - 备用方式：Subdomain 子域名
 - 兜底方式：Header 请求头
+ - 解析后写入 TenantContext/AccessContext
 
 **实现代码**：
 ```java
@@ -111,9 +112,10 @@ public class TenantResolver {
 #### 2.2.2 数据隔离
 
 **技术方案**：
-- **共享表**：添加 `tenant_id` 字段
-- **独立表**：每个租户独立表（可选）
-- **独立库**：每个租户独立数据库（可选）
+- **共享库**：`tenant_id` + TenantLine 拦截
+- **独立库**：动态数据源路由（dynamic-datasource）
+- **混合模式**：按租户配置选择共享库/独立库
+- **租户配置**：`tenant_profile` 表维护数据源与模式
 
 ### 2.3 缓存架构
 
@@ -217,7 +219,7 @@ public class TenantResolver {
 ### 4.3 接口安全
 
 - **认证**：JWT Token 验证
-- **授权**：RBAC 权限控制
+- **授权**：RBAC + SRA 策略（资源/行/列级）
 - **限流**：Resilience4j RateLimiter
 - **防 XSS**：输入过滤 + 输出转义
 - **防 CSRF**：CSRF Token

@@ -192,6 +192,16 @@ User (用户)
 - **资源级别权限**：`user.read`, `order.write`
 - **Scope 验证**：在资源服务器端验证
 
+#### SRA 策略模型（数据权限）
+
+在 RBAC 的基础上，引入 Subject / Resource / Action 策略模型用于数据权限执行：
+- **Subject**：用户/角色/团队/组织
+- **Resource**：表/字段/API
+- **Action**：QUERY/CREATE/UPDATE/DELETE
+- **Policy**：ALLOW/DENY + Scope（RESOURCE/ROW/COLUMN）
+- **Row Filter**：使用 JSON DSL 描述行级条件
+- **Column Constraint**：允许/拒绝字段列表
+
 ## 3. 非功能需求
 
 ### 3.1 性能

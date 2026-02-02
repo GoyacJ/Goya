@@ -16,9 +16,10 @@
 ### 2.2 数据隔离
 
 **隔离级别**：
-- **共享表**：添加 `tenant_id` 字段（推荐）
-- **独立表**：每个租户独立表
-- **独立库**：每个租户独立数据库
+- **共享库**：添加 `tenant_id` 字段（TenantLine 拦截）
+- **独立表**：每个租户独立表（可选）
+- **独立库**：每个租户独立数据库（动态数据源）
+- **混合模式**：按租户配置选择共享库/独立库
 
 ### 2.3 配置隔离
 
@@ -43,17 +44,31 @@
 ```java
 public class TenantContext {
     private static final ThreadLocal<String> TENANT = new ThreadLocal<>();
+    private static final ThreadLocal<String> MODE = new ThreadLocal<>();
+    private static final ThreadLocal<String> DS_KEY = new ThreadLocal<>();
     
-    public static void setTenant(String tenant) {
+    public static void setTenant(String tenant, String mode, String dsKey) {
         TENANT.set(tenant);
+        MODE.set(mode);
+        DS_KEY.set(dsKey);
     }
     
     public static String getTenant() {
         return TENANT.get();
     }
+
+    public static String getMode() {
+        return MODE.get();
+    }
+
+    public static String getDsKey() {
+        return DS_KEY.get();
+    }
     
     public static void clear() {
         TENANT.remove();
+        MODE.remove();
+        DS_KEY.remove();
     }
 }
 ```
@@ -74,6 +89,10 @@ public class TenantLineHandler implements TenantLineHandler {
     }
 }
 ```
+
+### 3.3 租户配置（tenant_profile）
+
+租户模式与数据源配置集中在 `tenant_profile` 表中维护，用于动态数据源路由与 tenant_line 开关控制。
 
 ## 4. 用户故事
 
