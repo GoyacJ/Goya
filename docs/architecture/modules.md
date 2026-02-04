@@ -71,7 +71,7 @@ Goya/
 - 基础接口定义
 
 **核心类**：
-- `Response<T>`：统一响应封装（Builder 模式）
+- `ApiRes<T>`：统一响应封装（Record 类型，支持 Builder 模式）
 - `BaseException`：业务异常基类
 - `IStrategy` + `StrategyChoose`：策略模式实现
 - `IChainHandler` + `ChainContext`：责任链模式实现
@@ -81,9 +81,9 @@ Goya/
 @RestController
 public class UserController {
     
-    public Response<User> getUser(@PathVariable Long id) {
+    public ApiRes<User> getUser(@PathVariable Long id) {
         User user = userService.getById(id);
-        return Response.ok(user);
+        return ApiRes.ok(user);
     }
 }
 ```
@@ -724,6 +724,7 @@ goya:
 
 ## 下一步阅读
 
+- [模块详细文档](./modules-detailed.md) - 深入了解各模块的技术细节和使用示例
 - [架构概览](./overview.md)
 - [设计模式](./design-patterns.md)
 - [开发指南](../guides/development.md)

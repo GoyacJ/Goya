@@ -351,7 +351,8 @@ public class GoyaRedisAutoConfiguration {
 
 ## 下一步阅读
 
-- [模块详解](./modules.md)
+- [模块详解](./modules.md) - 了解各模块的功能概览
+- [模块详细文档](./modules-detailed.md) - 深入了解各模块的技术细节和使用示例
 - [设计模式](./design-patterns.md)
 - [快速开始](../guides/quick-start.md)
 - [开发指南](../guides/development.md)

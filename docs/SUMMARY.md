@@ -71,14 +71,18 @@ platform/
 
 ```
 docs/
+├── SUMMARY.md                    # 文档总览（本文件）
+├── DOCUMENTATION_STRUCTURE.md    # 文档结构说明
 ├── architecture/                  # 架构文档
 │   ├── overview.md               # 架构概览
-│   ├── modules.md                # 模块详解
+│   ├── modules.md                # 模块详解（概览）
+│   ├── modules-detailed.md       # 模块详细文档（技术细节）
 │   └── design-patterns.md        # 设计模式
 ├── guides/                       # 开发指南
 │   ├── quick-start.md            # 快速开始
 │   ├── development.md            # 开发规范
-│   └── deployment.md             # 部署指南
+│   ├── deployment.md             # 部署指南
+│   └── api-reference.md          # API 参考
 ├── requirements/                 # 需求文档
 │   ├── product-requirements.md   # PRD
 │   ├── technical-requirements.md # TRD
@@ -89,38 +93,38 @@ docs/
 └── progress/                     # 开发进度
     ├── roadmap.md                # 路线图
     ├── milestones.md             # 里程碑
-    └── changelog.md              # 更新日志
+    ├── changelog.md              # 更新日志
+    └── PROGRESS_TEMPLATE.md      # 模块进度文档模板
+```
+
+**Cursor 工具目录**（供 Cursor AI 使用）：
+```
+.cursor/
+├── AI_ASSISTANT_GUIDE.md         # AI 助手使用指南（AI 助手必读）
+├── rules/                        # Rules（.mdc 格式）
+├── skills/                       # Skills（SKILL.md 格式）
+└── hooks/                        # Git Hooks
 ```
 
 ## 🎯 开发规范
 
-### Rules 规则文件
+### Cursor 开发工具
 
-位于 `../.cursor/rules/` 目录：
+**AI 助手必读**：
+- [AI 助手使用指南](../.cursor/AI_ASSISTANT_GUIDE.md) - **AI 助手必读**
 
-| 文件 | 说明 |
-|------|------|
-| goya-rules.mdc | 通用规则 |
-| java-backend.mdc | Java 后端规范 |
-| security-module.mdc | 安全模块规范 |
-| ai-module.mdc | AI 模块规范 |
-| database.mdc | 数据库规范 |
-| testing.mdc | 测试规范 |
+**Rules**（`.cursor/rules/*.mdc`）：
+- `ai-assistant-guide.mdc` - **AI 助手开发规范（AI 助手必读）** ⭐⭐⭐
+- `development-workflow.mdc` - 开发工作流规范 ⭐⭐⭐
+- `pre-development-checklist.mdc` - 开发前检查清单 ⭐⭐⭐
+- `post-development-checklist.mdc` - 开发后检查清单 ⭐⭐⭐
 
-### Skills 开发工具
+**Skills**（`.cursor/skills/*/SKILL.md`）：
+- `goya-development-workflow` - 开发工作流助手（**必须使用**）⭐⭐⭐
 
-位于 `../.cursor/skills/` 目录：
-
-| 工具 | 说明 |
-|------|------|
-| goya-component-generator | 组件脚手架生成器 |
-| goya-security-helper | 安全模块开发辅助 |
-| goya-ai-helper | AI 集成辅助 |
-| goya-database-generator | 数据库代码生成器 |
-| goya-api-designer | API 设计器 |
-| goya-code-checker | 代码规范检查 |
-| goya-doc-generator | 文档生成器 |
-| goya-test-generator | 测试用例生成器 |
+**Hooks**（`.cursor/hooks/*.sh`）：
+- `pre-commit.sh` - 提交前检查（编译、测试、文档）
+- `commit-msg.sh` - 提交信息格式检查
 
 ## 🚀 快速导航
 
@@ -132,11 +136,15 @@ docs/
 ### 深入学习
 1. [架构概览](./architecture/overview.md) - 理解架构设计
 2. [模块详解](./architecture/modules.md) - 了解各模块功能
-3. [设计模式](./architecture/design-patterns.md) - 学习最佳实践
+3. [模块详细文档](./architecture/modules-detailed.md) - 深入了解技术细节
+4. [设计模式](./architecture/design-patterns.md) - 学习最佳实践
+5. [API 参考](./guides/api-reference.md) - 核心 API 使用说明
 
 ### 贡献指南
 1. [贡献指南](../CONTRIBUTING.md) - 如何贡献代码
-2. [开发规范](../.cursor/rules/) - 代码规范要求
+2. [AI 助手使用指南](../.cursor/AI_ASSISTANT_GUIDE.md) - **AI 助手必读**，AI 开发规范
+3. [开发工作流规范](../.cursor/rules/development-workflow.mdc) - 标准开发流程
+4. [文档结构说明](./DOCUMENTATION_STRUCTURE.md) - 了解文档组织原则
 
 ### 规划路线
 1. [产品需求](./requirements/product-requirements.md) - 产品规划

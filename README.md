@@ -113,6 +113,10 @@ Goya/
 │   ├── guides/                    # 开发指南
 │   ├── requirements/              # 需求文档
 │   └── progress/                  # 开发进度
+├── .cursor/                       # Cursor 开发工具
+│   ├── rules/                     # 开发规则（.mdc）
+│   ├── skills/                    # 开发技能（SKILL.md）
+│   └── hooks/                     # Git Hooks
 └── goya-web-ui/                   # Vue 3 前端管理系统
     ├── apps/                      # 应用
     │   ├── web-antd/              # Ant Design Vue 版本
@@ -229,17 +233,76 @@ docker-compose up -d
 
 ## 📚 文档
 
-- [架构设计](./docs/architecture/overview.md)
-- [快速开始](./docs/guides/quick-start.md)
-- [开发指南](./docs/guides/development.md)
-- [部署指南](./docs/guides/deployment.md)
-- [产品需求](./docs/requirements/product-requirements.md)
-- [技术需求](./docs/requirements/technical-requirements.md)
-- [开发路线图](./docs/progress/roadmap.md)
+### 核心文档
+- [架构设计](./docs/architecture/overview.md) - 了解整体架构设计
+- [快速开始](./docs/guides/quick-start.md) - 5分钟快速上手
+- [开发指南](./docs/guides/development.md) - 开发规范和最佳实践
+- [API 参考](./docs/guides/api-reference.md) - 核心 API 使用说明
+- [部署指南](./docs/guides/deployment.md) - 生产环境部署
+
+### 开发规范体系
+- [AI 助手使用指南](./.cursor/AI_ASSISTANT_GUIDE.md) - **AI 助手必读**，定义 AI 开发规范和工作流程
+- [开发工作流规范](./.cursor/rules/development-workflow.mdc) - 标准开发流程（Rules 格式）
+
+### 规划文档
+- [产品需求](./docs/requirements/product-requirements.md) - 产品规划
+- [技术需求](./docs/requirements/technical-requirements.md) - 技术规划
+- [开发路线图](./docs/progress/roadmap.md) - 未来规划
+- [更新日志](./docs/progress/changelog.md) - 版本变更记录
+
+## 🛠️ 开发规范
+
+Goya 项目建立了完整的开发规范体系，确保每次开发都遵循统一的流程和标准。
+
+### 开发工作流
+
+**每次开发前必须**：
+1. 查阅项目文档（本 README.md、架构文档、开发指南）
+2. 查阅开发进度（changelog.md、milestones.md）
+3. 激活相关 Cursor Rules 和 Skills
+
+**开发过程中**：
+1. 遵循代码规范（`.cursorrules`、Rules）
+2. 使用相关 Skills 辅助开发
+3. 编写测试
+
+**开发完成后必须**：
+1. 更新 `docs/progress/changelog.md`
+2. 更新相关模块的进度文档（如有）
+3. 更新项目文档（如需要）
+4. 使用规范的 Git 提交信息提交代码
+
+**详细流程**：
+- 📖 [AI 助手使用指南](./.cursor/AI_ASSISTANT_GUIDE.md) - **AI 助手必读**，完整的开发流程说明
+- ✅ [开发前检查清单](./.cursor/rules/pre-development-checklist.mdc) - 开发前必须完成的检查项
+- ✅ [开发后检查清单](./.cursor/rules/post-development-checklist.mdc) - 开发后必须完成的工作
+
+### Cursor 开发工具
+
+- **Rules**：代码规范和开发流程规则（`.cursor/rules/*.mdc`）
+  - `ai-assistant-guide.mdc` - **AI 助手开发规范（AI 助手必读）**
+  - `development-workflow.mdc` - 开发工作流规范
+  - `pre-development-checklist.mdc` - 开发前检查清单
+  - `post-development-checklist.mdc` - 开发后检查清单
+- **Skills**：开发辅助工具（`.cursor/skills/*/SKILL.md`）
+  - `goya-development-workflow` - 开发工作流助手（**必须使用**）
+- **Hooks**：Git 提交前自动检查（`.cursor/hooks/*.sh` 和 `.cursor/hooks.json`）
+
+**AI 助手必读**：
+- [AI 助手使用指南](./.cursor/AI_ASSISTANT_GUIDE.md) - **AI 助手必读**，定义 AI 开发规范和工作流程
+
+**安装 Hooks**（可选）：
+```bash
+cp .cursor/hooks/pre-commit.sh .git/hooks/pre-commit
+cp .cursor/hooks/commit-msg.sh .git/hooks/commit-msg
+chmod +x .git/hooks/pre-commit .git/hooks/commit-msg
+```
 
 ## 🤝 贡献指南
 
 我们欢迎所有形式的贡献！请阅读 [贡献指南](./CONTRIBUTING.md) 了解详情。
+
+**重要提示**：在提交代码前，请确保已遵循 [开发工作流规范](./.cursor/rules/development-workflow.mdc) 完成所有必要的工作。
 
 ## 📄 开源协议
 

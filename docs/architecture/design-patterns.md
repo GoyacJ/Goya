@@ -113,86 +113,72 @@ SecurityUser user = SecurityUser.builder()
 - 不可变对象，线程安全
 - 参数校验集中在 `build()` 方法
 
-#### 2. Response（统一响应）
+#### 2. ApiRes（统一响应）
 
 ```java
 /**
- * 统一响应封装
+ * 统一 API 响应体（Record 类型）
  */
-public class Response<T> {
+public record ApiRes<T>(
+    boolean success,
+    String code,
+    String message,
+    String traceId,
+    LocalDateTime timestamp,
+    T data,
+    String path,
+    Map<String, Object> meta,
+    List<ApiFieldError> fieldErrors
+) implements IResponse {
     
-    private String code;
-    private String message;
-    private Boolean isSuccess;
-    private String timestamp;
-    private T data;
-    private String traceId;
-    private String path;
-    
-    private Response(Builder<T> builder) {
-        this.code = builder.code;
-        this.message = builder.message;
-        this.isSuccess = builder.isSuccess;
-        this.timestamp = builder.timestamp;
-        this.data = builder.data;
-        this.traceId = builder.traceId;
-        this.path = builder.path;
+    public static <T> ApiRes<T> ok() {
+        return ok(null, null, null);
     }
     
-    public static <T> Builder<T> builder() {
-        return new Builder<>();
+    public static <T> ApiRes<T> ok(T data) {
+        return ok(data, null, null);
     }
     
-    public static <T> Response<T> ok() {
-        return Response.<T>builder()
-            .code("0200")
-            .message("操作成功")
-            .isSuccess(true)
-            .timestamp(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-            .build();
+    public static <T> ApiRes<T> ok(T data, String message) {
+        return ok(data, message, null);
     }
     
-    public static <T> Response<T> ok(T data) {
-        return Response.<T>builder()
-            .code("0200")
-            .message("操作成功")
-            .isSuccess(true)
-            .data(data)
-            .timestamp(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-            .build();
+    // Builder 模式
+    public static OkBuilder okBuilder() {
+        return new OkBuilder();
     }
     
-    public static class Builder<T> {
-        private String code;
+    public static FailBuilder failBuilder(ErrorCode errorCode) {
+        return new FailBuilder(errorCode);
+    }
+    
+    public static final class OkBuilder {
         private String message;
-        private Boolean isSuccess;
-        private String timestamp;
-        private T data;
         private String traceId;
-        private String path;
+        private final Map<String, Object> meta = new LinkedHashMap<>();
         
-        public Builder<T> code(String code) {
-            this.code = code;
-            return this;
-        }
-        
-        public Builder<T> message(String message) {
+        public OkBuilder message(String message) {
             this.message = message;
             return this;
         }
         
-        public Builder<T> isSuccess(Boolean isSuccess) {
-            this.isSuccess = isSuccess;
+        public OkBuilder meta(String key, Object value) {
+            this.meta.put(key, value);
             return this;
         }
         
-        public Builder<T> data(T data) {
-            this.data = data;
-            return this;
-        }
-        
-        public Response<T> build() {
-            return new Response<>(this);
+        public <T> ApiRes<T> data(T data) {
+            return new ApiRes<>(
+                true,
+                CommonErrorCode.OK.code(),
+                message,
+                traceId,
+                LocalDateTime.now(),
+                data,
+                getCurrentRequestPath(),
+                meta,
+                List.of()
+            );
         }
     }
 }
@@ -205,21 +191,17 @@ public class Response<T> {
 public class UserController {
     
     @GetMapping("/users/{id}")
-    public Response<User> getUser(@PathVariable Long id) {
+    public ApiRes<User> getUser(@PathVariable Long id) {
         User user = userService.getById(id);
-        return Response.ok(user);
+        return ApiRes.ok(user);
     }
     
     @PostMapping("/users")
-    public Response<User> createUser(@RequestBody UserDTO dto) {
+    public ApiRes<User> createUser(@RequestBody UserDTO dto) {
         User user = userService.create(dto);
-        return Response.<User>builder()
-            .code("0201")
+        return ApiRes.okBuilder()
             .message("创建成功")
-            .isSuccess(true)
-            .data(user)
-            .timestamp(LocalDateTime.now().toString())
-            .build();
+            .data(user);
     }
 }
 ```
@@ -376,19 +358,19 @@ public class JwtAuthenticationConverter implements Converter<Jwt, AbstractAuthen
 /**
  * 为缓存添加统计功能
  */
-public class StatisticsCache implements ICache {
+public class StatisticsCacheService implements CacheService {
     
-    private final ICache delegate;
+    private final CacheService delegate;
     private final AtomicLong hitCount = new AtomicLong();
     private final AtomicLong missCount = new AtomicLong();
     
-    public StatisticsCache(ICache delegate) {
+    public StatisticsCacheService(CacheService delegate) {
         this.delegate = delegate;
     }
     
     @Override
-    public <T> T get(String key, Class<T> type) {
-        T value = delegate.get(key, type);
+    public <K, V> V get(String cacheName, K key, Class<V> type) {
+        V value = delegate.get(cacheName, key, type);
         if (value != null) {
             hitCount.incrementAndGet();
         } else {
@@ -398,8 +380,8 @@ public class StatisticsCache implements ICache {
     }
     
     @Override
-    public void put(String key, Object value) {
-        delegate.put(key, value);
+    public <K, V> void put(String cacheName, K key, V value) {
+        delegate.put(cacheName, key, value);
     }
     
     public double getHitRate() {
@@ -813,7 +795,7 @@ public class DefaultSocialManager extends AbstractSocialManager {
 public class RedisCacheEvictionSubscriber {
     
     @Autowired
-    private ICache caffeineCache;
+    private CacheService localCache;
     
     @Autowired
     private RedissonClient redissonClient;
@@ -823,7 +805,11 @@ public class RedisCacheEvictionSubscriber {
         RTopic topic = redissonClient.getTopic("cache:eviction");
         topic.addListener(String.class, (channel, key) -> {
             log.debug("收到缓存失效通知: {}", key);
-            caffeineCache.evict(key);
+            // 解析 cacheName 和 key
+            String[] parts = key.split(":", 2);
+            if (parts.length == 2) {
+                localCache.delete(parts[0], parts[1]);
+            }
         });
     }
 }

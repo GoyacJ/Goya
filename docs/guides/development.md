@@ -437,25 +437,19 @@ public class UserService {
 public class UserService {
     
     @Autowired
-    private ICache cache;
+    private CacheService cacheService;
     
     public User getUser(Long id) {
-        String key = "user:" + id;
-        
-        // 查询缓存
-        User user = cache.get(key, User.class);
-        if (user != null) {
-            return user;
-        }
-        
-        // 查询数据库
-        user = userRepository.findById(id).orElse(null);
-        if (user != null) {
-            // 写入缓存
-            cache.put(key, user, Duration.ofMinutes(10));
-        }
-        
-        return user;
+        // 使用 cacheName + key 的方式
+        return cacheService.getOrLoad("user", id, () -> {
+            return userRepository.findById(id).orElse(null);
+        });
+    }
+    
+    public void updateUser(User user) {
+        userRepository.save(user);
+        // 更新缓存
+        cacheService.put("user", user.getId(), user, Duration.ofMinutes(10));
     }
 }
 ```
@@ -626,3 +620,4 @@ public class UserService {
 - [部署指南](./deployment.md)
 - [架构设计](../architecture/overview.md)
 - [模块详解](../architecture/modules.md)
+- [AI 助手使用指南](../../.cursor/AI_ASSISTANT_GUIDE.md) - 使用 Cursor AI 开发必读

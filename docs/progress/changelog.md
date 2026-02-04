@@ -9,10 +9,26 @@
 - SRA 策略模型与数据权限执行（JSON DSL、行/列级约束）
 - 权限变更事件发布链路（framework-bus）
 - 多租户混合模式（共享库 + 独立库，动态数据源）
+- **开发规范体系**：
+  - Cursor Rules：开发工作流规范、开发前/后检查清单、AI 助手开发规范
+  - Cursor Skills：开发工作流助手（必须使用）
+  - Git Hooks：pre-commit 和 commit-msg 检查、hooks.json 配置
+  - AI 助手使用指南：`.cursor/AI_ASSISTANT_GUIDE.md`（AI 助手必读）
+  - 模块进度文档模板：PROGRESS_TEMPLATE.md
+- **文档体系完善**：
+  - 新增 `docs/architecture/modules-detailed.md`：模块详细技术文档
+  - 新增 `docs/guides/api-reference.md`：核心 API 参考文档
+  - 新增 `docs/DOCUMENTATION_STRUCTURE.md`：文档结构说明
 
 ### Changed
 - 优化 JWT Token 生成性能
 - 改进缓存同步机制
+- **文档整理**：
+  - 删除冗余文档，统一文档结构
+  - 去除 `.cursor/` 目录下的额外 README（供 Cursor 使用，无需额外文档）
+  - 合并重复的开发工作流文档
+  - 更新所有文档引用，确保指向正确的文档
+  - 简化 hooks/README.md，只保留必要的安装说明
 
 ### Fixed
 - 修复多线程下的租户上下文问题
