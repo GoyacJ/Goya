@@ -1,7 +1,11 @@
 package com.ysmjjsy.goya.component.mybatisplus.context.web;
 
 import com.ysmjjsy.goya.component.framework.common.constants.DefaultConst;
+import com.ysmjjsy.goya.component.framework.core.context.GoyaContext;
+import com.ysmjjsy.goya.component.framework.core.context.GoyaUser;
+import com.ysmjjsy.goya.component.framework.core.context.SpringContext;
 import com.ysmjjsy.goya.component.framework.security.domain.SubjectType;
+import com.ysmjjsy.goya.component.framework.servlet.utils.WebUtils;
 import com.ysmjjsy.goya.component.mybatisplus.context.AccessContextResolver;
 import com.ysmjjsy.goya.component.mybatisplus.context.AccessContextValue;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,10 +29,21 @@ public class WebAccessContextResolver implements AccessContextResolver {
         if (request == null) {
             return null;
         }
+
+        AccessContextValue fromUnifiedContext = resolveFromUnifiedContext(request);
+        if (fromUnifiedContext != null) {
+            return fromUnifiedContext;
+        }
+
+        if (StringUtils.hasText(WebUtils.getBearerToken(request))) {
+            return null;
+        }
+
         String userId = headerOrNull(request, DefaultConst.X_USER_ID);
         if (!StringUtils.hasText(userId)) {
             return null;
         }
+
         Map<String, Object> attrs = new HashMap<>();
         attrs.put("userId", userId);
         String tenantId = headerOrNull(request, DefaultConst.X_TENANT_ID);
@@ -44,5 +59,26 @@ public class WebAccessContextResolver implements AccessContextResolver {
         }
         String value = request.getHeader(name);
         return StringUtils.hasText(value) ? value.trim() : null;
+    }
+
+    private AccessContextValue resolveFromUnifiedContext(HttpServletRequest request) {
+        GoyaContext goyaContext = SpringContext.getBeanOrNull(GoyaContext.class);
+        if (goyaContext == null) {
+            return null;
+        }
+
+        GoyaUser goyaUser = goyaContext.currentUser(request);
+        if (goyaUser == null || !StringUtils.hasText(goyaUser.getUserId())) {
+            return null;
+        }
+
+        Map<String, Object> attrs = new HashMap<>();
+        attrs.put("userId", goyaUser.getUserId());
+        attrs.put("subjectSource", "goya-context");
+        String tenantId = goyaContext.currentTenant();
+        if (StringUtils.hasText(tenantId)) {
+            attrs.put("tenantId", tenantId);
+        }
+        return new AccessContextValue(goyaUser.getUserId(), SubjectType.USER, goyaUser.getUserId(), attrs);
     }
 }

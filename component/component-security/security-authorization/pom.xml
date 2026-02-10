@@ -21,8 +21,16 @@
             <artifactId>framework-boot-starter</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.ysmjjsy.goya</groupId>
+            <artifactId>framework-servlet</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-oauth2-resource-server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-oauth2-jose</artifactId>
         </dependency>
     </dependencies>
 </project>

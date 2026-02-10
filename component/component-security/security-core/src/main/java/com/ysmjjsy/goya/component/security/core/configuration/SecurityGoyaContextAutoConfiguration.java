@@ -5,11 +5,13 @@ import com.ysmjjsy.goya.component.framework.servlet.autoconfigure.GoyaContextAut
 import com.ysmjjsy.goya.component.security.core.configuration.properties.SecurityCoreProperties;
 import com.ysmjjsy.goya.component.security.core.context.GoyaSecurityContext;
 import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
+import com.ysmjjsy.goya.component.security.core.service.ITenantService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.web.server.autoconfigure.ServerProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -25,21 +27,27 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 @AutoConfiguration(before = GoyaContextAutoConfiguration.class)
 public class SecurityGoyaContextAutoConfiguration {
 
+    private final ServerProperties serverProperties;
+    private final SecurityCoreProperties securityCoreProperties;
+    private final SecurityUserManager securityUserManager;
+    private final ObjectProvider<ITenantService> tenantServiceProvider;
+    private final ObjectProvider<JwtDecoder> jwtDecoderProvider;
+
     @PostConstruct
     public void init() {
         log.debug("[Goya] |- security [core] SecurityGoyaContextAutoConfiguration auto configure.");
     }
 
     @Bean
-    public GoyaContext goyaSecurityContext(ServerProperties serverProperties,
-                                           SecurityCoreProperties securityCoreProperties,
-                                           SecurityUserManager securityUserManager,
-                                           ObjectProvider<JwtDecoder> jwtDecoderProvider) {
+    @ConditionalOnMissingBean(GoyaContext.class)
+    public GoyaContext goyaSecurityContext() {
         GoyaSecurityContext goyaSecurityContext = new GoyaSecurityContext(
                 serverProperties,
                 securityCoreProperties,
                 securityUserManager,
-                jwtDecoderProvider);
+                tenantServiceProvider,
+                jwtDecoderProvider
+        );
         log.trace("[Goya] |- component [core] SecurityGoyaContextAutoConfiguration |- bean [goyaSecurityContext] register.");
         return goyaSecurityContext;
     }

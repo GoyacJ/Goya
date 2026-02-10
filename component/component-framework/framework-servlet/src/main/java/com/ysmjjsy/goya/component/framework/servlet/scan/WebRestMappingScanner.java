@@ -74,8 +74,8 @@ public class WebRestMappingScanner extends AbstractRestMappingScanner {
         // method.getBeanType().getName() 取到的是注解实际Bean的名字，比如注解在在父类叫BaseController，而实际类是SysUserController，那么拿到的就是SysUserController
         String className = method.getBeanType().getName();
 
-        // 检测该类是否在GroupIds列表中
-        if (isLegalGroup(className)) {
+        // 检测该类是否在 GroupIds 允许列表中
+        if (!isLegalGroup(className)) {
             return null;
         }
 

@@ -1,8 +1,12 @@
 package com.ysmjjsy.goya.component.mybatisplus.tenant.web;
 
+import com.ysmjjsy.goya.component.framework.core.context.GoyaContext;
+import com.ysmjjsy.goya.component.framework.core.context.GoyaUser;
+import com.ysmjjsy.goya.component.framework.core.context.SpringContext;
 import com.ysmjjsy.goya.component.framework.servlet.utils.WebUtils;
 import com.ysmjjsy.goya.component.mybatisplus.context.TenantContext;
 import com.ysmjjsy.goya.component.mybatisplus.tenant.TenantResolver;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.util.StringUtils;
 
 /**
@@ -26,7 +30,28 @@ public class WebTenantResolver implements TenantResolver {
         if (StringUtils.hasText(tenantId)) {
             return tenantId;
         }
-        String header = WebUtils.getTenantId(WebUtils.getRequest());
+
+        HttpServletRequest request = WebUtils.getRequest();
+        if (request == null) {
+            return null;
+        }
+
+        GoyaContext goyaContext = SpringContext.getBeanOrNull(GoyaContext.class);
+        if (goyaContext != null) {
+            GoyaUser goyaUser = goyaContext.currentUser(request);
+            if (goyaUser != null && StringUtils.hasText(goyaUser.getUserId())) {
+                String resolvedTenant = goyaContext.currentTenant();
+                if (StringUtils.hasText(resolvedTenant)) {
+                    return resolvedTenant.trim();
+                }
+            }
+        }
+
+        if (StringUtils.hasText(WebUtils.getBearerToken(request))) {
+            return null;
+        }
+
+        String header = WebUtils.getTenantId(request);
         return StringUtils.hasText(header) ? header.trim() : null;
     }
 }

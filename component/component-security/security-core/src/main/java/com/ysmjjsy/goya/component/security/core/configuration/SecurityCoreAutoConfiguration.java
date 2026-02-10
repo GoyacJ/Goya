@@ -1,6 +1,8 @@
 package com.ysmjjsy.goya.component.security.core.configuration;
 
+import com.ysmjjsy.goya.component.framework.common.error.ErrorCodeCatalog;
 import com.ysmjjsy.goya.component.security.core.configuration.properties.SecurityCoreProperties;
+import com.ysmjjsy.goya.component.security.core.error.SecurityErrorCodeCatalog;
 import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
 import com.ysmjjsy.goya.component.security.core.service.ISocialUserService;
 import com.ysmjjsy.goya.component.security.core.service.IUserService;
@@ -8,6 +10,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
@@ -33,5 +36,13 @@ public class SecurityCoreAutoConfiguration {
         SecurityUserManager securityUserManager = new SecurityUserManager(userService, socialUserServiceProvider);
         log.trace("[Goya] |- component [core] SecurityCoreAutoConfiguration |- bean [securityUserManager] register.");
         return securityUserManager;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(name = "securityErrorCodeCatalog")
+    public ErrorCodeCatalog securityErrorCodeCatalog() {
+        SecurityErrorCodeCatalog securityErrorCodeCatalog = new SecurityErrorCodeCatalog();
+        log.trace("[Goya] |- component [core] SecurityCoreAutoConfiguration |- bean [securityErrorCodeCatalog] register.");
+        return securityErrorCodeCatalog;
     }
 }

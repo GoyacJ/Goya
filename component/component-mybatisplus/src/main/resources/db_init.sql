@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS data_resource (
     updated_at DATETIME NULL,
     updated_by VARCHAR(64) NULL,
     UNIQUE KEY uk_resource_hashcode (resource_hashcode),
+    UNIQUE KEY uk_tenant_type_code (tenant_code, resource_type, resource_code),
     KEY idx_tenant_resource (tenant_code, resource_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -114,6 +115,7 @@ CREATE TABLE IF NOT EXISTS data_resource (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_resource_hashcode ON data_resource(resource_hashcode);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_tenant_type_code ON data_resource(tenant_code, resource_type, resource_code);
 CREATE INDEX IF NOT EXISTS idx_tenant_resource ON data_resource(tenant_code, resource_code);
 
 CREATE TABLE IF NOT EXISTS data_resource_policy (
@@ -189,6 +191,7 @@ CREATE TABLE IF NOT EXISTS data_resource (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_resource_hashcode ON data_resource(resource_hashcode);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_tenant_type_code ON data_resource(tenant_code, resource_type, resource_code);
 CREATE INDEX IF NOT EXISTS idx_tenant_resource ON data_resource(tenant_code, resource_code);
 
 CREATE TABLE IF NOT EXISTS data_resource_policy (
