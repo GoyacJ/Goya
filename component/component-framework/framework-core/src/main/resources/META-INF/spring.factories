@@ -1,4 +1,0 @@
-org.springframework.boot.EnvironmentPostProcessor=\
-com.ysmjjsy.goya.component.framework.core.processor.CommonConfigEnvironmentPostProcessor
-org.springframework.context.ApplicationContextInitializer=\
-com.ysmjjsy.goya.component.framework.core.context.SpringContext

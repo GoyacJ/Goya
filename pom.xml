@@ -58,10 +58,6 @@
 
     <modules>
         <module>bom</module>
-        <module>ai</module>
-        <module>platform</module>
-        <module>component</module>
-        <module>cloud</module>
     </modules>
 
     <dependencyManagement>
@@ -74,135 +70,7 @@
                 <scope>import</scope>
             </dependency>
 
-            <!-- ======================== framework ======================== -->
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>framework-core</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>framework-common</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>framework-masker</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>framework-crypto</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>framework-cache</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>framework-bus</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>framework-log</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>framework-oss</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>framework-servlet</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>framework-security</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>framework-boot-starter</artifactId>
-                <version>${revision}</version>
-            </dependency>
-
-            <!-- ======================== component ======================== -->
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>component-redis</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>component-kafka</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>component-rabbitmq</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>component-captcha</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>component-mybatisplus</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>component-service</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>component-oss-aliyun</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>component-oss-s3</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>component-oss-minio</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>component-social</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>security-core</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>security-authentication</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>security-authorization</artifactId>
-                <version>${revision}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.ysmjjsy.goya</groupId>
-                <artifactId>security-oauth2</artifactId>
-                <version>${revision}</version>
-            </dependency>
+            <!-- ======================== 本项目依赖 ======================== -->
 
         </dependencies>
     </dependencyManagement>

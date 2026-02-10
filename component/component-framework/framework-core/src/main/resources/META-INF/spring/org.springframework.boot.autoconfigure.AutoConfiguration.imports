@@ -1,6 +1,0 @@
-com.ysmjjsy.goya.component.framework.core.autoconfigure.CoreFrameworkAutoConfiguration
-com.ysmjjsy.goya.component.framework.crypto.autoconfigure.CoreCryptoAutoConfiguration
-com.ysmjjsy.goya.component.framework.core.autoconfigure.CoreErrorAutoConfiguration
-com.ysmjjsy.goya.component.framework.core.autoconfigure.CoreI18nAutoConfiguration
-com.ysmjjsy.goya.component.framework.core.autoconfigure.CoreEnumAutoConfiguration
-com.ysmjjsy.goya.component.framework.core.autoconfigure.CoreJsonAutoConfiguration
