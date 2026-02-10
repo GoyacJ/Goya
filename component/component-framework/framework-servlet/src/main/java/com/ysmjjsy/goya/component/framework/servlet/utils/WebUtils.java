@@ -13,6 +13,8 @@ import com.ysmjjsy.goya.component.framework.core.constants.PropertyConst;
 import com.ysmjjsy.goya.component.framework.core.context.SpringContext;
 import com.ysmjjsy.goya.component.framework.core.enums.ProtocolEnum;
 import com.ysmjjsy.goya.component.framework.core.json.GoyaJson;
+import com.ysmjjsy.goya.component.framework.core.web.RequestInfo;
+import com.ysmjjsy.goya.component.framework.core.web.UserAgent;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -1124,5 +1126,36 @@ public class WebUtils {
         }
 
         return "Unknown Device";
+    }
+
+    /**
+     * 提取当前请求信息。
+     *
+     * @return RequestInfo；若当前无请求则返回 null
+     */
+    public static RequestInfo getRequestInfo() {
+        return getRequestInfo(getRequest());
+    }
+
+    /**
+     * 提取当前请求信息。
+     *
+     * @return RequestInfo；若当前无请求则返回 null
+     */
+    public static RequestInfo getRequestInfo(HttpServletRequest request) {
+        String uri = buildRequestUri(request);
+        String method = request.getMethod();
+        UserAgent ua = UserAgent.userAgentParse(request);
+        String ip = getIp(request);
+        return new RequestInfo(uri, method, ua, ip);
+    }
+
+    private String buildRequestUri(HttpServletRequest req) {
+        String uri = req.getRequestURI();
+        String qs = req.getQueryString();
+        if (!org.springframework.util.StringUtils.hasText(qs)) {
+            return uri;
+        }
+        return uri + "?" + qs;
     }
 }

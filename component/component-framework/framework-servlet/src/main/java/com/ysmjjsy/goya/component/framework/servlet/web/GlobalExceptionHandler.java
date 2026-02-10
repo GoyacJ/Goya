@@ -327,10 +327,7 @@ public class GlobalExceptionHandler {
      * @return ResponseEntity
      */
     private ResponseEntity<?> respond(HttpStatus status, ErrorCode code, String message, String traceId) {
-        return switch (props.responseStyle()) {
-            case API -> ResponseEntity.status(status).body(ApiRes.fail(code, message, traceId));
-            case PROBLEM, BOTH -> ResponseEntity.status(status).body(problemFactory.fromCode(code, message, traceId));
-        };
+        return ExceptionHandlerUtils.respond(status, code, message, traceId, props, problemFactory);
     }
 
     /**
@@ -340,13 +337,7 @@ public class GlobalExceptionHandler {
      * @return HTTP 状态码
      */
     private HttpStatus resolveHttpStatus(ErrorCode code) {
-        if (code == CommonErrorCode.UNAUTHORIZED) {
-            return HttpStatus.UNAUTHORIZED;
-        }
-        if (code == CommonErrorCode.FORBIDDEN) {
-            return HttpStatus.FORBIDDEN;
-        }
-        return statusMapper.map(code.category());
+        return ExceptionHandlerUtils.resolveHttpStatus(code, statusMapper);
     }
 
     /**
@@ -357,21 +348,16 @@ public class GlobalExceptionHandler {
      * @param request request
      */
     private void logBySeverity(GoyaException ex, String traceId, HttpServletRequest request) {
-        Severity sev = ex.errorCode().severity();
-        String uri = request.getRequestURI();
-        Object maskedMeta = masker.mask(ex.metadata());
-
-        switch (sev) {
-            case INFO -> log.info("业务异常(INFO) traceId={}, uri={}, code={}, category={}, metadata={}",
-                    traceId, uri, ex.errorCode().code(), ex.errorCode().category(), maskedMeta);
-            case WARN -> log.warn("业务异常(WARN) traceId={}, uri={}, code={}, category={}, metadata={}",
-                    traceId, uri, ex.errorCode().code(), ex.errorCode().category(), maskedMeta);
-            case ERROR -> log.error("业务异常(ERROR) traceId={}, uri={}, code={}, category={}, metadata={}",
-                    traceId, uri, ex.errorCode().code(), ex.errorCode().category(), maskedMeta, ex);
-            case FATAL -> log.error("业务异常(FATAL) traceId={}, uri={}, code={}, category={}, metadata={}",
-                    traceId, uri, ex.errorCode().code(), ex.errorCode().category(), maskedMeta, ex);
-            default -> log.error("Unexpected value: {}", sev, ex);
-        }
+        ExceptionHandlerUtils.logBySeverity(
+                ex.errorCode(),
+                ex.userMessage(),
+                ex.debugMessage(),
+                ex.metadata(),
+                traceId,
+                request.getRequestURI(),
+                masker,
+                ex
+        );
     }
 
     /**
