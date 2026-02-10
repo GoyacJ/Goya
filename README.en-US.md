@@ -59,7 +59,7 @@ docker-compose up -d
 ```text
 Goya/
 ├── AGENTS.md                 # Project-level Codex instructions
-├── .codex/skills/            # Project-specific Codex skills
+├── .agents/skills/           # Project-specific Codex skills
 ├── docs/                     # Documentation system (entry: docs/SUMMARY.md)
 ├── bom/
 ├── component/

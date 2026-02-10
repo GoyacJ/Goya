@@ -1,6 +1,6 @@
 ---
 name: goya-doc-governance
-description: 在 Goya 仓库维护文档体系时使用，确保架构、开发、运维、进度文档与代码状态一致。
+description: 在 Goya 仓库维护文档体系时使用，确保架构、开发、运维、进度文档与代码状态一致；仅代码实现且不涉及文档变更时不触发。
 ---
 
 # Goya Doc Governance

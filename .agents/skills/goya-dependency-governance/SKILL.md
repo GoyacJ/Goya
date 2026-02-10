@@ -1,6 +1,6 @@
 ---
 name: goya-dependency-governance
-description: 处理 Maven 依赖、模块边界和自动配置注册时使用，避免聚合依赖和自动配置失效。
+description: 处理 Maven 依赖、模块边界和自动配置注册时使用，避免聚合依赖和自动配置失效；若改动不涉及依赖或自动配置则不触发。
 ---
 
 # Goya Dependency Governance

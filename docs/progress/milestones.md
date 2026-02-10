@@ -1,7 +1,7 @@
 # Milestones
 
 ## M1: Codex 初始化（已完成）
-- 建立 `AGENTS.md` 与 `.codex/skills/`。
+- 建立 `AGENTS.md` 与 `.agents/skills/`。
 - 建立 `docs/` 文档总索引与核心分层文档。
 - 明确“无测试文件”策略。
 

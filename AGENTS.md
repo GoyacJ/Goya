@@ -5,6 +5,7 @@
 - 本项目后续默认通过 Codex 进行开发与维护。
 
 ## 强制工作流
+0. 每次通过 Codex 开启新 thread 时，必须先创建独立 worktree（优先使用 Codex Desktop Worktree；CLI 兜底：`.agents/skills/goya-thread-worktree/scripts/init_thread_worktree.sh --topic <topic>`）。
 1. 开发前先阅读：`/Users/goya/Repo/Git/Goya/Goya/docs/SUMMARY.md`。
 2. 仅在目标模块内改动，避免跨模块无关修改。
 3. 变更后至少执行一次 Maven 构建校验（跳过测试）：`mvn -DskipTests compile` 或按模块 `mvn -pl <module> -am -DskipTests validate`。
@@ -29,4 +30,4 @@
 
 ## 文档位置
 - 文档总索引：`/Users/goya/Repo/Git/Goya/Goya/docs/SUMMARY.md`
-- Codex 专属 skills：`/Users/goya/Repo/Git/Goya/Goya/.codex/skills/`
+- 项目专属 skills：`/Users/goya/Repo/Git/Goya/Goya/.agents/skills/`

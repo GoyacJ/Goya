@@ -60,7 +60,7 @@ docker-compose up -d
 ```text
 Goya/
 ├── AGENTS.md                 # Codex 项目级执行规范
-├── .codex/skills/            # 项目专属 Codex skills
+├── .agents/skills/           # 项目专属 Codex skills
 ├── docs/                     # 文档体系（总入口见 docs/SUMMARY.md）
 ├── bom/                      # 依赖版本管理
 ├── component/                # 基础框架与通用组件
