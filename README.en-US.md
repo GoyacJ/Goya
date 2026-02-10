@@ -11,7 +11,7 @@
 
 English | [简体中文](./README.md)
 
-[Quick Start](#quick-start) • [Core Features](#core-features) • [Architecture](#architecture) • [Documentation](#documentation) • [Contributing](./CONTRIBUTING.md)
+[Quick Start](#quick-start) • [Core Features](#core-features) • [Project Structure](#project-structure) • [Documentation](#documentation) • [Contributing](./CONTRIBUTING.md)
 
 </div>
 
@@ -24,7 +24,7 @@ Goya is an enterprise-grade microservices development framework built on **Sprin
 ### Architecture Components
 
 - **Goya/** - Java Backend Framework (this directory)
-- **goya-web-ui/** - Vue 3 Admin System
+- **goya-web-ui/** - Frontend lives in a separate repository (not included here)
 
 ## ✨ Core Features
 
@@ -104,14 +104,8 @@ Goya/
 ├── deploy/                        # Deployment Configs
 │   ├── docker/                    # Docker Compose
 │   └── maven/                     # Maven Config
-├── docs/                          # Documentation
-└── goya-web-ui/                   # Vue 3 Frontend
-    ├── apps/                      # Applications
-    │   ├── web-antd/              # Ant Design Vue
-    │   ├── web-ele/               # Element Plus
-    │   └── web-naive/             # Naive UI
-    ├── packages/                  # Shared Packages
-    └── internal/                  # Internal Tools
+├── docs/                          # Documentation directory (currently pending in this branch)
+└── logs/                          # Local runtime logs
 ```
 
 ## 🚀 Quick Start
@@ -136,21 +130,28 @@ cd platform/platform-monolith
 mvn spring-boot:run
 ```
 
-Access: `http://localhost:8080`
+Access: `http://localhost:8101`
 
-### Frontend Setup
+### Frontend Note
 
 ```bash
-cd goya-web-ui
-
-# Install dependencies
-pnpm install
-
-# Start dev server (Ant Design Vue)
-pnpm dev:antd
+# Frontend code is not in this repository.
+# Use the dedicated frontend repository for setup and run.
 ```
 
-Access: `http://localhost:5555`
+### Configuration Templates
+
+```bash
+# Docker infrastructure env template
+cp deploy/docker/docker-compose/basic/.env.example deploy/docker/docker-compose/basic/.env
+
+# Maven private repository settings template (optional)
+cp deploy/maven/conf/settings.xml.example deploy/maven/conf/settings.xml
+
+# Application config templates
+cp platform/platform-monolith/src/main/resources/application-dev.example.yml platform/platform-monolith/src/main/resources/application-dev.yml
+cp platform/platform-monolith/src/main/resources/application-prod.example.yml platform/platform-monolith/src/main/resources/application-prod.yml
+```
 
 ### Docker Quick Start
 
@@ -194,11 +195,12 @@ docker-compose up -d
 
 ## 📚 Documentation
 
-- [Architecture Design](./docs/architecture/overview.md)
-- [Quick Start](./docs/guides/quick-start.md)
-- [Development Guide](./docs/guides/development.md)
-- [Deployment Guide](./docs/guides/deployment.md)
-- [Roadmap](./docs/progress/roadmap.md)
+The `docs/` directory is currently being rebuilt in this branch. Available references:
+
+- [README](./README.md)
+- [README.en-US](./README.en-US.md)
+- [Contributing Guide](./CONTRIBUTING.md)
+- [AI Assistant Guide](./.cursor/AI_ASSISTANT_GUIDE.md)
 
 ## 🤝 Contributing
 

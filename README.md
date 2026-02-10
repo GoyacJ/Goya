@@ -11,7 +11,7 @@
 
 [English](./README.en-US.md) | 简体中文
 
-[快速开始](#快速开始) • [核心特性](#核心特性) • [架构设计](#架构设计) • [文档](#文档) • [贡献指南](./CONTRIBUTING.md)
+[快速开始](#快速开始) • [核心特性](#核心特性) • [项目结构](#项目结构) • [文档](#文档) • [贡献指南](./CONTRIBUTING.md)
 
 </div>
 
@@ -24,7 +24,7 @@ Goya 是一个基于 **Spring Boot 4.0.1** 和 **Java 25** 构建的企业级微
 ### 架构组成
 
 - **Goya/** - Java 后端框架（本目录）
-- **goya-web-ui/** - Vue 3 前端管理系统
+- **goya-web-ui/** - 前端独立仓库（当前仓库不包含）
 
 ## ✨ 核心特性
 
@@ -108,23 +108,12 @@ Goya/
 ├── deploy/                        # 部署配置
 │   ├── docker/                    # Docker Compose 配置
 │   └── maven/                     # Maven 配置
-├── docs/                          # 项目文档
-│   ├── architecture/              # 架构文档
-│   ├── guides/                    # 开发指南
-│   ├── requirements/              # 需求文档
-│   └── progress/                  # 开发进度
+├── docs/                          # 文档目录（当前分支待补充）
 ├── .cursor/                       # Cursor 开发工具
 │   ├── rules/                     # 开发规则（.mdc）
 │   ├── skills/                    # 开发技能（SKILL.md）
 │   └── hooks/                     # Git Hooks
-└── goya-web-ui/                   # Vue 3 前端管理系统
-    ├── apps/                      # 应用
-    │   ├── web-antd/              # Ant Design Vue 版本
-    │   ├── web-ele/               # Element Plus 版本
-    │   ├── web-naive/             # Naive UI 版本
-    │   └── backend-mock/          # Mock 服务
-    ├── packages/                  # 共享包
-    └── internal/                  # 内部工具
+└── logs/                          # 本地运行日志
 ```
 
 ## 🚀 快速开始
@@ -149,25 +138,28 @@ cd platform/platform-monolith
 mvn spring-boot:run
 ```
 
-访问：`http://localhost:8080`
+访问：`http://localhost:8101`
 
-### 前端启动
+### 前端说明
 
 ```bash
-cd goya-web-ui
-
-# 安装依赖
-pnpm install
-
-# 启动开发服务器（Ant Design Vue 版本）
-pnpm dev:antd
-
-# 或启动其他版本
-pnpm dev:ele     # Element Plus
-pnpm dev:naive   # Naive UI
+# 当前仓库不包含前端代码
+# 请在前端独立仓库执行安装和启动
 ```
 
-访问：`http://localhost:5555`
+### 配置模板
+
+```bash
+# Docker 基础设施配置模板
+cp deploy/docker/docker-compose/basic/.env.example deploy/docker/docker-compose/basic/.env
+
+# Maven 私有仓库配置模板（按需）
+cp deploy/maven/conf/settings.xml.example deploy/maven/conf/settings.xml
+
+# 应用配置模板
+cp platform/platform-monolith/src/main/resources/application-dev.example.yml platform/platform-monolith/src/main/resources/application-dev.yml
+cp platform/platform-monolith/src/main/resources/application-prod.example.yml platform/platform-monolith/src/main/resources/application-prod.yml
+```
 
 ### Docker 快速启动
 
@@ -218,7 +210,7 @@ docker-compose up -d
 - **security-authorization**：资源服务器（JWT 验证、黑名单）
 - **security-oauth2**：授权服务器（OAuth2.1 + OIDC）
 
-**详细文档**：[企业级认证授权方案](./docs/requirements/features/auth-system.md)
+**详细文档**：正在整理中（当前分支暂未包含该文档）
 
 ### AI 模块 (ai/)
 
@@ -233,22 +225,19 @@ docker-compose up -d
 
 ## 📚 文档
 
-### 核心文档
-- [架构设计](./docs/architecture/overview.md) - 了解整体架构设计
-- [快速开始](./docs/guides/quick-start.md) - 5分钟快速上手
-- [开发指南](./docs/guides/development.md) - 开发规范和最佳实践
-- [API 参考](./docs/guides/api-reference.md) - 核心 API 使用说明
-- [部署指南](./docs/guides/deployment.md) - 生产环境部署
+当前分支 `docs/` 目录尚未补齐。可参考以下已有文档：
+
+- [README](./README.md) - 当前模块结构与启动方式
+- [README.en-US](./README.en-US.md) - 英文说明
+- [CONTRIBUTING](./CONTRIBUTING.md) - 贡献与协作规范
+- [AI 助手使用指南](./.cursor/AI_ASSISTANT_GUIDE.md) - AI 协作流程
 
 ### 开发规范体系
 - [AI 助手使用指南](./.cursor/AI_ASSISTANT_GUIDE.md) - **AI 助手必读**，定义 AI 开发规范和工作流程
 - [开发工作流规范](./.cursor/rules/development-workflow.mdc) - 标准开发流程（Rules 格式）
 
 ### 规划文档
-- [产品需求](./docs/requirements/product-requirements.md) - 产品规划
-- [技术需求](./docs/requirements/technical-requirements.md) - 技术规划
-- [开发路线图](./docs/progress/roadmap.md) - 未来规划
-- [更新日志](./docs/progress/changelog.md) - 版本变更记录
+- 规划文档将在 `docs/` 目录补齐后更新索引
 
 ## 🛠️ 开发规范
 
@@ -257,8 +246,8 @@ Goya 项目建立了完整的开发规范体系，确保每次开发都遵循统
 ### 开发工作流
 
 **每次开发前必须**：
-1. 查阅项目文档（本 README.md、架构文档、开发指南）
-2. 查阅开发进度（changelog.md、milestones.md）
+1. 查阅项目文档（本 README.md 与 CONTRIBUTING.md）
+2. 查阅当前分支进度（Issue、PR 或项目看板）
 3. 激活相关 Cursor Rules 和 Skills
 
 **开发过程中**：
@@ -267,10 +256,9 @@ Goya 项目建立了完整的开发规范体系，确保每次开发都遵循统
 3. 编写测试
 
 **开发完成后必须**：
-1. 更新 `docs/progress/changelog.md`
-2. 更新相关模块的进度文档（如有）
-3. 更新项目文档（如需要）
-4. 使用规范的 Git 提交信息提交代码
+1. 更新受影响模块说明（README、注释或文档）
+2. 补充或更新测试
+3. 使用规范的 Git 提交信息提交代码
 
 **详细流程**：
 - 📖 [AI 助手使用指南](./.cursor/AI_ASSISTANT_GUIDE.md) - **AI 助手必读**，完整的开发流程说明

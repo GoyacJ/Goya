@@ -16,7 +16,7 @@
         <!-- 基础依赖 -->
         <dependency>
             <groupId>com.ysmjjsy.goya</groupId>
-            <artifactId>component-framework</artifactId>
+            <artifactId>framework-boot-starter</artifactId>
         </dependency>
     </dependencies>
 

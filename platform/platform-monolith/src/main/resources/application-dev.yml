@@ -2,11 +2,11 @@ spring:
   sql:
     init:
       mode: never
-      username: goya
-      password: goya123
+      username: ${APP_DB_USERNAME:goya}
+      password: ${APP_DB_PASSWORD:CHANGE_ME}
       platform: postgresql
   datasource:
-    url: jdbc:p6spy:postgresql://39.105.2.5:14210/goya_auth_server
+    url: ${APP_DB_URL:jdbc:p6spy:postgresql://127.0.0.1:5432/goya_auth_server}
     username: ${spring.sql.init.username}
     password: ${spring.sql.init.password}
     # 动态数据源文档 https://www.kancloud.cn/tracy5546/dynamic-datasource/content
@@ -36,16 +36,16 @@ spring:
   data:
     redis:
       database: 0
-      host: 39.105.2.5
-      password: goya123
-      port: 14240
+      host: ${APP_REDIS_HOST:127.0.0.1}
+      password: ${APP_REDIS_PASSWORD:CHANGE_ME}
+      port: ${APP_REDIS_PORT:6379}
       timeout: 10000
 ---
 # Spring Cloud Stream Kafka 配置
 spring:
   # Kafka 连接配置
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:39.105.2.5:14270}  # Kafka 服务器地址（可通过环境变量覆盖）
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:9092}  # Kafka 服务器地址（可通过环境变量覆盖）
     # Producer 配置
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
