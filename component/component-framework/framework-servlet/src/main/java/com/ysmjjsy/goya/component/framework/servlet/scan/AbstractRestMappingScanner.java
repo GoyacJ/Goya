@@ -121,24 +121,9 @@ public abstract class AbstractRestMappingScanner implements ApplicationListener<
      * @return url 对应的 code
      */
     protected String createCode(String url, String requestMethods) {
-        String method = extractFirstPart(requestMethods);
-        String path = extractFirstPart(url);
-        String resultCode = RestMappingCodeUtils.createMappingCode(method, path);
+        String resultCode = RestMappingCodeUtils.createMappingCode(requestMethods, url);
         log.trace("[Goya] |- Create code [{}] for Request [{}] : [{}]", resultCode, requestMethods, url);
         return resultCode;
-    }
-
-    private String extractFirstPart(String value) {
-        if (StringUtils.isBlank(value)) {
-            return value;
-        }
-        String[] parts = value.split(",");
-        for (String part : parts) {
-            if (StringUtils.isNotBlank(part)) {
-                return part.trim();
-            }
-        }
-        return value.trim();
     }
 
     /**

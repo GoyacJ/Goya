@@ -1,7 +1,6 @@
 package com.ysmjjsy.goya.component.mybatisplus.tenant.web;
 
 import com.ysmjjsy.goya.component.framework.core.context.GoyaContext;
-import com.ysmjjsy.goya.component.framework.core.context.GoyaUser;
 import com.ysmjjsy.goya.component.framework.core.context.SpringContext;
 import com.ysmjjsy.goya.component.framework.servlet.utils.WebUtils;
 import com.ysmjjsy.goya.component.mybatisplus.context.TenantContext;
@@ -38,12 +37,9 @@ public class WebTenantResolver implements TenantResolver {
 
         GoyaContext goyaContext = SpringContext.getBeanOrNull(GoyaContext.class);
         if (goyaContext != null) {
-            GoyaUser goyaUser = goyaContext.currentUser(request);
-            if (goyaUser != null && StringUtils.hasText(goyaUser.getUserId())) {
-                String resolvedTenant = goyaContext.currentTenant();
-                if (StringUtils.hasText(resolvedTenant)) {
-                    return resolvedTenant.trim();
-                }
+            String resolvedTenant = goyaContext.currentTenant();
+            if (StringUtils.hasText(resolvedTenant)) {
+                return resolvedTenant.trim();
             }
         }
 

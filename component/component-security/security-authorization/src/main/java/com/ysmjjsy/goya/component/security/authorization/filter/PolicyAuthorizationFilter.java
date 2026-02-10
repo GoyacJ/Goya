@@ -18,6 +18,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.core.OAuth2AuthenticatedPrincipal;
 import org.springframework.security.oauth2.server.resource.authentication.BearerTokenAuthentication;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.beans.factory.ObjectProvider;
@@ -28,8 +29,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -81,7 +85,7 @@ public class PolicyAuthorizationFilter extends OncePerRequestFilter {
         SubjectContext subjectContext = new SubjectContext();
         subjectContext.setSubjectType(SubjectType.USER);
         subjectContext.setSubjectId(resolveSubjectId(authentication));
-        subjectContext.setAttributes(Map.of("principalName", authentication.getName()));
+        subjectContext.setAttributes(resolveSubjectAttributes(authentication));
 
         ResourceContext resourceContext = new ResourceContext();
         resourceContext.setResourceType(ResourceType.API);
@@ -113,6 +117,11 @@ public class PolicyAuthorizationFilter extends OncePerRequestFilter {
     }
 
     private String resolveBestMatchingPattern(HttpServletRequest request) {
+        Object bestMatchingPattern = request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
+        if (bestMatchingPattern instanceof String pattern && StringUtils.isNotBlank(pattern)) {
+            return pattern;
+        }
+
         RequestMappingHandlerMapping handlerMapping = requestMappingHandlerMappingProvider.getIfAvailable();
         if (handlerMapping != null) {
             List<RequestMappingInfo> matchedInfos = new ArrayList<>();
@@ -135,27 +144,27 @@ public class PolicyAuthorizationFilter extends OncePerRequestFilter {
                 }
             }
         }
-
-        Object bestMatchingPattern = request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
-        if (bestMatchingPattern instanceof String pattern && StringUtils.isNotBlank(pattern)) {
-            return pattern;
-        }
         return request.getRequestURI();
     }
 
     private String resolveTenant(HttpServletRequest request, Authentication authentication) {
-        String requestTenant = request.getHeader(securityAuthorizationProperties.tenantHeader());
-        if (StringUtils.isNotBlank(requestTenant)) {
-            return requestTenant;
-        }
-
         if (authentication instanceof JwtAuthenticationToken jwtAuthenticationToken) {
-            return jwtAuthenticationToken.getToken().getClaimAsString(securityAuthorizationProperties.tenantClaim());
+            String tenant = jwtAuthenticationToken.getToken().getClaimAsString(securityAuthorizationProperties.tenantClaim());
+            if (StringUtils.isNotBlank(tenant)) {
+                return tenant;
+            }
         }
 
         if (authentication instanceof BearerTokenAuthentication bearerTokenAuthentication) {
             Object tenant = bearerTokenAuthentication.getTokenAttributes().get(securityAuthorizationProperties.tenantClaim());
-            return tenant == null ? null : String.valueOf(tenant);
+            if (tenant != null && StringUtils.isNotBlank(String.valueOf(tenant))) {
+                return String.valueOf(tenant);
+            }
+        }
+
+        String requestTenant = request.getHeader(securityAuthorizationProperties.tenantHeader());
+        if (StringUtils.isNotBlank(requestTenant)) {
+            return requestTenant;
         }
 
         return null;
@@ -177,5 +186,83 @@ public class PolicyAuthorizationFilter extends OncePerRequestFilter {
         }
 
         return authentication.getName();
+    }
+
+    private Map<String, Object> resolveSubjectAttributes(Authentication authentication) {
+        Map<String, Object> attributes = new LinkedHashMap<>();
+        attributes.put("principalName", authentication.getName());
+
+        Map<String, Object> tokenAttributes = resolveTokenAttributes(authentication);
+        List<String> roleIds = readStringList(tokenAttributes.get(securityAuthorizationProperties.roleIdsClaim()));
+        if (roleIds.isEmpty()) {
+            roleIds = readStringList(tokenAttributes.get("roles"));
+        }
+        List<String> teamIds = readStringList(tokenAttributes.get(securityAuthorizationProperties.teamIdsClaim()));
+        List<String> orgIds = readStringList(tokenAttributes.get(securityAuthorizationProperties.orgIdsClaim()));
+
+        if (!roleIds.isEmpty()) {
+            attributes.put("roleIds", roleIds);
+        }
+        if (!teamIds.isEmpty()) {
+            attributes.put("teamIds", teamIds);
+        }
+        if (!orgIds.isEmpty()) {
+            attributes.put("orgIds", orgIds);
+        }
+
+        return attributes;
+    }
+
+    private Map<String, Object> resolveTokenAttributes(Authentication authentication) {
+        if (authentication instanceof JwtAuthenticationToken jwtAuthenticationToken) {
+            return jwtAuthenticationToken.getToken().getClaims();
+        }
+        if (authentication instanceof BearerTokenAuthentication bearerTokenAuthentication) {
+            return bearerTokenAuthentication.getTokenAttributes();
+        }
+
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof OAuth2AuthenticatedPrincipal oauth2AuthenticatedPrincipal) {
+            return oauth2AuthenticatedPrincipal.getAttributes();
+        }
+        if (principal instanceof Map<?, ?> principalMap) {
+            Map<String, Object> attributes = new LinkedHashMap<>();
+            principalMap.forEach((key, value) -> attributes.put(String.valueOf(key), value));
+            return attributes;
+        }
+        return Collections.emptyMap();
+    }
+
+    private List<String> readStringList(Object value) {
+        if (value == null) {
+            return List.of();
+        }
+        if (value instanceof String text) {
+            if (StringUtils.isBlank(text)) {
+                return List.of();
+            }
+            String[] parts = text.split(",");
+            List<String> values = new ArrayList<>(parts.length);
+            for (String part : parts) {
+                if (StringUtils.isNotBlank(part)) {
+                    values.add(part.trim());
+                }
+            }
+            return values;
+        }
+        if (value instanceof Collection<?> collection) {
+            LinkedHashSet<String> values = new LinkedHashSet<>();
+            for (Object item : collection) {
+                if (item == null) {
+                    continue;
+                }
+                String text = String.valueOf(item).trim();
+                if (StringUtils.isNotBlank(text)) {
+                    values.add(text);
+                }
+            }
+            return new ArrayList<>(values);
+        }
+        return List.of(String.valueOf(value));
     }
 }

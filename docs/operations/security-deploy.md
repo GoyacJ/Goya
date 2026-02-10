@@ -30,11 +30,19 @@ goya:
       enabled: true
       deployment-mode: EMBEDDED
       issuer: https://auth.example.com
+      pre-auth:
+        require-client-binding: true
+      keys:
+        allow-in-memory-fallback: false
     resource:
       enabled: true
       mode: AUTO
       consistency-mode: STRICT
       user-header: X-User-Id
+      require-user-header-for-machine-token: false
+      role-ids-claim: role_ids
+      team-ids-claim: team_ids
+      org-ids-claim: org_ids
       api-action: ACCESS
 ```
 
@@ -62,9 +70,12 @@ goya:
       enabled: true
       deployment-mode: AUTH_CENTER
       issuer: https://auth.example.com
+      pre-auth:
+        require-client-binding: true
       keys:
         rotation-interval: P30D
         overlap: P7D
+        allow-in-memory-fallback: false
 ```
 
 资源服务示例：
@@ -87,6 +98,7 @@ goya:
 - 移动端、小程序：默认 Opaque Access Token
 - 公开客户端（public client）：必须启用 PKCE
 - 禁用隐式授权（OAuth2.1）
+- Web SSO 登录页需在拿到 `pre_auth_code` 后调用 `POST /security/login/session` 建立服务端会话。
 
 ## 4. 社交登录与小程序登录
 
@@ -128,12 +140,14 @@ mvn -DskipTests compile
 1. 执行 `oauth2_jwk` 建表 SQL。
 2. 回填 API 资源到 `data_resource`，并将 API 策略 `action` 统一迁移为 `ACCESS`。
 3. 将 API 策略 `resource_code` 迁移为 `mappingCode`（`method:pathPattern`）。
-4. 升级所有已认证客户端：必须同时发送 `X-Tenant-Id` 与 `X-User-Id`，且与 token claim 完全一致。
-5. 发布资源服务严格模式，再发布认证 Provider 化与 OAuth2 密钥持久化。
+4. 升级认证请求：密码/短信/小程序登录请求增加 `clientId`，社交回调透传 `client_id`。
+5. 升级所有已认证用户请求：必须同时发送 `X-Tenant-Id` 与 `X-User-Id`，且与 token claim 完全一致（机器令牌默认豁免 `X-User-Id`）。
+6. 发布资源服务严格模式，再发布认证 Provider 化与 OAuth2 密钥持久化。
 
 ## 8. 常见问题
 
 - 资源服务 `AUTO` 模式鉴权失败：确认 `issuer-uri` 或 `jwk-set-uri` / introspection 三元组已配置。
 - 令牌无法换取：确认客户端已启用 `urn:goya:grant-type:pre-auth-code` 授权类型。
+- `pre_auth_code` 交换失败（client mismatch）：检查认证请求与 `/oauth2/token` 使用的 `client_id` 是否一致。
 - 社交回调失败：检查第三方配置、回调地址与 `ISocialUserService` 绑定逻辑。
 - 一致性校验 403：检查 `X-Tenant-Id/X-User-Id` 是否存在且与 token 的 `tenant_id/sub` 一致。

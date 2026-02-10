@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
  * @param roles            角色
  * @param authorities      权限
  * @param clientType       客户端类型
+ * @param clientId         OAuth2 客户端ID
  * @param mfaVerified      是否完成MFA
  * @param sid              会话ID
  * @param deviceId         设备ID
@@ -41,6 +42,7 @@ public record PreAuthCodePayload(
         Set<String> roles,
         Set<String> authorities,
         ClientTypeEnum clientType,
+        String clientId,
         boolean mfaVerified,
         String sid,
         String deviceId,
@@ -51,6 +53,7 @@ public record PreAuthCodePayload(
     public static PreAuthCodePayload fromUser(SecurityUser securityUser,
                                               String tenantId,
                                               ClientTypeEnum clientType,
+                                              String clientId,
                                               String sid,
                                               String deviceId,
                                               boolean mfaVerified,
@@ -73,6 +76,7 @@ public record PreAuthCodePayload(
                 roles,
                 authorities,
                 clientType,
+                clientId,
                 mfaVerified,
                 sid,
                 deviceId,
@@ -92,6 +96,7 @@ public record PreAuthCodePayload(
                 roles,
                 authorities,
                 clientType,
+                clientId,
                 mfaVerified,
                 sid,
                 deviceId,
@@ -111,6 +116,7 @@ public record PreAuthCodePayload(
                 roles,
                 authorities,
                 clientType,
+                clientId,
                 mfaVerified,
                 sid,
                 deviceId,

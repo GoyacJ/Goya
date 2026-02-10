@@ -6,6 +6,7 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import com.ysmjjsy.goya.component.framework.cache.api.CacheService;
 import com.ysmjjsy.goya.component.security.authentication.service.PreAuthCodeService;
 import com.ysmjjsy.goya.component.security.core.constants.StandardClaimNamesConst;
 import com.ysmjjsy.goya.component.security.core.domain.SecurityUser;
@@ -15,6 +16,7 @@ import com.ysmjjsy.goya.component.security.oauth2.configuration.security.Authori
 import com.ysmjjsy.goya.component.security.oauth2.configuration.security.PkceEnforcingRegisteredClientRepository;
 import com.ysmjjsy.goya.component.security.oauth2.grant.PreAuthCodeGrantAuthenticationConverter;
 import com.ysmjjsy.goya.component.security.oauth2.grant.PreAuthCodeGrantAuthenticationProvider;
+import com.ysmjjsy.goya.component.security.oauth2.service.RevocationIndexingAuthorizationService;
 import com.ysmjjsy.goya.component.security.oauth2.service.SecurityOAuth2TokenFormatResolver;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +25,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -99,13 +102,15 @@ public class SecurityOAuth2AutoConfiguration {
                                                                                           OAuth2AuthorizationService oAuth2AuthorizationService,
                                                                                           OAuth2TokenGenerator<?> oAuth2TokenGenerator,
                                                                                           PreAuthCodeService preAuthCodeService,
-                                                                                          SecurityOAuth2TokenFormatResolver securityOAuth2TokenFormatResolver) {
+                                                                                          SecurityOAuth2TokenFormatResolver securityOAuth2TokenFormatResolver,
+                                                                                          SecurityOAuth2Properties securityOAuth2Properties) {
         PreAuthCodeGrantAuthenticationProvider provider = new PreAuthCodeGrantAuthenticationProvider(
                 preAuthCodeGrantType,
                 oAuth2AuthorizationService,
                 oAuth2TokenGenerator,
                 preAuthCodeService,
-                securityOAuth2TokenFormatResolver
+                securityOAuth2TokenFormatResolver,
+                securityOAuth2Properties.preAuth() == null || securityOAuth2Properties.preAuth().requireClientBinding()
         );
         log.trace("[Goya] |- security [oauth2] |- bean [preAuthCodeGrantAuthenticationProvider] register.");
         return provider;
@@ -144,26 +149,32 @@ public class SecurityOAuth2AutoConfiguration {
     }
 
     @Bean(name = "jwkSource")
-    @ConditionalOnBean(JdbcOAuth2JwkManager.class)
     @ConditionalOnMissingBean(name = "jwkSource")
-    public JWKSource<SecurityContext> persistentJwkSource(JdbcOAuth2JwkManager jdbcOAuth2JwkManager) {
-        JWKSource<SecurityContext> jwkSource = (selector, context) -> {
-            java.util.List<JWK> jwks = jdbcOAuth2JwkManager.loadJwks();
-            return selector.select(new JWKSet(jwks));
-        };
-        log.trace("[Goya] |- security [oauth2] |- bean [persistentJwkSource] register.");
-        return jwkSource;
-    }
+    public JWKSource<SecurityContext> jwkSource(SecurityOAuth2Properties securityOAuth2Properties,
+                                                ObjectProvider<JdbcOAuth2JwkManager> jdbcOAuth2JwkManagerObjectProvider) {
+        JdbcOAuth2JwkManager jdbcOAuth2JwkManager = jdbcOAuth2JwkManagerObjectProvider.getIfAvailable();
+        if (jdbcOAuth2JwkManager != null) {
+            JWKSource<SecurityContext> jwkSource = (selector, context) -> {
+                java.util.List<JWK> jwks = jdbcOAuth2JwkManager.loadJwks();
+                return selector.select(new JWKSet(jwks));
+            };
+            log.trace("[Goya] |- security [oauth2] |- bean [persistentJwkSource] register.");
+            return jwkSource;
+        }
 
-    @Bean(name = "jwkSource")
-    @ConditionalOnMissingBean(name = "jwkSource")
-    public JWKSource<SecurityContext> inMemoryJwkSource() {
-        RSAKey rsaKey = generateRsa();
-        JWKSet jwkSet = new JWKSet(rsaKey);
-        ImmutableJWKSet<SecurityContext> jwkSource = new ImmutableJWKSet<>(jwkSet);
-        log.warn("[Goya] |- security [oauth2] |- JDBC 不可用，回退到内存密钥（重启后失效）");
-        log.trace("[Goya] |- security [oauth2] |- bean [inMemoryJwkSource] register.");
-        return jwkSource;
+        if (allowInMemoryJwkFallback(securityOAuth2Properties)) {
+            RSAKey rsaKey = generateRsa();
+            JWKSet jwkSet = new JWKSet(rsaKey);
+            ImmutableJWKSet<SecurityContext> jwkSource = new ImmutableJWKSet<>(jwkSet);
+            log.warn("[Goya] |- security [oauth2] |- JDBC 不可用，回退到内存密钥（重启后失效）");
+            log.trace("[Goya] |- security [oauth2] |- bean [inMemoryJwkSource] register.");
+            return jwkSource;
+        }
+
+        throw new IllegalStateException(
+                "OAuth2 JWK 初始化失败：JDBC 不可用且已禁用内存回退。"
+                        + " deploymentMode=" + securityOAuth2Properties.deploymentMode()
+        );
     }
 
     @Bean
@@ -192,8 +203,21 @@ public class SecurityOAuth2AutoConfiguration {
     @ConditionalOnBean({DataSource.class, RegisteredClientRepository.class})
     @ConditionalOnMissingBean
     public OAuth2AuthorizationService oAuth2AuthorizationService(DataSource dataSource,
-                                                                 RegisteredClientRepository registeredClientRepository) {
-        JdbcOAuth2AuthorizationService service = new JdbcOAuth2AuthorizationService(new JdbcTemplate(dataSource), registeredClientRepository);
+                                                                 RegisteredClientRepository registeredClientRepository,
+                                                                 ObjectProvider<CacheService> cacheServiceObjectProvider,
+                                                                 SecurityOAuth2Properties securityOAuth2Properties) {
+        JdbcOAuth2AuthorizationService jdbcAuthorizationService = new JdbcOAuth2AuthorizationService(
+                new JdbcTemplate(dataSource),
+                registeredClientRepository
+        );
+        CacheService cacheService = cacheServiceObjectProvider.getIfAvailable();
+        OAuth2AuthorizationService service = cacheService == null
+                ? jdbcAuthorizationService
+                : new RevocationIndexingAuthorizationService(
+                        jdbcAuthorizationService,
+                        cacheService,
+                        securityOAuth2Properties
+                );
         log.trace("[Goya] |- security [oauth2] |- bean [oAuth2AuthorizationService] register.");
         return service;
     }
@@ -212,6 +236,10 @@ public class SecurityOAuth2AutoConfiguration {
     @ConditionalOnMissingBean(name = "securityAccessTokenCustomizer")
     public OAuth2TokenCustomizer<JwtEncodingContext> securityAccessTokenCustomizer() {
         OAuth2TokenCustomizer<JwtEncodingContext> customizer = context -> {
+            context.getClaims().id(UUID.randomUUID().toString());
+            if (context.getAuthorizationGrantType() != null) {
+                context.getClaims().claim("grant_type", context.getAuthorizationGrantType().getValue());
+            }
             if (!(context.getPrincipal().getPrincipal() instanceof SecurityUser securityUser)) {
                 return;
             }
@@ -250,6 +278,14 @@ public class SecurityOAuth2AutoConfiguration {
         };
         log.trace("[Goya] |- security [oauth2] |- bean [securityAccessTokenCustomizer] register.");
         return customizer;
+    }
+
+    private boolean allowInMemoryJwkFallback(SecurityOAuth2Properties securityOAuth2Properties) {
+        if (securityOAuth2Properties.deploymentMode() == SecurityOAuth2Properties.DeploymentMode.AUTH_CENTER) {
+            return false;
+        }
+        SecurityOAuth2Properties.Keys keys = securityOAuth2Properties.keys();
+        return keys != null && keys.allowInMemoryFallback();
     }
 
     private static RSAKey generateRsa() {

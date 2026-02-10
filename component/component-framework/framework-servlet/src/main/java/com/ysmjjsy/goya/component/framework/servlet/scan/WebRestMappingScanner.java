@@ -56,17 +56,16 @@ public class WebRestMappingScanner extends AbstractRestMappingScanner {
                 .filter(MapUtils::isNotEmpty)
                 .flatMap(hm -> hm.entrySet().stream())
                 .filter(e -> !isExcludedRequestMapping(e.getValue()))
-                .map(e -> createRestMapping(serviceId, e.getKey(), e.getValue()))
-                .filter(Objects::nonNull)
+                .flatMap(e -> createRestMappings(serviceId, e.getKey(), e.getValue()).stream())
                 .toList();
         complete(serviceId, resources);
     }
 
-    private RestMapping createRestMapping(String serviceId, RequestMappingInfo info, HandlerMethod method) {
+    private List<RestMapping> createRestMappings(String serviceId, RequestMappingInfo info, HandlerMethod method) {
         // 校验是否忽略
         Boolean elementIgnore = checkIgnore(method);
         if (elementIgnore == null) {
-            return null;
+            return List.of();
         }
 
         // 获取类名
@@ -76,51 +75,55 @@ public class WebRestMappingScanner extends AbstractRestMappingScanner {
 
         // 检测该类是否在 GroupIds 允许列表中
         if (!isLegalGroup(className)) {
-            return null;
+            return List.of();
         }
 
         // 获取RequestMapping注解对应的方法名
         String methodName = method.getMethod().getName();
 
-        // 获取注解对应的请求类型
-        String requestMethods = RequestMethodEnum.handlerRequestMethods(info.getMethodsCondition().getMethods());
+        Set<RequestMethodEnum> requestMethodEnums = RequestMethodEnum.parseRequestMethods(info.getMethodsCondition().getMethods());
 
         Set<String> patternValues = getPatternValues(info);
         if (CollectionUtils.isEmpty(patternValues)) {
-            return null;
+            return List.of();
         }
 
-        String originUrl = CollectionUtils.isNotEmpty(patternValues) ? String.join(SymbolConst.COMMA, patternValues) : "";
-
-        String urls = getUrls(patternValues);
-
-        // 根据serviceId, requestMethods, urls生成的MD5值，作为自定义主键
-        String flag = serviceId + SymbolConst.DASH + requestMethods + SymbolConst.DASH + urls;
-        String id = GoyaMD5Utils.md5(flag);
-
-        // 组装对象
-        RestMapping restMapping = new RestMapping();
-        restMapping.setMappingId(id);
-        restMapping.setMappingCode(createCode(urls, requestMethods));
-        restMapping.setServiceId(serviceId);
         Operation apiOperation = method.getMethodAnnotation(Operation.class);
-        if (Objects.nonNull(apiOperation)) {
-            restMapping.setSummary(apiOperation.summary());
-            restMapping.setDescription(apiOperation.description());
-        }
-
         Tag tag = method.getBeanType().getAnnotation(Tag.class);
-        if (Objects.nonNull(tag)) {
-            restMapping.setTag(tag.name());
+
+        List<RestMapping> mappings = new ArrayList<>();
+        for (String patternValue : patternValues) {
+            if (org.apache.commons.lang3.StringUtils.isBlank(patternValue)) {
+                continue;
+            }
+            String mappingUrl = getUrl(patternValue);
+            for (RequestMethodEnum requestMethodEnum : requestMethodEnums) {
+                String methodCode = requestMethodEnum == null ? RequestMethodEnum.ALL.getCode() : requestMethodEnum.getCode();
+                String flag = serviceId + SymbolConst.DASH + methodCode + SymbolConst.DASH + patternValue;
+                String id = GoyaMD5Utils.md5(flag);
+
+                RestMapping restMapping = new RestMapping();
+                restMapping.setMappingId(id);
+                restMapping.setMappingCode(createCode(patternValue, methodCode));
+                restMapping.setServiceId(serviceId);
+                restMapping.setRequestMethod(Set.of(requestMethodEnum == null ? RequestMethodEnum.ALL : requestMethodEnum));
+                restMapping.setUrl(mappingUrl);
+                restMapping.setBaseUrl(getBaseUrl(method));
+                restMapping.setClassName(className);
+                restMapping.setMethodName(methodName);
+                restMapping.setElementIgnore(elementIgnore);
+                if (Objects.nonNull(apiOperation)) {
+                    restMapping.setSummary(apiOperation.summary());
+                    restMapping.setDescription(apiOperation.description());
+                }
+                if (Objects.nonNull(tag)) {
+                    restMapping.setTag(tag.name());
+                }
+                mappings.add(restMapping);
+            }
         }
 
-        restMapping.setRequestMethod(RequestMethodEnum.parseRequestMethods(requestMethods));
-        restMapping.setUrl(urls);
-        restMapping.setBaseUrl(getBaseUrl(method));
-        restMapping.setClassName(className);
-        restMapping.setMethodName(methodName);
-        restMapping.setElementIgnore(elementIgnore);
-        return restMapping;
+        return mappings;
     }
 
     /**
@@ -162,14 +165,17 @@ public class WebRestMappingScanner extends AbstractRestMappingScanner {
             return "";
         }
 
-        String urls;
+        return patternValues.stream().map(this::getUrl).collect(Collectors.joining(SymbolConst.COMMA));
+    }
 
-        if (goyaContext.hasContextPath()) {
-            urls = patternValues.stream().map(va -> goyaContext.getContextPath() + va).collect(Collectors.joining(SymbolConst.COMMA));
-        } else {
-            urls = String.join(SymbolConst.COMMA, patternValues);
+    private String getUrl(String patternValue) {
+        if (org.apache.commons.lang3.StringUtils.isBlank(patternValue)) {
+            return "";
         }
-        return urls;
+        if (goyaContext.hasContextPath()) {
+            return goyaContext.getContextPath() + patternValue;
+        }
+        return patternValue;
     }
 
     /**

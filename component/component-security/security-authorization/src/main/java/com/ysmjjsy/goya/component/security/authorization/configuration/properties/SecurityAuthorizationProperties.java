@@ -24,7 +24,7 @@ public record SecurityAuthorizationProperties(
         @DefaultValue("AUTO")
         ResourceTokenMode mode,
 
-        @DefaultValue("/security/login,/api/security/auth/**,/actuator/health,/error")
+        @DefaultValue("/security/login,/security/login/session,/api/security/auth/**,/actuator/health,/error")
         String permitAllPatterns,
 
         @DefaultValue("X-Tenant-Id")
@@ -39,8 +39,20 @@ public record SecurityAuthorizationProperties(
         @DefaultValue("sub")
         String userClaim,
 
+        @DefaultValue("role_ids")
+        String roleIdsClaim,
+
+        @DefaultValue("team_ids")
+        String teamIdsClaim,
+
+        @DefaultValue("org_ids")
+        String orgIdsClaim,
+
         @DefaultValue("STRICT")
         ConsistencyMode consistencyMode,
+
+        @DefaultValue("false")
+        boolean requireUserHeaderForMachineToken,
 
         @DefaultValue("ACCESS")
         String apiAction,

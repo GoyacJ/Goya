@@ -64,11 +64,13 @@ public class SocialAuthService {
             SecurityUser securityUser = securityUserManager.thirdLoginAndSave(source, attributes);
             String tenantId = StringUtils.defaultIfBlank(securityUser.getTenantId(), "public");
             ClientTypeEnum clientType = parseClientType(callbackParams.get("client_type"), ClientTypeEnum.WEB);
+            String clientId = resolveClientId(callbackParams);
 
             return primaryAuthIssueService.issueAfterPrimary(
                     securityUser,
                     tenantId,
                     clientType,
+                    clientId,
                     callbackParams.get("device_id"),
                     servletRequest,
                     null,
@@ -100,5 +102,13 @@ public class SocialAuthService {
         } catch (Exception ex) {
             return defaultValue;
         }
+    }
+
+    private String resolveClientId(Map<String, String> callbackParams) {
+        String clientId = callbackParams.get("client_id");
+        if (StringUtils.isNotBlank(clientId)) {
+            return clientId;
+        }
+        return callbackParams.get("clientId");
     }
 }

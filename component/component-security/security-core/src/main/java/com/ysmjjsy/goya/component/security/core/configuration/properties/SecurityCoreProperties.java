@@ -49,7 +49,11 @@ public record SecurityCoreProperties(
 
             @Schema(defaultValue = "默认租户")
             @DefaultValue("public")
-            String defaultTenantId
+            String defaultTenantId,
+
+            @Schema(defaultValue = "已认证请求是否允许回退请求头租户")
+            @DefaultValue("false")
+            boolean allowHeaderFallbackWhenAuthenticated
     ) {
     }
 

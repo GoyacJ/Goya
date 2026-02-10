@@ -81,6 +81,7 @@ public class PasswordAuthService {
                 securityUser,
                 tenantId,
                 clientType,
+                request.clientId(),
                 request.deviceId(),
                 servletRequest,
                 request.mfaType(),

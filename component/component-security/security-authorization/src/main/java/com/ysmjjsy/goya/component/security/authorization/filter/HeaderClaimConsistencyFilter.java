@@ -17,6 +17,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -26,6 +27,8 @@ import java.util.Map;
  * @since 2026/2/10
  */
 public class HeaderClaimConsistencyFilter extends OncePerRequestFilter {
+
+    private static final String CLAIM_GRANT_TYPE = "grant_type";
 
     private final SecurityAuthorizationProperties securityAuthorizationProperties;
 
@@ -52,16 +55,29 @@ public class HeaderClaimConsistencyFilter extends OncePerRequestFilter {
         String requestTenant = trim(request.getHeader(securityAuthorizationProperties.tenantHeader()));
         String requestUserId = trim(request.getHeader(securityAuthorizationProperties.userHeader()));
         TokenIdentity tokenIdentity = resolveTokenIdentity(authentication);
+        boolean bypassMachineUserHeader = tokenIdentity.machineToken()
+                && !securityAuthorizationProperties.requireUserHeaderForMachineToken();
 
         if (SecurityAuthorizationProperties.ConsistencyMode.STRICT == consistencyMode) {
-            if (StringUtils.isAnyBlank(requestTenant, requestUserId, tokenIdentity.tenantId(), tokenIdentity.userId())) {
-                deny(response, "header 或 token 关键身份信息缺失");
-                return;
-            }
-            if (!StringUtils.equals(requestTenant, tokenIdentity.tenantId())
-                    || !StringUtils.equals(requestUserId, tokenIdentity.userId())) {
-                deny(response, "header 与 token 身份不一致");
-                return;
+            if (bypassMachineUserHeader) {
+                if (StringUtils.isAnyBlank(requestTenant, tokenIdentity.tenantId())) {
+                    deny(response, "machine token 缺少 tenant 身份信息");
+                    return;
+                }
+                if (!StringUtils.equals(requestTenant, tokenIdentity.tenantId())) {
+                    deny(response, "machine token tenant header 与 token 不一致");
+                    return;
+                }
+            } else {
+                if (StringUtils.isAnyBlank(requestTenant, requestUserId, tokenIdentity.tenantId(), tokenIdentity.userId())) {
+                    deny(response, "header 或 token 关键身份信息缺失");
+                    return;
+                }
+                if (!StringUtils.equals(requestTenant, tokenIdentity.tenantId())
+                        || !StringUtils.equals(requestUserId, tokenIdentity.userId())) {
+                    deny(response, "header 与 token 身份不一致");
+                    return;
+                }
             }
         } else {
             if (StringUtils.isNotBlank(requestTenant)
@@ -70,7 +86,9 @@ public class HeaderClaimConsistencyFilter extends OncePerRequestFilter {
                 deny(response, "tenant header 与 token 不一致");
                 return;
             }
-            if (StringUtils.isNotBlank(requestUserId)
+
+            if (!bypassMachineUserHeader
+                    && StringUtils.isNotBlank(requestUserId)
                     && StringUtils.isNotBlank(tokenIdentity.userId())
                     && !StringUtils.equals(requestUserId, tokenIdentity.userId())) {
                 deny(response, "user header 与 token 不一致");
@@ -90,24 +108,57 @@ public class HeaderClaimConsistencyFilter extends OncePerRequestFilter {
     private TokenIdentity resolveTokenIdentity(Authentication authentication) {
         String tenantId = null;
         String userId = null;
+        String clientId = null;
+        boolean machineToken = false;
 
         if (authentication instanceof JwtAuthenticationToken jwtAuthenticationToken) {
             String tenantClaim = securityAuthorizationProperties.tenantClaim();
             String userClaim = securityAuthorizationProperties.userClaim();
             tenantId = jwtAuthenticationToken.getToken().getClaimAsString(tenantClaim);
             userId = resolveJwtUser(jwtAuthenticationToken, userClaim);
+            clientId = jwtAuthenticationToken.getToken().getClaimAsString(StandardClaimNamesConst.CLIENT_ID);
+            machineToken = isMachineToken(
+                    jwtAuthenticationToken.getToken().getClaimAsString(CLAIM_GRANT_TYPE),
+                    clientId,
+                    userId,
+                    authentication.getName()
+            );
         } else if (authentication instanceof BearerTokenAuthentication bearerTokenAuthentication) {
             Map<String, Object> tokenAttributes = bearerTokenAuthentication.getTokenAttributes();
             tenantId = toStringValue(tokenAttributes.get(securityAuthorizationProperties.tenantClaim()));
             userId = resolveUserFromMap(tokenAttributes, securityAuthorizationProperties.userClaim());
+            clientId = toStringValue(tokenAttributes.get(StandardClaimNamesConst.CLIENT_ID));
+            machineToken = isMachineToken(
+                    toStringValue(tokenAttributes.get(CLAIM_GRANT_TYPE)),
+                    clientId,
+                    userId,
+                    authentication.getName()
+            );
         } else {
             Object principal = authentication.getPrincipal();
             if (principal instanceof OAuth2AuthenticatedPrincipal oauth2Principal) {
-                tenantId = toStringValue(oauth2Principal.getAttribute(securityAuthorizationProperties.tenantClaim()));
-                userId = resolveUserFromMap(oauth2Principal.getAttributes(), securityAuthorizationProperties.userClaim());
+                Map<String, Object> attributes = oauth2Principal.getAttributes();
+                tenantId = toStringValue(attributes.get(securityAuthorizationProperties.tenantClaim()));
+                userId = resolveUserFromMap(attributes, securityAuthorizationProperties.userClaim());
+                clientId = toStringValue(attributes.get(StandardClaimNamesConst.CLIENT_ID));
+                machineToken = isMachineToken(
+                        toStringValue(attributes.get(CLAIM_GRANT_TYPE)),
+                        clientId,
+                        userId,
+                        authentication.getName()
+                );
             } else if (principal instanceof Map<?, ?> principalMap) {
-                tenantId = toStringValue(principalMap.get(securityAuthorizationProperties.tenantClaim()));
-                userId = resolveUserFromMap(principalMap, securityAuthorizationProperties.userClaim());
+                Map<String, Object> attributes = new LinkedHashMap<>();
+                principalMap.forEach((key, value) -> attributes.put(String.valueOf(key), value));
+                tenantId = toStringValue(attributes.get(securityAuthorizationProperties.tenantClaim()));
+                userId = resolveUserFromMap(attributes, securityAuthorizationProperties.userClaim());
+                clientId = toStringValue(attributes.get(StandardClaimNamesConst.CLIENT_ID));
+                machineToken = isMachineToken(
+                        toStringValue(attributes.get(CLAIM_GRANT_TYPE)),
+                        clientId,
+                        userId,
+                        authentication.getName()
+                );
             }
         }
 
@@ -115,7 +166,10 @@ public class HeaderClaimConsistencyFilter extends OncePerRequestFilter {
             userId = authentication.getName();
         }
 
-        return new TokenIdentity(trim(tenantId), trim(userId));
+        if (!machineToken) {
+            machineToken = isMachineToken(null, clientId, userId, authentication.getName());
+        }
+        return new TokenIdentity(trim(tenantId), trim(userId), trim(clientId), machineToken);
     }
 
     private String resolveJwtUser(JwtAuthenticationToken jwtAuthenticationToken, String userClaim) {
@@ -143,6 +197,19 @@ public class HeaderClaimConsistencyFilter extends OncePerRequestFilter {
         return toStringValue(source.get(StandardClaimNamesConst.SUB));
     }
 
+    private boolean isMachineToken(String grantType, String clientId, String userId, String principalName) {
+        if ("client_credentials".equalsIgnoreCase(StringUtils.defaultString(grantType))) {
+            return true;
+        }
+        if (StringUtils.isBlank(clientId)) {
+            return false;
+        }
+        if (StringUtils.equals(clientId, userId)) {
+            return true;
+        }
+        return StringUtils.equals(clientId, principalName);
+    }
+
     private String toStringValue(Object value) {
         return value == null ? null : String.valueOf(value);
     }
@@ -156,6 +223,6 @@ public class HeaderClaimConsistencyFilter extends OncePerRequestFilter {
                 SecurityErrorCode.SUBJECT_MISMATCH.code() + ": " + reason);
     }
 
-    private record TokenIdentity(String tenantId, String userId) {
+    private record TokenIdentity(String tenantId, String userId, String clientId, boolean machineToken) {
     }
 }

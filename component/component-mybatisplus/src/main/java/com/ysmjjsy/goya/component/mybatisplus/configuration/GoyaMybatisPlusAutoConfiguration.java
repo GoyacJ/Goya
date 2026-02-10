@@ -23,6 +23,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 
 import java.util.ArrayList;
@@ -38,6 +39,11 @@ import java.util.List;
 @AutoConfiguration
 @EnableConfigurationProperties(GoyaMybatisPlusProperties.class)
 public class GoyaMybatisPlusAutoConfiguration {
+
+    /**
+     * 过滤器顺序，保证在 Spring Security 过滤链（通常为 -100）之后执行。
+     */
+    private static final int ACCESS_CONTEXT_FILTER_ORDER = -80;
 
     @PostConstruct
     public void init() {
@@ -164,6 +170,21 @@ public class GoyaMybatisPlusAutoConfiguration {
         AccessContextFilter filter = new AccessContextFilter(resolver);
         log.trace("[Goya] |- component [mybatis-plus] GoyaMybatisPlusAutoConfiguration |- bean [accessContextFilter] register.");
         return filter;
+    }
+
+    /**
+     * AccessContext 过滤器注册，显式放在 Security 过滤链之后。
+     *
+     * @param filter AccessContextFilter
+     * @return FilterRegistrationBean
+     */
+    @Bean
+    @ConditionalOnMissingBean(name = "accessContextFilterRegistration")
+    public FilterRegistrationBean<AccessContextFilter> accessContextFilterRegistration(AccessContextFilter filter) {
+        FilterRegistrationBean<AccessContextFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setName("goyaAccessContextFilter");
+        registration.setOrder(ACCESS_CONTEXT_FILTER_ORDER);
+        return registration;
     }
 
     /**

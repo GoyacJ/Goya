@@ -32,6 +32,8 @@ public enum SecurityErrorCode implements ErrorCode {
 
     SUBJECT_MISMATCH("GOYA-SECURITY-AUTH-0014", "请求头主体与令牌主体不一致", ErrorCategory.AUTH, Severity.WARN, false),
 
+    CLIENT_BINDING_MISMATCH("GOYA-SECURITY-AUTH-0015", "预认证码与客户端绑定不一致", ErrorCategory.AUTH, Severity.WARN, false),
+
     SOCIAL_LOGIN_FAILED("GOYA-SECURITY-AUTH-0010", "社交登录失败", ErrorCategory.AUTH, Severity.WARN, false),
 
     WX_MINI_LOGIN_FAILED("GOYA-SECURITY-AUTH-0011", "小程序登录失败", ErrorCategory.AUTH, Severity.WARN, false),

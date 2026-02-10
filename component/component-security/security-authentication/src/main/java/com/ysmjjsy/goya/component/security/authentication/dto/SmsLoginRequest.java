@@ -15,6 +15,7 @@ public record SmsLoginRequest(
         String phoneNumber,
         String code,
         String tenantId,
+        String clientId,
         ClientTypeEnum clientType,
         String deviceId,
         MfaType mfaType,

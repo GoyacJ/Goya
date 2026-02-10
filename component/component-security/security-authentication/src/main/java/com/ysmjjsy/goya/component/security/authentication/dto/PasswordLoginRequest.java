@@ -16,6 +16,7 @@ public record PasswordLoginRequest(
         String username,
         String password,
         String tenantId,
+        String clientId,
         ClientTypeEnum clientType,
         String deviceId,
         MfaType mfaType,

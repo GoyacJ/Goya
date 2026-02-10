@@ -67,6 +67,7 @@ public class SmsAuthService {
                 securityUser,
                 request.tenantId(),
                 clientType,
+                request.clientId(),
                 request.deviceId(),
                 servletRequest,
                 request.mfaType(),

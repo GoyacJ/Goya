@@ -42,17 +42,20 @@ public class PreAuthCodeGrantAuthenticationProvider implements AuthenticationPro
     private final OAuth2TokenGenerator<? extends OAuth2Token> tokenGenerator;
     private final PreAuthCodeService preAuthCodeService;
     private final SecurityOAuth2TokenFormatResolver tokenFormatResolver;
+    private final boolean requireClientBinding;
 
     public PreAuthCodeGrantAuthenticationProvider(AuthorizationGrantType preAuthCodeGrantType,
                                                   OAuth2AuthorizationService authorizationService,
                                                   OAuth2TokenGenerator<? extends OAuth2Token> tokenGenerator,
                                                   PreAuthCodeService preAuthCodeService,
-                                                  SecurityOAuth2TokenFormatResolver tokenFormatResolver) {
+                                                  SecurityOAuth2TokenFormatResolver tokenFormatResolver,
+                                                  boolean requireClientBinding) {
         this.preAuthCodeGrantType = preAuthCodeGrantType;
         this.authorizationService = authorizationService;
         this.tokenGenerator = tokenGenerator;
         this.preAuthCodeService = preAuthCodeService;
         this.tokenFormatResolver = tokenFormatResolver;
+        this.requireClientBinding = requireClientBinding;
     }
 
     @Override
@@ -60,15 +63,11 @@ public class PreAuthCodeGrantAuthenticationProvider implements AuthenticationPro
         PreAuthCodeGrantAuthenticationToken preAuthCodeGrantAuthentication = (PreAuthCodeGrantAuthenticationToken) authentication;
 
         OAuth2ClientAuthenticationToken clientPrincipal = getAuthenticatedClientElseThrowInvalidClient(preAuthCodeGrantAuthentication);
-        RegisteredClient registeredClient = tokenFormatResolver.resolve(
-                clientPrincipal.getRegisteredClient(),
-                resolveClientType(preAuthCodeGrantAuthentication)
-        );
-
-        if (!registeredClient.getAuthorizationGrantTypes().contains(preAuthCodeGrantType)) {
+        RegisteredClient sourceRegisteredClient = clientPrincipal.getRegisteredClient();
+        if (sourceRegisteredClient == null) {
             throw new OAuth2AuthenticationException(new OAuth2Error(
-                    OAuth2ErrorCodes.UNAUTHORIZED_CLIENT,
-                    "unauthorized grant type",
+                    OAuth2ErrorCodes.INVALID_CLIENT,
+                    "registered client missing",
                     null
             ));
         }
@@ -79,6 +78,17 @@ public class PreAuthCodeGrantAuthenticationProvider implements AuthenticationPro
                         "pre_auth_code invalid",
                         null
                 )));
+        validateClientBinding(preAuthCodePayload, sourceRegisteredClient.getClientId());
+
+        ClientTypeEnum resolvedClientType = resolveClientType(preAuthCodePayload, sourceRegisteredClient);
+        RegisteredClient registeredClient = tokenFormatResolver.resolve(sourceRegisteredClient, resolvedClientType);
+        if (!registeredClient.getAuthorizationGrantTypes().contains(preAuthCodeGrantType)) {
+            throw new OAuth2AuthenticationException(new OAuth2Error(
+                    OAuth2ErrorCodes.UNAUTHORIZED_CLIENT,
+                    "unauthorized grant type",
+                    null
+            ));
+        }
 
         Set<String> authorizedScopes = resolveAuthorizedScopes(
                 preAuthCodeGrantAuthentication.getScopes(),
@@ -212,8 +222,14 @@ public class PreAuthCodeGrantAuthenticationProvider implements AuthenticationPro
         return scopes;
     }
 
-    private ClientTypeEnum resolveClientType(PreAuthCodeGrantAuthenticationToken authenticationToken) {
-        Object clientType = authenticationToken.getAdditionalParameters().get(StandardClaimNamesConst.CLIENT_TYPE);
+    private ClientTypeEnum resolveClientType(PreAuthCodePayload preAuthCodePayload, RegisteredClient registeredClient) {
+        if (preAuthCodePayload.clientType() != null) {
+            return preAuthCodePayload.clientType();
+        }
+
+        Object clientType = registeredClient
+                .getClientSettings()
+                .getSetting(SecurityOAuth2TokenFormatResolver.CLIENT_TYPE_SETTING);
         if (clientType instanceof String clientTypeString && StringUtils.isNotBlank(clientTypeString)) {
             try {
                 return ClientTypeEnum.valueOf(clientTypeString.trim().toUpperCase());
@@ -222,6 +238,29 @@ public class PreAuthCodeGrantAuthenticationProvider implements AuthenticationPro
             }
         }
         return ClientTypeEnum.WEB;
+    }
+
+    private void validateClientBinding(PreAuthCodePayload preAuthCodePayload, String currentClientId) {
+        if (!requireClientBinding) {
+            return;
+        }
+
+        String boundClientId = preAuthCodePayload.clientId();
+        if (StringUtils.isBlank(boundClientId)) {
+            throw new OAuth2AuthenticationException(new OAuth2Error(
+                    OAuth2ErrorCodes.INVALID_GRANT,
+                    "pre_auth_code missing client binding",
+                    null
+            ));
+        }
+
+        if (!StringUtils.equals(boundClientId, currentClientId)) {
+            throw new OAuth2AuthenticationException(new OAuth2Error(
+                    OAuth2ErrorCodes.INVALID_GRANT,
+                    "pre_auth_code client mismatch",
+                    null
+            ));
+        }
     }
 
     private OAuth2AccessToken accessToken(OAuth2Authorization.Builder authorizationBuilder,

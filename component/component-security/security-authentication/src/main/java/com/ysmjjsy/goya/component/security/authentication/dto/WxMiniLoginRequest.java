@@ -17,6 +17,7 @@ public record WxMiniLoginRequest(
         String encryptedData,
         String iv,
         String tenantId,
+        String clientId,
         ClientTypeEnum clientType,
         String deviceId,
         MfaType mfaType,

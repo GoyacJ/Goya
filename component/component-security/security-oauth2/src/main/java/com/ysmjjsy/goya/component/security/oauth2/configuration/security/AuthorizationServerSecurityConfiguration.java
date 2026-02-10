@@ -65,6 +65,7 @@ public class AuthorizationServerSecurityConfiguration {
                 .securityMatcher(endpointsMatcher)
                 .authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
                 .csrf(csrf -> csrf.ignoringRequestMatchers(endpointsMatcher))
+                .requestCache(Customizer.withDefaults())
                 .exceptionHandling(exceptionHandling -> exceptionHandling.defaultAuthenticationEntryPointFor(
                         new LoginUrlAuthenticationEntryPoint("/security/login"),
                         new MediaTypeRequestMatcher(MediaType.TEXT_HTML)

@@ -81,6 +81,10 @@ public record SecurityOAuth2Properties(
         @DefaultValue
         Keys keys,
 
+        @Schema(defaultValue = "预认证扩展配置")
+        @DefaultValue
+        PreAuth preAuth,
+
         @Schema(defaultValue = "端点配置")
         @DefaultValue
         Endpoints endpoints
@@ -123,7 +127,20 @@ public record SecurityOAuth2Properties(
 
             @Schema(defaultValue = "旧密钥重叠验签窗口")
             @DefaultValue("P7D")
-            Duration overlap
+            Duration overlap,
+
+            @Schema(defaultValue = "是否允许回退到内存JWK")
+            @DefaultValue("false")
+            boolean allowInMemoryFallback
+    ) {
+    }
+
+    @Schema(defaultValue = "预认证扩展配置")
+    public record PreAuth(
+
+            @Schema(defaultValue = "是否强制校验 pre_auth_code 与 client_id 绑定")
+            @DefaultValue("true")
+            boolean requireClientBinding
     ) {
     }
 }

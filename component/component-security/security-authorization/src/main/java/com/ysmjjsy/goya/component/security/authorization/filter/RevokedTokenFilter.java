@@ -13,6 +13,8 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * <p>吊销令牌过滤器</p>
@@ -41,25 +43,40 @@ public class RevokedTokenFilter extends OncePerRequestFilter {
             return;
         }
 
-        String jti = resolveJti(authentication);
-        if (jti != null && cacheService.exists(securityAuthorizationProperties.revokedCacheName(), jti)) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token revoked");
-            return;
+        for (String tokenIdentifier : resolveTokenIdentifiers(authentication)) {
+            if (cacheService.exists(securityAuthorizationProperties.revokedCacheName(), tokenIdentifier)) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token revoked");
+                return;
+            }
         }
 
         filterChain.doFilter(request, response);
     }
 
-    private String resolveJti(Authentication authentication) {
+    private Set<String> resolveTokenIdentifiers(Authentication authentication) {
+        Set<String> identifiers = new LinkedHashSet<>();
         if (authentication instanceof JwtAuthenticationToken jwtAuthenticationToken) {
-            return jwtAuthenticationToken.getToken().getId();
+            if (jwtAuthenticationToken.getToken().getId() != null) {
+                identifiers.add(jwtAuthenticationToken.getToken().getId());
+            }
+            if (jwtAuthenticationToken.getToken().getTokenValue() != null) {
+                identifiers.add(jwtAuthenticationToken.getToken().getTokenValue());
+            }
+            return identifiers;
         }
 
         if (authentication instanceof BearerTokenAuthentication bearerTokenAuthentication) {
             Object jti = bearerTokenAuthentication.getTokenAttributes().get("jti");
-            return jti == null ? null : String.valueOf(jti);
+            if (jti != null) {
+                identifiers.add(String.valueOf(jti));
+            }
+            if (bearerTokenAuthentication.getToken() != null
+                    && bearerTokenAuthentication.getToken().getTokenValue() != null) {
+                identifiers.add(bearerTokenAuthentication.getToken().getTokenValue());
+            }
+            return identifiers;
         }
 
-        return null;
+        return identifiers;
     }
 }

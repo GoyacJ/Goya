@@ -5,6 +5,7 @@ import com.ysmjjsy.goya.component.security.authentication.auth.*;
 import com.ysmjjsy.goya.component.security.authentication.configuration.properties.SecurityAuthenticationProperties;
 import com.ysmjjsy.goya.component.security.authentication.controller.SecurityAuthController;
 import com.ysmjjsy.goya.component.security.authentication.controller.SecurityLoginViewController;
+import com.ysmjjsy.goya.component.security.authentication.controller.SsoSessionController;
 import com.ysmjjsy.goya.component.security.authentication.service.*;
 import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
 import com.ysmjjsy.goya.component.security.core.service.LoginRiskEvaluator;
@@ -255,5 +256,13 @@ public class SecurityAuthenticationAutoConfiguration {
         SecurityLoginViewController securityLoginViewController = new SecurityLoginViewController();
         log.trace("[Goya] |- security [authentication] |- bean [securityLoginViewController] register.");
         return securityLoginViewController;
+    }
+
+    @Bean
+    @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
+    public SsoSessionController ssoSessionController(PreAuthCodeService preAuthCodeService) {
+        SsoSessionController ssoSessionController = new SsoSessionController(preAuthCodeService);
+        log.trace("[Goya] |- security [authentication] |- bean [ssoSessionController] register.");
+        return ssoSessionController;
     }
 }

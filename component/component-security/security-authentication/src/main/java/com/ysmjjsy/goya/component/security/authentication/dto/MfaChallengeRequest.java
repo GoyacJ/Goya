@@ -15,6 +15,7 @@ public record MfaChallengeRequest(
         String userId,
         String tenantId,
         ClientTypeEnum clientType,
+        String clientId,
         String deviceId,
         MfaType mfaType,
         String target,

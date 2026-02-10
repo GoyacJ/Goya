@@ -19,6 +19,9 @@ import org.springframework.boot.web.server.autoconfigure.ServerProperties;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.core.OAuth2AuthenticatedPrincipal;
+import org.springframework.security.oauth2.server.resource.authentication.BearerTokenAuthentication;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtClaimAccessor;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -26,7 +29,9 @@ import org.springframework.security.oauth2.jwt.JwtException;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -122,13 +127,16 @@ public class GoyaSecurityContext extends AbstractGoyaContext {
 
     @Override
     public String currentTenant() {
-        GoyaUser currentUser = currentUser();
-        if (currentUser instanceof SecurityUser securityUser && StringUtils.isNotBlank(securityUser.getTenantId())) {
-            return securityUser.getTenantId();
+        String tenantFromAuthentication = resolveTenantFromAuthentication();
+        if (StringUtils.isNotBlank(tenantFromAuthentication)) {
+            return tenantFromAuthentication;
         }
 
         HttpServletRequest request = WebUtils.getRequest();
-        if (request != null && securityCoreProperties.tenant().enabled()) {
+        if (request != null
+                && securityCoreProperties.tenant().enabled()
+                && (!isAuthenticatedRequest()
+                || securityCoreProperties.tenant().allowHeaderFallbackWhenAuthenticated())) {
             ITenantService tenantService = tenantServiceProvider.getIfAvailable();
             if (tenantService != null) {
                 String tenantId = tenantService.resolveTenantId(request);
@@ -153,6 +161,16 @@ public class GoyaSecurityContext extends AbstractGoyaContext {
             return null;
         }
 
+        if (authentication instanceof JwtAuthenticationToken jwtAuthenticationToken) {
+            return mapJwtToSecurityUser(jwtAuthenticationToken.getToken());
+        }
+        if (authentication instanceof BearerTokenAuthentication bearerTokenAuthentication) {
+            return mapAttributesToSecurityUser(
+                    bearerTokenAuthentication.getTokenAttributes(),
+                    bearerTokenAuthentication.getName()
+            );
+        }
+
         Object principal = authentication.getPrincipal();
         if (principal instanceof SecurityUser securityUser) {
             return securityUser;
@@ -162,6 +180,17 @@ public class GoyaSecurityContext extends AbstractGoyaContext {
         }
         if (principal instanceof Jwt jwt) {
             return mapJwtToSecurityUser(jwt);
+        }
+        if (principal instanceof OAuth2AuthenticatedPrincipal oauth2AuthenticatedPrincipal) {
+            return mapAttributesToSecurityUser(
+                    oauth2AuthenticatedPrincipal.getAttributes(),
+                    oauth2AuthenticatedPrincipal.getName()
+            );
+        }
+        if (principal instanceof Map<?, ?> principalMap) {
+            Map<String, Object> attributes = new LinkedHashMap<>();
+            principalMap.forEach((key, value) -> attributes.put(String.valueOf(key), value));
+            return mapAttributesToSecurityUser(attributes, authentication.getName());
         }
         if (principal instanceof String username
                 && StringUtils.isNotBlank(username)
@@ -174,6 +203,57 @@ public class GoyaSecurityContext extends AbstractGoyaContext {
         }
 
         return null;
+    }
+
+    @Nullable
+    private String resolveTenantFromAuthentication() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return null;
+        }
+
+        if (authentication instanceof JwtAuthenticationToken jwtAuthenticationToken) {
+            String tenant = jwtAuthenticationToken.getToken()
+                    .getClaimAsString(securityCoreProperties.tenant().tenantClaim());
+            if (StringUtils.isNotBlank(tenant)) {
+                return tenant;
+            }
+        }
+
+        if (authentication instanceof BearerTokenAuthentication bearerTokenAuthentication) {
+            Object tenant = bearerTokenAuthentication
+                    .getTokenAttributes()
+                    .get(securityCoreProperties.tenant().tenantClaim());
+            if (tenant != null && StringUtils.isNotBlank(String.valueOf(tenant))) {
+                return String.valueOf(tenant);
+            }
+        }
+
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof SecurityUser securityUser && StringUtils.isNotBlank(securityUser.getTenantId())) {
+            return securityUser.getTenantId();
+        }
+        if (principal instanceof OAuth2AuthenticatedPrincipal oauth2AuthenticatedPrincipal) {
+            Object tenant = oauth2AuthenticatedPrincipal.getAttribute(securityCoreProperties.tenant().tenantClaim());
+            if (tenant != null && StringUtils.isNotBlank(String.valueOf(tenant))) {
+                return String.valueOf(tenant);
+            }
+        }
+        if (principal instanceof Map<?, ?> principalMap) {
+            Object tenant = principalMap.get(securityCoreProperties.tenant().tenantClaim());
+            if (tenant != null && StringUtils.isNotBlank(String.valueOf(tenant))) {
+                return String.valueOf(tenant);
+            }
+        }
+
+        return null;
+    }
+
+    private boolean isAuthenticatedRequest() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null
+                && authentication.isAuthenticated()
+                && !"anonymousUser".equalsIgnoreCase(authentication.getName());
     }
 
     private SecurityUser mapJwtToSecurityUser(JwtClaimAccessor claimAccessor) {
@@ -207,6 +287,41 @@ public class GoyaSecurityContext extends AbstractGoyaContext {
                 .build();
     }
 
+    private SecurityUser mapAttributesToSecurityUser(Map<String, Object> attributes, String principalName) {
+        if (attributes == null || attributes.isEmpty()) {
+            return null;
+        }
+
+        String userId = resolveUserId(attributes, principalName);
+        String username = resolveClaimString(attributes, securityCoreProperties.claims().username());
+        if (StringUtils.isBlank(username)) {
+            username = StringUtils.defaultIfBlank(principalName, userId);
+        }
+
+        Set<String> roles = toStringSet(attributes.get(securityCoreProperties.claims().roles()));
+        Set<String> permissions = toStringSet(attributes.get(securityCoreProperties.claims().authorities()));
+
+        Set<GrantedAuthority> grantedAuthorities = new LinkedHashSet<>();
+        permissions.forEach(permission -> grantedAuthorities.add(new SecurityGrantedAuthority(permission)));
+        roles.stream()
+                .map(role -> role.startsWith("ROLE_") ? role : "ROLE_" + role)
+                .forEach(role -> grantedAuthorities.add(new SecurityGrantedAuthority(role)));
+
+        return SecurityUser.builder()
+                .userId(userId)
+                .username(username)
+                .password(StringUtils.EMPTY)
+                .openId(resolveClaimString(attributes, securityCoreProperties.claims().openId()))
+                .tenantId(resolveClaimString(attributes, securityCoreProperties.tenant().tenantClaim()))
+                .roles(roles)
+                .authorities(grantedAuthorities)
+                .enabled(true)
+                .accountNonExpired(true)
+                .accountNonLocked(true)
+                .credentialsNonExpired(true)
+                .build();
+    }
+
     private String resolveUserId(JwtClaimAccessor claimAccessor) {
         String configuredClaimName = securityCoreProperties.claims().userId();
         String configuredValue = resolveClaimString(claimAccessor, configuredClaimName);
@@ -222,6 +337,24 @@ public class GoyaSecurityContext extends AbstractGoyaContext {
         return "anonymous";
     }
 
+    private String resolveUserId(Map<String, Object> attributes, String principalName) {
+        String configuredClaimName = securityCoreProperties.claims().userId();
+        String configuredValue = resolveClaimString(attributes, configuredClaimName);
+        if (StringUtils.isNotBlank(configuredValue)) {
+            return configuredValue;
+        }
+
+        Object sub = attributes.get("sub");
+        if (sub != null && StringUtils.isNotBlank(String.valueOf(sub))) {
+            return String.valueOf(sub);
+        }
+
+        if (StringUtils.isNotBlank(principalName)) {
+            return principalName;
+        }
+        return "anonymous";
+    }
+
     @Nullable
     private static Object resolveClaimObject(JwtClaimAccessor claimAccessor, String claimName) {
         if (StringUtils.isBlank(claimName)) {
@@ -232,6 +365,18 @@ public class GoyaSecurityContext extends AbstractGoyaContext {
 
     private static String resolveClaimString(JwtClaimAccessor claimAccessor, String claimName) {
         Object value = resolveClaimObject(claimAccessor, claimName);
+        if (value == null) {
+            return null;
+        }
+        return String.valueOf(value);
+    }
+
+    @Nullable
+    private static String resolveClaimString(Map<String, Object> attributes, String claimName) {
+        if (attributes == null || StringUtils.isBlank(claimName)) {
+            return null;
+        }
+        Object value = attributes.get(claimName);
         if (value == null) {
             return null;
         }

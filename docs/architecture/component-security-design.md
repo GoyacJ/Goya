@@ -40,6 +40,7 @@
   - `POST /api/security/auth/mfa/challenge`
   - `POST /api/security/auth/mfa/verify`
 - 提供最小登录页：`GET /security/login`。
+- 提供会话桥接接口：`POST /security/login/session`。
 - 认证成功返回 `pre_auth_code`，风控要求二次认证时返回 `mfa_challenge_id`。
 - 一次认证与二次认证均通过 `AuthenticationManager + AuthenticationProvider` 链执行。
 
@@ -47,9 +48,11 @@
 
 - 提供 OAuth2.1 授权服务器自动配置。
 - 扩展授权类型：`grant_type=urn:goya:grant-type:pre-auth-code`。
+- `pre_auth_code` 默认强绑定 `client_id`（`goya.security.oauth2.pre-auth.require-client-binding=true`）。
 - 基于客户端类型解析 Access Token 格式（JWT/Opaque）。
 - 注入统一 claims：`tenant_id`、`roles`、`authorities`、`client_type`、`sid`、`mfa`、`cnf.jkt`。
 - 签名密钥改为 JDBC 持久化，默认 `P30D` 轮换，`P7D` 重叠验签窗口。
+- 默认禁用内存 JWK 回退（`goya.security.oauth2.keys.allow-in-memory-fallback=false`）。
 - 对 public client 强制开启 PKCE（`requireProofKey=true`）。
 
 ### 2.4 security-authorization
@@ -57,7 +60,9 @@
 - 提供资源服务器自动配置。
 - 支持 `AUTO/JWT/OPAQUE` 三种令牌校验模式。
 - 已认证请求执行 `X-Tenant-Id/X-User-Id` 与 token claim 双向一致性校验（默认 `STRICT`）。
+- `client_credentials` 机器令牌默认只做租户一致性校验，不强制 `X-User-Id`。
 - API 授权资源码统一采用 `mappingCode`（`method + pathPattern`）并固定 action=`ACCESS`。
+- 鉴权主体属性补齐 `roleIds/teamIds/orgIds`，用于 ROLE/TEAM/ORG 策略命中。
 - 做吊销令牌校验、策略引擎联动。
 
 ## 3. 关键流程
@@ -68,7 +73,8 @@
 2. 跳转 `/security/login`。
 3. 调用认证 API 完成一次认证与可选 MFA。
 4. 认证模块签发 `pre_auth_code`。
-5. 客户端以扩展 grant 调 `/oauth2/token` 换取 access/refresh token。
+5. 调用 `POST /security/login/session` 建立服务端会话并回跳授权请求。
+6. 继续完成授权码流程并换取 token。
 
 ### 3.2 移动端 / 小程序
 
@@ -98,10 +104,16 @@
 - 默认租户：`public`
 - `goya.security.resource.consistency-mode = STRICT`
 - `goya.security.resource.user-header = X-User-Id`
+- `goya.security.resource.require-user-header-for-machine-token = false`
+- `goya.security.resource.role-ids-claim = role_ids`
+- `goya.security.resource.team-ids-claim = team_ids`
+- `goya.security.resource.org-ids-claim = org_ids`
 - `goya.security.resource.api-action = ACCESS`
 - Access Token TTL：JWT 15 分钟，Opaque 30 分钟
 - Refresh Token TTL：14 天，`reuse=false`
 - 密钥轮换：`goya.security.oauth2.keys.rotation-interval = P30D`，`goya.security.oauth2.keys.overlap = P7D`
+- `goya.security.oauth2.keys.allow-in-memory-fallback = false`
+- `goya.security.oauth2.pre-auth.require-client-binding = true`
 
 ## 6. 缓存键约定
 

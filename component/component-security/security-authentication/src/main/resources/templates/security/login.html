@@ -121,17 +121,71 @@
         <option value="MINIPROGRAM">MINIPROGRAM</option>
     </select>
 
+    <label for="clientId">Client ID</label>
+    <input id="clientId" type="text" placeholder="oauth2 client_id (optional)">
+
     <button type="button" onclick="submitLogin()">Login</button>
 
     <pre id="output"></pre>
 </div>
 
 <script>
+    function safeJson(response) {
+        return response.json().catch(() => ({}));
+    }
+
+    function resolveContinueUri() {
+        const params = new URLSearchParams(window.location.search);
+        return params.get('continue') || params.get('continue_uri') || params.get('continueTo') || null;
+    }
+
+    async function establishSession(preAuthCode) {
+        const response = await fetch('/security/login/session', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                preAuthCode,
+                continueUri: resolveContinueUri()
+            })
+        });
+        const payload = await safeJson(response);
+        if (!response.ok || payload.success === false) {
+            const message = payload.message || payload.code || ('HTTP ' + response.status);
+            throw new Error('session establish failed: ' + message);
+        }
+
+        const redirectTarget = payload.data?.continue || '/oauth2/authorize';
+        window.location.href = redirectTarget;
+    }
+
+    async function verifyMfaAndGetPreAuth(challengeId, clientType) {
+        const code = window.prompt('请输入 MFA 验证码');
+        if (!code) {
+            throw new Error('已取消 MFA 验证');
+        }
+        const response = await fetch('/api/security/auth/mfa/verify', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                challengeId,
+                code,
+                clientType
+            })
+        });
+        const payload = await safeJson(response);
+        if (!response.ok || payload.success === false) {
+            const message = payload.message || payload.code || ('HTTP ' + response.status);
+            throw new Error('mfa verify failed: ' + message);
+        }
+        return payload.data?.preAuthCode;
+    }
+
     async function submitLogin() {
         const payload = {
             username: document.getElementById('username').value,
             password: document.getElementById('password').value,
-            clientType: document.getElementById('clientType').value
+            clientType: document.getElementById('clientType').value,
+            clientId: document.getElementById('clientId').value
         };
 
         const output = document.getElementById('output');
@@ -143,8 +197,23 @@
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(payload)
             });
-            const data = await response.json();
-            output.textContent = JSON.stringify(data, null, 2);
+            const result = await safeJson(response);
+            output.textContent = JSON.stringify(result, null, 2);
+
+            if (!response.ok || result.success === false) {
+                const message = result.message || result.code || ('HTTP ' + response.status);
+                throw new Error(message);
+            }
+
+            const authResult = result.data || {};
+            let preAuthCode = authResult.preAuthCode;
+            if (!preAuthCode && authResult.status === 'MFA_REQUIRED') {
+                preAuthCode = await verifyMfaAndGetPreAuth(authResult.mfaChallengeId, payload.clientType);
+            }
+            if (!preAuthCode) {
+                throw new Error('未获取到 pre_auth_code');
+            }
+            await establishSession(preAuthCode);
         } catch (e) {
             output.textContent = 'request failed: ' + e;
         }

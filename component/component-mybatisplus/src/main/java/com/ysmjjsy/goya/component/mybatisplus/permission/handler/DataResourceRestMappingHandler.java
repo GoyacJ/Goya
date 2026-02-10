@@ -13,6 +13,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -89,11 +90,18 @@ public class DataResourceRestMappingHandler implements IRestMappingHandler {
         target.setResourceName(StringUtils.defaultIfBlank(restMapping.getSummary(), restMapping.getMethodName()));
         target.setResourceDesc(restMapping.getDescription());
         target.setResourceOwner(currentServiceId);
-        target.setResourceOperType(restMapping.getRequestMethod() == null ? null : restMapping.getRequestMethod().toString());
+        target.setResourceOperType(resolveRequestMethod(restMapping.getRequestMethod()));
         target.setResourceHashcode(buildResourceHashCode(tenantCode, restMapping.getMappingCode()));
     }
 
     private String buildResourceHashCode(String tenantCode, String mappingCode) {
         return GoyaMD5Utils.md5(tenantCode + ":" + ResourceType.API.getCode() + ":" + mappingCode);
+    }
+
+    private String resolveRequestMethod(Set<?> requestMethods) {
+        if (CollectionUtils.isEmpty(requestMethods)) {
+            return null;
+        }
+        return requestMethods.iterator().next().toString();
     }
 }
