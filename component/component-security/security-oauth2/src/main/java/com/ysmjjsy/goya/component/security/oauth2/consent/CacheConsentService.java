@@ -7,8 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.time.Duration;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * <p>基于Redis的用户授权同意服务实现</p>
@@ -24,6 +24,7 @@ public class CacheConsentService implements ConsentService {
     private final MultiLevelCacheService cacheService;
     private static final String CACHE_NAME = "oauth2_consent";
     private static final String KEY_PREFIX = "consent:";
+    private static final String USER_CLIENTS_KEY_PREFIX = "consent:user_clients:";
     private static final Duration CONSENT_EXPIRY = Duration.ofDays(365);
 
     @Override
@@ -63,6 +64,10 @@ public class CacheConsentService implements ConsentService {
         String consentData = GoyaJson.toJson(scopes);
 
         cacheService.put(CACHE_NAME, key, consentData, CONSENT_EXPIRY);
+        
+        // 维护用户的所有客户端ID列表
+        addClientToUserList(userId, clientId);
+        
         log.debug("[Goya] |- security [authentication] Consent saved for user: {} | client: {} | scopes: {}", 
                 userId, clientId, scopes);
     }
@@ -75,6 +80,10 @@ public class CacheConsentService implements ConsentService {
 
         String key = buildKey(userId, clientId);
         cacheService.delete(CACHE_NAME, key);
+        
+        // 从用户客户端列表中移除
+        removeClientFromUserList(userId, clientId);
+        
         log.debug("[Goya] |- security [authentication] Consent revoked for user: {} | client: {}", userId, clientId);
     }
 
@@ -96,6 +105,88 @@ public class CacheConsentService implements ConsentService {
             return scopes != null ? scopes : new HashSet<>();
         } catch (Exception e) {
             log.error("[Goya] |- security [authentication] Failed to parse consent data for key: {}", key, e);
+            return new HashSet<>();
+        }
+    }
+
+    @Override
+    public Map<String, Set<String>> findAllConsents(String userId) {
+        if (StringUtils.isBlank(userId)) {
+            return Collections.emptyMap();
+        }
+
+        // 1. 获取用户的所有客户端ID列表
+        Set<String> clientIds = getUserClientIds(userId);
+        if (clientIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        // 2. 批量查询所有客户端的授权范围
+        Map<String, Set<String>> result = new LinkedHashMap<>();
+        for (String clientId : clientIds) {
+            Set<String> scopes = getConsentedScopes(userId, clientId);
+            if (!scopes.isEmpty()) {
+                result.put(clientId, scopes);
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * 添加客户端到用户客户端列表
+     *
+     * @param userId   用户ID
+     * @param clientId 客户端ID
+     */
+    private void addClientToUserList(String userId, String clientId) {
+        String userClientsKey = USER_CLIENTS_KEY_PREFIX + userId;
+        Set<String> clientIds = getUserClientIds(userId);
+        if (!clientIds.contains(clientId)) {
+            clientIds.add(clientId);
+            String clientIdsJson = GoyaJson.toJson(clientIds);
+            cacheService.put(CACHE_NAME, userClientsKey, clientIdsJson, CONSENT_EXPIRY);
+        }
+    }
+
+    /**
+     * 从用户客户端列表中移除客户端
+     *
+     * @param userId   用户ID
+     * @param clientId 客户端ID
+     */
+    private void removeClientFromUserList(String userId, String clientId) {
+        String userClientsKey = USER_CLIENTS_KEY_PREFIX + userId;
+        Set<String> clientIds = getUserClientIds(userId);
+        if (clientIds.remove(clientId)) {
+            if (clientIds.isEmpty()) {
+                cacheService.delete(CACHE_NAME, userClientsKey);
+            } else {
+                String clientIdsJson = GoyaJson.toJson(clientIds);
+                cacheService.put(CACHE_NAME, userClientsKey, clientIdsJson, CONSENT_EXPIRY);
+            }
+        }
+    }
+
+    /**
+     * 获取用户的所有客户端ID列表
+     *
+     * @param userId 用户ID
+     * @return 客户端ID集合
+     */
+    private Set<String> getUserClientIds(String userId) {
+        String userClientsKey = USER_CLIENTS_KEY_PREFIX + userId;
+        String clientIdsJson = cacheService.get(CACHE_NAME, userClientsKey, String.class);
+        
+        if (StringUtils.isBlank(clientIdsJson)) {
+            return new HashSet<>();
+        }
+
+        try {
+            Set<String> clientIds = GoyaJson.fromJsonSet(clientIdsJson, String.class);
+            return clientIds != null ? clientIds : new HashSet<>();
+        } catch (Exception e) {
+            log.error("[Goya] |- security [authentication] Failed to parse user client IDs for key: {}", userClientsKey, e);
             return new HashSet<>();
         }
     }

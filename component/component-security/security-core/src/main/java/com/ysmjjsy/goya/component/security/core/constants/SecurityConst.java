@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.security.core.constants;
 
-import com.ysmjjsy.goya.component.framework.constants.PropertyConst;
+import com.ysmjjsy.goya.component.framework.core.constants.PropertyConst;
 
 /**
  * <p></p>
@@ -15,6 +15,7 @@ public interface SecurityConst {
      */
     String PROPERTY_PLATFORM_SECURITY = PropertyConst.PROPERTY_GOYA + ".security";
     String PROPERTY_PLATFORM_SECURITY_AUTHENTICATION = PROPERTY_PLATFORM_SECURITY + ".authentication";
+    String PROPERTY_PLATFORM_SECURITY_OAUTH2 = PROPERTY_PLATFORM_SECURITY + ".oauth2";
     String PROPERTY_PLATFORM_SECURITY_RESOURCE = PROPERTY_PLATFORM_SECURITY + ".resource";
 
     String ACCOUNT_EXPIRED = "AccountExpiredException";

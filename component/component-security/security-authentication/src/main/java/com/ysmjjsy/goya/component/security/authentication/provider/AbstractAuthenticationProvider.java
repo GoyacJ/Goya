@@ -1,10 +1,12 @@
 package com.ysmjjsy.goya.component.security.authentication.provider;
 
+import com.ysmjjsy.goya.component.security.authentication.lockout.AccountLockoutService;
 import com.ysmjjsy.goya.component.security.core.domain.SecurityUser;
 import com.ysmjjsy.goya.component.security.core.enums.LoginTypeEnum;
 import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NullMarked;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -24,9 +26,12 @@ import java.util.Map;
 public abstract class AbstractAuthenticationProvider implements AuthenticationProvider {
 
     private final SecurityUserManager securityUserManager;
+    private final ObjectProvider<AccountLockoutService> accountLockoutServiceProvider;
 
-    protected AbstractAuthenticationProvider(SecurityUserManager securityUserManager) {
+    protected AbstractAuthenticationProvider(SecurityUserManager securityUserManager,
+                                             ObjectProvider<AccountLockoutService> accountLockoutServiceProvider) {
         this.securityUserManager = securityUserManager;
+        this.accountLockoutServiceProvider = accountLockoutServiceProvider;
     }
 
     protected abstract LoginTypeEnum loginType();
@@ -139,11 +144,35 @@ public abstract class AbstractAuthenticationProvider implements AuthenticationPr
         }
 
         if (authentication.getPrincipal() instanceof SecurityUser user) {
+            // 检查并自动解锁（如果已到解锁时间）
+            AccountLockoutService accountLockoutService = accountLockoutServiceProvider.getIfAvailable();
+            if (accountLockoutService != null) {
+                // 如果账号已自动解锁，需要重新加载用户信息
+                if (accountLockoutService.checkAndAutoUnlock(user.getUserId())) {
+                    // 账号已自动解锁，重新加载用户信息
+                    try {
+                        SecurityUser refreshedUser = securityUserManager.findUserByUserId(user.getUserId());
+                        if (refreshedUser != null && refreshedUser.isAccountNonLocked()) {
+                            // 用户已解锁，继续认证流程
+                            log.debug("[Goya] |- security [authentication] Account auto-unlocked: userId={}", user.getUserId());
+                        }
+                    } catch (Exception e) {
+                        log.warn("[Goya] |- security [authentication] Failed to refresh user after auto-unlock: userId={}", user.getUserId(), e);
+                    }
+                }
+            }
+            
             if (!user.isEnabled()) {
                 throw new DisabledException("账户已禁用");
             }
             if (!user.isAccountNonLocked()) {
-                throw new LockedException("账户已锁定");
+                // 再次检查锁定状态（可能在自动解锁后已改变）
+                if (accountLockoutService != null && accountLockoutService.checkAndAutoUnlock(user.getUserId())) {
+                    // 账号已自动解锁，允许继续
+                    log.debug("[Goya] |- security [authentication] Account auto-unlocked during status check: userId={}", user.getUserId());
+                } else {
+                    throw new LockedException("账户已锁定");
+                }
             }
             if (!user.isAccountNonExpired()) {
                 throw new AccountExpiredException("账户已过期");
@@ -151,6 +180,10 @@ public abstract class AbstractAuthenticationProvider implements AuthenticationPr
             if (!user.isCredentialsNonExpired()) {
                 throw new CredentialsExpiredException("凭证已过期");
             }
+            
+            // 检查密码是否过期（不阻止认证，但在 Token 中标记）
+            // 密码过期检查在 JwtTokenCustomizer 中进行，这里只记录日志
+            // 如果需要强制修改密码，可以在认证成功后检查并返回特殊响应
         }
     }
 

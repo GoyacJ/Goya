@@ -1,11 +1,13 @@
 package com.ysmjjsy.goya.component.security.authentication.provider.login;
 
+import com.ysmjjsy.goya.component.security.authentication.lockout.AccountLockoutService;
 import com.ysmjjsy.goya.component.security.authentication.provider.AbstractAuthenticationProvider;
 import com.ysmjjsy.goya.component.security.core.enums.LoginTypeEnum;
 import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
 import com.ysmjjsy.goya.component.security.core.service.IOtpService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -35,8 +37,10 @@ public class SmsAuthenticationProvider extends AbstractAuthenticationProvider {
 
     private final IOtpService otpService;
 
-    public SmsAuthenticationProvider(SecurityUserManager securityUserManager, IOtpService otpService) {
-        super(securityUserManager);
+    public SmsAuthenticationProvider(SecurityUserManager securityUserManager, 
+                                     IOtpService otpService,
+                                     ObjectProvider<AccountLockoutService> accountLockoutServiceProvider) {
+        super(securityUserManager, accountLockoutServiceProvider);
         this.otpService = otpService;
     }
 

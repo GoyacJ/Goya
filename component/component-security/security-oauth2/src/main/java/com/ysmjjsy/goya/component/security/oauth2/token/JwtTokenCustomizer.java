@@ -1,5 +1,7 @@
 package com.ysmjjsy.goya.component.security.oauth2.token;
 
+import com.ysmjjsy.goya.component.security.authentication.passwordexpiration.PasswordExpirationService;
+import com.ysmjjsy.goya.component.security.authentication.passwordexpiration.PasswordExpirationService.PasswordExpirationInfo;
 import com.ysmjjsy.goya.component.security.core.constants.StandardClaimNamesConst;
 import com.ysmjjsy.goya.component.security.core.domain.SecurityUser;
 import com.ysmjjsy.goya.component.security.core.utils.DPoPKeyUtils;
@@ -7,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
@@ -32,8 +35,13 @@ import java.util.stream.Collectors;
  * @since 2025/12/17 21:53
  */
 @Slf4j
-@RequiredArgsConstructor
 public class JwtTokenCustomizer implements OAuth2TokenCustomizer<JwtEncodingContext> {
+
+    private final ObjectProvider<PasswordExpirationService> passwordExpirationServiceProvider;
+
+    public JwtTokenCustomizer(ObjectProvider<PasswordExpirationService> passwordExpirationServiceProvider) {
+        this.passwordExpirationServiceProvider = passwordExpirationServiceProvider;
+    }
 
     @Override
     public void customize(JwtEncodingContext context) {
@@ -51,6 +59,23 @@ public class JwtTokenCustomizer implements OAuth2TokenCustomizer<JwtEncodingCont
         // ===== 通用：sub + tenant =====
         claims.subject(user.getUserId());
         claims.claim(StandardClaimNamesConst.TENANT_ID, user.getTenantId());
+
+        // ===== 密码过期信息 =====
+        PasswordExpirationService passwordExpirationService = passwordExpirationServiceProvider.getIfAvailable();
+        if (passwordExpirationService != null) {
+            PasswordExpirationInfo expirationInfo = passwordExpirationService.checkPasswordExpiration(user.getUserId());
+            if (expirationInfo != null) {
+                claims.claim("password_expired", expirationInfo.expired());
+                if (expirationInfo.passwordExpirationTime() != null) {
+                    claims.claim("password_expiration_time", 
+                            expirationInfo.passwordExpirationTime().atZone(java.time.ZoneId.systemDefault()).toInstant());
+                }
+                if (expirationInfo.remainingDays() != Long.MAX_VALUE) {
+                    claims.claim("password_remaining_days", expirationInfo.remainingDays());
+                }
+                claims.claim("password_in_warning_period", expirationInfo.inWarningPeriod());
+            }
+        }
 
         // ===== Access Token =====
         if (OAuth2TokenType.ACCESS_TOKEN.equals(tokenType)) {

@@ -40,6 +40,14 @@ public interface IUserService {
     SecurityUser findUserByPhoneNumber(String phoneNumber);
 
     /**
+     * 根据邮箱查询用户
+     *
+     * @param email 邮箱
+     * @return 用户
+     */
+    SecurityUser findUserByEmail(String email);
+
+    /**
      * 注册用户
      *
      * @param userPrincipal 用户信息
@@ -53,6 +61,13 @@ public interface IUserService {
      * @param userId 用户Id
      */
     void lockedUser(String userId);
+
+    /**
+     * 用户解锁
+     *
+     * @param userId 用户Id
+     */
+    void unlockUser(String userId);
 
     /**
      * 注册设备
@@ -124,4 +139,55 @@ public interface IUserService {
      * @return true如果密码在历史中，false如果不在
      */
     boolean isPasswordInHistory(String userId, String password);
+
+    /**
+     * 更新用户密码
+     *
+     * @param userId      用户ID
+     * @param newPassword 新密码（已加密）
+     */
+    void updatePassword(String userId, String newPassword);
+
+    /**
+     * 获取密码最后修改时间
+     * <p>注意：此方法需要用户服务实现密码修改时间存储逻辑</p>
+     *
+     * @param userId 用户ID
+     * @return 密码最后修改时间，如果未设置则返回 null
+     */
+    java.time.LocalDateTime getPasswordLastModifiedTime(String userId);
+
+    /**
+     * 更新用户昵称
+     *
+     * @param userId   用户ID
+     * @param nickname 新昵称
+     */
+    void updateNickname(String userId, String nickname);
+
+    /**
+     * 更新用户头像
+     *
+     * @param userId 用户ID
+     * @param avatar 新头像URL
+     */
+    void updateAvatar(String userId, String avatar);
+
+    /**
+     * 更新用户邮箱
+     * <p>注意：此方法需要验证邮箱是否已被其他用户使用</p>
+     *
+     * @param userId 用户ID
+     * @param email  新邮箱
+     */
+    void updateEmail(String userId, String email);
+
+    /**
+     * 更新用户手机号
+     * <p>注意：此方法需要验证手机号是否已被其他用户使用</p>
+     *
+     * @param userId      用户ID
+     * @param phoneNumber 新手机号
+     */
+    void updatePhoneNumber(String userId, String phoneNumber);
 }

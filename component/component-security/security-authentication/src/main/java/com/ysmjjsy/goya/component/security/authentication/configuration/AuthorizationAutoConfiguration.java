@@ -2,6 +2,7 @@ package com.ysmjjsy.goya.component.security.authentication.configuration;
 
 import com.ysmjjsy.goya.component.security.authentication.configuration.properties.SecurityAuthenticationProperties;
 import com.ysmjjsy.goya.component.security.authentication.configurer.SecurityAuthenticationProviderConfigurer;
+import com.ysmjjsy.goya.component.security.authentication.lockout.AccountLockoutService;
 import com.ysmjjsy.goya.component.security.authentication.password.PasswordPolicyValidator;
 import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
 import jakarta.annotation.PostConstruct;
@@ -57,11 +58,15 @@ public class AuthorizationAutoConfiguration {
     public SecurityAuthenticationProviderConfigurer securityAuthenticationProviderConfigurer(SecurityUserManager securityUserManager,
                                                                                              PasswordPolicyValidator passwordPolicyValidator,
                                                                                              ObjectProvider<IOtpService> otpServiceProvider,
+                                                                                             ObjectProvider<com.ysmjjsy.goya.component.social.service.WxMiniProgramService> wxMiniProgramServiceProvider,
+                                                                                             ObjectProvider<AccountLockoutService> accountLockoutServiceProvider,
                                                                                              SecurityAuthenticationProperties authenticationProperties) {
         SecurityAuthenticationProviderConfigurer configurer = new SecurityAuthenticationProviderConfigurer(
                 securityUserManager,
                 passwordPolicyValidator,
                 otpServiceProvider,
+                wxMiniProgramServiceProvider,
+                accountLockoutServiceProvider,
                 authenticationProperties
         );
         log.trace("[Goya] |- security [authentication] configurer auto configure.");

@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.security.core.enums;
 
-import com.ysmjjsy.goya.component.core.enums.IEnum;
+import com.ysmjjsy.goya.component.framework.common.enums.CodeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 @RequiredArgsConstructor
 @Schema(defaultValue = "认证操作类型")
-public enum SecurityOperationEnum implements IEnum<String> {
+public enum SecurityOperationEnum implements CodeEnum<String> {
 
     @Schema(defaultValue = "登陆成功")
     LOGIN_SUCCESS("LOGIN_SUCCESS", "登陆成功"),
@@ -41,5 +41,5 @@ public enum SecurityOperationEnum implements IEnum<String> {
 
     ;
     private final String code;
-    private final String description;
+    private final String label;
 }

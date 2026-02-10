@@ -1,10 +1,10 @@
 package com.ysmjjsy.goya.component.security.authentication.filter;
 
+import com.ysmjjsy.goya.component.framework.core.web.RequestInfo;
+import com.ysmjjsy.goya.component.framework.servlet.utils.WebUtils;
 import com.ysmjjsy.goya.component.security.core.domain.SecurityUser;
 import com.ysmjjsy.goya.component.security.core.domain.SecurityUserDevice;
 import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
-import com.ysmjjsy.goya.component.web.utils.UserAgent;
-import com.ysmjjsy.goya.component.web.utils.WebUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -62,7 +62,7 @@ public class DeviceManagementFilter extends OncePerRequestFilter {
                         String deviceName = WebUtils.extractDeviceName(request);
                         String deviceType = WebUtils.identifyDeviceType(request);
                         String ipAddress = WebUtils.getClientIp(request);
-                        UserAgent userAgent = WebUtils.getUserAgent(request);
+                        RequestInfo.UserAgent userAgent = WebUtils.getUserAgent(request);
 
                         // 注册或更新设备
                         SecurityUserDevice device = securityUserManager.findByDeviceId(deviceId);

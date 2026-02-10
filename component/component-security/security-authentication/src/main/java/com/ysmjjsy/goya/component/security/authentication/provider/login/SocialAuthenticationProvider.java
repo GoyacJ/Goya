@@ -1,10 +1,12 @@
 package com.ysmjjsy.goya.component.security.authentication.provider.login;
 
+import com.ysmjjsy.goya.component.security.authentication.lockout.AccountLockoutService;
 import com.ysmjjsy.goya.component.security.authentication.provider.AbstractAuthenticationProvider;
 import com.ysmjjsy.goya.component.security.core.enums.LoginTypeEnum;
 import com.ysmjjsy.goya.component.security.core.enums.SocialTypeEnum;
 import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -33,8 +35,9 @@ import java.util.Map;
 @Slf4j
 public class SocialAuthenticationProvider extends AbstractAuthenticationProvider {
 
-    public SocialAuthenticationProvider(SecurityUserManager securityUserManager) {
-        super(securityUserManager);
+    public SocialAuthenticationProvider(SecurityUserManager securityUserManager,
+                                        ObjectProvider<AccountLockoutService> accountLockoutServiceProvider) {
+        super(securityUserManager, accountLockoutServiceProvider);
     }
 
     @Override

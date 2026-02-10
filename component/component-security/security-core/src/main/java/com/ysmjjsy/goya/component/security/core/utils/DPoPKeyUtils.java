@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.security.core.utils;
 
-import com.ysmjjsy.goya.component.framework.json.GoyaJson;
+import com.ysmjjsy.goya.component.framework.core.json.GoyaJson;
 import com.ysmjjsy.goya.component.security.core.exception.SecurityAuthenticationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.jwt.Jwt;

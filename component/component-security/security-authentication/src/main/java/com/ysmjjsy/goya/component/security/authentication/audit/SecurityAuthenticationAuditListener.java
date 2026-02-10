@@ -1,10 +1,11 @@
 package com.ysmjjsy.goya.component.security.authentication.audit;
 
+import com.ysmjjsy.goya.component.framework.core.web.UserAgent;
+import com.ysmjjsy.goya.component.framework.servlet.utils.WebUtils;
 import com.ysmjjsy.goya.component.security.authentication.errortimes.LoginFailureCacheManger;
+import com.ysmjjsy.goya.component.security.authentication.lockout.AccountLockoutService;
 import com.ysmjjsy.goya.component.security.core.domain.SecurityUser;
 import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
-import com.ysmjjsy.goya.component.web.utils.UserAgent;
-import com.ysmjjsy.goya.component.web.utils.WebUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,7 @@ public class SecurityAuthenticationAuditListener {
 
     private final SecurityUserManager securityUserManager;
     private final LoginFailureCacheManger loginFailureCacheManger;
+    private final AccountLockoutService accountLockoutService;
 
     /**
      * 监听认证成功事件
@@ -104,7 +106,7 @@ public class SecurityAuthenticationAuditListener {
 
 
             if (loginFailureCacheManger.checkErrorTimes(userId)) {
-                securityUserManager.lockedUser(userId);
+                accountLockoutService.lockAccount(userId);
             }
             // 记录登录失败审计日志
             securityUserManager.recordLoginFailure(username, ipAddress, userAgent, requestUri, errorMessage);

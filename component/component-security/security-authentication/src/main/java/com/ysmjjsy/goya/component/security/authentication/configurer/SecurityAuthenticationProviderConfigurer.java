@@ -1,11 +1,14 @@
 package com.ysmjjsy.goya.component.security.authentication.configurer;
 
 import com.ysmjjsy.goya.component.security.authentication.configuration.properties.SecurityAuthenticationProperties;
+import com.ysmjjsy.goya.component.security.authentication.lockout.AccountLockoutService;
 import com.ysmjjsy.goya.component.security.authentication.password.PasswordPolicyValidator;
 import com.ysmjjsy.goya.component.security.authentication.provider.login.PasswordAuthenticationProvider;
 import com.ysmjjsy.goya.component.security.authentication.provider.login.SmsAuthenticationProvider;
 import com.ysmjjsy.goya.component.security.authentication.provider.login.SocialAuthenticationProvider;
+import com.ysmjjsy.goya.component.security.authentication.provider.login.WxAppAuthenticationProvider;
 import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
+import com.ysmjjsy.goya.component.social.service.WxMiniProgramService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
@@ -26,6 +29,8 @@ public class SecurityAuthenticationProviderConfigurer extends AbstractHttpConfig
     private final SecurityUserManager securityUserManager;
     private final PasswordPolicyValidator passwordPolicyValidator;
     private final ObjectProvider<IOtpService> otpServiceProvider;
+    private final ObjectProvider<WxMiniProgramService> wxMiniProgramServiceProvider;
+    private final ObjectProvider<AccountLockoutService> accountLockoutServiceProvider;
     private final SecurityAuthenticationProperties authenticationProperties;
 
     @Override
@@ -34,7 +39,7 @@ public class SecurityAuthenticationProviderConfigurer extends AbstractHttpConfig
 
         if (loginConfig.allowPasswordLogin()) {
             PasswordAuthenticationProvider passwordAuthenticationProvider =
-                    new PasswordAuthenticationProvider(securityUserManager, passwordPolicyValidator);
+                    new PasswordAuthenticationProvider(securityUserManager, passwordPolicyValidator, accountLockoutServiceProvider);
             builder.authenticationProvider(passwordAuthenticationProvider);
         }
 
@@ -42,7 +47,7 @@ public class SecurityAuthenticationProviderConfigurer extends AbstractHttpConfig
             IOtpService otpService = otpServiceProvider.getIfAvailable();
             if (otpService != null) {
                 SmsAuthenticationProvider smsAuthenticationProvider =
-                        new SmsAuthenticationProvider(securityUserManager, otpService);
+                        new SmsAuthenticationProvider(securityUserManager, otpService, accountLockoutServiceProvider);
                 builder.authenticationProvider(smsAuthenticationProvider);
             } else {
                 log.warn("[Goya] |- security [authentication] SMS login enabled but IOtpService is missing.");
@@ -51,8 +56,19 @@ public class SecurityAuthenticationProviderConfigurer extends AbstractHttpConfig
 
         if (loginConfig.allowSocialLogin()) {
             SocialAuthenticationProvider socialAuthenticationProvider =
-                    new SocialAuthenticationProvider(securityUserManager);
+                    new SocialAuthenticationProvider(securityUserManager, accountLockoutServiceProvider);
             builder.authenticationProvider(socialAuthenticationProvider);
+            
+            // 注册微信小程序登录 Provider
+            WxMiniProgramService wxMiniProgramService = wxMiniProgramServiceProvider.getIfAvailable();
+            if (wxMiniProgramService != null) {
+                WxAppAuthenticationProvider wxAppAuthenticationProvider =
+                        new WxAppAuthenticationProvider(securityUserManager, wxMiniProgramServiceProvider, accountLockoutServiceProvider);
+                builder.authenticationProvider(wxAppAuthenticationProvider);
+                log.debug("[Goya] |- security [authentication] WxAppAuthenticationProvider registered");
+            } else {
+                log.debug("[Goya] |- security [authentication] WxMiniProgramService not available, skipping WxAppAuthenticationProvider");
+            }
         }
     }
 }

@@ -2,14 +2,15 @@ package com.ysmjjsy.goya.component.security.oauth2.token;
 
 import com.ysmjjsy.goya.component.security.core.domain.SecurityUser;
 import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
-import com.ysmjjsy.goya.component.web.utils.WebUtils;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.*;
-import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
@@ -140,9 +141,9 @@ public class TokenManager {
 
         // 记录Token生成审计日志
         try {
-            HttpServletRequest request = WebUtils.getRequest();
+            HttpServletRequest request = getCurrentRequest();
             if (request != null) {
-                String ipAddress = WebUtils.getClientIp(request);
+                String ipAddress = getClientIp(request);
                 securityUserManager.recordTokenGenerate(
                         userDetails.getUserId(),
                         userDetails.getUsername(),
@@ -166,14 +167,32 @@ public class TokenManager {
     }
 
     /**
-     * 刷新Token（支持Refresh Token Rotation）
+     * 刷新Token（支持Refresh Token Rotation和DPoP）
      * <p>每次刷新时，旧的Refresh Token自动作废，颁发新的</p>
+     * <p>支持DPoP Proof验证（如果客户端配置为DPoP Token Type）</p>
+     * <p>此方法会自动从当前HTTP请求中提取DPoP Proof（如果存在）</p>
      *
      * @param refreshTokenValue Refresh Token值
      * @param registeredClient  客户端信息
      * @return Token响应
      */
     public TokenResponse refreshToken(String refreshTokenValue, RegisteredClient registeredClient) {
+        // 尝试从HTTP请求中提取DPoP Proof
+        Jwt dPoPProof = extractDPoPProofFromRequest();
+        return refreshToken(refreshTokenValue, registeredClient, dPoPProof);
+    }
+
+    /**
+     * 刷新Token（支持Refresh Token Rotation和DPoP）
+     * <p>每次刷新时，旧的Refresh Token自动作废，颁发新的</p>
+     * <p>支持DPoP Proof验证（如果客户端配置为DPoP Token Type）</p>
+     *
+     * @param refreshTokenValue Refresh Token值
+     * @param registeredClient  客户端信息
+     * @param dPoPProof         DPoP Proof（可选，如果客户端配置为DPoP则必需）
+     * @return Token响应
+     */
+    public TokenResponse refreshToken(String refreshTokenValue, RegisteredClient registeredClient, Jwt dPoPProof) {
         // 1. 查找授权记录
         OAuth2Authorization authorization = authorizationService.findByToken(
                 refreshTokenValue, OAuth2TokenType.REFRESH_TOKEN);
@@ -203,22 +222,20 @@ public class TokenManager {
         // 5. 提取用户信息
         SecurityUser user = extractUser(authorization);
 
-        // 6. 生成新的Token（刷新Token时，需要检查原授权记录中是否有DPoP proof）
-        // 注意：刷新Token时，DPoP proof应该在新的请求中提供，这里暂时传null
-        // 如果需要支持刷新Token时的DPoP，需要在refreshToken方法中添加dPoPProof参数
+        // 6. 生成新的Token（支持DPoP Proof）
         TokenResponse response = generateToken(
                 registeredClient,
                 user,
                 AuthorizationGrantType.REFRESH_TOKEN,
                 authorization.getAuthorizedScopes(),
                 null,
-                null);
+                dPoPProof);
 
         // 记录Token刷新审计日志
         try {
-            HttpServletRequest request = WebUtils.getRequest();
+            HttpServletRequest request = getCurrentRequest();
             if (request != null) {
-                String ipAddress = WebUtils.getClientIp(request);
+                String ipAddress = getClientIp(request);
                 securityUserManager.recordTokenRefresh(
                         user.getUserId(),
                         user.getUsername(),
@@ -232,6 +249,51 @@ public class TokenManager {
         }
 
         return response;
+    }
+
+    /**
+     * 从HTTP请求中提取并验证DPoP Proof
+     * <p>从请求的DPoP header中提取DPoP Proof并验证</p>
+     * <p>根据RFC 9449，DPoP Proof应该在DPoP header中提供</p>
+     *
+     * @return 验证后的DPoP Proof JWT，如果不存在则返回null
+     */
+    private Jwt extractDPoPProofFromRequest() {
+        try {
+            HttpServletRequest request = getCurrentRequest();
+            if (request == null) {
+                return null;
+            }
+
+            String dPoPProofHeader = request.getHeader("DPoP");
+            if (dPoPProofHeader == null || dPoPProofHeader.isBlank()) {
+                return null;
+            }
+
+            // 使用Spring Security的DPoP Proof验证API
+            String method = request.getMethod();
+            String targetUri = request.getRequestURL().toString();
+            if (request.getQueryString() != null) {
+                targetUri += "?" + request.getQueryString();
+            }
+
+            // 构建DPoP Proof验证上下文
+            DPoPProofContext dPoPProofContext = DPoPProofContext.withDPoPProof(dPoPProofHeader)
+                    .method(method)
+                    .targetUri(targetUri)
+                    .build();
+
+            // 创建JWT解码器并验证DPoP Proof
+            JwtDecoder dPoPProofVerifier = new DPoPProofJwtDecoderFactory().createDecoder(dPoPProofContext);
+            Jwt dPoPProofJwt = dPoPProofVerifier.decode(dPoPProofHeader);
+            
+            log.debug("[Goya] |- security [oauth2] DPoP Proof extracted and validated from refresh token request");
+            return dPoPProofJwt;
+        } catch (Exception e) {
+            // DPoP Proof验证失败，但不抛出异常（允许不使用DPoP的情况）
+            log.debug("[Goya] |- security [oauth2] Failed to extract DPoP Proof from request: {}", e.getMessage());
+            return null;
+        }
     }
 
     /**
@@ -355,6 +417,43 @@ public class TokenManager {
         // 否则使用BEARER（包括：未配置、配置为BEARER、或配置为DPoP但没有Proof的情况）
         // 注意：如果配置为DPoP但没有Proof，会在validateTokenTypeConfiguration中抛出异常
         return OAuth2AccessToken.TokenType.BEARER;
+    }
+
+    /**
+     * 获取当前HTTP请求
+     *
+     * @return HttpServletRequest，如果不在请求上下文中则返回null
+     */
+    private HttpServletRequest getCurrentRequest() {
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        return attributes != null ? attributes.getRequest() : null;
+    }
+
+    /**
+     * 获取客户端IP地址
+     *
+     * @param request HTTP请求
+     * @return 客户端IP地址
+     */
+    private String getClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("X-Real-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("Proxy-Client-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("WL-Proxy-Client-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        // 处理多个IP的情况，取第一个
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+        return ip;
     }
 
     /**

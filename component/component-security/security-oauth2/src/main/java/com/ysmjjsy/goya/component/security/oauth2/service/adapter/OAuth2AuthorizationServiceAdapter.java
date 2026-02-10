@@ -36,4 +36,13 @@ public class OAuth2AuthorizationServiceAdapter implements OAuth2AuthorizationSer
     public OAuth2Authorization findByToken(String token, OAuth2TokenType tokenType) {
         return authorizationService.findByToken(token, tokenType);
     }
+
+    /**
+     * 获取底层的 IOAuth2AuthorizationService，用于扩展功能
+     *
+     * @return IOAuth2AuthorizationService
+     */
+    public IOAuth2AuthorizationService getDelegate() {
+        return authorizationService;
+    }
 }

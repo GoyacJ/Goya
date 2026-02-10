@@ -126,16 +126,50 @@ public class SocialOAuth2UserService implements OAuth2UserService<OidcUserReques
                 }
             }
 
-            // 3. 如果用户不存在，根据配置决定是否自动创建
+            // 3. 如果用户不存在，尝试自动创建用户
             if (user == null) {
-                log.debug("[Goya] |- security [authentication] User not found, auto-creation not implemented yet.");
-                // TODO: 实现自动创建用户逻辑
-                // 需要根据业务需求实现用户创建
-                throw new OAuth2AuthenticationException(
-                        new org.springframework.security.oauth2.core.OAuth2Error(
-                                "user_not_found",
-                                "用户不存在，请先注册",
-                                null));
+                log.debug("[Goya] |- security [authentication] User not found, attempting auto-creation");
+                try {
+                    // 从属性中提取用户信息（复用上面已提取的 email 和 username）
+                    String nickname = extractNickname(registrationId, attributes);
+                    String avatar = extractAvatar(registrationId, attributes);
+                    
+                    // 使用邮箱或用户名作为用户名
+                    String finalUsername = StringUtils.isNotBlank(email) ? email : username;
+                    if (StringUtils.isBlank(finalUsername)) {
+                        throw new OAuth2AuthenticationException(
+                                new org.springframework.security.oauth2.core.OAuth2Error(
+                                        "user_creation_failed",
+                                        "无法从第三方账号提取用户名或邮箱",
+                                        null));
+                    }
+                    
+                    // 创建新用户
+                    // 注意：社交登录用户没有密码，使用随机密码占位符
+                    // 实际应用中，社交登录用户只能通过社交登录方式登录，不能使用密码登录
+                    SecurityUser newUser = SecurityUser.builder()
+                            .username(finalUsername)
+                            .password("{noop}" + java.util.UUID.randomUUID().toString())
+                            .email(email)
+                            .nickname(nickname)
+                            .avatar(avatar)
+                            .enabled(true)
+                            .accountNonLocked(true)
+                            .accountNonExpired(true)
+                            .credentialsNonExpired(true)
+                            .build();
+                    
+                    user = securityUserManager.registerUser(newUser);
+                    log.info("[Goya] |- security [authentication] Auto-created user from social login: {}, provider: {}", finalUsername, registrationId);
+                } catch (Exception e) {
+                    log.error("[Goya] |- security [authentication] Failed to auto-create user from social login", e);
+                    throw new OAuth2AuthenticationException(
+                            new org.springframework.security.oauth2.core.OAuth2Error(
+                                    "user_creation_failed",
+                                    "自动创建用户失败: " + e.getMessage(),
+                                    null),
+                            e);
+                }
             }
 
             // 4. 检查账户状态
@@ -202,7 +236,42 @@ public class SocialOAuth2UserService implements OAuth2UserService<OidcUserReques
             case "wechat" -> (String) attributes.get("nickname");
             case "gitee" -> (String) attributes.get("login");
             case "github" -> (String) attributes.get("login");
+            case "google" -> (String) attributes.get("name");
             default -> (String) attributes.get("name");
+        };
+    }
+
+    /**
+     * 提取昵称
+     *
+     * @param registrationId 第三方登录提供商ID
+     * @param attributes      用户属性
+     * @return 昵称
+     */
+    private String extractNickname(String registrationId, Map<String, Object> attributes) {
+        return switch (registrationId) {
+            case "wechat" -> (String) attributes.get("nickname");
+            case "gitee" -> (String) attributes.get("name");
+            case "github" -> (String) attributes.get("name");
+            case "google" -> (String) attributes.get("name");
+            default -> (String) attributes.get("name");
+        };
+    }
+
+    /**
+     * 提取头像
+     *
+     * @param registrationId 第三方登录提供商ID
+     * @param attributes      用户属性
+     * @return 头像URL
+     */
+    private String extractAvatar(String registrationId, Map<String, Object> attributes) {
+        return switch (registrationId) {
+            case "wechat" -> (String) attributes.get("headimgurl");
+            case "gitee" -> (String) attributes.get("avatar_url");
+            case "github" -> (String) attributes.get("avatar_url");
+            case "google" -> (String) attributes.get("picture");
+            default -> (String) attributes.get("avatar");
         };
     }
 

@@ -46,5 +46,13 @@ public interface ConsentService {
      * @return 已授权的范围集合
      */
     Set<String> getConsentedScopes(String userId, String clientId);
+
+    /**
+     * 查询用户的所有授权记录
+     *
+     * @param userId 用户ID
+     * @return 授权记录列表（客户端ID -> 授权范围）
+     */
+    java.util.Map<String, Set<String>> findAllConsents(String userId);
 }
 

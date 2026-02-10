@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -28,6 +29,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @AutoConfiguration
 @EnableConfigurationProperties({SecurityAuthenticationProperties.class})
 @EnableWebSecurity
+@ComponentScan(basePackages = {
+        "com.ysmjjsy.goya.component.security.authentication.controller",
+        "com.ysmjjsy.goya.component.security.authentication.lockout",
+        "com.ysmjjsy.goya.component.security.authentication.passwordreset",
+        "com.ysmjjsy.goya.component.security.authentication.passwordexpiration",
+        "com.ysmjjsy.goya.component.security.authentication.session",
+        "com.ysmjjsy.goya.component.security.authentication.registration",
+        "com.ysmjjsy.goya.component.security.authentication.profile"
+})
 public class SecurityAuthenticationAutoConfiguration {
 
     @PostConstruct
@@ -59,8 +69,14 @@ public class SecurityAuthenticationAutoConfiguration {
     }
 
     @Bean
-    public SecurityAuthenticationAuditListener securityAuthenticationAuditListener(SecurityUserManager securityUserManager, LoginFailureCacheManger loginFailureCacheManger) {
-        SecurityAuthenticationAuditListener listener = new SecurityAuthenticationAuditListener(securityUserManager, loginFailureCacheManger);
+    public SecurityAuthenticationAuditListener securityAuthenticationAuditListener(SecurityUserManager securityUserManager, 
+                                                                                   LoginFailureCacheManger loginFailureCacheManger,
+                                                                                   com.ysmjjsy.goya.component.security.authentication.lockout.AccountLockoutService accountLockoutService) {
+        SecurityAuthenticationAuditListener listener = new SecurityAuthenticationAuditListener(
+                securityUserManager, 
+                loginFailureCacheManger,
+                accountLockoutService
+        );
         log.trace("[Goya] |- security [authentication] securityAuthenticationAuditListener auto configure.");
         return listener;
     }

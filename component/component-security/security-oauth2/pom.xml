@@ -24,5 +24,9 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-oauth2-client</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.ysmjjsy.goya</groupId>
+            <artifactId>component-social</artifactId>
+        </dependency>
     </dependencies>
 </project>

@@ -1,10 +1,12 @@
 package com.ysmjjsy.goya.component.security.authentication.provider.login;
 
+import com.ysmjjsy.goya.component.security.authentication.lockout.AccountLockoutService;
 import com.ysmjjsy.goya.component.security.authentication.password.PasswordPolicyValidator;
 import com.ysmjjsy.goya.component.security.authentication.provider.AbstractAuthenticationProvider;
 import com.ysmjjsy.goya.component.security.core.enums.LoginTypeEnum;
 import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -33,8 +35,10 @@ public class PasswordAuthenticationProvider extends AbstractAuthenticationProvid
 
     private final PasswordPolicyValidator passwordPolicyValidator;
 
-    public PasswordAuthenticationProvider(SecurityUserManager securityUserService, PasswordPolicyValidator passwordPolicyValidator) {
-        super(securityUserService);
+    public PasswordAuthenticationProvider(SecurityUserManager securityUserService, 
+                                         PasswordPolicyValidator passwordPolicyValidator,
+                                         ObjectProvider<AccountLockoutService> accountLockoutServiceProvider) {
+        super(securityUserService, accountLockoutServiceProvider);
         this.passwordPolicyValidator = passwordPolicyValidator;
     }
 

@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.security.core.domain;
 
-import com.ysmjjsy.goya.component.framework.json.GoyaJson;
+import com.ysmjjsy.goya.component.framework.core.json.GoyaJson;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import tools.jackson.core.JacksonException;

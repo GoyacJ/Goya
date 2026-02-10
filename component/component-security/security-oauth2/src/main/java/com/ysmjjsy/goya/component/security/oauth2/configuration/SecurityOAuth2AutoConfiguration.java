@@ -7,6 +7,8 @@ import com.nimbusds.jose.proc.SecurityContext;
 import com.ysmjjsy.goya.component.cache.multilevel.service.MultiLevelCacheService;
 import com.ysmjjsy.goya.component.framework.context.SpringContext;
 import com.ysmjjsy.goya.component.security.authentication.configuration.properties.SecurityAuthenticationProperties;
+import com.ysmjjsy.goya.component.security.core.configuration.properties.SecurityCoreProperties;
+import com.ysmjjsy.goya.component.security.oauth2.configuration.properties.SecurityOAuth2Properties;
 import com.ysmjjsy.goya.component.security.core.enums.CertificateEnum;
 import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
 import com.ysmjjsy.goya.component.security.oauth2.request.CustomizerRequestCache;
@@ -26,10 +28,13 @@ import com.ysmjjsy.goya.component.security.oauth2.userinfo.SocialOAuth2UserServi
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.core.io.Resource;
 import org.springframework.security.crypto.encrypt.KeyStoreKeyFactory;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
@@ -57,6 +62,11 @@ import java.util.UUID;
  */
 @Slf4j
 @AutoConfiguration
+@EnableConfigurationProperties(SecurityOAuth2Properties.class)
+@ComponentScan(basePackages = {
+        "com.ysmjjsy.goya.component.security.oauth2.controller",
+        "com.ysmjjsy.goya.component.security.oauth2.consent.controller"
+})
 public class SecurityOAuth2AutoConfiguration {
 
     @PostConstruct
@@ -104,12 +114,35 @@ public class SecurityOAuth2AutoConfiguration {
     /**
      * 创建OAuth2认证成功处理器
      * <p>登录成功后，从Redis恢复SavedRequest，重定向回授权端点</p>
+     * <p>支持多客户端类型：Web（Session）、移动端（临时Token）、小程序（直接Token）</p>
      *
+     * @param requestCache           请求缓存
+     * @param oauth2Properties       OAuth2 配置属性
+     * @param clientTypeResolver     客户端类型识别器
+     * @param tempAuthTokenGenerator 临时认证 Token 生成器
+     * @param mobileAuthStateStore   移动端授权状态存储
+     * @param registeredClientRepository 注册客户端仓库
      * @return OAuth2AuthenticationSuccessHandler
      */
     @Bean
-    public OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler(RequestCache requestCache) {
-        OAuth2AuthenticationSuccessHandler handler = new OAuth2AuthenticationSuccessHandler(requestCache);
+    public OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler(
+            RequestCache requestCache,
+            SecurityOAuth2Properties oauth2Properties,
+            com.ysmjjsy.goya.component.security.oauth2.client.ClientTypeResolver clientTypeResolver,
+            com.ysmjjsy.goya.component.security.oauth2.token.TemporaryAuthTokenGenerator tempAuthTokenGenerator,
+            com.ysmjjsy.goya.component.security.oauth2.client.MobileAuthStateStore mobileAuthStateStore,
+            RegisteredClientRepository registeredClientRepository,
+            org.springframework.beans.factory.ObjectProvider<com.ysmjjsy.goya.component.security.authentication.mfa.service.MfaService> mfaServiceProvider,
+            SecurityAuthenticationProperties authenticationProperties) {
+        OAuth2AuthenticationSuccessHandler handler = new OAuth2AuthenticationSuccessHandler(
+                requestCache,
+                oauth2Properties,
+                clientTypeResolver,
+                tempAuthTokenGenerator,
+                mobileAuthStateStore,
+                registeredClientRepository,
+                mfaServiceProvider,
+                authenticationProperties);
         log.trace("[Goya] |- security [authentication] OAuth2AuthenticationSuccessHandler auto configure.");
         return handler;
     }
@@ -234,11 +267,13 @@ public class SecurityOAuth2AutoConfiguration {
     /**
      * 配置JWT Token自定义器（支持DPoP）
      *
+     * @param passwordExpirationServiceProvider 密码过期服务提供者
      * @return JwtTokenCustomizer
      */
     @Bean
-    public JwtTokenCustomizer jwtTokenCustomizer() {
-        return new JwtTokenCustomizer();
+    public JwtTokenCustomizer jwtTokenCustomizer(
+            org.springframework.beans.factory.ObjectProvider<com.ysmjjsy.goya.component.security.authentication.passwordexpiration.PasswordExpirationService> passwordExpirationServiceProvider) {
+        return new JwtTokenCustomizer(passwordExpirationServiceProvider);
     }
 
     @Bean
@@ -248,11 +283,98 @@ public class SecurityOAuth2AutoConfiguration {
         return mapper;
     }
 
+    /**
+     * 配置社交登录 OAuth2 用户服务
+     * <p>处理第三方登录回调，支持用户自动创建和绑定</p>
+     * <p>仅在启用社交登录时配置</p>
+     *
+     * @param oidcUserService OIDC 用户服务（Spring Security 默认实现）
+     * @param iSecurityUserService 用户管理服务
+     * @return SocialOAuth2UserService
+     */
     @Bean
+    @ConditionalOnProperty(prefix = "goya.security.authentication.login", name = "allow-social-login", havingValue = "true", matchIfMissing = false)
     public SocialOAuth2UserService socialOAuth2UserService(OidcUserService oidcUserService,
                                                            SecurityUserManager iSecurityUserService) {
         SocialOAuth2UserService socialOAuth2UserService = new SocialOAuth2UserService(oidcUserService, iSecurityUserService);
-        log.trace("[Goya] |- security [authentication] socialOAuth2UserService auto configure.");
+        log.trace("[Goya] |- security [oauth2] SocialOAuth2UserService auto configure.");
         return socialOAuth2UserService;
+    }
+
+
+    /**
+     * 配置 Token 撤销服务
+     *
+     * @param authorizationService OAuth2 授权服务
+     * @param tokenBlacklistStamp   Token 黑名单
+     * @param securityUserManager   用户管理器
+     * @param securityCoreProperties 安全核心配置
+     * @return TokenRevocationService
+     */
+    @Bean
+    @ConditionalOnBean({OAuth2AuthorizationService.class, TokenBlacklistStamp.class})
+    public com.ysmjjsy.goya.component.security.oauth2.token.TokenRevocationService tokenRevocationService(
+            OAuth2AuthorizationService authorizationService,
+            TokenBlacklistStamp tokenBlacklistStamp,
+            SecurityUserManager securityUserManager,
+            SecurityCoreProperties securityCoreProperties) {
+        // 创建 JwtDecoder（用于解析 JWT 获取 JTI）
+        // 使用授权服务器的 JWK Set URI 创建 JwtDecoder
+        org.springframework.security.oauth2.jwt.JwtDecoder jwtDecoder = null;
+        String authServiceUri = securityCoreProperties.authServiceUri();
+        if (authServiceUri != null && !authServiceUri.isBlank()) {
+            try {
+                // 构建 JWK Set URI（标准路径：/.well-known/jwks.json）
+                String jwkSetUri = authServiceUri + "/.well-known/jwks.json";
+                jwtDecoder = org.springframework.security.oauth2.jwt.NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
+                log.debug("[Goya] |- security [oauth2] TokenRevocationService JwtDecoder configured with jwkSetUri: {}", jwkSetUri);
+            } catch (Exception e) {
+                log.warn("[Goya] |- security [oauth2] Failed to create JwtDecoder for TokenRevocationService", e);
+            }
+        } else {
+            log.warn("[Goya] |- security [oauth2] authServiceUri not configured, TokenRevocationService JwtDecoder will be null");
+        }
+        
+        com.ysmjjsy.goya.component.security.oauth2.token.TokenRevocationService service =
+                new com.ysmjjsy.goya.component.security.oauth2.token.TokenRevocationService(
+                        authorizationService, tokenBlacklistStamp, securityUserManager, jwtDecoder);
+        log.trace("[Goya] |- security [oauth2] TokenRevocationService auto configure.");
+        return service;
+    }
+
+    /**
+     * 配置 Token 内省服务
+     *
+     * @param authorizationService OAuth2 授权服务
+     * @param tokenBlacklistStamp  Token 黑名单
+     * @param securityCoreProperties 安全核心配置
+     * @return TokenIntrospectionService
+     */
+    @Bean
+    @ConditionalOnBean({OAuth2AuthorizationService.class, TokenBlacklistStamp.class})
+    public com.ysmjjsy.goya.component.security.oauth2.token.TokenIntrospectionService tokenIntrospectionService(
+            OAuth2AuthorizationService authorizationService,
+            TokenBlacklistStamp tokenBlacklistStamp,
+            SecurityCoreProperties securityCoreProperties) {
+        // 创建 JwtDecoder（用于解析 JWT Access Token）
+        org.springframework.security.oauth2.jwt.JwtDecoder jwtDecoder = null;
+        String authServiceUri = securityCoreProperties.authServiceUri();
+        if (authServiceUri != null && !authServiceUri.isBlank()) {
+            try {
+                String jwkSetUri = authServiceUri + "/.well-known/jwks.json";
+                jwtDecoder = org.springframework.security.oauth2.jwt.NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
+                log.debug("[Goya] |- security [oauth2] TokenIntrospectionService JwtDecoder configured with jwkSetUri: {}", jwkSetUri);
+            } catch (Exception e) {
+                log.warn("[Goya] |- security [oauth2] Failed to create JwtDecoder for TokenIntrospectionService", e);
+            }
+        } else {
+            log.warn("[Goya] |- security [oauth2] authServiceUri not configured, TokenIntrospectionService JwtDecoder will be null");
+        }
+        
+        com.ysmjjsy.goya.component.security.oauth2.token.TokenIntrospectionService service =
+                new com.ysmjjsy.goya.component.security.oauth2.token.TokenIntrospectionService(
+                        authorizationService, tokenBlacklistStamp, jwtDecoder);
+        log.trace("[Goya] |- security [oauth2] TokenIntrospectionService auto configure.");
+        return service;
     }
 }
