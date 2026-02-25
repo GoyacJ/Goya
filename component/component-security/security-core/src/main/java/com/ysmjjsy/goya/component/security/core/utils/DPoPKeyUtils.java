@@ -1,6 +1,7 @@
 package com.ysmjjsy.goya.component.security.core.utils;
 
-import com.ysmjjsy.goya.component.framework.json.GoyaJson;
+import com.ysmjjsy.goya.component.framework.common.error.CommonErrorCode;
+import com.ysmjjsy.goya.component.framework.core.json.GoyaJson;
 import com.ysmjjsy.goya.component.security.core.exception.SecurityAuthenticationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -144,7 +145,7 @@ public class DPoPKeyUtils {
 
         } catch (Exception e) {
             log.error("[Goya] |- security [core] Failed to normalize JWK", e);
-            throw new SecurityAuthenticationException("Failed to normalize JWK", e);
+            throw new SecurityAuthenticationException(CommonErrorCode.UNAUTHORIZED, "DPoP JWK 规范化失败", e);
         }
     }
 
@@ -162,4 +163,3 @@ public class DPoPKeyUtils {
         }
     }
 }
-

@@ -2,7 +2,7 @@ package com.ysmjjsy.goya.component.security.core.domain;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
-import com.ysmjjsy.goya.component.web.enums.NetworkAccessTypeEnum;
+import com.ysmjjsy.goya.component.framework.servlet.enums.NetworkAccessTypeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;

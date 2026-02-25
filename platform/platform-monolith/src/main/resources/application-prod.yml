@@ -3,11 +3,11 @@ spring:
   sql:
     init:
       mode: never
-      username: goya
-      password: goya123
+      username: ${APP_DB_USERNAME}
+      password: ${APP_DB_PASSWORD}
       platform: postgresql
   datasource:
-    url: jdbc:p6spy:postgresql://39.105.2.5:14210/goya_auth_server
+    url: ${APP_DB_URL}
     username: ${spring.sql.init.username}
     password: ${spring.sql.init.password}
     # 动态数据源文档 https://www.kancloud.cn/tracy5546/dynamic-datasource/content
@@ -37,9 +37,9 @@ spring:
   data:
     redis:
       database: 0
-      host: 39.105.2.5
-      password: goya123
-      port: 14240
+      host: ${APP_REDIS_HOST}
+      password: ${APP_REDIS_PASSWORD}
+      port: ${APP_REDIS_PORT:6379}
       timeout: 10000
       repositories:
         enabled: false

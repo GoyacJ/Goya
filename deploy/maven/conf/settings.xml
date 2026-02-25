@@ -20,8 +20,8 @@
     <servers>
         <server>
             <id>repo-water</id>
-            <username>62f27d04b2d38424763be610</username>
-            <password>QQH895-O5ryh</password>
+            <username>${env.REPO_WATER_USERNAME}</username>
+            <password>${env.REPO_WATER_PASSWORD}</password>
         </server>
     </servers>
     <profiles>

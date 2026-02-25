@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.security.core.domain;
 
-import com.ysmjjsy.goya.component.framework.context.GoyaUser;
+import com.ysmjjsy.goya.component.framework.core.context.GoyaUser;
 import lombok.Getter;
 import lombok.ToString;
 import org.springframework.security.core.CredentialsContainer;

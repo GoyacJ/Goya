@@ -248,5 +248,32 @@ JSON DSL 结构约束（正式 Schema 说明）：
 
 ---
 
+## 11. 与 component-security 闭环联动（2026-02-25）
+
+当前版本已与 `component-security` 完成端到端联动，执行链路如下：
+
+1. 请求先经过 `security-authorization`：
+   - `HeaderClaimConsistencyFilter`（主体与租户一致性）
+   - `RevokedTokenFilter`（撤销后旧 token 即时 401）
+   - `PolicyAuthorizationFilter`（动态 API 权限）
+2. 进入数据库查询阶段后，由本模块 `GoyaDataPermissionHandler` 注入行级过滤条件。
+3. 会话注销、踢出、禁用后，无需改造本模块即可完成“令牌失效 + 数据权限执行”闭环。
+
+生产建议：
+
+```yaml
+goya:
+  mybatis-plus:
+    permission:
+      enabled: true
+      fail-closed: true
+```
+
+说明：
+- `fail-closed=true` 时，AccessContext 缺失、规则解析异常、策略执行异常均收敛为安全拒绝（`1=0`）。
+- 本模块聚焦“数据权限执行”，不承担 token 生命周期管理，避免职责耦合。
+
+---
+
 如需新增适配（JPA、Spring Security 等），应在独立模块实现 framework-security 的 SPI，
 component-mybatisplus 只负责 MyBatis Plus 生态内的执行与拦截。

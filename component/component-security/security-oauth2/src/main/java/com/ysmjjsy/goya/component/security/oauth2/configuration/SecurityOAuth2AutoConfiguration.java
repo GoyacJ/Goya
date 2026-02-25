@@ -1,62 +1,72 @@
 package com.ysmjjsy.goya.component.security.oauth2.configuration;
 
+import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
+import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
-import com.ysmjjsy.goya.component.cache.multilevel.service.MultiLevelCacheService;
-import com.ysmjjsy.goya.component.framework.context.SpringContext;
-import com.ysmjjsy.goya.component.security.authentication.configuration.properties.SecurityAuthenticationProperties;
-import com.ysmjjsy.goya.component.security.core.enums.CertificateEnum;
-import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
-import com.ysmjjsy.goya.component.security.oauth2.request.CustomizerRequestCache;
-import com.ysmjjsy.goya.component.security.oauth2.request.entrypoint.OAuth2AuthenticationEntryPoint;
-import com.ysmjjsy.goya.component.security.oauth2.request.handler.OAuth2AuthenticationSuccessHandler;
-import com.ysmjjsy.goya.component.security.oauth2.service.IOAuth2AuthorizationConsentService;
-import com.ysmjjsy.goya.component.security.oauth2.service.IOAuth2AuthorizationService;
-import com.ysmjjsy.goya.component.security.oauth2.service.IRegisteredClientService;
-import com.ysmjjsy.goya.component.security.oauth2.service.adapter.OAuth2AuthorizationConsentServiceAdapter;
-import com.ysmjjsy.goya.component.security.oauth2.service.adapter.OAuth2AuthorizationServiceAdapter;
-import com.ysmjjsy.goya.component.security.oauth2.service.adapter.RegisteredClientRepositoryAdapter;
-import com.ysmjjsy.goya.component.security.oauth2.token.JwtTokenCustomizer;
-import com.ysmjjsy.goya.component.security.oauth2.token.TokenBlacklistStamp;
-import com.ysmjjsy.goya.component.security.oauth2.token.TokenManager;
-import com.ysmjjsy.goya.component.security.oauth2.userinfo.OAuth2UserInfoMapper;
-import com.ysmjjsy.goya.component.security.oauth2.userinfo.SocialOAuth2UserService;
+import com.ysmjjsy.goya.component.framework.cache.api.CacheService;
+import com.ysmjjsy.goya.component.security.authentication.service.PreAuthCodeService;
+import com.ysmjjsy.goya.component.security.core.constants.StandardClaimNamesConst;
+import com.ysmjjsy.goya.component.security.core.domain.SecurityUser;
+import com.ysmjjsy.goya.component.security.core.service.SecuritySessionLifecycleService;
+import com.ysmjjsy.goya.component.security.oauth2.configuration.key.JdbcOAuth2JwkManager;
+import com.ysmjjsy.goya.component.security.oauth2.configuration.properties.SecurityOAuth2Properties;
+import com.ysmjjsy.goya.component.security.oauth2.configuration.security.AuthorizationServerSecurityConfiguration;
+import com.ysmjjsy.goya.component.security.oauth2.configuration.security.PkceEnforcingRegisteredClientRepository;
+import com.ysmjjsy.goya.component.security.oauth2.grant.PreAuthCodeGrantAuthenticationConverter;
+import com.ysmjjsy.goya.component.security.oauth2.grant.PreAuthCodeGrantAuthenticationProvider;
+import com.ysmjjsy.goya.component.security.oauth2.service.OAuth2SecuritySessionLifecycleService;
+import com.ysmjjsy.goya.component.security.oauth2.service.RevocationIndexingAuthorizationService;
+import com.ysmjjsy.goya.component.security.oauth2.service.SecurityOAuth2TokenFormatResolver;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.core.io.Resource;
-import org.springframework.security.crypto.encrypt.KeyStoreKeyFactory;
-import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
-import org.springframework.security.oauth2.jwt.JwtEncoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.client.JdbcRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
-import org.springframework.security.oauth2.server.authorization.token.*;
-import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
-import org.springframework.security.web.savedrequest.RequestCache;
+import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
+import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
+import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationConsentService;
 
+import javax.sql.DataSource;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
- * <p></p>
+ * <p>OAuth2 自动配置</p>
  *
  * @author goya
- * @since 2026/1/22 23:03
+ * @since 2026/2/10
  */
 @Slf4j
 @AutoConfiguration
+@EnableConfigurationProperties(SecurityOAuth2Properties.class)
+@ConditionalOnProperty(prefix = "goya.security.oauth2", name = "enabled", havingValue = "true", matchIfMissing = true)
+@Import(AuthorizationServerSecurityConfiguration.class)
 public class SecurityOAuth2AutoConfiguration {
 
     @PostConstruct
@@ -64,195 +74,252 @@ public class SecurityOAuth2AutoConfiguration {
         log.debug("[Goya] |- security [oauth2] SecurityOAuth2AutoConfiguration auto configure.");
     }
 
-    /**
-     * 创建Redis RequestCache
-     * <p>用于保存和恢复 SavedRequest，支持无状态环境</p>
-     *
-     * @param cacheService 缓存服务（可选）
-     * @return RedisRequestCache
-     */
     @Bean
-    @ConditionalOnBean(MultiLevelCacheService.class)
-    public RequestCache requestCache(MultiLevelCacheService cacheService) {
-        CustomizerRequestCache requestCache =
-                new CustomizerRequestCache(cacheService);
-        log.trace("[Goya] |- security [authentication] customizerRequestCache auto configure.");
-        return requestCache;
+    @ConditionalOnMissingBean
+    public SecurityOAuth2TokenFormatResolver securityOAuth2TokenFormatResolver(SecurityOAuth2Properties securityOAuth2Properties) {
+        SecurityOAuth2TokenFormatResolver resolver = new SecurityOAuth2TokenFormatResolver(securityOAuth2Properties);
+        log.trace("[Goya] |- security [oauth2] |- bean [securityOAuth2TokenFormatResolver] register.");
+        return resolver;
     }
 
     @Bean
-    @ConditionalOnMissingBean(RequestCache.class)
-    public RequestCache sessionRequestCache() {
-        HttpSessionRequestCache requestCache = new HttpSessionRequestCache();
-        log.trace("[Goya] |- security [authentication] HttpSessionRequestCache auto configure.");
-        return requestCache;
-    }
-
-    /**
-     * 创建OAuth2认证入口点
-     * <p>拦截未认证的请求，保存原始请求到Redis，重定向到登录页面</p>
-     *
-     * @return OAuth2AuthenticationEntryPoint
-     */
-    @Bean
-    public OAuth2AuthenticationEntryPoint oAuth2AuthenticationEntryPoint(RequestCache requestCache) {
-        OAuth2AuthenticationEntryPoint entryPoint = new OAuth2AuthenticationEntryPoint(requestCache);
-        log.trace("[Goya] |- security [authentication] OAuth2AuthenticationEntryPoint auto configure.");
-        return entryPoint;
-    }
-
-    /**
-     * 创建OAuth2认证成功处理器
-     * <p>登录成功后，从Redis恢复SavedRequest，重定向回授权端点</p>
-     *
-     * @return OAuth2AuthenticationSuccessHandler
-     */
-    @Bean
-    public OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler(RequestCache requestCache) {
-        OAuth2AuthenticationSuccessHandler handler = new OAuth2AuthenticationSuccessHandler(requestCache);
-        log.trace("[Goya] |- security [authentication] OAuth2AuthenticationSuccessHandler auto configure.");
-        return handler;
-    }
-
-    /**
-     * 配置OAuth2 Token生成器
-     * <p>
-     * 组合JWT Generator（access_token）和Opaque Refresh Token Generator
-     * </p>
-     */
-    @Bean
-    public OAuth2TokenGenerator<?> tokenGenerator(JwtEncoder jwtEncoder, JwtTokenCustomizer jwtTokenCustomizer) {
-        JwtGenerator jwtGenerator = new JwtGenerator(jwtEncoder);
-        jwtGenerator.setJwtCustomizer(jwtTokenCustomizer);
-
-        OAuth2AccessTokenGenerator accessTokenGenerator = new OAuth2AccessTokenGenerator();
-        OAuth2RefreshTokenGenerator refreshTokenGenerator = new OAuth2RefreshTokenGenerator();
-
-        return new DelegatingOAuth2TokenGenerator(
-                jwtGenerator, accessTokenGenerator, refreshTokenGenerator);
-    }
-
-    /**
-     * 配置缓存 OAuth2授权服务（优先使用）
-     * <p>实现全无状态设计，支持水平扩展</p>
-     *
-     * @param authorizationService authorizationService
-     * @return RedisOAuth2AuthorizationService
-     */
-    @Bean
-    @ConditionalOnBean(IOAuth2AuthorizationService.class)
-    public OAuth2AuthorizationService oAuth2AuthorizationService(IOAuth2AuthorizationService authorizationService) {
-        OAuth2AuthorizationServiceAdapter adapter = new OAuth2AuthorizationServiceAdapter(authorizationService);
-        log.trace("[Goya] |- security [oauth2] OAuth2AuthorizationService adapter auto configure.");
-        return adapter;
+    @ConditionalOnMissingBean
+    public AuthorizationGrantType preAuthCodeGrantType(SecurityOAuth2Properties securityOAuth2Properties) {
+        AuthorizationGrantType authorizationGrantType = new AuthorizationGrantType(securityOAuth2Properties.preAuthCodeGrantType());
+        log.trace("[Goya] |- security [oauth2] |- bean [preAuthCodeGrantType] register.");
+        return authorizationGrantType;
     }
 
     @Bean
-    @ConditionalOnBean(IOAuth2AuthorizationConsentService.class)
-    public OAuth2AuthorizationConsentService oAuth2AuthorizationConsentService(IOAuth2AuthorizationConsentService consentService) {
-        OAuth2AuthorizationConsentServiceAdapter adapter = new OAuth2AuthorizationConsentServiceAdapter(consentService);
-        log.trace("[Goya] |- security [oauth2] OAuth2AuthorizationConsentService adapter auto configure.");
-        return adapter;
+    @ConditionalOnMissingBean
+    public PreAuthCodeGrantAuthenticationConverter preAuthCodeGrantAuthenticationConverter(AuthorizationGrantType preAuthCodeGrantType) {
+        PreAuthCodeGrantAuthenticationConverter converter = new PreAuthCodeGrantAuthenticationConverter(preAuthCodeGrantType);
+        log.trace("[Goya] |- security [oauth2] |- bean [preAuthCodeGrantAuthenticationConverter] register.");
+        return converter;
     }
 
     @Bean
-    @ConditionalOnBean(IRegisteredClientService.class)
-    public RegisteredClientRepository registeredClientRepository(IRegisteredClientService registeredClientService) {
-        RegisteredClientRepositoryAdapter adapter = new RegisteredClientRepositoryAdapter(registeredClientService);
-        log.trace("[Goya] |- security [oauth2] RegisteredClientRepository adapter auto configure.");
-        return adapter;
-    }
-
-    @Bean
-    public TokenBlacklistStamp tokenBlacklistStamp(SecurityAuthenticationProperties properties) {
-        TokenBlacklistStamp stamp = new TokenBlacklistStamp(properties.tokenBlackList());
-        log.trace("[Goya] |- security [authentication] tokenBlacklistStamp auto configure.");
-        return stamp;
-    }
-
-    /**
-     * 配置Token服务
-     * <p>封装OAuth2 Token生成的完整流程</p>
-     * <p>支持混合Token模式（JWT Access Token + Opaque Refresh Token）和Refresh Token Rotation</p>
-     *
-     * @param tokenGenerator       Token生成器
-     * @param authorizationService 授权服务
-     * @param securityUserService  用户服务
-     * @param tokenBlacklistStamp  token黑名单管理
-     * @return TokenService
-     */
-    @Bean
-    public TokenManager tokenService(
-            OAuth2TokenGenerator<?> tokenGenerator,
-            OAuth2AuthorizationService authorizationService,
-            SecurityUserManager securityUserService,
-            TokenBlacklistStamp tokenBlacklistStamp) {
-        TokenManager tokenService = new TokenManager(
-                tokenGenerator, authorizationService, securityUserService, tokenBlacklistStamp
+    @ConditionalOnMissingBean
+    public PreAuthCodeGrantAuthenticationProvider preAuthCodeGrantAuthenticationProvider(AuthorizationGrantType preAuthCodeGrantType,
+                                                                                          OAuth2AuthorizationService oAuth2AuthorizationService,
+                                                                                          OAuth2TokenGenerator<?> oAuth2TokenGenerator,
+                                                                                          PreAuthCodeService preAuthCodeService,
+                                                                                          SecurityOAuth2TokenFormatResolver securityOAuth2TokenFormatResolver,
+                                                                                          SecurityOAuth2Properties securityOAuth2Properties) {
+        PreAuthCodeGrantAuthenticationProvider provider = new PreAuthCodeGrantAuthenticationProvider(
+                preAuthCodeGrantType,
+                oAuth2AuthorizationService,
+                oAuth2TokenGenerator,
+                preAuthCodeService,
+                securityOAuth2TokenFormatResolver,
+                securityOAuth2Properties.preAuth() == null || securityOAuth2Properties.preAuth().requireClientBinding(),
+                securityOAuth2Properties.allowRefreshTokenForPublicClients()
         );
-        log.trace("[Goya] |- security [authentication] TokenService auto configure.");
-        return tokenService;
+        log.trace("[Goya] |- security [oauth2] |- bean [preAuthCodeGrantAuthenticationProvider] register.");
+        return provider;
     }
 
     @Bean
-    @ConditionalOnMissingBean(JWKSource.class)
-    public JWKSource<SecurityContext> jwkSource(SecurityAuthenticationProperties authenticationProperties) throws NoSuchAlgorithmException {
-        SecurityAuthenticationProperties.Jwk jwk = authenticationProperties.jwk();
-        KeyPair keyPair = null;
-        if (jwk.certificate() == CertificateEnum.CUSTOM) {
-            Resource[] resource = SpringContext.getResources(jwk.jksKeyStore());
-            if (ArrayUtils.isNotEmpty(resource)) {
-                KeyStoreKeyFactory keyStoreKeyFactory = new KeyStoreKeyFactory(resource[0], jwk.jksStorePassword().toCharArray());
-                keyPair = keyStoreKeyFactory.getKeyPair(jwk.jksKeyAlias(), jwk.jksKeyPassword().toCharArray());
+    @ConditionalOnMissingBean
+    public AuthorizationServerSettings authorizationServerSettings(SecurityOAuth2Properties securityOAuth2Properties) {
+        SecurityOAuth2Properties.Endpoints endpoints = securityOAuth2Properties.endpoints();
+
+        AuthorizationServerSettings.Builder builder = AuthorizationServerSettings.builder();
+        if (StringUtils.isNotBlank(securityOAuth2Properties.issuer())) {
+            builder.issuer(securityOAuth2Properties.issuer());
+        }
+
+        builder.authorizationEndpoint(endpoints.authorizationEndpoint())
+                .tokenEndpoint(endpoints.tokenEndpoint())
+                .jwkSetEndpoint(endpoints.jwkSetEndpoint())
+                .tokenRevocationEndpoint(endpoints.revocationEndpoint())
+                .tokenIntrospectionEndpoint(endpoints.introspectionEndpoint())
+                .oidcLogoutEndpoint(endpoints.oidcLogoutEndpoint());
+
+        AuthorizationServerSettings authorizationServerSettings = builder.build();
+        log.trace("[Goya] |- security [oauth2] |- bean [authorizationServerSettings] register.");
+        return authorizationServerSettings;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnBean(JdbcTemplate.class)
+    public JdbcOAuth2JwkManager jdbcOAuth2JwkManager(JdbcTemplate jdbcTemplate,
+                                                     SecurityOAuth2Properties securityOAuth2Properties) {
+        JdbcOAuth2JwkManager jwkManager = new JdbcOAuth2JwkManager(jdbcTemplate, securityOAuth2Properties);
+        log.trace("[Goya] |- security [oauth2] |- bean [jdbcOAuth2JwkManager] register.");
+        return jwkManager;
+    }
+
+    @Bean(name = "jwkSource")
+    @ConditionalOnMissingBean(name = "jwkSource")
+    public JWKSource<SecurityContext> jwkSource(SecurityOAuth2Properties securityOAuth2Properties,
+                                                ObjectProvider<JdbcOAuth2JwkManager> jdbcOAuth2JwkManagerObjectProvider) {
+        JdbcOAuth2JwkManager jdbcOAuth2JwkManager = jdbcOAuth2JwkManagerObjectProvider.getIfAvailable();
+        if (jdbcOAuth2JwkManager != null) {
+            JWKSource<SecurityContext> jwkSource = (selector, context) -> {
+                java.util.List<JWK> jwks = jdbcOAuth2JwkManager.loadJwks();
+                return selector.select(new JWKSet(jwks));
+            };
+            log.trace("[Goya] |- security [oauth2] |- bean [persistentJwkSource] register.");
+            return jwkSource;
+        }
+
+        if (allowInMemoryJwkFallback(securityOAuth2Properties)) {
+            RSAKey rsaKey = generateRsa();
+            JWKSet jwkSet = new JWKSet(rsaKey);
+            ImmutableJWKSet<SecurityContext> jwkSource = new ImmutableJWKSet<>(jwkSet);
+            log.warn("[Goya] |- security [oauth2] |- JDBC 不可用，回退到内存密钥（重启后失效）");
+            log.trace("[Goya] |- security [oauth2] |- bean [inMemoryJwkSource] register.");
+            return jwkSource;
+        }
+
+        throw new IllegalStateException(
+                "OAuth2 JWK 初始化失败：JDBC 不可用且已禁用内存回退。"
+                        + " deploymentMode=" + securityOAuth2Properties.deploymentMode()
+        );
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
+        JwtDecoder jwtDecoder = OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
+        log.trace("[Goya] |- security [oauth2] |- bean [jwtDecoder] register.");
+        return jwtDecoder;
+    }
+
+    @Bean
+    @ConditionalOnBean(DataSource.class)
+    @ConditionalOnMissingBean
+    public RegisteredClientRepository registeredClientRepository(DataSource dataSource,
+                                                                 SecurityOAuth2Properties securityOAuth2Properties) {
+        JdbcRegisteredClientRepository delegate = new JdbcRegisteredClientRepository(new JdbcTemplate(dataSource));
+        RegisteredClientRepository registeredClientRepository = new PkceEnforcingRegisteredClientRepository(
+                delegate,
+                securityOAuth2Properties.requirePkceForPublicClients()
+        );
+        log.trace("[Goya] |- security [oauth2] |- bean [registeredClientRepository] register with PKCE enforcement.");
+        return registeredClientRepository;
+    }
+
+    @Bean
+    @ConditionalOnBean({DataSource.class, RegisteredClientRepository.class})
+    @ConditionalOnMissingBean
+    public OAuth2AuthorizationService oAuth2AuthorizationService(DataSource dataSource,
+                                                                 RegisteredClientRepository registeredClientRepository,
+                                                                 ObjectProvider<CacheService> cacheServiceObjectProvider,
+                                                                 SecurityOAuth2Properties securityOAuth2Properties) {
+        JdbcOAuth2AuthorizationService jdbcAuthorizationService = new JdbcOAuth2AuthorizationService(
+                new JdbcTemplate(dataSource),
+                registeredClientRepository
+        );
+        CacheService cacheService = cacheServiceObjectProvider.getIfAvailable();
+        OAuth2AuthorizationService service = cacheService == null
+                ? jdbcAuthorizationService
+                : new RevocationIndexingAuthorizationService(
+                        jdbcAuthorizationService,
+                        cacheService,
+                        securityOAuth2Properties
+                );
+        log.trace("[Goya] |- security [oauth2] |- bean [oAuth2AuthorizationService] register.");
+        return service;
+    }
+
+    @Bean
+    @ConditionalOnBean({DataSource.class, RegisteredClientRepository.class})
+    @ConditionalOnMissingBean
+    public OAuth2AuthorizationConsentService oAuth2AuthorizationConsentService(DataSource dataSource,
+                                                                               RegisteredClientRepository registeredClientRepository) {
+        JdbcOAuth2AuthorizationConsentService service = new JdbcOAuth2AuthorizationConsentService(new JdbcTemplate(dataSource), registeredClientRepository);
+        log.trace("[Goya] |- security [oauth2] |- bean [oAuth2AuthorizationConsentService] register.");
+        return service;
+    }
+
+    @Bean
+    @ConditionalOnBean({OAuth2AuthorizationService.class, CacheService.class})
+    @ConditionalOnMissingBean
+    public SecuritySessionLifecycleService securitySessionLifecycleService(OAuth2AuthorizationService oAuth2AuthorizationService,
+                                                                           CacheService cacheService) {
+        SecuritySessionLifecycleService securitySessionLifecycleService = new OAuth2SecuritySessionLifecycleService(
+                oAuth2AuthorizationService,
+                cacheService
+        );
+        log.trace("[Goya] |- security [oauth2] |- bean [securitySessionLifecycleService] register.");
+        return securitySessionLifecycleService;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(name = "securityAccessTokenCustomizer")
+    public OAuth2TokenCustomizer<JwtEncodingContext> securityAccessTokenCustomizer() {
+        OAuth2TokenCustomizer<JwtEncodingContext> customizer = context -> {
+            context.getClaims().id(UUID.randomUUID().toString());
+            if (context.getAuthorizationGrantType() != null) {
+                context.getClaims().claim("grant_type", context.getAuthorizationGrantType().getValue());
+            }
+            if (!(context.getPrincipal().getPrincipal() instanceof SecurityUser securityUser)) {
+                return;
             }
 
-        } else {
+            context.getClaims().claim(StandardClaimNamesConst.TENANT_ID, securityUser.getTenantId());
+            context.getClaims().claim(StandardClaimNamesConst.ROLES, securityUser.getRoles());
+            context.getClaims().claim(
+                    StandardClaimNamesConst.AUTHORITIES,
+                    securityUser.getAuthorities().stream().map(a -> a.getAuthority()).collect(Collectors.toSet())
+            );
+            context.getClaims().claim(StandardClaimNamesConst.OPEN_ID, securityUser.getOpenId());
+            context.getClaims().claim(StandardClaimNamesConst.CLIENT_ID, context.getRegisteredClient().getClientId());
+
+            Object details = context.getPrincipal().getDetails();
+            if (details instanceof Map<?, ?> detailsMap) {
+                Map<String, Object> convertedMap = new LinkedHashMap<>();
+                detailsMap.forEach((k, v) -> convertedMap.put(String.valueOf(k), v));
+                Object sid = convertedMap.get(StandardClaimNamesConst.SID);
+                Object mfa = convertedMap.get(StandardClaimNamesConst.MFA);
+                Object clientType = convertedMap.get(StandardClaimNamesConst.CLIENT_TYPE);
+                Object dpopJkt = convertedMap.get(StandardClaimNamesConst.JKT);
+
+                if (sid != null) {
+                    context.getClaims().claim(StandardClaimNamesConst.SID, sid);
+                }
+                if (mfa != null) {
+                    context.getClaims().claim(StandardClaimNamesConst.MFA, mfa);
+                }
+                if (clientType != null) {
+                    context.getClaims().claim(StandardClaimNamesConst.CLIENT_TYPE, clientType);
+                }
+                if (dpopJkt instanceof String jkt && StringUtils.isNotBlank(jkt)) {
+                    context.getClaims().claim(StandardClaimNamesConst.CNF, Map.of(StandardClaimNamesConst.JKT, jkt));
+                }
+            }
+        };
+        log.trace("[Goya] |- security [oauth2] |- bean [securityAccessTokenCustomizer] register.");
+        return customizer;
+    }
+
+    private boolean allowInMemoryJwkFallback(SecurityOAuth2Properties securityOAuth2Properties) {
+        if (securityOAuth2Properties.deploymentMode() == SecurityOAuth2Properties.DeploymentMode.AUTH_CENTER) {
+            return false;
+        }
+        SecurityOAuth2Properties.Keys keys = securityOAuth2Properties.keys();
+        return keys != null && keys.allowInMemoryFallback();
+    }
+
+    private static RSAKey generateRsa() {
+        KeyPair keyPair;
+        try {
             KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
             keyPairGenerator.initialize(2048);
             keyPair = keyPairGenerator.generateKeyPair();
+        } catch (Exception ex) {
+            throw new IllegalStateException(ex);
         }
 
         RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
         RSAPrivateKey privateKey = (RSAPrivateKey) keyPair.getPrivate();
-        RSAKey rsaKey = new RSAKey.Builder(publicKey)
+
+        return new RSAKey.Builder(publicKey)
                 .privateKey(privateKey)
                 .keyID(UUID.randomUUID().toString())
                 .build();
-        JWKSet jwkSet = new JWKSet(rsaKey);
-        return (jwkSelector, _) -> jwkSelector.select(jwkSet);
-    }
-
-    /**
-     * 配置JWT Encoder
-     */
-    @Bean
-    @ConditionalOnMissingBean(JwtEncoder.class)
-    public JwtEncoder jwtEncoder(JWKSource<SecurityContext> jwkSource) {
-        return new NimbusJwtEncoder(jwkSource);
-    }
-
-    /**
-     * 配置JWT Token自定义器（支持DPoP）
-     *
-     * @return JwtTokenCustomizer
-     */
-    @Bean
-    public JwtTokenCustomizer jwtTokenCustomizer() {
-        return new JwtTokenCustomizer();
-    }
-
-    @Bean
-    public OAuth2UserInfoMapper oAuth2UserInfoMapper(SecurityUserManager securityUserService) {
-        OAuth2UserInfoMapper mapper = new OAuth2UserInfoMapper(securityUserService);
-        log.trace("[Goya] |- security [authentication] oAuth2UserInfoMapper auto configure.");
-        return mapper;
-    }
-
-    @Bean
-    public SocialOAuth2UserService socialOAuth2UserService(OidcUserService oidcUserService,
-                                                           SecurityUserManager iSecurityUserService) {
-        SocialOAuth2UserService socialOAuth2UserService = new SocialOAuth2UserService(oidcUserService, iSecurityUserService);
-        log.trace("[Goya] |- security [authentication] socialOAuth2UserService auto configure.");
-        return socialOAuth2UserService;
     }
 }

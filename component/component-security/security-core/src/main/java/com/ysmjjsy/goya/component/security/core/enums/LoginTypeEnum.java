@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.security.core.enums;
 
-import com.ysmjjsy.goya.component.core.enums.IEnum;
+import com.ysmjjsy.goya.component.framework.common.enums.CodeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
@@ -18,7 +18,7 @@ import org.springframework.util.StringUtils;
 @Getter
 @RequiredArgsConstructor
 @Schema(defaultValue = "登录类型")
-public enum LoginTypeEnum implements IEnum<String> {
+public enum LoginTypeEnum implements CodeEnum<String> {
 
     @Schema(defaultValue = "密码")
     PASSWORD("PASSWORD", "password"),
@@ -31,7 +31,7 @@ public enum LoginTypeEnum implements IEnum<String> {
 
     ;
     private final String code;
-    private final String description;
+    private final String label;
 
     public static LoginTypeEnum resolve(HttpServletRequest request) {
         String loginType = request.getParameter("login_type");
@@ -39,7 +39,7 @@ public enum LoginTypeEnum implements IEnum<String> {
             return null;
         }
         for (LoginTypeEnum value : values()) {
-            if (value.code.equalsIgnoreCase(loginType) || value.description.equalsIgnoreCase(loginType)) {
+            if (value.code.equalsIgnoreCase(loginType) || value.label.equalsIgnoreCase(loginType)) {
                 return value;
             }
         }

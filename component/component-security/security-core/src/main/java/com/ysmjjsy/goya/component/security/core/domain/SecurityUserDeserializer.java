@@ -1,6 +1,6 @@
 package com.ysmjjsy.goya.component.security.core.domain;
 
-import com.ysmjjsy.goya.component.framework.json.GoyaJson;
+import com.ysmjjsy.goya.component.framework.core.json.GoyaJson;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import tools.jackson.core.JacksonException;
@@ -46,7 +46,7 @@ public class SecurityUserDeserializer extends ValueDeserializer<SecurityUser> {
         Set<GrantedAuthority> authorities = ctxt.readTreeAsValue(GoyaJson.readJsonNode(jsonNode, "authorities"),
                 ctxt.getTypeFactory().constructType(SECURITY_GRANTED_AUTHORITY_SET));
 
-        Set<String> roles = ctxt.readTreeAsValue(GoyaJson.readJsonNode(jsonNode, "authorities"),
+        Set<String> roles = ctxt.readTreeAsValue(GoyaJson.readJsonNode(jsonNode, "roles"),
                 ctxt.getTypeFactory().constructType(SECURITY_ROLE_SET));
 
         SecurityUser.Builder b = SecurityUser.builder()
@@ -95,4 +95,3 @@ public class SecurityUserDeserializer extends ValueDeserializer<SecurityUser> {
         return pwdNode == null;
     }
 }
-

@@ -1,9 +1,9 @@
 package com.ysmjjsy.goya.component.security.core.domain;
 
-import com.ysmjjsy.goya.component.framework.enums.StatusEnum;
+import com.ysmjjsy.goya.component.framework.core.enums.StatusEnum;
+import com.ysmjjsy.goya.component.framework.core.web.UserAgent;
+import com.ysmjjsy.goya.component.framework.servlet.enums.RequestMethodEnum;
 import com.ysmjjsy.goya.component.security.core.enums.SecurityOperationEnum;
-import com.ysmjjsy.goya.component.web.enums.RequestMethodEnum;
-import com.ysmjjsy.goya.component.web.utils.UserAgent;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

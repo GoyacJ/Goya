@@ -7,9 +7,8 @@ package com.ysmjjsy.goya.component.framework.core.web;
  *
  * @param requestUri 请求 URI（可选包含 queryString）
  * @param httpMethod HTTP 方法
- * @param userAgent User-Agent（可能较长，建议截断）
- * @param clientIp 客户端 IP（根据 X-Forwarded-For/X-Real-IP 等解析）
- *
+ * @param userAgent  User-Agent（可能较长，建议截断）
+ * @param clientIp   客户端 IP（根据 X-Forwarded-For/X-Real-IP 等解析）
  * @author goya
  * @since 2026/1/24 23:46
  */
@@ -19,17 +18,4 @@ public record RequestInfo(
         UserAgent userAgent,
         String clientIp
 ) {
-
-    public record UserAgent(
-            String browserName,
-            String osName,
-            boolean mobile,
-            boolean mobileBrowser,
-            boolean iphoneOrIpod,
-            boolean ipad,
-            boolean ios,
-            boolean android,
-            String engineName
-    ) {
-    }
 }

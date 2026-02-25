@@ -10,6 +10,11 @@ package com.ysmjjsy.goya.component.security.core.constants;
 public interface StandardClaimNamesConst {
 
     /**
+     * 用户主体
+     */
+    String SUB = "sub";
+
+    /**
      * 租户Id
      */
     String TENANT_ID = "tenant_id";
@@ -33,4 +38,29 @@ public interface StandardClaimNamesConst {
      * client_id
      */
     String CLIENT_ID = "client_id";
+
+    /**
+     * client_type
+     */
+    String CLIENT_TYPE = "client_type";
+
+    /**
+     * sid
+     */
+    String SID = "sid";
+
+    /**
+     * mfa
+     */
+    String MFA = "mfa";
+
+    /**
+     * cnf
+     */
+    String CNF = "cnf";
+
+    /**
+     * jkt
+     */
+    String JKT = "jkt";
 }

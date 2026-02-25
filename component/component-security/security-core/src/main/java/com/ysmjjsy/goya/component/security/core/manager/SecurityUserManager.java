@@ -1,14 +1,14 @@
 package com.ysmjjsy.goya.component.security.core.manager;
 
-import com.ysmjjsy.goya.component.framework.enums.StatusEnum;
+import com.ysmjjsy.goya.component.framework.core.enums.StatusEnum;
+import com.ysmjjsy.goya.component.framework.core.web.UserAgent;
+import com.ysmjjsy.goya.component.framework.servlet.enums.RequestMethodEnum;
 import com.ysmjjsy.goya.component.security.core.domain.SecurityUser;
 import com.ysmjjsy.goya.component.security.core.domain.SecurityUserAuthAuditLog;
 import com.ysmjjsy.goya.component.security.core.domain.SecurityUserDevice;
 import com.ysmjjsy.goya.component.security.core.enums.SecurityOperationEnum;
 import com.ysmjjsy.goya.component.security.core.service.ISocialUserService;
 import com.ysmjjsy.goya.component.security.core.service.IUserService;
-import com.ysmjjsy.goya.component.web.enums.RequestMethodEnum;
-import com.ysmjjsy.goya.component.web.utils.UserAgent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NullMarked;
@@ -19,6 +19,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * <p>用户服务接口</p>
@@ -40,6 +41,15 @@ public class SecurityUserManager implements UserDetailsService {
      */
     public void lockedUser(String userId) {
         userService.lockedUser(userId);
+    }
+
+    /**
+     * 用户解锁
+     *
+     * @param userId 用户Id
+     */
+    public void unlockUser(String userId) {
+        userService.unlockUser(userId);
     }
 
     /**
@@ -113,6 +123,34 @@ public class SecurityUserManager implements UserDetailsService {
     }
 
     /**
+     * 根据用户ID查询设备列表
+     *
+     * @param userId 用户ID
+     * @return 设备列表
+     */
+    public List<SecurityUserDevice> findDevicesByUserId(String userId) {
+        return userService.findByUserId(userId);
+    }
+
+    /**
+     * 信任设备
+     *
+     * @param deviceId 设备ID
+     */
+    public void trustDevice(String deviceId) {
+        userService.trustDevice(deviceId);
+    }
+
+    /**
+     * 撤销设备
+     *
+     * @param deviceId 设备ID
+     */
+    public void revokeDevice(String deviceId) {
+        userService.revokeDevice(deviceId);
+    }
+
+    /**
      * 根据用户名查询用户
      *
      * @param userId userId
@@ -132,6 +170,16 @@ public class SecurityUserManager implements UserDetailsService {
      */
     public SecurityUser findUserByUsername(String username) throws AuthenticationException {
         return userService.findUserByUsername(username);
+    }
+
+    /**
+     * 注册用户
+     *
+     * @param user 用户信息
+     * @return 注册后的用户信息
+     */
+    public SecurityUser registerUser(SecurityUser user) {
+        return userService.registerUser(user);
     }
 
     @Override
@@ -325,5 +373,75 @@ public class SecurityUserManager implements UserDetailsService {
 
     public boolean isPasswordInHistory(String userId, String password) {
         return userService.isPasswordInHistory(userId,password);
+    }
+
+    /**
+     * 根据邮箱查询用户
+     *
+     * @param email 邮箱
+     * @return 用户
+     */
+    public SecurityUser findUserByEmail(String email) {
+        return userService.findUserByEmail(email);
+    }
+
+    /**
+     * 更新用户密码
+     *
+     * @param userId      用户ID
+     * @param newPassword 新密码（已加密）
+     */
+    public void updatePassword(String userId, String newPassword) {
+        userService.updatePassword(userId, newPassword);
+    }
+
+    /**
+     * 获取密码最后修改时间
+     *
+     * @param userId 用户ID
+     * @return 密码最后修改时间，如果未设置则返回 null
+     */
+    public java.time.LocalDateTime getPasswordLastModifiedTime(String userId) {
+        return userService.getPasswordLastModifiedTime(userId);
+    }
+
+    /**
+     * 更新用户昵称
+     *
+     * @param userId   用户ID
+     * @param nickname 新昵称
+     */
+    public void updateNickname(String userId, String nickname) {
+        userService.updateNickname(userId, nickname);
+    }
+
+    /**
+     * 更新用户头像
+     *
+     * @param userId 用户ID
+     * @param avatar 新头像URL
+     */
+    public void updateAvatar(String userId, String avatar) {
+        userService.updateAvatar(userId, avatar);
+    }
+
+    /**
+     * 更新用户邮箱
+     *
+     * @param userId 用户ID
+     * @param email  新邮箱
+     */
+    public void updateEmail(String userId, String email) {
+        userService.updateEmail(userId, email);
+    }
+
+    /**
+     * 更新用户手机号
+     *
+     * @param userId      用户ID
+     * @param phoneNumber 新手机号
+     */
+    public void updatePhoneNumber(String userId, String phoneNumber) {
+        userService.updatePhoneNumber(userId, phoneNumber);
     }
 }

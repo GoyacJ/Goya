@@ -17,4 +17,6 @@ public interface ISocialConstants {
 
     String CACHE_THIRD_PARTY = CacheConst.CACHE_PREFIX + "thirdparty:";
 
+    String CACHE_SOCIAL_BINDING = CacheConst.CACHE_PREFIX + "social:binding:";
+
 }

@@ -69,6 +69,7 @@
         <guava.version>33.5.0-jre</guava.version>
         <gson.version>2.13.2</gson.version>
         <zxing.version>3.5.4</zxing.version>
+        <totp.version>1.7.1</totp.version>
         <commons-collections4.version>4.5.0</commons-collections4.version>
         <commons-io.version>2.21.0</commons-io.version>
         <commons-text.version>1.15.0</commons-text.version>
@@ -303,6 +304,16 @@
                 <groupId>com.google.zxing</groupId>
                 <artifactId>core</artifactId>
                 <version>${zxing.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.zxing</groupId>
+                <artifactId>javase</artifactId>
+                <version>${zxing.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>dev.samstevens.totp</groupId>
+                <artifactId>totp</artifactId>
+                <version>${totp.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>

@@ -5,14 +5,14 @@
 ## 1. 当前状态
 - 状态：开发中
 - 当前迭代：V1
-- 最后更新：2026-01-31
+- 最后更新：2026-02-25
 
 ## 2. 里程碑
 
 - [ ] V1.0 基础能力
 - [ ] V1.1 动态权限规则引擎基础版
 - [ ] V1.2 多租户混合模式
-- [ ] V1.3 安全护栏完善
+- [ ] V1.3 观测与安全护栏完善
 
 ## 3. 任务清单（滚动维护）
 
@@ -20,25 +20,23 @@
 - [x] 需求文档完成
 - [x] 最终方案契约完成
 - [ ] 详细设计文档（包结构/接口/时序）
-- [x] 数据结构与 JSON DSL 规则定义
+- [ ] 数据结构与规则 DSL 定义
 
 ### 3.2 基础框架
 - [x] AutoConfiguration 结构与开关定义
 - [x] MyBatis Plus 拦截器链组装
-- [x] 统一日志格式与 SQL 日志
+- [x] 统一日志与 traceId 接入
 
 ### 3.3 多租户
 - [x] TenantContext/AccessContext 定义
 - [x] TenantResolver/TenantProfileStore 接口与默认实现
 - [x] dynamic-datasource 路由注入点（Filter/Aspect）
 - [x] TenantLineHandler 实现
-
 ### 3.4 动态权限
-- [x] ResourceResolver 接口与默认实现
-- [x] PolicyRepository 接口与默认实现
-- [x] JSON DSL 解析与过滤器构建
-- [x] 行/列约束输出与拦截执行
-- [x] DataPermissionHandler 注入与拦截器对接
+- [x] ResourceRegistry 接口与默认实现
+- [x] PermissionRuleStore 接口与缓存策略
+- [x] PermissionCompiler 规则编译器
+- [x] DataPermissionHandler 规则注入
 
 ### 3.5 审计与安全
 - [x] MetaObjectHandler 自动填充
@@ -60,6 +58,7 @@
 - 2026-01-31：租户配置支持数据库数据源管理（jdbc_url 等字段），并在路由阶段优先注册数据源。
 - 2026-01-31：更新 db_init.sql 以覆盖 MySQL/PostgreSQL/SQLite，并对齐租户/资源表字段与审计字段。
 - 2026-01-31：新增租户数据源类型枚举（TenantDataSourceType），替换 ds_type 字段为枚举模型。
+- 2026-02-25：与 component-security 会话撤销闭环对齐，补充动态权限/数据权限生产联动基线（`fail-closed=true`）。
 
 ## 5. framework-security 重构
 
@@ -70,7 +69,13 @@
 
 ### 5.2 代码实现
 - [x] 适配 AuthorizationService + PolicyEngine 流程
-- [x] JSON DSL 解析与过滤器构建
+- [x] JSqlParser DSL 解析与过滤器构建
 - [x] 默认 SubjectResolver / ResourceResolver
 - [x] PolicyRepository 具体存储实现（按业务表落地）
-- [x] PermissionChangePublisher/Subscriber 默认链路
+
+## 6. 与 component-security 联动状态（2026-02-25）
+
+- [x] 动态 API 鉴权主链：`PolicyAuthorizationFilter` 持续生效，策略变更即时生效。
+- [x] 数据权限主链：`GoyaDataPermissionHandler` + `GoyaDataPermissionInterceptor` 持续生效。
+- [x] 生产建议：保持 `goya.mybatis-plus.permission.fail-closed=true`。
+- [x] Token 撤销后资源侧统一 401，数据权限链路无需额外改造即可闭环。

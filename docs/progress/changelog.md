@@ -1,106 +1,58 @@
-# 更新日志 | Changelog
+# Changelog
 
 ## [Unreleased]
 
 ### Added
-- 多租户 Issuer 支持
-- 短信验证码登录
-- 社交登录框架
-- SRA 策略模型与数据权限执行（JSON DSL、行/列级约束）
-- 权限变更事件发布链路（framework-bus）
-- 多租户混合模式（共享库 + 独立库，动态数据源）
+- 初始化 Codex 项目规范文件：`AGENTS.md`。
+- 新增项目专属 Codex skills（开发流程、依赖治理、文档治理）。
+- 建立完整文档体系（入门、架构、开发、运维、进度）。
+- 新增 `goya-thread-worktree` skill，支持一线程一 worktree（Desktop 优先，CLI 兜底）。
+- 新增并行 thread 的 worktree SOP 与初始化/回收脚本。
+- 完成 `component-security` 企业版实现：`security-core`、`security-authentication`、`security-oauth2`、`security-authorization`。
+- 新增统一认证 API（密码/短信/社交/小程序/MFA）与最小登录页 `GET /security/login`。
+- 新增 SSO 会话桥接接口：`POST /security/login/session`。
+- 新增 OAuth2.1 扩展授权类型 `urn:goya:grant-type:pre-auth-code`。
+- 新增安全模块治理错误码：`SecurityErrorCode`、`SecurityErrorCodeCatalog`。
+- 新增资源侧一致性校验过滤器：`HeaderClaimConsistencyFilter`（默认 `STRICT`）。
+- 新增 OAuth2 JDBC 密钥轮换实现：`oauth2_jwk`、`JdbcOAuth2JwkManager`（`P30D` 轮换 + `P7D` 重叠）。
+- 新增统一会话生命周期契约：`SecuritySessionLifecycleService` 与结果模型 `SecuritySessionRevocationResult`。
+- 新增认证会话命令 API：`POST /api/security/auth/logout`、`POST /api/security/auth/kickout`。
+- 新增 OAuth2 OIDC 登出联动过滤器：`OidcLogoutRevocationFilter`（`/connect/logout` 接入统一撤销链路）。
+- 新增社交绑定默认存储抽象：`SocialBindingStore` 与缓存实现 `CacheSocialBindingStore`。
+- 新增安全设计文档：`docs/architecture/component-security-design.md`。
+- 新增安全部署文档：`docs/operations/security-deploy.md`。
+- 新增前端工作区：`ui-platform`（pnpm 多包，`@goya/*` 命名空间）。
+- 新增设计系统基线：`packages/tokens`、`packages/ui`、`packages/icons`、`packages/assets`、`packages/i18n`。
+- 新增前端 API SDK：`packages/api`，包含 `ApiEnvelope<T>`、`AuthResultDto`、`OAuthTokenResponse`、`PermissionContext`。
+- 新增管理后台应用：`apps/web`，覆盖认证（密码/短信/MFA）与 OSS/MinIO 首期页面。
+- 新增双主题（light/dark）与双语（`zh-CN`、`en-US`）基线。
 
 ### Changed
-- 优化 JWT Token 生成性能
-- 改进缓存同步机制
-
-### Fixed
-- 修复多线程下的租户上下文问题
-
-## [0.4.0] - 2025-01-29
-
-### Added - 项目重构
-- **模块重组**：将原 component 模块重组为更清晰的结构
-- **Framework 聚合模块**：新增 `component-framework` 聚合模块
-  - `framework-core`：核心工具类、基础定义
-  - `framework-common`：公共组件、工具类
-  - `framework-masker`：数据脱敏功能
-  - `framework-crypto`：加密解密工具
-  - `framework-cache`：缓存抽象层
-  - `framework-bus`：消息总线抽象
-  - `framework-log`：日志增强
-  - `framework-oss`：对象存储抽象
-  - `framework-servlet`：Servlet 增强
-  - `framework-boot-starter`：自动配置启动器
-- **Redis 模块增强**：新增 `component-redis`
-  - 分布式锁（可重入锁/公平锁/读写锁）
-  - 布隆过滤器
-  - 延迟队列 / 可靠延迟队列
-  - 分布式限流器
-  - Topic 消息发布订阅
-  - 原子操作服务
-- **消息总线拆分**：
-  - 新增 `component-kafka`：Kafka 消息总线实现
-  - 新增 `component-rabbitmq`：RabbitMQ 消息总线实现
-- **OSS 模块拆分**：
-  - 新增 `component-oss-aliyun`：阿里云 OSS 完整实现
-  - 新增 `component-oss-s3`：AWS S3 实现
-  - 新增 `component-oss-minio`：MinIO 实现
-- **项目结构调整**：
-  - 前端项目移至 `goya-web-ui/` 目录
-  - 部署配置移至 `deploy/` 目录
-  - 文档移至 `docs/` 目录
-
-### Changed
-- 重构数据库模块为 `component-mybatisplus`
-- 优化安全模块结构
-- 更新所有模块依赖版本
+- README 与文档入口迁移到 Codex 文档体系。
+- 开发流程默认切换为 Codex。
+- 项目 skill 目录由旧目录迁移为 `.agents/skills`。
+- `AGENTS.md` 与 `docs/development/codex-workflow.md` 强制要求新 thread 先初始化独立 worktree。
+- `SecurityCoreProperties` 扩展多租户与 claim 配置并保持兼容。
+- 资源服务支持 `AUTO/JWT/OPAQUE` 混合令牌校验与租户一致性校验。
+- 认证流程切换为 `AuthenticationManager + AuthenticationProvider` 链实现。
+- API 鉴权键从原始 URI 切换为 `servlet-scan mappingCode`，API action 固定为 `ACCESS`。
+- `WebAccessContextResolver` 与 `WebTenantResolver` 改为优先消费统一认证上下文，仅未认证入口允许 header 回退。
+- `pre_auth_code` 与 `mfa_challenge` 改为原子一次性消费，阻断并发重放。
+- `pre_auth_code` 默认强绑定 `client_id`，认证请求 DTO 增加 `clientId` 并透传到交换链路。
+- `SecurityOAuth2AutoConfiguration` 落地 `deploymentMode` 行为：`AUTH_CENTER` 禁用内存 JWK 回退，`EMBEDDED` 仅在显式开启时回退。
+- OAuth2 授权存储新增撤销索引写入装饰器：保存/删除授权时同步 `jti` 吊销缓存与 `sid` 索引。
+- OAuth2 授权存储撤销索引增强为 `sid/user/user+client -> authorizationIds` 与 `sid -> tokenIds`，支持按会话/按用户/按客户端撤销。
+- 资源侧一致性校验支持机器令牌分支：`client_credentials` 默认只校验租户一致性。
+- `PolicyAuthorizationFilter` 主体属性补齐 `roleIds/teamIds/orgIds`，提高 ROLE/TEAM/ORG 策略命中率。
+- `framework-servlet` 扫描结果改为逐 `(method, pathPattern)` 产出，扫描侧与运行时统一 `RestMappingCodeUtils` 算法。
+- `security-authentication` / `security-oauth2` / `security-authorization` 从占位模块变更为可用模块。
+- README、快速开始、环境说明、构建发布文档已同步前端启动和联调命令。
+- `pre-auth-code` 交换默认策略收敛为 `AccessToken=JWT`（Web/移动端/小程序），`RefreshToken=Opaque`（默认轮换）。
+- 认证入口 `permitAll` 范围由 `/api/security/auth/**` 收敛为登录相关路径，`logout/kickout` 纳入受保护资源链。
+- `PolicyAuthorizationFilter` 增加内置安全端点豁免：`/api/security/auth/logout`、`/api/security/auth/kickout`，避免无策略时阻断会话命令。
+- `component-social` 的 `DefaultSocialManager` 去除空实现，默认可读写社交绑定缓存。
+- 根 README 与核心模块 README（framework-security、component-security、security-*、component-social、component-mybatisplus）已按当前闭环能力同步更新。
 
 ### Removed
-- 移除原 `component-core`（合并到 framework-core）
-- 移除原 `component-web`（合并到 framework-servlet）
-- 移除原 `component-cache`（拆分为 framework-cache + component-redis）
-- 移除原 `component-bus`（拆分为 framework-bus + component-kafka/rabbitmq）
-- 移除原 `component-database`（重构为 component-mybatisplus）
-- 移除原 `component-oss`（拆分为独立 OSS 实现模块）
-
-## [0.3.0] - 2025-01-24
-
-### Added
-- OAuth2.1 授权服务器
-- Authorization Code + PKCE 流程
-- JWT Access Token 签发
-- Refresh Token 管理
-- Token 撤销功能
-- OIDC Discovery 端点
-- 项目文档体系
-- Cursor Rules 开发规范
-- Cursor Skills 开发工具
-
-### Changed
-- 重构安全模块结构
-- 优化 SecurityUser 构建器
-
-## [0.2.0] - 2025-01-20
-
-### Added
-- Spring Security 7 集成
-- 用户名密码认证
-- SecurityUser 领域模型
-- IUserService SPI 接口
-
-### Changed
-- 统一异常处理
-
-## [0.1.0] - 2025-01-10
-
-### Added
-- 项目初始化
-- BOM 依赖管理
-- component-core 模块
-- component-framework 模块
-- 自动配置机制
-
----
-
-版本格式遵循 [Semantic Versioning](https://semver.org/)。
+- 移除模块中的测试依赖（JUnit）。
+- 清理残留测试目录（若存在）。

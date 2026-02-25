@@ -26,6 +26,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.mybatis.spring.annotation.MapperScan;
 
 /**
@@ -40,6 +41,11 @@ import org.mybatis.spring.annotation.MapperScan;
 @EnableConfigurationProperties(GoyaMybatisPlusProperties.class)
 @ConditionalOnProperty(prefix = MybatisPlusConst.PROPERTY_MYBATIS_PLUS + ".tenant", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class MybatisPlusTenantAutoConfiguration {
+
+    /**
+     * 过滤器顺序，保证在 Spring Security 过滤链（通常为 -100）之后执行。
+     */
+    private static final int TENANT_ROUTING_FILTER_ORDER = -90;
 
     @PostConstruct
     public void init() {
@@ -167,6 +173,21 @@ public class MybatisPlusTenantAutoConfiguration {
         GoyaTenantRoutingFilter goyaTenantRoutingFilter = new GoyaTenantRoutingFilter(resolver, profileStore, decider, router, registrar, properties.tenant());
         log.trace("[Goya] |- component [mybatis-plus] MybatisPlusTenantAutoConfiguration |- bean [goyaTenantRoutingFilter] register.");
         return goyaTenantRoutingFilter;
+    }
+
+    /**
+     * 租户路由过滤器注册，显式放在 Security 过滤链之后。
+     *
+     * @param filter 租户路由过滤器
+     * @return FilterRegistrationBean
+     */
+    @Bean
+    @ConditionalOnMissingBean(name = "goyaTenantRoutingFilterRegistration")
+    public FilterRegistrationBean<GoyaTenantRoutingFilter> goyaTenantRoutingFilterRegistration(GoyaTenantRoutingFilter filter) {
+        FilterRegistrationBean<GoyaTenantRoutingFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setName("goyaTenantRoutingFilter");
+        registration.setOrder(TENANT_ROUTING_FILTER_ORDER);
+        return registration;
     }
 
     /**

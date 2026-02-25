@@ -5,219 +5,96 @@
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 [![Java](https://img.shields.io/badge/Java-25-blue.svg)](https://openjdk.org/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.1-brightgreen.svg)](https://spring.io/projects/spring-boot)
-[![Spring Cloud](https://img.shields.io/badge/Spring%20Cloud-2025.1.0-green.svg)](https://spring.io/projects/spring-cloud)
 
-**Next-Generation Enterprise Microservices Framework**
+**Enterprise Microservice Framework (Codex-first maintenance mode)**
 
 English | [简体中文](./README.md)
 
-[Quick Start](#quick-start) • [Core Features](#core-features) • [Architecture](#architecture) • [Documentation](#documentation) • [Contributing](./CONTRIBUTING.md)
-
 </div>
 
----
+## Overview
 
-## 📖 Introduction
+Goya is an enterprise backend framework built on **Java 25** and **Spring Boot 4.0.1**.
+This repository focuses on backend modules. Frontend code is maintained in a separate repository.
 
-Goya is an enterprise-grade microservices development framework built on **Spring Boot 4.0.1** and **Java 25**, featuring a separated frontend-backend architecture with complete capabilities for security authentication & authorization, AI integration, multi-tenancy, caching, message bus, and more.
+## Current State
 
-### Architecture Components
+- Main runnable app: `platform/platform-monolith`
+- Default port: `8101`
+- Development mode: **Codex-first**
+- Quality policy: **No test files policy** (no `src/test/**` additions)
 
-- **Goya/** - Java Backend Framework (this directory)
-- **goya-web-ui/** - Vue 3 Admin System
-
-## ✨ Core Features
-
-### 🛡️ Security System
-- **OAuth2.1 + OIDC** Authorization Server
-- **Multiple Login Methods**: Username/Password / SMS OTP / Social Login (JustAuth)
-- **Multi-Tenancy**: Isolated Issuer, JWK, Client Data
-- **JWT + Opaque Token**: Access Token (JWT) + Refresh Token (Opaque)
-- **SSO**: Single Sign-On across applications
-- **Fine-Grained Permissions**: RBAC role-based access control
-
-### 🤖 AI Capabilities
-- **Spring AI 2.0.0-M1** Integration
-- **LangChain4j 1.9.1** Orchestration
-- **RAG** Retrieval Augmented Generation
-- **MCP** (Model Context Protocol) Support
-- **Multi-Model Support**: OpenAI, Qwen, Local Models
-
-### 🚀 Microservices Components
-- **Cache**: Redis (Distributed Lock / Bloom Filter / Delayed Queue / Rate Limiter)
-- **Message Bus**: Kafka / RabbitMQ
-- **Database**: MyBatis Plus Enhancement
-- **Object Storage**: Aliyun OSS / MinIO / AWS S3
-- **CAPTCHA**: Arithmetic / Slider / Jigsaw Types
-- **Social Login**: WeChat Mini Program / Third-Party Platforms
-- **Audit Logging**: Operation Logs / Audit Trails
-
-### 🏗️ Tech Stack
-- **Java 25** + **Spring Boot 4.0.1** + **Spring Cloud 2025.1.0**
-- **Spring Security 7** + **Spring Authorization Server**
-- **MyBatis Plus 3.5.15**
-- **Redisson 4.0.0**
-- **MapStruct 1.6.3** + **Lombok 1.18.42**
-- **Nacos 3.1.1** Service Discovery + Config Center
-
-## 📦 Project Structure
-
-```
-Goya/
-├── bom/                           # Dependency Management BOM
-├── component/                     # Common Components
-│   ├── component-framework/       # Framework Foundation (Aggregation)
-│   │   ├── framework-core/        # Core Utilities
-│   │   ├── framework-common/      # Common Components
-│   │   ├── framework-masker/      # Data Masking
-│   │   ├── framework-crypto/      # Encryption/Decryption
-│   │   ├── framework-cache/       # Cache Abstraction
-│   │   ├── framework-bus/         # Message Bus Abstraction
-│   │   ├── framework-log/         # Logging Enhancement
-│   │   ├── framework-oss/         # Object Storage Abstraction
-│   │   ├── framework-servlet/     # Servlet Enhancement
-│   │   └── framework-boot-starter/# Auto Configuration Starter
-│   ├── component-redis/           # Redis Implementation (Redisson)
-│   ├── component-kafka/           # Kafka Message Bus
-│   ├── component-rabbitmq/        # RabbitMQ Message Bus
-│   ├── component-mybatisplus/     # MyBatis Plus Enhancement
-│   ├── component-captcha/         # CAPTCHA
-│   ├── component-security/        # Security Module
-│   │   ├── security-core/         # Core Domain Models
-│   │   ├── security-authentication/ # Authentication
-│   │   ├── security-authorization/  # Resource Server
-│   │   └── security-oauth2/       # Authorization Server
-│   ├── component-social/          # Social Login
-│   ├── component-oss-aliyun/      # Aliyun OSS Implementation
-│   ├── component-oss-s3/          # AWS S3 Implementation
-│   └── component-oss-minio/       # MinIO Implementation
-├── ai/                            # AI Module
-│   ├── ai-spring/                 # Spring AI Integration
-│   ├── ai-model/                  # Model Management
-│   ├── ai-rag/                    # RAG Implementation
-│   ├── ai-mcp/                    # MCP Protocol
-│   └── ai-video/                  # Video Processing
-├── platform/                      # Platform Applications
-│   ├── platform-monolith/         # Monolithic App
-│   └── platform-distributed/      # Distributed App
-├── cloud/                         # Cloud Native Support
-├── deploy/                        # Deployment Configs
-│   ├── docker/                    # Docker Compose
-│   └── maven/                     # Maven Config
-├── docs/                          # Documentation
-└── goya-web-ui/                   # Vue 3 Frontend
-    ├── apps/                      # Applications
-    │   ├── web-antd/              # Ant Design Vue
-    │   ├── web-ele/               # Element Plus
-    │   └── web-naive/             # Naive UI
-    ├── packages/                  # Shared Packages
-    └── internal/                  # Internal Tools
-```
-
-## 🚀 Quick Start
+## Quick Start
 
 ### Requirements
 
-- **JDK 25+**
-- **Maven 3.9+**
-- **Node.js 20+** & **pnpm 10+**
-- **Docker** (Optional)
-- **Redis 7+** (For cache and session)
-- **MySQL 8+** or **PostgreSQL 15+**
+- JDK 25+
+- Maven 3.9+
+- Docker (optional)
 
-### Backend Setup
+### Build (skip tests)
 
 ```bash
-# Install dependencies
-mvn clean install -DskipTests
+mvn -DskipTests compile
+```
 
-# Start auth server
+### Run monolith
+
+```bash
 cd platform/platform-monolith
 mvn spring-boot:run
 ```
 
-Access: `http://localhost:8080`
+Visit: `http://localhost:8101`
 
-### Frontend Setup
-
-```bash
-cd goya-web-ui
-
-# Install dependencies
-pnpm install
-
-# Start dev server (Ant Design Vue)
-pnpm dev:antd
-```
-
-Access: `http://localhost:5555`
-
-### Docker Quick Start
+### Optional infra bootstrap
 
 ```bash
 cd deploy/docker/docker-compose/basic
 docker-compose up -d
 ```
 
-## 🎯 Core Modules
+## Repository Layout
 
-### Framework Foundation (component-framework)
+```text
+Goya/
+├── AGENTS.md                 # Project-level Codex instructions
+├── .agents/skills/           # Project-specific Codex skills
+├── docs/                     # Documentation system (entry: docs/SUMMARY.md)
+├── bom/
+├── component/
+├── ai/
+├── platform/
+├── cloud/
+└── deploy/
+```
 
-| Module | Description |
-|--------|-------------|
-| framework-core | Core utilities, base definitions, response wrapper |
-| framework-common | Common components, utility classes |
-| framework-masker | Data masking (phone, ID card, email, etc.) |
-| framework-crypto | Encryption/Decryption (AES, RSA, SM4, etc.) |
-| framework-cache | Cache abstraction layer |
-| framework-bus | Message bus abstraction |
-| framework-log | Logging enhancement, audit logs |
-| framework-oss | Object storage abstraction |
-| framework-servlet | Servlet enhancement, XSS protection |
-| framework-boot-starter | Auto configuration starter |
+## Documentation Entry
 
-### Redis Module (component-redis)
+Start here:
 
-- **Cache Service**: Unified cache operations
-- **Distributed Lock**: Reentrant, Fair, Read/Write locks
-- **Bloom Filter**: Prevent cache penetration
-- **Delayed Queue**: Reliable delayed queue
-- **Rate Limiter**: Token bucket based rate limiting
-- **Topic Message**: Pub/Sub pattern
+- [docs/SUMMARY.md](./docs/SUMMARY.md)
 
-### Security Module (component-security)
+Key docs:
 
-- **security-core**: Core domain models, SPI interfaces
-- **security-authentication**: Multiple auth methods
-- **security-authorization**: Resource server (JWT)
-- **security-oauth2**: Authorization server (OAuth2.1 + OIDC)
+- [Architecture Overview](./docs/architecture/overview.md)
+- [Module Map](./docs/architecture/module-map.md)
+- [Codex Workflow](./docs/development/codex-workflow.md)
+- [No-Test Policy](./docs/development/no-test-policy.md)
+- [Build and Release](./docs/operations/build-and-release.md)
+- [Changelog](./docs/progress/changelog.md)
 
-## 📚 Documentation
+## Codex Constraints
 
-- [Architecture Design](./docs/architecture/overview.md)
-- [Quick Start](./docs/guides/quick-start.md)
-- [Development Guide](./docs/guides/development.md)
-- [Deployment Guide](./docs/guides/deployment.md)
-- [Roadmap](./docs/progress/roadmap.md)
+- Read `docs/SUMMARY.md` before implementation.
+- Validate changes with `-DskipTests` build commands.
+- Do not add test files or test dependencies.
+- Keep docs synchronized with every functional change.
 
-## 🤝 Contributing
+## Contributing
 
-We welcome all contributions! Please read the [Contributing Guide](./CONTRIBUTING.md).
+See [CONTRIBUTING.md](./CONTRIBUTING.md).
 
-## 📄 License
+## License
 
-This project is licensed under the [Apache License 2.0](./LICENSE).
-
-## 🔗 Links
-
-- Website: https://www.ysmjjsy.com
-- GitHub: https://github.com/GoyaDo/Goya
-- Issues: https://github.com/GoyaDo/Goya/issues
-
----
-
-<div align="center">
-
-**Built with ❤️ by Goya Team**
-
-</div>
+[Apache License 2.0](./LICENSE)

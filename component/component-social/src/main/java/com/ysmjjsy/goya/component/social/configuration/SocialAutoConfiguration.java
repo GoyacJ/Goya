@@ -7,6 +7,7 @@ import com.ysmjjsy.goya.component.social.service.*;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
@@ -62,8 +63,19 @@ public class SocialAutoConfiguration {
     }
 
     @Bean
-    public SocialManager defaultSocialManager(ThirdPartService thirdPartService, WxMiniProgramService wxMiniProgramService) {
-        DefaultSocialManager defaultSocialManager = new DefaultSocialManager(thirdPartService, wxMiniProgramService);
+    @ConditionalOnMissingBean
+    public SocialBindingStore socialBindingStore(SocialProperties socialProperties) {
+        SocialBindingStore socialBindingStore = new CacheSocialBindingStore(socialProperties.binding());
+        log.trace("[Goya] |- component [social] SocialAutoConfiguration |- bean [socialBindingStore] register.");
+        return socialBindingStore;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(SocialManager.class)
+    public SocialManager defaultSocialManager(ThirdPartService thirdPartService,
+                                              WxMiniProgramService wxMiniProgramService,
+                                              SocialBindingStore socialBindingStore) {
+        DefaultSocialManager defaultSocialManager = new DefaultSocialManager(thirdPartService, wxMiniProgramService, socialBindingStore);
         log.trace("[Goya] |- component [social] SocialAutoConfiguration |- bean [defaultSocialManager] register.");
         return defaultSocialManager;
     }
