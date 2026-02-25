@@ -32,7 +32,16 @@ public class SecurityAuthenticationWebSecurityConfiguration {
     @SuppressWarnings("all")
     public SecurityFilterChain securityAuthenticationFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
-                .securityMatcher("/api/security/auth/**", "/security/login", "/security/login/session")
+                .securityMatcher(
+                        "/api/security/auth/password/login",
+                        "/api/security/auth/sms/send",
+                        "/api/security/auth/sms/login",
+                        "/api/security/auth/social/**",
+                        "/api/security/auth/wx-mini/login",
+                        "/api/security/auth/mfa/**",
+                        "/security/login",
+                        "/security/login/session"
+                )
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
                 .formLogin(AbstractHttpConfigurer::disable)

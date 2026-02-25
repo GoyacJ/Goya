@@ -32,6 +32,7 @@ goya:
       issuer: https://auth.example.com
       pre-auth:
         require-client-binding: true
+      allow-refresh-token-for-public-clients: true
       keys:
         allow-in-memory-fallback: false
     resource:
@@ -72,6 +73,7 @@ goya:
       issuer: https://auth.example.com
       pre-auth:
         require-client-binding: true
+      allow-refresh-token-for-public-clients: true
       keys:
         rotation-interval: P30D
         overlap: P7D
@@ -95,17 +97,31 @@ goya:
 ## 3. 客户端建议
 
 - Web 客户端：默认 JWT Access Token
-- 移动端、小程序：默认 Opaque Access Token
+- 移动端、小程序：默认 JWT Access Token
+- Refresh Token：默认 Opaque，且 `reuse=false`（轮换）
 - 公开客户端（public client）：必须启用 PKCE
 - 禁用隐式授权（OAuth2.1）
 - Web SSO 登录页需在拿到 `pre_auth_code` 后调用 `POST /security/login/session` 建立服务端会话。
 
-## 4. 社交登录与小程序登录
+## 4. 会话注销与踢出
+
+- 用户注销：`POST /api/security/auth/logout`
+  - `CURRENT_SESSION`：仅当前会话
+  - `ALL_SESSIONS`：同用户全端
+  - `BY_CLIENT`：同用户指定客户端
+- 管理员踢出：`POST /api/security/auth/kickout`，按 `tenantId/userId/clientId` 撤销。
+- OIDC 登出：`/connect/logout` 已接入同一会话撤销服务。
+- 业务禁用用户闭环：禁用后调用 `SecuritySessionLifecycleService.revokeByUser(tenantId, userId)`。
+- `logout/kickout` 为内置安全端点，默认绕过策略引擎资源判定，不要求额外配置 `data_resource_policy`；鉴权由认证态与命令权限控制。
+
+## 5. 社交登录与小程序登录
 
 - 需启用 `component-social` 并正确配置第三方应用参数。
 - 社交账号绑定关系通过 `ISocialUserService` 提供。
+- 未提供自定义 `ISocialUserService` 时，自动启用默认适配器并复用 `SocialBindingStore`。
+- 默认绑定存储为缓存实现（`CacheSocialBindingStore`），可按业务替换为持久化实现。
 
-## 5. SPI 接入清单
+## 6. SPI 接入清单
 
 至少实现：
 
@@ -119,7 +135,21 @@ goya:
 - `IRolePermissionService`
 - `LoginRiskEvaluator`（可选）
 
-## 6. 验收命令
+## 7. 动态权限与数据权限联动建议
+
+- 动态 API 授权由 `PolicyAuthorizationFilter` 统一拦截，策略变更可即时生效。
+- 数据权限由 `component-mybatisplus` 的 `GoyaDataPermissionHandler` 执行。
+- 生产建议固定：
+
+```yaml
+goya:
+  mybatis-plus:
+    permission:
+      enabled: true
+      fail-closed: true
+```
+
+## 8. 验收命令
 
 ```bash
 mvn -pl component/component-security/security-core -am -DskipTests validate
@@ -135,7 +165,7 @@ mvn -pl component/component-security -am -DskipTests validate
 mvn -DskipTests compile
 ```
 
-## 7. 迁移步骤（破坏性变更）
+## 9. 迁移步骤（破坏性变更）
 
 1. 执行 `oauth2_jwk` 建表 SQL。
 2. 回填 API 资源到 `data_resource`，并将 API 策略 `action` 统一迁移为 `ACCESS`。
@@ -144,7 +174,7 @@ mvn -DskipTests compile
 5. 升级所有已认证用户请求：必须同时发送 `X-Tenant-Id` 与 `X-User-Id`，且与 token claim 完全一致（机器令牌默认豁免 `X-User-Id`）。
 6. 发布资源服务严格模式，再发布认证 Provider 化与 OAuth2 密钥持久化。
 
-## 8. 常见问题
+## 10. 常见问题
 
 - 资源服务 `AUTO` 模式鉴权失败：确认 `issuer-uri` 或 `jwk-set-uri` / introspection 三元组已配置。
 - 令牌无法换取：确认客户端已启用 `urn:goya:grant-type:pre-auth-code` 授权类型。

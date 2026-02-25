@@ -36,6 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * <p>策略引擎授权过滤器</p>
@@ -44,6 +45,11 @@ import java.util.Map;
  * @since 2026/2/10
  */
 public class PolicyAuthorizationFilter extends OncePerRequestFilter {
+
+    private static final Set<String> SECURITY_INTERNAL_BYPASS_PATHS = Set.of(
+            "/api/security/auth/logout",
+            "/api/security/auth/kickout"
+    );
 
     private final AuthorizationService authorizationService;
     private final SecurityAuthorizationProperties securityAuthorizationProperties;
@@ -61,6 +67,11 @@ public class PolicyAuthorizationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
+        if (isSecurityInternalBypassRequest(request)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
             filterChain.doFilter(request, response);
@@ -76,6 +87,15 @@ public class PolicyAuthorizationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isSecurityInternalBypassRequest(HttpServletRequest request) {
+        String requestPath = request.getRequestURI();
+        String contextPath = request.getContextPath();
+        if (StringUtils.isNotBlank(contextPath) && StringUtils.startsWith(requestPath, contextPath)) {
+            requestPath = requestPath.substring(contextPath.length());
+        }
+        return SECURITY_INTERNAL_BYPASS_PATHS.contains(requestPath);
     }
 
     private AuthorizeRequest buildAuthorizeRequest(HttpServletRequest request, Authentication authentication) {

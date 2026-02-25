@@ -41,16 +41,20 @@ public record SecurityOAuth2Properties(
         @DefaultValue("true")
         boolean requirePkceForPublicClients,
 
+        @Schema(defaultValue = "公开客户端是否允许签发RefreshToken")
+        @DefaultValue("true")
+        boolean allowRefreshTokenForPublicClients,
+
         @Schema(defaultValue = "Web默认AccessToken格式")
         @DefaultValue("JWT")
         String webAccessTokenFormat,
 
         @Schema(defaultValue = "移动端默认AccessToken格式")
-        @DefaultValue("OPAQUE")
+        @DefaultValue("JWT")
         String mobileAppAccessTokenFormat,
 
         @Schema(defaultValue = "小程序默认AccessToken格式")
-        @DefaultValue("OPAQUE")
+        @DefaultValue("JWT")
         String miniProgramAccessTokenFormat,
 
         @Schema(defaultValue = "JWT AccessToken有效期")

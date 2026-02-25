@@ -32,6 +32,7 @@ public class SecurityAuthController implements IController {
     private final SocialAuthService socialAuthService;
     private final WxMiniProgramAuthService wxMiniProgramAuthService;
     private final MfaService mfaService;
+    private final SecuritySessionCommandService securitySessionCommandService;
     @Qualifier("securityAuthenticationManager")
     private final AuthenticationManager securityAuthenticationManager;
 
@@ -80,6 +81,17 @@ public class SecurityAuthController implements IController {
     public ApiRes<AuthResult> mfaVerify(@RequestBody MfaVerifyRequest request,
                                         HttpServletRequest servletRequest) {
         return response(authenticate(new MfaVerifyAuthenticationToken(request, servletRequest)));
+    }
+
+    @PostMapping("/logout")
+    public ApiRes<Map<String, Object>> logout(@RequestBody(required = false) LogoutRequest request,
+                                              HttpServletRequest servletRequest) {
+        return response(securitySessionCommandService.logout(request, servletRequest));
+    }
+
+    @PostMapping("/kickout")
+    public ApiRes<Map<String, Object>> kickout(@RequestBody KickoutRequest request) {
+        return response(securitySessionCommandService.kickout(request));
     }
 
     private AuthResult authenticate(Authentication requestToken) {

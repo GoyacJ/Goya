@@ -33,8 +33,21 @@ public record SocialProperties(
 
         @Schema(defaultValue = "第三方配置")
         @DefaultValue
-        ThirdPart thirdPart
+        ThirdPart thirdPart,
+
+        @Schema(defaultValue = "绑定存储配置")
+        @DefaultValue
+        Binding binding
 ) {
+
+    @Schema(defaultValue = "绑定存储配置")
+    public record Binding(
+
+            @Schema(defaultValue = "绑定缓存有效期")
+            @DefaultValue("P3650D")
+            Duration expire
+    ) {
+    }
 
     @Schema(defaultValue = "第三方配置")
     public record ThirdPart(

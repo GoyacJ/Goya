@@ -3,6 +3,7 @@ package com.ysmjjsy.goya.component.security.oauth2.service;
 import com.ysmjjsy.goya.component.framework.cache.api.CacheService;
 import com.ysmjjsy.goya.component.security.core.constants.StandardClaimNamesConst;
 import com.ysmjjsy.goya.component.security.oauth2.configuration.properties.SecurityOAuth2Properties;
+import com.ysmjjsy.goya.component.security.oauth2.constants.SecurityOAuth2CacheNames;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.oauth2.core.ClaimAccessor;
 import org.springframework.security.oauth2.core.OAuth2Token;
@@ -15,6 +16,7 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * <p>带撤销索引与 sid 索引写入能力的 AuthorizationService 装饰器。</p>
@@ -24,7 +26,7 @@ import java.util.Map;
  */
 public class RevocationIndexingAuthorizationService implements OAuth2AuthorizationService {
 
-    private static final String SID_INDEX_CACHE_NAME = "goya:security:sso:sid";
+    private static final String KEY_SEPARATOR = ":";
 
     private final OAuth2AuthorizationService delegate;
     private final CacheService cacheService;
@@ -64,37 +66,121 @@ public class RevocationIndexingAuthorizationService implements OAuth2Authorizati
         if (authorization == null) {
             return;
         }
+
         OAuth2Authorization.Token<?> accessToken = authorization.getAccessToken();
-        if (accessToken == null || accessToken.getToken() == null) {
+        OAuth2Authorization.Token<?> refreshToken = authorization.getRefreshToken();
+        if ((accessToken == null || accessToken.getToken() == null)
+                && (refreshToken == null || refreshToken.getToken() == null)) {
+            return;
+        }
+
+        Duration ttl = resolveAuthorizationTtl(authorization, securityOAuth2Properties.refreshTokenTtl());
+
+        boolean revoked = forceRevoke || Boolean.TRUE.equals(
+                accessToken == null ? null : accessToken.getMetadata().get(OAuth2Authorization.Token.INVALIDATED_METADATA_NAME)
+        ) || Boolean.TRUE.equals(
+                refreshToken == null ? null : refreshToken.getMetadata().get(OAuth2Authorization.Token.INVALIDATED_METADATA_NAME)
+        );
+        if (revoked) {
+            revokeToken(accessToken, ttl);
+            revokeToken(refreshToken, ttl);
             return;
         }
 
         Map<String, Object> claims = extractClaims(accessToken);
-        String jti = toStringValue(claims.get("jti"));
         String sid = toStringValue(claims.get(StandardClaimNamesConst.SID));
-        String tokenValue = resolveTokenValue(accessToken.getToken());
-        String tokenId = StringUtils.defaultIfBlank(jti, tokenValue);
-        Duration ttl = resolveTtl(accessToken.getToken(), securityOAuth2Properties.refreshTokenTtl());
-
-        boolean revoked = forceRevoke || Boolean.TRUE.equals(
-                accessToken.getMetadata().get(OAuth2Authorization.Token.INVALIDATED_METADATA_NAME)
+        String tenantId = toStringValue(claims.get(StandardClaimNamesConst.TENANT_ID));
+        String userId = StringUtils.defaultIfBlank(toStringValue(claims.get("sub")), authorization.getPrincipalName());
+        String clientId = StringUtils.defaultIfBlank(
+                toStringValue(claims.get(StandardClaimNamesConst.CLIENT_ID)),
+                authorization.getRegisteredClientId()
         );
-        if (revoked) {
-            if (StringUtils.isNotBlank(tokenId)) {
-                cacheService.put(securityOAuth2Properties.revocationCacheName(), tokenId, "1", ttl);
-            }
-            return;
+
+        if (StringUtils.isNotBlank(authorization.getId())) {
+            indexAuthorizationIdBySid(sid, authorization.getId(), ttl);
+            indexAuthorizationIdByUser(tenantId, userId, authorization.getId(), ttl);
+            indexAuthorizationIdByUserClient(tenantId, userId, clientId, authorization.getId(), ttl);
         }
 
-        if (StringUtils.isNotBlank(sid) && StringUtils.isNotBlank(tokenId)) {
-            String existing = cacheService.get(SID_INDEX_CACHE_NAME, sid, String.class);
-            LinkedHashSet<String> tokenIds = parseTokenIds(existing);
-            tokenIds.add(tokenId);
-            cacheService.put(SID_INDEX_CACHE_NAME, sid, String.join(",", tokenIds), ttl);
+        indexTokenIdBySid(sid, accessToken, ttl);
+        indexTokenIdBySid(sid, refreshToken, ttl);
+    }
+
+    private void indexAuthorizationIdBySid(String sid, String authorizationId, Duration ttl) {
+        if (StringUtils.isBlank(sid) || StringUtils.isBlank(authorizationId)) {
+            return;
+        }
+        indexValueSet(SecurityOAuth2CacheNames.SSO_SID_AUTHORIZATION_INDEX, sid, authorizationId, ttl);
+    }
+
+    private void indexAuthorizationIdByUser(String tenantId, String userId, String authorizationId, Duration ttl) {
+        if (StringUtils.isAnyBlank(tenantId, userId, authorizationId)) {
+            return;
+        }
+        String userKey = composeUserKey(tenantId, userId);
+        indexValueSet(SecurityOAuth2CacheNames.SSO_USER_AUTHORIZATION_INDEX, userKey, authorizationId, ttl);
+    }
+
+    private void indexAuthorizationIdByUserClient(String tenantId,
+                                                  String userId,
+                                                  String clientId,
+                                                  String authorizationId,
+                                                  Duration ttl) {
+        if (StringUtils.isAnyBlank(tenantId, userId, clientId, authorizationId)) {
+            return;
+        }
+        String userClientKey = composeUserClientKey(tenantId, userId, clientId);
+        indexValueSet(SecurityOAuth2CacheNames.SSO_USER_CLIENT_AUTHORIZATION_INDEX, userClientKey, authorizationId, ttl);
+    }
+
+    private void indexTokenIdBySid(String sid, OAuth2Authorization.Token<?> tokenHolder, Duration ttl) {
+        if (StringUtils.isBlank(sid) || tokenHolder == null || tokenHolder.getToken() == null) {
+            return;
+        }
+        Set<String> tokenIds = collectTokenIdentifiers(tokenHolder);
+        for (String tokenId : tokenIds) {
+            indexValueSet(SecurityOAuth2CacheNames.SSO_SID_TOKEN_INDEX, sid, tokenId, ttl);
         }
     }
 
+    private void revokeToken(OAuth2Authorization.Token<?> tokenHolder, Duration ttl) {
+        if (tokenHolder == null || tokenHolder.getToken() == null) {
+            return;
+        }
+        Set<String> tokenIdentifiers = collectTokenIdentifiers(tokenHolder);
+        for (String tokenIdentifier : tokenIdentifiers) {
+            cacheService.put(securityOAuth2Properties.revocationCacheName(), tokenIdentifier, "1", ttl);
+        }
+    }
+
+    private Set<String> collectTokenIdentifiers(OAuth2Authorization.Token<?> tokenHolder) {
+        LinkedHashSet<String> identifiers = new LinkedHashSet<>();
+        Map<String, Object> claims = extractClaims(tokenHolder);
+        String jti = toStringValue(claims.get("jti"));
+        String tokenValue = resolveTokenValue(tokenHolder.getToken());
+        if (StringUtils.isNotBlank(jti)) {
+            identifiers.add(jti);
+        }
+        if (StringUtils.isNotBlank(tokenValue)) {
+            identifiers.add(tokenValue);
+        }
+        return identifiers;
+    }
+
+    private void indexValueSet(String cacheName, String key, String value, Duration ttl) {
+        if (StringUtils.isAnyBlank(cacheName, key, value)) {
+            return;
+        }
+        String existing = cacheService.get(cacheName, key, String.class);
+        LinkedHashSet<String> values = parseValues(existing);
+        values.add(value);
+        cacheService.put(cacheName, key, String.join(",", values), ttl);
+    }
+
     private Map<String, Object> extractClaims(OAuth2Authorization.Token<?> tokenHolder) {
+        if (tokenHolder == null) {
+            return Map.of();
+        }
         Object metadataClaims = tokenHolder.getMetadata().get(OAuth2Authorization.Token.CLAIMS_METADATA_NAME);
         if (metadataClaims instanceof Map<?, ?> map) {
             Map<String, Object> claims = new LinkedHashMap<>();
@@ -109,6 +195,19 @@ public class RevocationIndexingAuthorizationService implements OAuth2Authorizati
         return Map.of();
     }
 
+    private Duration resolveAuthorizationTtl(OAuth2Authorization authorization, Duration fallback) {
+        Duration accessTtl = resolveTtl(authorization.getAccessToken() == null ? null : authorization.getAccessToken().getToken(), null);
+        Duration refreshTtl = resolveTtl(authorization.getRefreshToken() == null ? null : authorization.getRefreshToken().getToken(), null);
+        Duration ttl = maxDuration(accessTtl, refreshTtl);
+        if (ttl != null) {
+            return ttl;
+        }
+        if (fallback != null && !fallback.isNegative() && !fallback.isZero()) {
+            return fallback;
+        }
+        return Duration.ofHours(1);
+    }
+
     private Duration resolveTtl(Object token, Duration fallback) {
         if (token instanceof OAuth2Token oauth2Token && oauth2Token.getExpiresAt() != null) {
             Duration duration = Duration.between(Instant.now(), oauth2Token.getExpiresAt()).plusMinutes(1);
@@ -119,10 +218,23 @@ public class RevocationIndexingAuthorizationService implements OAuth2Authorizati
         if (fallback != null && !fallback.isNegative() && !fallback.isZero()) {
             return fallback;
         }
+        if (fallback == null) {
+            return null;
+        }
         return Duration.ofHours(1);
     }
 
-    private LinkedHashSet<String> parseTokenIds(String existing) {
+    private Duration maxDuration(Duration left, Duration right) {
+        if (left == null) {
+            return right;
+        }
+        if (right == null) {
+            return left;
+        }
+        return left.compareTo(right) >= 0 ? left : right;
+    }
+
+    private LinkedHashSet<String> parseValues(String existing) {
         LinkedHashSet<String> values = new LinkedHashSet<>();
         if (StringUtils.isBlank(existing)) {
             return values;
@@ -149,5 +261,13 @@ public class RevocationIndexingAuthorizationService implements OAuth2Authorizati
             return toStringValue(oauth2Token.getTokenValue());
         }
         return null;
+    }
+
+    private String composeUserKey(String tenantId, String userId) {
+        return tenantId + KEY_SEPARATOR + userId;
+    }
+
+    private String composeUserClientKey(String tenantId, String userId, String clientId) {
+        return tenantId + KEY_SEPARATOR + userId + KEY_SEPARATOR + clientId;
     }
 }

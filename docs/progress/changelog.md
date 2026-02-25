@@ -15,6 +15,10 @@
 - 新增安全模块治理错误码：`SecurityErrorCode`、`SecurityErrorCodeCatalog`。
 - 新增资源侧一致性校验过滤器：`HeaderClaimConsistencyFilter`（默认 `STRICT`）。
 - 新增 OAuth2 JDBC 密钥轮换实现：`oauth2_jwk`、`JdbcOAuth2JwkManager`（`P30D` 轮换 + `P7D` 重叠）。
+- 新增统一会话生命周期契约：`SecuritySessionLifecycleService` 与结果模型 `SecuritySessionRevocationResult`。
+- 新增认证会话命令 API：`POST /api/security/auth/logout`、`POST /api/security/auth/kickout`。
+- 新增 OAuth2 OIDC 登出联动过滤器：`OidcLogoutRevocationFilter`（`/connect/logout` 接入统一撤销链路）。
+- 新增社交绑定默认存储抽象：`SocialBindingStore` 与缓存实现 `CacheSocialBindingStore`。
 - 新增安全设计文档：`docs/architecture/component-security-design.md`。
 - 新增安全部署文档：`docs/operations/security-deploy.md`。
 - 新增前端工作区：`ui-platform`（pnpm 多包，`@goya/*` 命名空间）。
@@ -37,11 +41,17 @@
 - `pre_auth_code` 默认强绑定 `client_id`，认证请求 DTO 增加 `clientId` 并透传到交换链路。
 - `SecurityOAuth2AutoConfiguration` 落地 `deploymentMode` 行为：`AUTH_CENTER` 禁用内存 JWK 回退，`EMBEDDED` 仅在显式开启时回退。
 - OAuth2 授权存储新增撤销索引写入装饰器：保存/删除授权时同步 `jti` 吊销缓存与 `sid` 索引。
+- OAuth2 授权存储撤销索引增强为 `sid/user/user+client -> authorizationIds` 与 `sid -> tokenIds`，支持按会话/按用户/按客户端撤销。
 - 资源侧一致性校验支持机器令牌分支：`client_credentials` 默认只校验租户一致性。
 - `PolicyAuthorizationFilter` 主体属性补齐 `roleIds/teamIds/orgIds`，提高 ROLE/TEAM/ORG 策略命中率。
 - `framework-servlet` 扫描结果改为逐 `(method, pathPattern)` 产出，扫描侧与运行时统一 `RestMappingCodeUtils` 算法。
 - `security-authentication` / `security-oauth2` / `security-authorization` 从占位模块变更为可用模块。
 - README、快速开始、环境说明、构建发布文档已同步前端启动和联调命令。
+- `pre-auth-code` 交换默认策略收敛为 `AccessToken=JWT`（Web/移动端/小程序），`RefreshToken=Opaque`（默认轮换）。
+- 认证入口 `permitAll` 范围由 `/api/security/auth/**` 收敛为登录相关路径，`logout/kickout` 纳入受保护资源链。
+- `PolicyAuthorizationFilter` 增加内置安全端点豁免：`/api/security/auth/logout`、`/api/security/auth/kickout`，避免无策略时阻断会话命令。
+- `component-social` 的 `DefaultSocialManager` 去除空实现，默认可读写社交绑定缓存。
+- 根 README 与核心模块 README（framework-security、component-security、security-*、component-social、component-mybatisplus）已按当前闭环能力同步更新。
 
 ### Removed
 - 移除模块中的测试依赖（JUnit）。

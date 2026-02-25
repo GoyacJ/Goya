@@ -26,6 +26,8 @@
 - 提供 `GoyaSecurityContext`，实现 `currentUser/currentTenant` 解析。
 - 提供 SPI：`IUserService`、`ISocialUserService`、`ITenantService`、`IOtpService`、`IRolePermissionService`。
 - 提供风险评估扩展点：`LoginRiskEvaluator`（可选覆盖）。
+- 提供会话生命周期抽象：`SecuritySessionLifecycleService`，统一 `logoutCurrent/revokeBySid/revokeByUser/revokeByUserAndClient`。
+- 提供会话撤销结果模型：`SecuritySessionRevocationResult`。
 - 提供错误码治理：`SecurityErrorCode`、`SecurityErrorCodeCatalog`。
 
 ### 2.2 security-authentication
@@ -39,10 +41,14 @@
   - `POST /api/security/auth/wx-mini/login`
   - `POST /api/security/auth/mfa/challenge`
   - `POST /api/security/auth/mfa/verify`
+  - `POST /api/security/auth/logout`（`CURRENT_SESSION | ALL_SESSIONS | BY_CLIENT`）
+  - `POST /api/security/auth/kickout`（管理员按 `tenantId/userId/clientId` 踢出）
 - 提供最小登录页：`GET /security/login`。
 - 提供会话桥接接口：`POST /security/login/session`。
+- 对外 `logout/kickout` 命令统一委托 `SecuritySessionCommandService -> SecuritySessionLifecycleService`。
 - 认证成功返回 `pre_auth_code`，风控要求二次认证时返回 `mfa_challenge_id`。
 - 一次认证与二次认证均通过 `AuthenticationManager + AuthenticationProvider` 链执行。
+- 提供默认 `ISocialUserService` 适配器（`@ConditionalOnMissingBean`），复用 `component-social` 的 `SocialBindingStore`。
 
 ### 2.3 security-oauth2
 
@@ -50,10 +56,18 @@
 - 扩展授权类型：`grant_type=urn:goya:grant-type:pre-auth-code`。
 - `pre_auth_code` 默认强绑定 `client_id`（`goya.security.oauth2.pre-auth.require-client-binding=true`）。
 - 基于客户端类型解析 Access Token 格式（JWT/Opaque）。
+- 默认令牌策略：`AccessToken=JWT`（Web/移动端/小程序默认一致），`RefreshToken=Opaque`。
+- `refresh_token` 默认轮换（`reuse=false`），支持公开客户端按配置签发（`allow-refresh-token-for-public-clients`）。
 - 注入统一 claims：`tenant_id`、`roles`、`authorities`、`client_type`、`sid`、`mfa`、`cnf.jkt`。
 - 签名密钥改为 JDBC 持久化，默认 `P30D` 轮换，`P7D` 重叠验签窗口。
 - 默认禁用内存 JWK 回退（`goya.security.oauth2.keys.allow-in-memory-fallback=false`）。
 - 对 public client 强制开启 PKCE（`requireProofKey=true`）。
+- 授权存储写入撤销索引：
+  - `sid -> tokenIds`
+  - `sid -> authorizationIds`
+  - `tenant:user -> authorizationIds`
+  - `tenant:user:client -> authorizationIds`
+- `/connect/logout` 通过 `OidcLogoutRevocationFilter` 收敛到统一会话撤销服务。
 
 ### 2.4 security-authorization
 
@@ -63,7 +77,9 @@
 - `client_credentials` 机器令牌默认只做租户一致性校验，不强制 `X-User-Id`。
 - API 授权资源码统一采用 `mappingCode`（`method + pathPattern`）并固定 action=`ACCESS`。
 - 鉴权主体属性补齐 `roleIds/teamIds/orgIds`，用于 ROLE/TEAM/ORG 策略命中。
-- 做吊销令牌校验、策略引擎联动。
+- `RevokedTokenFilter` 作为资源侧最终吊销拦截，撤销后请求即时返回 401。
+- `PolicyAuthorizationFilter` 与策略引擎联动，策略变更后即时生效。
+- 内置安全端点 `POST /api/security/auth/logout|kickout` 默认绕过策略判定，仅要求认证并执行会话命令权限校验。
 
 ## 3. 关键流程
 
@@ -89,10 +105,18 @@
 3. 映射 `roles/authorities` 到 `GrantedAuthority`。
 4. 解析 `bestMatchingPattern + method` 生成 `mappingCode`，以 `ACCESS` 动作走策略引擎判定。
 
+### 3.4 会话撤销闭环
+
+1. 用户调用 `POST /api/security/auth/logout`：按 scope 触发当前会话/同用户全端/同用户同客户端撤销。
+2. 管理员调用 `POST /api/security/auth/kickout`：按 `tenantId/userId/clientId` 撤销目标会话。
+3. OIDC RP-Initiated Logout 调用 `/connect/logout`：同样进入 `SecuritySessionLifecycleService`。
+4. `OAuth2AuthorizationService.remove` 触发 access/refresh 吊销标记写入。
+5. 资源侧 `RevokedTokenFilter` 立即拦截旧 token（401）。
+
 ## 4. 过滤器链顺序
 
 - `@Order(1)` OAuth2 授权服务器链（`/oauth2/**`、`/.well-known/**`、`/connect/**`）
-- `@Order(2)` 认证 API 链（`/api/security/auth/**`、`/security/login`）
+- `@Order(2)` 认证 API 链（登录/MFA/社交/小程序 + `/security/login`）
 - `@Order(3)` 资源访问链（业务 API）
 
 ## 5. 配置与默认值
@@ -114,6 +138,7 @@
 - 密钥轮换：`goya.security.oauth2.keys.rotation-interval = P30D`，`goya.security.oauth2.keys.overlap = P7D`
 - `goya.security.oauth2.keys.allow-in-memory-fallback = false`
 - `goya.security.oauth2.pre-auth.require-client-binding = true`
+- `goya.security.oauth2.allow-refresh-token-for-public-clients = true`
 
 ## 6. 缓存键约定
 
@@ -121,8 +146,18 @@
 - `goya:security:auth:mfa:{challengeId}`
 - `goya:security:auth:precode:{code}`
 - `goya:security:token:revoked:{jti}`
+- `goya:security:sso:sid:{sid} -> tokenIds`
+- `goya:security:sso:sid:auth:{sid} -> authorizationIds`
+- `goya:security:sso:user:auth:{tenant}:{user} -> authorizationIds`
+- `goya:security:sso:user-client:auth:{tenant}:{user}:{client} -> authorizationIds`
 
-## 7. 扩展点
+## 7. 与数据权限联动
+
+- 动态 API 权限：`PolicyAuthorizationFilter` 基于运行时策略即时判定，无需重启生效。
+- 数据权限主链：`component-mybatisplus` 的 `GoyaDataPermissionHandler`。
+- 生产建议：保持 `goya.mybatis-plus.permission.fail-closed=true`，策略/上下文异常时按 `1=0` 收敛。
+
+## 8. 扩展点
 
 业务方可按需覆盖：
 

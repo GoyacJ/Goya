@@ -1,10 +1,13 @@
 package com.ysmjjsy.goya.component.security.oauth2.configuration.security;
 
+import com.ysmjjsy.goya.component.security.core.service.SecuritySessionLifecycleService;
 import com.ysmjjsy.goya.component.security.oauth2.configuration.properties.SecurityOAuth2Properties;
+import com.ysmjjsy.goya.component.security.oauth2.filter.OidcLogoutRevocationFilter;
 import com.ysmjjsy.goya.component.security.oauth2.grant.PreAuthCodeGrantAuthenticationConverter;
 import com.ysmjjsy.goya.component.security.oauth2.grant.PreAuthCodeGrantAuthenticationProvider;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
@@ -15,6 +18,7 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
@@ -42,7 +46,8 @@ public class AuthorizationServerSecurityConfiguration {
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity httpSecurity,
                                                                       SecurityOAuth2Properties securityOAuth2Properties,
                                                                       PreAuthCodeGrantAuthenticationConverter preAuthCodeGrantAuthenticationConverter,
-                                                                      PreAuthCodeGrantAuthenticationProvider preAuthCodeGrantAuthenticationProvider) throws Exception {
+                                                                      PreAuthCodeGrantAuthenticationProvider preAuthCodeGrantAuthenticationProvider,
+                                                                      ObjectProvider<SecuritySessionLifecycleService> securitySessionLifecycleServiceProvider) throws Exception {
         httpSecurity.oauth2AuthorizationServer(Customizer.withDefaults());
         OAuth2AuthorizationServerConfigurer authorizationServerConfigurer = httpSecurity.getConfigurer(OAuth2AuthorizationServerConfigurer.class);
         if (authorizationServerConfigurer == null) {
@@ -71,6 +76,14 @@ public class AuthorizationServerSecurityConfiguration {
                         new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
                 ))
                 .oauth2ResourceServer(oAuth2ResourceServer -> oAuth2ResourceServer.jwt(Customizer.withDefaults()));
+
+        SecuritySessionLifecycleService securitySessionLifecycleService = securitySessionLifecycleServiceProvider.getIfAvailable();
+        if (securitySessionLifecycleService != null) {
+            httpSecurity.addFilterBefore(
+                    new OidcLogoutRevocationFilter(securitySessionLifecycleService, securityOAuth2Properties),
+                    AuthorizationFilter.class
+            );
+        }
 
         return httpSecurity.build();
     }

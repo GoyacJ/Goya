@@ -43,19 +43,22 @@ public class PreAuthCodeGrantAuthenticationProvider implements AuthenticationPro
     private final PreAuthCodeService preAuthCodeService;
     private final SecurityOAuth2TokenFormatResolver tokenFormatResolver;
     private final boolean requireClientBinding;
+    private final boolean allowRefreshTokenForPublicClients;
 
     public PreAuthCodeGrantAuthenticationProvider(AuthorizationGrantType preAuthCodeGrantType,
                                                   OAuth2AuthorizationService authorizationService,
                                                   OAuth2TokenGenerator<? extends OAuth2Token> tokenGenerator,
                                                   PreAuthCodeService preAuthCodeService,
                                                   SecurityOAuth2TokenFormatResolver tokenFormatResolver,
-                                                  boolean requireClientBinding) {
+                                                  boolean requireClientBinding,
+                                                  boolean allowRefreshTokenForPublicClients) {
         this.preAuthCodeGrantType = preAuthCodeGrantType;
         this.authorizationService = authorizationService;
         this.tokenGenerator = tokenGenerator;
         this.preAuthCodeService = preAuthCodeService;
         this.tokenFormatResolver = tokenFormatResolver;
         this.requireClientBinding = requireClientBinding;
+        this.allowRefreshTokenForPublicClients = allowRefreshTokenForPublicClients;
     }
 
     @Override
@@ -140,7 +143,8 @@ public class PreAuthCodeGrantAuthenticationProvider implements AuthenticationPro
 
         OAuth2RefreshToken refreshToken = null;
         if (registeredClient.getAuthorizationGrantTypes().contains(AuthorizationGrantType.REFRESH_TOKEN)
-                && !ClientAuthenticationMethod.NONE.equals(clientPrincipal.getClientAuthenticationMethod())) {
+                && (allowRefreshTokenForPublicClients
+                || !ClientAuthenticationMethod.NONE.equals(clientPrincipal.getClientAuthenticationMethod()))) {
             OAuth2TokenContext refreshTokenContext = DefaultOAuth2TokenContext.builder()
                     .registeredClient(registeredClient)
                     .principal(principal)

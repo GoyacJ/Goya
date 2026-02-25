@@ -24,7 +24,7 @@ public record SecurityAuthorizationProperties(
         @DefaultValue("AUTO")
         ResourceTokenMode mode,
 
-        @DefaultValue("/security/login,/security/login/session,/api/security/auth/**,/actuator/health,/error")
+        @DefaultValue("/security/login,/security/login/session,/api/security/auth/password/login,/api/security/auth/sms/send,/api/security/auth/sms/login,/api/security/auth/social/**,/api/security/auth/wx-mini/login,/api/security/auth/mfa/**,/actuator/health,/error")
         String permitAllPatterns,
 
         @DefaultValue("X-Tenant-Id")

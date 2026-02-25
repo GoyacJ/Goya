@@ -5,7 +5,7 @@
 ## 1. 当前状态
 - 状态：开发中
 - 当前迭代：V1
-- 最后更新：2026-01-31
+- 最后更新：2026-02-25
 
 ## 2. 里程碑
 
@@ -58,6 +58,7 @@
 - 2026-01-31：租户配置支持数据库数据源管理（jdbc_url 等字段），并在路由阶段优先注册数据源。
 - 2026-01-31：更新 db_init.sql 以覆盖 MySQL/PostgreSQL/SQLite，并对齐租户/资源表字段与审计字段。
 - 2026-01-31：新增租户数据源类型枚举（TenantDataSourceType），替换 ds_type 字段为枚举模型。
+- 2026-02-25：与 component-security 会话撤销闭环对齐，补充动态权限/数据权限生产联动基线（`fail-closed=true`）。
 
 ## 5. framework-security 重构
 
@@ -71,3 +72,10 @@
 - [x] JSqlParser DSL 解析与过滤器构建
 - [x] 默认 SubjectResolver / ResourceResolver
 - [x] PolicyRepository 具体存储实现（按业务表落地）
+
+## 6. 与 component-security 联动状态（2026-02-25）
+
+- [x] 动态 API 鉴权主链：`PolicyAuthorizationFilter` 持续生效，策略变更即时生效。
+- [x] 数据权限主链：`GoyaDataPermissionHandler` + `GoyaDataPermissionInterceptor` 持续生效。
+- [x] 生产建议：保持 `goya.mybatis-plus.permission.fail-closed=true`。
+- [x] Token 撤销后资源侧统一 401，数据权限链路无需额外改造即可闭环。

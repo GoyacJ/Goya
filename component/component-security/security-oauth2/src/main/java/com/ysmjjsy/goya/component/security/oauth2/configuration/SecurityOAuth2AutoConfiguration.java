@@ -10,12 +10,14 @@ import com.ysmjjsy.goya.component.framework.cache.api.CacheService;
 import com.ysmjjsy.goya.component.security.authentication.service.PreAuthCodeService;
 import com.ysmjjsy.goya.component.security.core.constants.StandardClaimNamesConst;
 import com.ysmjjsy.goya.component.security.core.domain.SecurityUser;
+import com.ysmjjsy.goya.component.security.core.service.SecuritySessionLifecycleService;
 import com.ysmjjsy.goya.component.security.oauth2.configuration.key.JdbcOAuth2JwkManager;
 import com.ysmjjsy.goya.component.security.oauth2.configuration.properties.SecurityOAuth2Properties;
 import com.ysmjjsy.goya.component.security.oauth2.configuration.security.AuthorizationServerSecurityConfiguration;
 import com.ysmjjsy.goya.component.security.oauth2.configuration.security.PkceEnforcingRegisteredClientRepository;
 import com.ysmjjsy.goya.component.security.oauth2.grant.PreAuthCodeGrantAuthenticationConverter;
 import com.ysmjjsy.goya.component.security.oauth2.grant.PreAuthCodeGrantAuthenticationProvider;
+import com.ysmjjsy.goya.component.security.oauth2.service.OAuth2SecuritySessionLifecycleService;
 import com.ysmjjsy.goya.component.security.oauth2.service.RevocationIndexingAuthorizationService;
 import com.ysmjjsy.goya.component.security.oauth2.service.SecurityOAuth2TokenFormatResolver;
 import jakarta.annotation.PostConstruct;
@@ -110,7 +112,8 @@ public class SecurityOAuth2AutoConfiguration {
                 oAuth2TokenGenerator,
                 preAuthCodeService,
                 securityOAuth2TokenFormatResolver,
-                securityOAuth2Properties.preAuth() == null || securityOAuth2Properties.preAuth().requireClientBinding()
+                securityOAuth2Properties.preAuth() == null || securityOAuth2Properties.preAuth().requireClientBinding(),
+                securityOAuth2Properties.allowRefreshTokenForPublicClients()
         );
         log.trace("[Goya] |- security [oauth2] |- bean [preAuthCodeGrantAuthenticationProvider] register.");
         return provider;
@@ -230,6 +233,19 @@ public class SecurityOAuth2AutoConfiguration {
         JdbcOAuth2AuthorizationConsentService service = new JdbcOAuth2AuthorizationConsentService(new JdbcTemplate(dataSource), registeredClientRepository);
         log.trace("[Goya] |- security [oauth2] |- bean [oAuth2AuthorizationConsentService] register.");
         return service;
+    }
+
+    @Bean
+    @ConditionalOnBean({OAuth2AuthorizationService.class, CacheService.class})
+    @ConditionalOnMissingBean
+    public SecuritySessionLifecycleService securitySessionLifecycleService(OAuth2AuthorizationService oAuth2AuthorizationService,
+                                                                           CacheService cacheService) {
+        SecuritySessionLifecycleService securitySessionLifecycleService = new OAuth2SecuritySessionLifecycleService(
+                oAuth2AuthorizationService,
+                cacheService
+        );
+        log.trace("[Goya] |- security [oauth2] |- bean [securitySessionLifecycleService] register.");
+        return securitySessionLifecycleService;
     }
 
     @Bean

@@ -8,9 +8,12 @@ import com.ysmjjsy.goya.component.security.authentication.controller.SecurityLog
 import com.ysmjjsy.goya.component.security.authentication.controller.SsoSessionController;
 import com.ysmjjsy.goya.component.security.authentication.service.*;
 import com.ysmjjsy.goya.component.security.core.manager.SecurityUserManager;
+import com.ysmjjsy.goya.component.security.core.service.ISocialUserService;
 import com.ysmjjsy.goya.component.security.core.service.LoginRiskEvaluator;
 import com.ysmjjsy.goya.component.security.core.service.ITenantService;
 import com.ysmjjsy.goya.component.security.core.service.IOtpService;
+import com.ysmjjsy.goya.component.security.core.service.SecuritySessionLifecycleService;
+import com.ysmjjsy.goya.component.social.service.SocialBindingStore;
 import com.ysmjjsy.goya.component.social.service.ThirdPartService;
 import com.ysmjjsy.goya.component.social.service.WxMiniProgramService;
 import jakarta.annotation.PostConstruct;
@@ -179,6 +182,22 @@ public class SecurityAuthenticationAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean
+    public SecuritySessionCommandService securitySessionCommandService(ObjectProvider<SecuritySessionLifecycleService> securitySessionLifecycleServiceProvider) {
+        SecuritySessionCommandService securitySessionCommandService = new SecuritySessionCommandService(securitySessionLifecycleServiceProvider);
+        log.trace("[Goya] |- security [authentication] |- bean [securitySessionCommandService] register.");
+        return securitySessionCommandService;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(ISocialUserService.class)
+    public ISocialUserService defaultSocialUserServiceAdapter(ObjectProvider<SocialBindingStore> socialBindingStoreProvider) {
+        ISocialUserService socialUserService = new DefaultSocialUserServiceAdapter(socialBindingStoreProvider);
+        log.trace("[Goya] |- security [authentication] |- bean [defaultSocialUserServiceAdapter] register.");
+        return socialUserService;
+    }
+
+    @Bean
     public PasswordAuthenticationProvider passwordAuthenticationProvider(PasswordAuthService passwordAuthService) {
         PasswordAuthenticationProvider provider = new PasswordAuthenticationProvider(passwordAuthService);
         log.trace("[Goya] |- security [authentication] |- bean [passwordAuthenticationProvider] register.");
@@ -237,6 +256,7 @@ public class SecurityAuthenticationAutoConfiguration {
                                                          SocialAuthService socialAuthService,
                                                          WxMiniProgramAuthService wxMiniProgramAuthService,
                                                          MfaService mfaService,
+                                                         SecuritySessionCommandService securitySessionCommandService,
                                                          @Qualifier("securityAuthenticationManager") AuthenticationManager securityAuthenticationManager) {
         SecurityAuthController securityAuthController = new SecurityAuthController(
                 passwordAuthService,
@@ -244,6 +264,7 @@ public class SecurityAuthenticationAutoConfiguration {
                 socialAuthService,
                 wxMiniProgramAuthService,
                 mfaService,
+                securitySessionCommandService,
                 securityAuthenticationManager
         );
         log.trace("[Goya] |- security [authentication] |- bean [securityAuthController] register.");

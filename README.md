@@ -6,95 +6,91 @@
 [![Java](https://img.shields.io/badge/Java-25-blue.svg)](https://openjdk.org/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.1-brightgreen.svg)](https://spring.io/projects/spring-boot)
 
-**新一代企业级微服务开发框架（Codex 维护模式）**
+**企业级后端全体系脚手架（Spring Boot 4.0 + JDK 25）**
 
 [English](./README.en-US.md) | 简体中文
 
 </div>
 
-## 项目说明
+## 项目定位
 
-Goya 是基于 **Java 25** 和 **Spring Boot 4.0.1** 的企业级后端框架仓库。
-当前仓库以后端为主，前端代码不在本仓库中维护。
+Goya 是一个面向企业级场景的后端仓库，核心目标是提供可直接落地的：
 
-## 当前状态
+- 统一认证授权（PC / 移动端 / 小程序）
+- OAuth2.1 与 SSO
+- 动态权限 + 数据权限
+- 多租户与基础组件化能力
 
-- 主运行入口：`platform/platform-monolith`
-- 默认端口：`8101`
-- 模块总量：多聚合模块 + 细分组件模块
-- 开发模式：**Codex 优先**
-- 质量策略：**无测试文件策略**（不新增 `src/test/**`）
+## 当前安全能力闭环
+
+已在 `framework-security`、`component-mybatisplus`、`component-social`、`component-security` 完成以下闭环能力：
+
+- 统一认证入口：密码、短信、社交、小程序、MFA
+- OAuth2.1 扩展授权：`urn:goya:grant-type:pre-auth-code`
+- 双 Token 策略：`AccessToken=JWT`、`RefreshToken=Opaque`（默认轮换，`reuse=false`）
+- 全局会话撤销：`logout CURRENT_SESSION | ALL_SESSIONS | BY_CLIENT`、管理员 `kickout`
+- OIDC 登出联动：`/connect/logout` 收敛到统一会话生命周期服务
+- 撤销即时生效：资源侧 `RevokedTokenFilter` 拦截旧 token（401）
+- 动态 API 权限：`PolicyAuthorizationFilter` 运行时策略即时生效
+- 数据权限执行：`GoyaDataPermissionHandler`，生产建议 `fail-closed=true`
+
+## 模块总览
+
+| 模块 | 说明 |
+|---|---|
+| `component/component-framework/framework-security` | SRA 策略模型与授权引擎 |
+| `component/component-mybatisplus` | MyBatis Plus 企业配置 + 多租户 + 数据权限执行 |
+| `component/component-social` | 短信/第三方/小程序能力与社交绑定 |
+| `component/component-security/security-core` | 安全核心模型、SPI、会话生命周期抽象 |
+| `component/component-security/security-authentication` | 统一认证 API 与会话命令入口 |
+| `component/component-security/security-oauth2` | OAuth2.1 授权服务器与令牌治理 |
+| `component/component-security/security-authorization` | 资源侧鉴权、吊销拦截、策略联动 |
+| `platform/platform-monolith` | 默认运行入口 |
 
 ## 快速开始
 
-### 1) 环境要求
+### 1. 环境要求
 
-- JDK 25+
+- JDK 25
 - Maven 3.9+
-- Docker（可选）
+- Redis（认证临时态、预认证码、撤销索引）
+- OAuth2 相关表（`registered_client`、`authorization`、`consent`、`oauth2_jwk`）
 
-### 2) 构建（跳过测试）
+### 2. 构建校验（跳过测试）
+
+```bash
+mvn -DskipTests validate
+```
+
+全仓编译（需 JDK 25）：
 
 ```bash
 mvn -DskipTests compile
 ```
 
-### 3) 启动单体应用
+### 3. 启动单体应用
 
 ```bash
 cd platform/platform-monolith
 mvn spring-boot:run
 ```
 
-访问：`http://localhost:8101`
-
-### 4) 启动基础设施（可选）
-
-```bash
-cd deploy/docker/docker-compose/basic
-docker-compose up -d
-```
-
-## 项目结构
-
-```text
-Goya/
-├── AGENTS.md                 # Codex 项目级执行规范
-├── .agents/skills/           # 项目专属 Codex skills
-├── docs/                     # 文档体系（总入口见 docs/SUMMARY.md）
-├── bom/                      # 依赖版本管理
-├── component/                # 基础框架与通用组件
-├── ai/                       # AI 相关模块
-├── platform/                 # 平台应用（含 monolith）
-├── cloud/                    # 云原生占位模块
-└── deploy/                   # 部署与配置
-```
+默认地址：`http://localhost:8101`
 
 ## 文档入口
 
-请从总索引开始：
-
-- [docs/SUMMARY.md](./docs/SUMMARY.md)
-
-核心文档：
-
-- [架构概览](./docs/architecture/overview.md)
-- [模块地图](./docs/architecture/module-map.md)
-- [Codex 开发工作流](./docs/development/codex-workflow.md)
-- [无测试策略](./docs/development/no-test-policy.md)
+- [文档总索引](./docs/SUMMARY.md)
+- [安全架构设计](./docs/architecture/component-security-design.md)
+- [安全部署指南](./docs/operations/security-deploy.md)
 - [构建与发布](./docs/operations/build-and-release.md)
 - [变更日志](./docs/progress/changelog.md)
 
-## Codex 维护约束
+## 开发与治理约束
 
-- 开发前先读 `docs/SUMMARY.md`
-- 变更后至少执行 `mvn -DskipTests compile` 或模块级 `validate`
-- 禁止新增测试文件与测试依赖
-- 任何变更必须同步更新文档（至少 `docs/progress/changelog.md`）
-
-## 贡献
-
-请阅读：[CONTRIBUTING.md](./CONTRIBUTING.md)
+- 依赖版本统一在 `bom/pom.xml` 管理
+- 优先复用已有模块，不平行造轮子
+- 不新增测试文件（`src/test/**`）与测试依赖
+- 任何功能变更必须同步更新文档（至少 `docs/progress/changelog.md`）
 
 ## 许可证
 

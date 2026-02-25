@@ -12,37 +12,42 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DefaultSocialManager extends AbstractSocialManager {
 
-    public DefaultSocialManager(ThirdPartService thirdPartService, WxMiniProgramService wxMiniProgramService) {
+    private final SocialBindingStore socialBindingStore;
+
+    public DefaultSocialManager(ThirdPartService thirdPartService,
+                                WxMiniProgramService wxMiniProgramService,
+                                SocialBindingStore socialBindingStore) {
         super(thirdPartService, wxMiniProgramService);
+        this.socialBindingStore = socialBindingStore;
     }
 
     @Override
     SocialUser findUserByPhone(String phoneNumber) {
-        return null;
+        return socialBindingStore.findByPhone(phoneNumber);
     }
 
     @Override
     SocialUser saveSocialUserByPhone(String phoneNumber) {
-        return null;
+        return socialBindingStore.saveByPhone(phoneNumber);
     }
 
     @Override
     SocialUser findUserByThird(String source, String uuid) {
-        return null;
+        return socialBindingStore.findByThird(source, uuid);
     }
 
     @Override
     SocialUser saveSocialUser(SocialUser socialUser) {
-        return socialUser;
+        return socialBindingStore.save(socialUser);
     }
 
     @Override
     SocialUser updateSocialUser(String userId, SocialUser socialUser) {
-        return socialUser;
+        return socialBindingStore.update(userId, socialUser);
     }
 
     @Override
     SocialUser findUserByWxMiniProgram(String openId, String unionId, String appId) {
-        return null;
+        return socialBindingStore.findByWxMiniProgram(openId, unionId, appId);
     }
 }
