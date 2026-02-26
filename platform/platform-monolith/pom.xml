@@ -16,6 +16,10 @@
     <dependencies>
         <dependency>
             <groupId>com.ysmjjsy.goya</groupId>
+            <artifactId>component-admin</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.ysmjjsy.goya</groupId>
             <artifactId>component-service</artifactId>
         </dependency>
         <dependency>
@@ -46,10 +50,6 @@
         <dependency>
             <groupId>com.ysmjjsy.goya</groupId>
             <artifactId>component-oss-s3</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.ysmjjsy.goya</groupId>
-            <artifactId>component-mybatisplus</artifactId>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>

@@ -14,6 +14,7 @@
 ### 架构
 - [架构概览](./architecture/overview.md)
 - [模块地图](./architecture/module-map.md)
+- [管理域设计](./architecture/component-admin-design.md)
 - [依赖治理规则](./architecture/dependency-rules.md)
 
 ### 开发

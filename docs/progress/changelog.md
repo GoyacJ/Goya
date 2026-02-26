@@ -26,6 +26,11 @@
 - 新增前端 API SDK：`packages/api`，包含 `ApiEnvelope<T>`、`AuthResultDto`、`OAuthTokenResponse`、`PermissionContext`。
 - 新增管理后台应用：`apps/web`，覆盖认证（密码/短信/MFA）与 OSS/MinIO 首期页面。
 - 新增双主题（light/dark）与双语（`zh-CN`、`en-US`）基线。
+- 新增 `component-admin` 企业级管理域模块（单 Jar），覆盖用户/角色/权限/菜单/部门/字典/策略管理。
+- 新增 `component-admin` 默认安全 SPI：`AdminUserService`、`AdminRolePermissionService`、`AdminTenantService`（支持 `@ConditionalOnMissingBean` 覆盖）。
+- 新增管理域 API 前缀 `/api/admin` 与首批完整接口集合。
+- 新增管理域数据库初始化脚本：`component/component-admin/src/main/resources/db_init.sql`（MySQL/PostgreSQL/SQLite）。
+- 新增管理域架构文档：`docs/architecture/component-admin-design.md`。
 
 ### Changed
 - README 与文档入口迁移到 Codex 文档体系。
@@ -52,6 +57,10 @@
 - `PolicyAuthorizationFilter` 增加内置安全端点豁免：`/api/security/auth/logout`、`/api/security/auth/kickout`，避免无策略时阻断会话命令。
 - `component-social` 的 `DefaultSocialManager` 去除空实现，默认可读写社交绑定缓存。
 - 根 README 与核心模块 README（framework-security、component-security、security-*、component-social、component-mybatisplus）已按当前闭环能力同步更新。
+- `component/pom.xml` 新增模块聚合：`component-admin`。
+- 根 `pom.xml` 的 `dependencyManagement` 新增内部模块：`component-admin`。
+- `platform/platform-monolith/pom.xml` 新增 `component-admin` 依赖，默认接入管理域能力。
+- `component-admin` 进一步收敛多租户隔离：去除跨租户用户名回退查询，角色/权限/菜单/部门关联写入前做租户内存在性校验，策略与资源更新改为租户作用域严格校验。
 
 ### Removed
 - 移除模块中的测试依赖（JUnit）。

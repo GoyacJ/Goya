@@ -8,6 +8,7 @@
 - 作用：管理子模块编译顺序与聚合构建，不直接提供运行时代码。
 
 ## 子模块
+- `component-admin`
 - `component-redis`
 - `component-captcha`
 - `component-security`

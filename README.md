@@ -33,6 +33,7 @@ Goya 是一个面向企业级场景的后端仓库，核心目标是提供可直
 - 撤销即时生效：资源侧 `RevokedTokenFilter` 拦截旧 token（401）
 - 动态 API 权限：`PolicyAuthorizationFilter` 运行时策略即时生效
 - 数据权限执行：`GoyaDataPermissionHandler`，生产建议 `fail-closed=true`
+- 管理域默认实现：`component-admin`（RBAC、用户/角色/权限/菜单/部门/字典、策略管理）
 
 ## 模块总览
 
@@ -40,6 +41,7 @@ Goya 是一个面向企业级场景的后端仓库，核心目标是提供可直
 |---|---|
 | `component/component-framework/framework-security` | SRA 策略模型与授权引擎 |
 | `component/component-mybatisplus` | MyBatis Plus 企业配置 + 多租户 + 数据权限执行 |
+| `component/component-admin` | 企业管理域（RBAC、用户、菜单、部门、字典、策略） |
 | `component/component-social` | 短信/第三方/小程序能力与社交绑定 |
 | `component/component-security/security-core` | 安全核心模型、SPI、会话生命周期抽象 |
 | `component/component-security/security-authentication` | 统一认证 API 与会话命令入口 |
@@ -81,6 +83,7 @@ mvn spring-boot:run
 
 - [文档总索引](./docs/SUMMARY.md)
 - [安全架构设计](./docs/architecture/component-security-design.md)
+- [管理域架构设计](./docs/architecture/component-admin-design.md)
 - [安全部署指南](./docs/operations/security-deploy.md)
 - [构建与发布](./docs/operations/build-and-release.md)
 - [变更日志](./docs/progress/changelog.md)

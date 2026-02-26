@@ -14,6 +14,7 @@
     <description>公共组件</description>
 
     <modules>
+        <module>component-admin</module>
         <module>component-redis</module>
         <module>component-captcha</module>
         <module>component-security</module>

@@ -20,6 +20,7 @@
 | framework-oss | 85 | 可用 |
 | framework-security | 55 | 可用 |
 | framework-boot-starter | 1 | 入口聚合 |
+| component-admin | 78 | 可用 |
 | component-service | 0 | 占位 |
 | component-redis | 19 | 可用 |
 | component-kafka | 2 | 基础实现 |
@@ -38,5 +39,6 @@
 | platform-distributed | 0 | 占位 |
 | cloud | 0 | 占位 |
 
-补充：`component-security`、`framework-security`、`component-mybatisplus` 已完成认证授权与数据权限一致性重构，
+补充：`component-admin` 已提供管理域默认实现（RBAC、用户、角色、权限、菜单、部门、字典、策略管理）并接管安全 SPI；
+`component-security`、`framework-security`、`component-mybatisplus` 已完成认证授权与数据权限一致性重构，
 包括 Provider 化认证、`mappingCode` 资源键统一、Header/Claim 严格校验分支、`pre_auth_code` 客户端绑定与 OAuth2 密钥治理强化。
