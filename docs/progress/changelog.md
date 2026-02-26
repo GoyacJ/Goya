@@ -61,6 +61,7 @@
 - 根 `pom.xml` 的 `dependencyManagement` 新增内部模块：`component-admin`。
 - `platform/platform-monolith/pom.xml` 新增 `component-admin` 依赖，默认接入管理域能力。
 - `component-admin` 进一步收敛多租户隔离：去除跨租户用户名回退查询，角色/权限/菜单/部门关联写入前做租户内存在性校验，策略与资源更新改为租户作用域严格校验。
+- `component-admin` 自动配置改为显式注册安全 SPI Bean：`IUserService`、`IRolePermissionService`、`ITenantService`，避免启动阶段出现 `NoSuchBeanDefinitionException: IUserService`。
 
 ### Removed
 - 移除模块中的测试依赖（JUnit）。
